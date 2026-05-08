@@ -79,7 +79,7 @@ describe("useSmartIconMatch", () => {
               title: "Example",
               icon: "/api/site/icon?url=https%3A%2F%2Fexample.com",
               description: "Demo",
-              backgroundColor: "#ffffff",
+              backgroundColor: "#111827",
               fetchedAt: "2026-05-08T00:00:00Z",
             },
           }),
@@ -110,6 +110,7 @@ describe("useSmartIconMatch", () => {
         url: "/api/site/icon?url=https%3A%2F%2Fexample.com",
         source: "site",
         label: "Example",
+        backgroundColor: "#111827",
       },
     ]);
     expect(smartIconMatch.showSmartMatchModal.value).toBe(true);
@@ -129,6 +130,7 @@ describe("useSmartIconMatch", () => {
             url: "https://example.com",
             title: "Example",
             icon: null,
+            backgroundColor: "#ffffff",
           },
         }),
       })),
@@ -147,8 +149,32 @@ describe("useSmartIconMatch", () => {
         url: "/api/site/icon?url=https%3A%2F%2Fexample.com&size=64",
         source: "site",
         label: "Example",
+        backgroundColor: "#ffffff",
       },
     ]);
+  });
+
+  it("returns the selected icon result with metadata background color", async () => {
+    const onSelect = vi.fn();
+    const smartIconMatch = useSmartIconMatch({
+      form: ref({ url: "example.com" }),
+      onSelect,
+      notify: vi.fn(),
+    });
+
+    smartIconMatch.selectSmartMatchCandidate({
+      url: "/api/site/icon?url=https%3A%2F%2Fexample.com",
+      source: "site",
+      label: "Example",
+      backgroundColor: "#111827",
+    });
+
+    expect(onSelect).toHaveBeenCalledWith({
+      icon: "/api/site/icon?url=https%3A%2F%2Fexample.com",
+      source: "site",
+      label: "Example",
+      backgroundColor: "#111827",
+    });
   });
 
   it("asks for a URL before querying metadata", async () => {

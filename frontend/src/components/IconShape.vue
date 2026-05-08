@@ -15,6 +15,11 @@ const props = defineProps<{
   imgScale?: number;
 }>();
 
+const emit = defineEmits<{
+  error: [];
+  load: [];
+}>();
+
 const sizePx = computed(() => props.size ?? 48);
 const scaleVal = computed(() => (props.imgScale ?? 100) / 100);
 
@@ -52,18 +57,29 @@ const isSvg = computed(() => {
   return !!s && s.trim().startsWith("<svg");
 });
 
+const isCssColorValue = (value?: string) => {
+  const cls = value?.trim();
+  if (!cls) return false;
+  return (
+    cls.startsWith("#") ||
+    cls.startsWith("rgb") ||
+    cls.startsWith("hsl") ||
+    (typeof CSS !== "undefined" && CSS.supports?.("color", cls))
+  );
+};
+
 const textScale = computed(() => ((props.size ?? 48) >= 48 ? 0.52 : 0.56) * scaleVal.value);
 
 const resolvedFillClass = computed(() => {
   const cls = props.bgClass || "fill-gray-100";
-  if (cls.startsWith("#") || cls.startsWith("rgb") || cls.startsWith("hsl")) return "";
+  if (isCssColorValue(cls)) return "";
   if (cls.includes("bg-")) return cls.replace(/\bbg-/g, "fill-");
   return cls;
 });
 
 const fillStyle = computed(() => {
   const cls = props.bgClass;
-  if (cls && (cls.startsWith("#") || cls.startsWith("rgb") || cls.startsWith("hsl"))) {
+  if (isCssColorValue(cls)) {
     return { fill: cls };
   }
   return {};
@@ -135,6 +151,8 @@ const pathD = computed(() => {
           :width="imgGeometry.width"
           :height="imgGeometry.height"
           preserveAspectRatio="xMidYMid slice"
+          @error="emit('error')"
+          @load="emit('load')"
         />
         <foreignObject v-else-if="isSvg" x="0" y="0" width="100" height="100">
           <div

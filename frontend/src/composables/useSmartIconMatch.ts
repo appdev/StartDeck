@@ -1,10 +1,19 @@
 import { ref, shallowRef, type Ref } from "vue";
 import { fetchSiteMetadata, getSiteIconUrl, normalizeSiteUrl } from "@/utils/siteMetadata";
+import { normalizeIconBackgroundColor } from "@/utils/iconAppearance";
 
 export interface SmartIconCandidate {
   url: string;
   source: "site";
   label?: string;
+  backgroundColor?: string;
+}
+
+export interface SmartIconMatchResult {
+  icon: string;
+  source: SmartIconCandidate["source"];
+  label?: string;
+  backgroundColor?: string;
 }
 
 export interface SmartIconFormState {
@@ -16,7 +25,7 @@ export interface SmartIconFormState {
 
 interface SmartIconMatchOptions {
   form: Ref<SmartIconFormState>;
-  onSelect: (url: string) => void;
+  onSelect: (result: SmartIconMatchResult) => void;
   notify?: (message: string) => void;
 }
 
@@ -146,7 +155,12 @@ export const useSmartIconMatch = ({ form, onSelect, notify }: SmartIconMatchOpti
 
   const selectSmartMatchCandidate = (candidate: SmartIconCandidate) => {
     cancelActiveRun();
-    onSelect(candidate.url);
+    onSelect({
+      icon: candidate.url,
+      source: candidate.source,
+      label: candidate.label,
+      backgroundColor: candidate.backgroundColor,
+    });
     showSmartMatchModal.value = false;
   };
 
@@ -169,11 +183,13 @@ export const useSmartIconMatch = ({ form, onSelect, notify }: SmartIconMatchOpti
 
       const candidates: SmartIconCandidate[] = [];
       const metadataIcon = metadata?.icon?.trim();
+      const metadataBackgroundColor = normalizeIconBackgroundColor(metadata?.backgroundColor);
       if (metadataIcon && (await validateIconCandidate(metadataIcon))) {
         candidates.push({
           url: metadataIcon,
           source: "site",
           label: metadata?.title || extractKeywordFromUrl(targetUrl) || "site",
+          backgroundColor: metadataBackgroundColor || undefined,
         });
       }
 
@@ -184,6 +200,7 @@ export const useSmartIconMatch = ({ form, onSelect, notify }: SmartIconMatchOpti
             url: fallbackIcon,
             source: "site",
             label: metadata?.title || extractKeywordFromUrl(targetUrl) || "site",
+            backgroundColor: metadataBackgroundColor || undefined,
           });
         }
       }

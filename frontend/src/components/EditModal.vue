@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { ref, watch, computed, shallowRef, onMounted, onUnmounted } from "vue";
 import type { NavItem } from "@/types";
-import { useSmartIconMatch } from "@/composables/useSmartIconMatch";
+import { useSmartIconMatch, type SmartIconMatchResult } from "@/composables/useSmartIconMatch";
 import { useMainStore } from "../stores/main";
+import IconShape from "./IconShape.vue";
 import IconUploader from "./IconUploader.vue";
 import IconSelectionModal from "./IconSelectionModal.vue";
 import GroupSelector from "./GroupSelector.vue";
@@ -10,6 +11,7 @@ import OverlayMotion from "@/components/base/OverlayMotion.vue";
 import { VueCropper } from "vue-cropper";
 import { resolveManagedUrl, toAppUrl } from "@/utils/runtimeUrls";
 import { getSiteIconUrl } from "@/utils/siteMetadata";
+import { normalizeIconBackgroundColor, resolveIconBackground } from "@/utils/iconAppearance";
 import "vue-cropper/dist/index.css";
 
 // 接收父组件传来的数据
@@ -111,6 +113,9 @@ const form = ref<EditForm>({
   description1: "",
   description2: "",
   description3: "",
+  iconBackgroundMode: "default",
+  iconAutoBackgroundColor: "",
+  iconCustomBackgroundColor: "",
   color: "bg-gray-100 text-gray-700",
   titleColor: "",
   isPublic: false,
@@ -121,8 +126,78 @@ const form = ref<EditForm>({
 });
 
 // 选中图标
-const onIconSelect = (icon: string) => {
-  form.value.icon = icon;
+const activeGroup = computed(() =>
+  store.groups.find((group) => group.id === (localGroupId.value || props.groupId || "")),
+);
+
+const effectiveIconShape = computed(() => activeGroup.value?.iconShape || store.appConfig.iconShape || "circle");
+const isIconHidden = computed(() => effectiveIconShape.value === "hidden");
+const isIconShapeNone = computed(() => effectiveIconShape.value === "none");
+const iconBackgroundResolution = computed(() =>
+  resolveIconBackground(form.value, {
+    fallback: "bg-gray-100",
+    shape: effectiveIconShape.value,
+  }),
+);
+
+const iconBackgroundModes = [
+  { value: "auto", label: "自动" },
+  { value: "default", label: "默认" },
+  { value: "custom", label: "自定义" },
+] as const;
+
+const iconBackgroundPresets = [
+  "#111827",
+  "#1d4ed8",
+  "#047857",
+  "#b45309",
+  "#be123c",
+  "#7c3aed",
+  "#0f766e",
+  "#f3f4f6",
+] as const;
+
+const setIconBackgroundMode = (mode: (typeof iconBackgroundModes)[number]["value"]) => {
+  form.value.iconBackgroundMode = mode;
+  if (mode === "default") {
+    form.value.iconCustomBackgroundColor = "";
+  }
+  if (mode === "custom" && !normalizeIconBackgroundColor(form.value.iconCustomBackgroundColor)) {
+    form.value.iconCustomBackgroundColor =
+      normalizeIconBackgroundColor(form.value.iconAutoBackgroundColor) || "#111827";
+  }
+};
+
+const setCustomIconBackgroundColor = (value: string) => {
+  const normalized = normalizeIconBackgroundColor(value);
+  if (!normalized || !normalized.startsWith("#") || normalized.length !== 7) return;
+  form.value.iconBackgroundMode = "custom";
+  form.value.iconCustomBackgroundColor = normalized;
+};
+
+const iconCustomColorValue = computed(
+  () => normalizeIconBackgroundColor(form.value.iconCustomBackgroundColor) || "#111827",
+);
+
+const resolveCandidateBackground = (backgroundColor?: string) =>
+  resolveIconBackground(
+    {
+      iconBackgroundMode: backgroundColor ? "auto" : "default",
+      iconAutoBackgroundColor: backgroundColor || "",
+    },
+    {
+      fallback: "bg-gray-100",
+      shape: effectiveIconShape.value,
+    },
+  ).color;
+
+const onIconSelect = (result: SmartIconMatchResult) => {
+  form.value.icon = result.icon;
+  const backgroundColor = normalizeIconBackgroundColor(result.backgroundColor);
+  form.value.iconAutoBackgroundColor = backgroundColor || "";
+  if (form.value.iconBackgroundMode !== "custom") {
+    form.value.iconBackgroundMode = backgroundColor ? "auto" : "default";
+  }
 };
 
 const {
@@ -160,6 +235,9 @@ watch(
           description1: props.data.description1 || "",
           description2: props.data.description2 || "",
           description3: props.data.description3 || "",
+          iconBackgroundMode: props.data.iconBackgroundMode || "default",
+          iconAutoBackgroundColor: props.data.iconAutoBackgroundColor || "",
+          iconCustomBackgroundColor: props.data.iconCustomBackgroundColor || "",
           titleColor: props.data.titleColor || "",
           backgroundImage: props.data.backgroundImage || "",
           backgroundBlur: props.data.backgroundBlur ?? 6,
@@ -175,6 +253,9 @@ watch(
           backupUrls: [],
           backupLanUrls: [],
           icon: "",
+          iconBackgroundMode: "default",
+          iconAutoBackgroundColor: "",
+          iconCustomBackgroundColor: "",
           color: "bg-gray-100 text-gray-700",
           titleColor: "",
           isPublic: false,
@@ -435,6 +516,14 @@ const submit = async () => {
 
   isSaving.value = true;
   try {
+    form.value.iconAutoBackgroundColor =
+      normalizeIconBackgroundColor(form.value.iconAutoBackgroundColor) || "";
+    form.value.iconCustomBackgroundColor =
+      normalizeIconBackgroundColor(form.value.iconCustomBackgroundColor) || "";
+    if (form.value.iconBackgroundMode === "custom" && !form.value.iconCustomBackgroundColor) {
+      form.value.iconBackgroundMode = "default";
+    }
+
     if (saveIconToLocal.value) {
       const icon = (form.value.icon || "").trim();
       if (icon && !icon.startsWith("/icon-cache/")) {
@@ -770,15 +859,18 @@ const submit = async () => {
               class="shrink-0 w-20 h-20 rounded-xl border bg-gray-50 flex items-center justify-center overflow-hidden shadow-sm cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition-all group relative"
               @click="triggerIconUpload"
             >
-              <img
-                v-if="form.icon"
-                :src="store.getAssetUrl(form.icon)"
-                class="w-full h-full object-cover transition-transform duration-200"
-                :style="{ transform: `scale(${(form.iconSize ?? 100) / 100})` }"
+              <IconShape
+                v-if="form.icon && !isIconHidden"
+                :shape="effectiveIconShape"
+                :size="64"
+                :imgScale="form.iconSize"
+                :bgClass="iconBackgroundResolution.color"
+                :icon="form.icon"
+                class="transition-transform duration-200"
                 @error="handleIconError"
                 @load="onImgLoad"
               />
-              <span v-else class="text-gray-300 text-xs">预览</span>
+              <span v-else class="text-gray-300 text-xs">{{ isIconHidden ? "隐藏" : "预览" }}</span>
             </div>
 
             <!-- 操作区 -->
@@ -859,10 +951,13 @@ const submit = async () => {
                     :title="candidate.label || getIconNameFromUrl(candidate.url)"
                     class="group w-20 h-20 rounded-xl border border-transparent bg-white/90 hover:border-blue-200 hover:bg-white hover:shadow-sm flex items-center justify-center overflow-hidden transition-all"
                   >
-                    <img
-                      :src="store.getAssetUrl(candidate.url)"
-                      class="w-full h-full object-contain p-2 transition-transform group-hover:scale-110"
-                      loading="lazy"
+                    <IconShape
+                      :shape="effectiveIconShape"
+                      :size="56"
+                      :imgScale="86"
+                      :bgClass="resolveCandidateBackground(candidate.backgroundColor)"
+                      :icon="candidate.url"
+                      class="transition-transform group-hover:scale-110"
                     />
                   </button>
                 </div>
@@ -887,6 +982,70 @@ const submit = async () => {
                   class="flex-1 h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-400"
                 />
                 <span class="text-xs text-gray-500 w-8 text-right">{{ form.iconSize }}%</span>
+              </div>
+
+              <div
+                v-if="!isIconHidden"
+                class="space-y-2 bg-gray-50 px-3 py-2.5 rounded-lg border border-gray-100"
+              >
+                <div class="flex items-center justify-between gap-3">
+                  <span class="text-xs text-gray-400 whitespace-nowrap">背景</span>
+                  <div class="flex rounded-lg bg-white border border-gray-200 p-0.5">
+                    <button
+                      v-for="mode in iconBackgroundModes"
+                      :key="mode.value"
+                      type="button"
+                      @click="setIconBackgroundMode(mode.value)"
+                      class="px-2 py-1 text-xs rounded-md transition-colors"
+                      :class="
+                        (form.iconBackgroundMode || 'default') === mode.value
+                          ? 'bg-gray-900 text-white'
+                          : 'text-gray-500 hover:text-gray-900'
+                      "
+                    >
+                      {{ mode.label }}
+                    </button>
+                  </div>
+                </div>
+
+                <div v-if="form.iconBackgroundMode === 'custom'" class="flex items-center gap-2">
+                  <button
+                    v-for="color in iconBackgroundPresets"
+                    :key="color"
+                    type="button"
+                    class="w-5 h-5 rounded-full border transition-all"
+                    :class="
+                      iconCustomColorValue === color
+                        ? 'border-gray-900 ring-2 ring-gray-300'
+                        : 'border-gray-200 hover:border-gray-400'
+                    "
+                    :style="{ backgroundColor: color }"
+                    :title="color"
+                    @click="setCustomIconBackgroundColor(color)"
+                  ></button>
+                  <input
+                    :value="iconCustomColorValue"
+                    type="color"
+                    class="w-7 h-7 rounded cursor-pointer border-none p-0 bg-transparent"
+                    title="选择图标背景色"
+                    @input="setCustomIconBackgroundColor(($event.target as HTMLInputElement).value)"
+                  />
+                  <input
+                    :value="iconCustomColorValue"
+                    type="text"
+                    maxlength="7"
+                    class="w-20 px-2 py-1 rounded-md border border-gray-200 bg-white text-xs text-gray-600 focus:border-gray-900 outline-none"
+                    placeholder="#111827"
+                    @input="setCustomIconBackgroundColor(($event.target as HTMLInputElement).value)"
+                  />
+                </div>
+
+                <div class="text-[11px] leading-4 text-gray-400">
+                  <span v-if="isIconShapeNone">当前形状不显示背景，颜色会保留供切换形状后使用。</span>
+                  <span v-else-if="iconBackgroundResolution.source === 'auto'">已使用站点元数据背景色。</span>
+                  <span v-else-if="iconBackgroundResolution.source === 'legacy'">正在读取旧图标背景配置。</span>
+                  <span v-else>未获取到背景色时使用浅灰默认背景。</span>
+                </div>
               </div>
             </div>
           </div>

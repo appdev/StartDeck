@@ -10,6 +10,8 @@ import { parseBookmarks } from "../utils/bookmark";
 import { VueDraggable } from "vue-draggable-plus";
 import OverlayMotion from "@/components/base/OverlayMotion.vue";
 import { fetchSiteMetadata, getSiteIconUrl, normalizeSiteUrl } from "@/utils/siteMetadata";
+import { normalizeIconBackgroundColor, resolveIconBackground } from "@/utils/iconAppearance";
+import IconShape from "./IconShape.vue";
 
 const props = defineProps<{
   onOpenSettings: () => void;
@@ -400,6 +402,12 @@ const getLinkIcon = (item: BookmarkItem | BookmarkCategory): string | undefined 
   return undefined;
 };
 
+const getBookmarkIconBackground = (item: BookmarkItem) =>
+  resolveIconBackground(item, {
+    fallback: "rgba(0, 0, 0, 0.06)",
+    shape: "rounded",
+  }).color;
+
 // --- Keyboard Shortcuts ---
 const handleKeydown = (e: KeyboardEvent) => {
   // Ignore if input is focused
@@ -419,6 +427,7 @@ const editingBookmarkId = ref<string | null>(null);
 const editingBookmarkTitle = ref("");
 const editingBookmarkUrl = ref("");
 const editingBookmarkIcon = ref("");
+const editingBookmarkAutoBackgroundColor = ref("");
 const selectedCategoryForEdit = ref<string>("");
 const addInputRef = ref<HTMLInputElement | null>(null);
 const editInputRef = ref<HTMLInputElement | null>(null);
@@ -550,6 +559,7 @@ const openEditModal = (item: BookmarkItem | BookmarkCategory) => {
     editingItemType.value = "link";
     editingBookmarkUrl.value = item.url;
     editingBookmarkIcon.value = item.icon || "";
+    editingBookmarkAutoBackgroundColor.value = item.iconAutoBackgroundColor || "";
     selectedCategoryForEdit.value =
       findLinkParentCategoryId(item.id, bookmarks.value || []) ||
       bookmarks.value?.find((c) => c.title === "默认收藏")?.id ||
@@ -558,6 +568,7 @@ const openEditModal = (item: BookmarkItem | BookmarkCategory) => {
     editingItemType.value = "category";
     editingBookmarkUrl.value = "";
     editingBookmarkIcon.value = "";
+    editingBookmarkAutoBackgroundColor.value = "";
     selectedCategoryForEdit.value = "";
   }
 
@@ -569,6 +580,9 @@ const openEditModal = (item: BookmarkItem | BookmarkCategory) => {
 
 const applySiteIconFallback = (item: BookmarkItem) => {
   item.icon = getSiteIconUrl(item.url);
+  if (item.iconBackgroundMode !== "custom") {
+    item.iconBackgroundMode = item.iconAutoBackgroundColor ? "auto" : "default";
+  }
 };
 
 const confirmEditBookmark = async () => {
@@ -580,6 +594,10 @@ const confirmEditBookmark = async () => {
     if (editingItemType.value === "link" && "url" in item) {
       item.url = editingBookmarkUrl.value;
       item.icon = editingBookmarkIcon.value || item.icon;
+      item.iconAutoBackgroundColor = editingBookmarkAutoBackgroundColor.value || undefined;
+      if (item.iconBackgroundMode !== "custom") {
+        item.iconBackgroundMode = editingBookmarkAutoBackgroundColor.value ? "auto" : "default";
+      }
 
       // Auto fetch icon if empty
       if (!item.icon) {
@@ -697,11 +715,13 @@ const confirmAddBookmark = async () => {
   // Try to fetch meta
   let title = finalUrl;
   let icon = "";
+  let iconAutoBackgroundColor = "";
 
   try {
     const data = await fetchSiteMetadata(finalUrl);
     if (data?.title) title = data.title;
     if (data?.icon) icon = data.icon;
+    iconAutoBackgroundColor = normalizeIconBackgroundColor(data?.backgroundColor) || "";
   } catch (e) {
     console.error("Meta fetch failed", e);
   }
@@ -715,6 +735,8 @@ const confirmAddBookmark = async () => {
     title: title,
     url: finalUrl,
     icon: icon,
+    iconBackgroundMode: iconAutoBackgroundColor ? "auto" : "default",
+    iconAutoBackgroundColor: iconAutoBackgroundColor || undefined,
   });
 
   store.markDirty();
@@ -1060,11 +1082,13 @@ const toggle = () => {
                   >
                     {{ category.title.substring(0, 2) }}
                   </template>
-                  <img
+                  <IconShape
                     v-else-if="getLinkIcon(category as BookmarkItem)"
-                    :src="getLinkIcon(category as BookmarkItem)"
-                    class="w-4 h-4 object-contain"
-                    alt=""
+                    :shape="'rounded'"
+                    :size="28"
+                    :imgScale="78"
+                    :bgClass="getBookmarkIconBackground(category as BookmarkItem)"
+                    :icon="(category as BookmarkItem).icon || ''"
                   />
                   <span v-else class="text-[10px] font-bold opacity-70 leading-none">{{
                     category.title.substring(0, 1).toUpperCase()
@@ -1124,11 +1148,13 @@ const toggle = () => {
                 <div
                   class="flex-shrink-0 w-4 h-4 rounded flex items-center justify-center overflow-hidden"
                 >
-                  <img
+                  <IconShape
                     v-if="getLinkIcon(item)"
-                    :src="getLinkIcon(item)"
-                    class="w-full h-full object-contain"
-                    alt=""
+                    :shape="'rounded'"
+                    :size="16"
+                    :imgScale="78"
+                    :bgClass="getBookmarkIconBackground(item as BookmarkItem)"
+                    :icon="(item as BookmarkItem).icon || ''"
                   />
                   <span v-else class="text-[10px] font-bold opacity-70 leading-none">{{
                     item.title.substring(0, 1).toUpperCase()
@@ -1305,11 +1331,13 @@ const toggle = () => {
                     <div
                       class="flex-shrink-0 flex items-center justify-center overflow-hidden w-6 h-6 rounded bg-black/5"
                     >
-                      <img
+                      <IconShape
                         v-if="item.icon"
-                        :src="store.getAssetUrl(item.icon)"
-                        class="max-w-full max-h-full object-contain"
-                        alt=""
+                        :shape="'rounded'"
+                        :size="24"
+                        :imgScale="78"
+                        :bgClass="getBookmarkIconBackground(item as BookmarkItem)"
+                        :icon="item.icon"
                         @error="applySiteIconFallback(item)"
                       />
                       <span v-else class="text-[10px] font-bold opacity-70 leading-none">{{
@@ -1710,10 +1738,21 @@ const toggle = () => {
                     <div
                       class="w-9 h-9 rounded-lg bg-gray-100 flex items-center justify-center shrink-0 overflow-hidden border border-gray-200/50"
                     >
-                      <img
+                      <IconShape
                         v-if="editingBookmarkIcon"
-                        :src="store.getAssetUrl(editingBookmarkIcon)"
-                        class="w-5 h-5 object-contain"
+                        :shape="'rounded'"
+                        :size="36"
+                        :imgScale="78"
+                        :bgClass="
+                          resolveIconBackground(
+                            {
+                              iconBackgroundMode: editingBookmarkAutoBackgroundColor ? 'auto' : 'default',
+                              iconAutoBackgroundColor: editingBookmarkAutoBackgroundColor,
+                            },
+                            { fallback: 'bg-gray-100', shape: 'rounded' },
+                          ).color
+                        "
+                        :icon="editingBookmarkIcon"
                         @error="editingBookmarkIcon = ''"
                       />
                       <span v-else class="text-[10px] text-gray-400">icon</span>

@@ -8,6 +8,8 @@ import { isInternalDomain, processSecurityUrl } from "../utils/security";
 import { parseBookmarks } from "../utils/bookmark";
 import OverlayMotion from "@/components/base/OverlayMotion.vue";
 import { fetchSiteMetadata, getSiteIconUrl, normalizeSiteUrl } from "@/utils/siteMetadata";
+import { normalizeIconBackgroundColor, resolveIconBackground } from "@/utils/iconAppearance";
+import IconShape from "./IconShape.vue";
 
 const props = defineProps<{ widget: WidgetConfig }>();
 const store = useMainStore();
@@ -67,6 +69,7 @@ const editingLinkId = ref<string | null>(null);
 const newTitle = ref("");
 const newUrl = ref("");
 const newIcon = ref("");
+const newAutoBackgroundColor = ref("");
 const isFetching = ref(false);
 const isAddingCategory = ref(false);
 const newCategoryTitle = ref("");
@@ -180,6 +183,7 @@ const autoFetchIcon = async () => {
   try {
     const metadata = await fetchSiteMetadata(newUrl.value);
     if (metadata?.title) newTitle.value = metadata.title;
+    newAutoBackgroundColor.value = normalizeIconBackgroundColor(metadata?.backgroundColor) || "";
     if (metadata?.icon) {
       newIcon.value = metadata.icon;
     } else {
@@ -207,6 +211,7 @@ const startAdd = (e: MouseEvent, cat: BookmarkCategory) => {
   newTitle.value = "";
   newUrl.value = "";
   newIcon.value = "";
+  newAutoBackgroundColor.value = "";
 };
 
 const startEdit = (e: MouseEvent, cat: BookmarkCategory, link: BookmarkItem) => {
@@ -223,6 +228,7 @@ const startEdit = (e: MouseEvent, cat: BookmarkCategory, link: BookmarkItem) => 
   newTitle.value = link.title;
   newUrl.value = link.url;
   newIcon.value = link.icon || "";
+  newAutoBackgroundColor.value = link.iconAutoBackgroundColor || "";
 };
 
 const confirmSubmit = async () => {
@@ -244,6 +250,10 @@ const confirmSubmit = async () => {
         target.title = newTitle.value;
         target.url = finalUrl;
         target.icon = newIcon.value;
+        target.iconAutoBackgroundColor = newAutoBackgroundColor.value || undefined;
+        if (target.iconBackgroundMode !== "custom") {
+          target.iconBackgroundMode = newAutoBackgroundColor.value ? "auto" : "default";
+        }
       }
     } else {
       cat.children.push({
@@ -251,6 +261,8 @@ const confirmSubmit = async () => {
         title: newTitle.value,
         url: finalUrl,
         icon: newIcon.value,
+        iconBackgroundMode: newAutoBackgroundColor.value ? "auto" : "default",
+        iconAutoBackgroundColor: newAutoBackgroundColor.value || undefined,
       });
     }
 
@@ -264,6 +276,12 @@ const confirmSubmit = async () => {
     });
   }
 };
+
+const getBookmarkIconBackground = (item: BookmarkItem) =>
+  resolveIconBackground(item, {
+    fallback: "rgba(255, 255, 255, 0.14)",
+    shape: "rounded",
+  }).color;
 
 const cancelEdit = () => {
   activeCategory.value = null;
@@ -449,10 +467,13 @@ const handleScrollIsolation = (e: WheelEvent) => {
             <div
               class="w-5 h-5 rounded bg-white/10 flex items-center justify-center shrink-0 overflow-hidden border border-white/10"
             >
-              <img
-                :src="store.getAssetUrl(link.icon)"
-                class="w-4 h-4 object-cover"
-                @error="link.icon = getSiteIconUrl(link.url)"
+              <IconShape
+                :shape="'rounded'"
+                :size="20"
+                :imgScale="82"
+                :bgClass="getBookmarkIconBackground(link as BookmarkItem)"
+                :icon="(link as BookmarkItem).icon || ''"
+                @error="(link as BookmarkItem).icon = getSiteIconUrl((link as BookmarkItem).url)"
               />
             </div>
 
@@ -535,10 +556,21 @@ const handleScrollIsolation = (e: WheelEvent) => {
           <div
             class="w-8 h-8 rounded bg-white/10 flex items-center justify-center border border-white/10 overflow-hidden shrink-0"
           >
-            <img
+            <IconShape
               v-if="newIcon"
-              :src="store.getAssetUrl(newIcon)"
-              class="w-full h-full object-cover"
+              :shape="'rounded'"
+              :size="32"
+              :imgScale="82"
+              :bgClass="
+                resolveIconBackground(
+                  {
+                    iconBackgroundMode: newAutoBackgroundColor ? 'auto' : 'default',
+                    iconAutoBackgroundColor: newAutoBackgroundColor,
+                  },
+                  { fallback: 'rgba(255, 255, 255, 0.14)', shape: 'rounded' },
+                ).color
+              "
+              :icon="newIcon"
             />
             <span v-else class="text-xs text-white/40">icon</span>
           </div>

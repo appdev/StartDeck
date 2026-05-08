@@ -1,3 +1,5 @@
+export type IconBackgroundMode = "auto" | "default" | "custom";
+
 export interface NavItem {
   id: string;
   title: string;
@@ -10,6 +12,9 @@ export interface NavItem {
   description1?: string;
   description2?: string;
   description3?: string;
+  iconBackgroundMode?: IconBackgroundMode;
+  iconAutoBackgroundColor?: string;
+  iconCustomBackgroundColor?: string;
   color?: string;
   titleColor?: string;
   isPublic: boolean;
@@ -274,6 +279,9 @@ export interface BookmarkItem {
   title: string;
   url: string;
   icon?: string;
+  iconBackgroundMode?: IconBackgroundMode;
+  iconAutoBackgroundColor?: string;
+  iconCustomBackgroundColor?: string;
   type?: "link";
   pinned?: boolean;
 }

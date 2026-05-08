@@ -21,6 +21,7 @@ import { generateLayout, type GridLayoutItem } from "../utils/gridLayout";
 import type { NavItem, WidgetConfig, NavGroup } from "@/types";
 import OverlayMotion from "@/components/base/OverlayMotion.vue";
 import { isInternalNetwork, getNetworkConfig, computeEffectiveNetworkMode } from "@/utils/network";
+import { resolveIconBackground } from "@/utils/iconAppearance";
 import DOMPurify from "dompurify";
 const CHUNK_RELOAD_KEY = "flatnas:chunk-reload-at";
 const loadAsync = <T extends Component>(loader: AsyncComponentLoader<T>) =>
@@ -594,6 +595,14 @@ const processIcon = (iconStr: string) => {
   return fixed;
 };
 // --- 核心修复逻辑结束 ---
+
+type IconBackgroundInput = Parameters<typeof resolveIconBackground>[0];
+
+const getIconBackground = (item: IconBackgroundInput, shape?: string) =>
+  resolveIconBackground(item, {
+    fallback: "bg-gray-100",
+    shape,
+  }).color;
 
 // --- Wallpaper Preload Logic ---
 const isPcBgLoaded = ref(false);
@@ -3318,14 +3327,7 @@ onUnmounted(() => {
                   :shape="store.appConfig.iconShape || 'circle'"
                   :size="((store.appConfig.iconSize || 48) * ((widget.data.iconSize || 100) / 100))"
                   :imgScale="100"
-                  :bgClass="
-                    widget.data.color &&
-                    !widget.data.color.includes('sky') &&
-                    widget.data.color !== '#000000' &&
-                    widget.data.color !== 'bg-black'
-                      ? widget.data.color
-                      : 'bg-white'
-                  "
+                  :bgClass="getIconBackground(widget.data, store.appConfig.iconShape || 'circle')"
                   :icon="processIcon(widget.data.icon)"
                   class="w-full h-full"
                   :class="widget.data.backgroundImage ? 'drop-shadow-lg' : ''"
@@ -3764,14 +3766,7 @@ onUnmounted(() => {
                       :shape="group.iconShape || store.appConfig.iconShape"
                       :size="getLayoutConfig(group).iconSize"
                       :imgScale="item.iconSize"
-                      :bgClass="
-                        item.color &&
-                        !item.color.includes('sky') &&
-                        item.color !== '#000000' &&
-                        item.color !== 'bg-black'
-                          ? item.color
-                          : 'bg-white'
-                      "
+                      :bgClass="getIconBackground(item, group.iconShape || store.appConfig.iconShape)"
                       :icon="processIcon(item.icon || '')"
                       class="transition-all duration-300 relative z-10 w-full h-full"
                       :class="item.backgroundImage || group.backgroundImage ? 'drop-shadow-lg' : ''"
