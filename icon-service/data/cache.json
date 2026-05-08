@@ -1,0 +1,35 @@
+{
+    "updated_at": "2026-04-22T23:32:49.67447+08:00",
+    "records": [
+        {
+            "host": "apkdv.com",
+            "title": "",
+            "name": "LengYue's Blog -",
+            "url": "https://apkdv.com/",
+            "finalUrl": "",
+            "description": "",
+            "backgroundColor": "",
+            "icons": ["https://apkdv.com/icons/favicon.svg"],
+            "src": "https://apkdv.com/icons/favicon.svg",
+            "localIcons": ["apkdv.com.svg"],
+            "source": "itab",
+            "fetchedAt": "2026-04-11T03:18:08.527757+08:00",
+            "updatedAt": "0001-01-01T00:00:00Z"
+        },
+        {
+            "host": "github.com",
+            "title": "GitHub · Change is constant. GitHub keeps you ahead.",
+            "name": "GitHub · Change is constant. GitHub keeps you ahead.",
+            "url": "https://github.com/",
+            "finalUrl": "https://github.com/",
+            "description": "Join the world’s most widely adopted, AI-powered developer platform where millions of developers, businesses, and the largest open source community build software that advances humanity.",
+            "backgroundColor": "#27282C",
+            "icons": ["https://github.com/fluidicon.png"],
+            "src": "https://github.com/fluidicon.png",
+            "localIcons": ["github.com.png"],
+            "source": "microlink",
+            "fetchedAt": "2026-04-22T15:32:48.089472Z",
+            "updatedAt": "0001-01-01T00:00:00Z"
+        }
+    ]
+}

@@ -1,0 +1,16 @@
+{
+    "addr": ":8080",
+    "dataDir": "./data",
+    "seedIconDir": "./data/icons",
+    "cacheIconDir": "./data/cache",
+    "cacheFile": "./data/cache.json",
+    "seedJSON": "./data/seed-data.json",
+    "iconPrefix": "/icons/",
+    "cachePrefix": "/cache/",
+    "publicIconBaseURL": "",
+    "microlinkBaseURL": "https://api.microlink.io/",
+    "microlinkAPIKey": "",
+    "itabFP": "",
+    "itabSignatureKey": "",
+    "itabToken": ""
+}
