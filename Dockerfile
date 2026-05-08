@@ -1,3 +1,7 @@
+ARG BUILDPLATFORM=linux/amd64
+ARG TARGETOS=linux
+ARG TARGETARCH=amd64
+
 # Stage 1: Build Frontend
 FROM node:20.19-bookworm-slim AS frontend-builder
 
@@ -57,8 +61,8 @@ COPY backend/ .
 
 # Build binary
 # Use ARG TARGETOS and TARGETARCH to support cross-compilation
-ARG TARGETOS
-ARG TARGETARCH
+ARG TARGETOS=linux
+ARG TARGETARCH=amd64
 RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -ldflags="-s -w" -o flatnas-backend .
 
 # Stage 3: Build Icon Service
@@ -80,8 +84,8 @@ RUN go mod download
 
 COPY icon-service/ .
 
-ARG TARGETOS
-ARG TARGETARCH
+ARG TARGETOS=linux
+ARG TARGETARCH=amd64
 RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -ldflags="-s -w" -o flatnas-iconserver .
 
 # Stage 4: Final Image
