@@ -97,35 +97,33 @@ watch(
     :show="show"
     :z-index="200"
     close-on-overlay
-    overlay-class="bg-black/50 backdrop-blur-sm p-4 pointer-events-auto"
+    overlay-class="sd-overlay pointer-events-auto"
     panel-class="max-w-2xl"
     @close="$emit('update:show', false)"
   >
-    <div class="bg-white rounded-xl shadow-2xl p-6 w-full max-h-[80vh] flex flex-col">
-      <div class="flex justify-between items-center mb-4">
-        <h3 class="text-lg font-bold text-gray-900 flex items-center gap-2">
-          <span v-if="source === 'local'">📁 本地图标</span>
-          <span v-else>🌐 网络图标</span>
-          <span class="text-sm font-normal text-gray-500">({{ candidates.length }}个匹配)</span>
+    <div class="sd-modal-surface flex max-h-[80vh] flex-col">
+      <div class="sd-modal-header">
+        <h3 class="sd-modal-title flex items-center gap-2">
+          <span>{{ source === "local" ? "本地图标" : "网络图标" }}</span>
+          <span class="text-sm font-normal text-slate-500">({{ candidates.length }} 个匹配)</span>
         </h3>
         <div
-          class="text-sm text-orange-500 font-medium bg-orange-50 px-2 py-1 rounded-full flex items-center gap-1"
+          class="rounded-full bg-amber-50 px-2.5 py-1 text-sm font-medium text-amber-600"
         >
-          <span>⏱️</span>
           <span>{{ timeoutSeconds }}s 后自动选择</span>
         </div>
       </div>
 
-      <div class="flex-1 overflow-y-auto p-2 min-h-[200px]">
+      <div class="sd-modal-body flex-1 min-h-[200px]">
         <div class="grid grid-cols-4 sm:grid-cols-6 gap-4">
           <button
             v-for="icon in visibleCandidates"
             :key="icon"
             @click="selectIcon(icon)"
-            class="group flex flex-col items-center gap-3 p-3 rounded-xl hover:bg-blue-50 transition-all border border-gray-100 hover:border-blue-200 hover:shadow-md"
+            class="group flex flex-col items-center gap-3 rounded-xl border border-slate-200 bg-white p-3 transition-all hover:border-blue-200 hover:bg-blue-50 hover:shadow-sm"
           >
             <div
-              class="w-12 h-12 flex items-center justify-center bg-white rounded-lg shadow-sm group-hover:scale-110 transition-transform"
+              class="w-12 h-12 flex items-center justify-center bg-slate-50 rounded-lg shadow-sm group-hover:scale-105 transition-transform"
             >
               <img :src="store.getAssetUrl(icon)" class="w-8 h-8 object-contain" loading="lazy" />
             </div>
@@ -140,26 +138,26 @@ watch(
         <div v-if="hasMore" class="mt-4 flex justify-center">
           <button
             @click="loadMore"
-            class="px-4 py-2 text-sm text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-full transition-colors"
+            class="sd-btn sd-btn-secondary"
           >
             加载更多 ({{ candidates.length - visibleCount }} 个)
           </button>
         </div>
       </div>
 
-      <div class="mt-6 flex justify-between items-center border-t pt-4">
+      <div class="sd-modal-footer justify-between">
         <button
           v-if="source === 'api'"
           @click="$emit('cancelLink')"
-          class="px-4 py-2 rounded-lg text-red-500 hover:bg-red-50 font-medium transition-colors flex items-center gap-1"
+          class="sd-btn sd-btn-danger-soft"
         >
-          <span>🔗</span> 取消链接
+          取消链接
         </button>
         <div v-else></div>
 
         <button
           @click="$emit('update:show', false)"
-          class="px-6 py-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 font-medium transition-colors"
+          class="sd-btn sd-btn-secondary px-6"
         >
           取消
         </button>

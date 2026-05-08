@@ -143,7 +143,7 @@ onUnmounted(() => window.removeEventListener("message", handleMessage));
   <OverlayMotion
     :show="show"
     :z-index="50"
-    overlay-class="bg-black/50 backdrop-blur-sm p-8"
+    overlay-class="sd-overlay-strong"
     panel-class="max-w-5xl"
   >
     <div class="bg-white w-full h-full max-h-[85vh] rounded-2xl shadow-2xl flex flex-col overflow-hidden">
@@ -197,7 +197,7 @@ onUnmounted(() => window.removeEventListener("message", handleMessage));
     <Transition name="notice-fade">
       <div
         v-if="notice.show"
-        class="fixed inset-0 z-[60] flex items-center justify-center bg-black/30 backdrop-blur-sm"
+        class="fixed inset-0 z-[60] flex items-center justify-center bg-black/30"
         @click.self="notice.type !== 'confirm' && (notice.show = false)"
       >
         <div class="bg-white rounded-2xl shadow-2xl p-6 max-w-sm w-full mx-4">

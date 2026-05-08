@@ -371,7 +371,7 @@ onUnmounted(() => {
           <OverlayMotion
             :show="showCityInput"
             :z-index="9999"
-            overlay-class="bg-black/60 backdrop-blur-md p-4"
+            overlay-class="sd-overlay-strong"
             panel-class="max-w-sm"
           >
               <div

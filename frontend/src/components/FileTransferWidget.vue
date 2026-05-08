@@ -1649,7 +1649,7 @@ onBeforeUnmount(() => {
       :show="previewOpen && !!previewItem"
       :z-index="9999"
       close-on-overlay
-      overlay-class="bg-black/40 backdrop-blur-sm p-4"
+      overlay-class="sd-overlay"
       panel-class="max-w-3xl"
       @close="closePreview"
     >

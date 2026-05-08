@@ -74,15 +74,13 @@ const handleSubmit = async () => {
   <OverlayMotion
     :show="show"
     :z-index="50"
-    overlay-class="bg-black/40 backdrop-blur-sm p-4"
+    overlay-class="sd-overlay"
     panel-class="max-w-sm"
   >
-    <div class="bg-white rounded-2xl shadow-2xl w-full overflow-hidden">
-      <div
-        class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50"
-      >
-        <h3 class="text-lg font-bold text-gray-800 flex items-center gap-2">
-          <span v-if="isRegister">👤 新用户注册</span>
+    <div class="sd-modal-surface">
+      <div class="sd-modal-header">
+        <h3 class="sd-modal-title flex items-center gap-2">
+          <span v-if="isRegister">新用户注册</span>
           <template v-else>
             <svg class="w-6 h-6 text-gray-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
               <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
@@ -92,19 +90,21 @@ const handleSubmit = async () => {
             </span>
           </template>
         </h3>
-        <button @click="close" class="text-gray-400 hover:text-gray-600 text-2xl leading-none">
-          &times;
+        <button type="button" @click="close" class="sd-icon-button" aria-label="关闭登录弹窗">
+          <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 6l12 12M18 6L6 18" />
+          </svg>
         </button>
       </div>
 
-      <div class="p-6">
+      <div class="sd-modal-body">
         <div class="mb-5 space-y-4">
           <div v-if="authMode === 'multi'">
             <input
               v-model="username"
               type="text"
               placeholder="用户名"
-              class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 outline-none transition-all text-center text-lg tracking-widest"
+              class="sd-input text-center text-lg tracking-widest"
               @keyup.enter="handleSubmit"
             />
           </div>
@@ -114,7 +114,7 @@ const handleSubmit = async () => {
               v-model="password"
               type="password"
               placeholder="密码"
-              class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 outline-none transition-all text-center text-lg tracking-widest"
+              class="sd-input text-center text-lg tracking-widest"
               @keyup.enter="handleSubmit"
             />
           </div>
@@ -122,7 +122,7 @@ const handleSubmit = async () => {
 
         <button
           @click="handleSubmit"
-          class="w-full bg-gray-800 text-white py-3 rounded-xl font-bold hover:bg-black active:scale-95 transition-all shadow-lg"
+          class="sd-btn sd-btn-primary w-full"
         >
           {{ isRegister ? "注 册" : "登 录" }}
         </button>

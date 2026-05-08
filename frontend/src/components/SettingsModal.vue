@@ -1820,14 +1820,15 @@ watch(activeTab, (val) => {
   <OverlayMotion
     :show="show"
     :z-index="50"
-    overlay-class="bg-black/30 backdrop-blur-sm p-3"
+    overlay-class="sd-overlay"
     panel-class="w-full max-w-3xl"
   >
     <div
       v-if="isImporting"
-      class="fixed inset-0 z-[60] bg-black/50 backdrop-blur-sm flex items-center justify-center"
+      class="fixed inset-0 z-[60] sd-overlay-strong flex items-center justify-center"
     >
-      <div class="bg-white rounded-xl p-6 shadow-2xl max-w-sm w-full mx-4 text-center space-y-4">
+      <div class="sd-modal-surface max-w-sm mx-4">
+        <div class="sd-modal-body text-center space-y-4">
         <div
           class="animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent mx-auto"
         ></div>
@@ -1853,18 +1854,20 @@ watch(activeTab, (val) => {
           </div>
           <p class="text-xs text-gray-400">图标进度：{{ importProgress }} / {{ importTotal }}</p>
         </div>
+        </div>
       </div>
     </div>
 
     <div
-      class="backdrop-blur-xl rounded-2xl shadow-2xl w-full max-w-3xl overflow-hidden flex flex-col md:flex-row h-[600px] md:h-[480px] relative"
-      :class="isNightDaylightMode ? 'night-settings bg-slate-900/60 text-slate-100 border border-white/10' : 'bg-white/90'"
+      class="sd-modal-surface max-w-3xl flex flex-col md:flex-row h-[600px] md:h-[480px] relative"
+      :class="isNightDaylightMode ? 'sd-modal-dark night-settings' : ''"
       :style="{ transform: `translate(${modalPosition.x}px, ${modalPosition.y}px)` }"
       @wheel.stop
     >
       <button
         @click="close"
-        class="absolute top-4 right-4 bg-red-100 hover:bg-red-200 text-red-500 hover:text-red-900 z-10 w-7 h-7 rounded-full flex items-center justify-center shadow-sm transition-colors"
+        class="sd-icon-button absolute top-3 right-3 z-10 bg-white/80"
+        aria-label="关闭设置"
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -4885,12 +4888,13 @@ document.querySelector('.card-item').addEventListener('click', () => {
   <OverlayMotion
     :show="showMultiUserWarning"
     :z-index="80"
-    overlay-class="bg-black/40 backdrop-blur-sm p-4 pt-[calc(1rem+env(safe-area-inset-top))] pb-[calc(1rem+env(safe-area-inset-bottom))]"
+    overlay-class="sd-overlay-strong"
     panel-class="max-w-sm"
   >
-    <div class="bg-white rounded-xl shadow-xl p-6 w-full border border-gray-100">
+    <div class="sd-modal-surface">
+      <div class="sd-modal-body">
       <div class="flex items-center gap-3 mb-4">
-        <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-2xl">
+        <div class="w-10 h-10 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center text-lg font-bold">
           !
         </div>
         <h3 class="text-base font-bold text-gray-900">切换模式警告</h3>
@@ -4904,7 +4908,7 @@ document.querySelector('.card-item').addEventListener('click', () => {
       <div class="flex gap-3">
         <button
           @click="showMultiUserWarning = false"
-          class="flex-1 px-4 py-2.5 min-h-[44px] bg-gray-100 text-gray-600 rounded-lg text-sm font-bold hover:bg-gray-200 transition-colors"
+          class="sd-btn sd-btn-secondary flex-1"
         >
           取消
         </button>
@@ -4913,10 +4917,11 @@ document.querySelector('.card-item').addEventListener('click', () => {
             showMultiUserWarning = false;
             requestAuth(() => performAuthModeSwitch('multi'), '请输入管理员密码以确认切换');
           "
-          class="flex-1 px-4 py-2.5 min-h-[44px] bg-gray-900 text-white rounded-lg text-sm font-bold hover:bg-gray-800 transition-colors shadow-md"
+          class="sd-btn sd-btn-primary flex-1"
         >
           确认切换
         </button>
+      </div>
       </div>
     </div>
   </OverlayMotion>
@@ -4925,25 +4930,27 @@ document.querySelector('.card-item').addEventListener('click', () => {
   <OverlayMotion
     :show="showDeleteWidgetConfirm"
     :z-index="70"
-    overlay-class="bg-black/20 backdrop-blur-sm p-4 pt-[calc(1rem+env(safe-area-inset-top))] pb-[calc(1rem+env(safe-area-inset-bottom))]"
+    overlay-class="sd-overlay-strong"
     panel-class="max-w-sm"
   >
-    <div class="bg-white rounded-xl shadow-xl p-6 w-full border border-gray-100">
+    <div class="sd-modal-surface">
+      <div class="sd-modal-body">
       <h3 class="text-base font-bold text-gray-900 mb-2">确认删除</h3>
       <p class="text-sm text-gray-500 mb-6">确定要删除这个万能窗口吗？此操作无法撤销。</p>
       <div class="flex gap-3">
         <button
           @click="showDeleteWidgetConfirm = false"
-          class="flex-1 px-4 py-2 min-h-[44px] bg-gray-100 text-gray-600 rounded-lg text-sm font-bold hover:bg-gray-200 transition-colors"
+          class="sd-btn sd-btn-secondary flex-1"
         >
           取消
         </button>
         <button
           @click="confirmRemoveWidget"
-          class="flex-1 px-4 py-2 min-h-[44px] bg-gray-900 text-white rounded-lg text-sm font-bold hover:bg-gray-800 transition-colors"
+          class="sd-btn sd-btn-danger flex-1"
         >
           删除
         </button>
+      </div>
       </div>
     </div>
   </OverlayMotion>
@@ -4951,17 +4958,18 @@ document.querySelector('.card-item').addEventListener('click', () => {
   <OverlayMotion
     :show="showRenameModal"
     :z-index="90"
-    overlay-class="bg-black/40 backdrop-blur-sm p-4 pt-[calc(1rem+env(safe-area-inset-top))] pb-[calc(1rem+env(safe-area-inset-bottom))]"
+    overlay-class="sd-overlay"
     panel-class="max-w-sm"
   >
-    <div class="bg-white rounded-xl shadow-xl w-full p-4 border border-gray-100">
+    <div class="sd-modal-surface">
+      <div class="sd-modal-body">
       <div class="text-base font-bold text-gray-900">修改昵称</div>
       <div class="text-xs text-gray-500 mt-1">将同步更新到道理鱼音乐账户资料</div>
 
       <input
         v-model="newDisplayName"
         type="text"
-        class="mt-3 w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:border-gray-900 outline-none"
+        class="sd-input mt-3 text-sm"
         placeholder="请输入新的昵称"
         @keyup.enter="updateDisplayName"
       />
@@ -4969,17 +4977,18 @@ document.querySelector('.card-item').addEventListener('click', () => {
       <div class="mt-4 flex justify-end gap-2">
         <button
           @click="showRenameModal = false"
-          class="px-4 py-2 min-h-[44px] text-gray-600 hover:bg-gray-100 rounded-lg text-sm transition-colors"
+          class="sd-btn sd-btn-secondary"
         >
           取消
         </button>
         <button
           @click="updateDisplayName"
           :disabled="isUpdatingProfile"
-          class="px-4 py-2 min-h-[44px] bg-gray-900 text-white rounded-lg text-sm font-bold hover:bg-gray-800 disabled:opacity-50 transition-colors"
+          class="sd-btn sd-btn-primary"
         >
           {{ isUpdatingProfile ? "保存中..." : "保存" }}
         </button>
+      </div>
       </div>
     </div>
   </OverlayMotion>

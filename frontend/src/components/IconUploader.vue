@@ -146,15 +146,17 @@ const confirmCrop = () => {
 
     <div
       v-if="showCropper"
-      class="fixed inset-0 z-[999] bg-black/60 flex items-center justify-center p-4 backdrop-blur-sm"
+      class="fixed inset-0 z-[999] sd-overlay-strong flex items-center justify-center"
     >
       <div
-        class="bg-white w-full max-w-lg rounded-2xl overflow-hidden shadow-2xl flex flex-col h-[500px]"
+        class="sd-modal-surface max-w-lg flex flex-col h-[500px]"
       >
-        <div class="px-4 py-3 border-b border-gray-100 flex justify-between items-center">
-          <h3 class="font-bold text-gray-700">裁剪图片</h3>
-          <button @click="showCropper = false" class="text-gray-400 hover:text-gray-600 text-xl">
-            &times;
+        <div class="sd-modal-header">
+          <h3 class="sd-modal-title text-base">裁剪图片</h3>
+          <button type="button" @click="showCropper = false" class="sd-icon-button" aria-label="关闭裁剪弹窗">
+            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 6l12 12M18 6L6 18" />
+            </svg>
           </button>
         </div>
         <div class="flex-1 bg-gray-900 relative">
@@ -188,16 +190,16 @@ const confirmCrop = () => {
           >
         </div>
 
-        <div class="p-4 bg-gray-50 flex justify-end gap-3">
+        <div class="sd-modal-footer">
           <button
             @click="showCropper = false"
-            class="px-4 py-2 rounded-lg text-gray-600 hover:bg-gray-200 transition-colors"
+            class="sd-btn sd-btn-secondary"
           >
             取消
           </button>
           <button
             @click="confirmCrop"
-            class="px-6 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-200 transition-all"
+            class="sd-btn sd-btn-primary px-6"
           >
             确认使用
           </button>

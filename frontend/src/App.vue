@@ -500,10 +500,7 @@ onMounted(() => {
       aria-modal="true"
       aria-labelledby="conflict-title"
     >
-      <div
-        class="absolute inset-0 bg-black/40 backdrop-blur-[2px]"
-        @click.stop
-      />
+      <div class="absolute inset-0 bg-black/40" @click.stop />
       <div
         class="relative w-full max-w-md rounded-2xl bg-white dark:bg-neutral-800 shadow-xl border border-neutral-200 dark:border-neutral-700 overflow-hidden"
       >
@@ -561,7 +558,7 @@ onMounted(() => {
       aria-modal="true"
       aria-labelledby="sync-confirm-title"
     >
-      <div class="absolute inset-0 bg-black/40 backdrop-blur-[2px]" @click.stop />
+      <div class="absolute inset-0 bg-black/40" @click.stop />
       <div
         class="relative w-full max-w-md rounded-2xl bg-white dark:bg-neutral-800 shadow-xl border border-neutral-200 dark:border-neutral-700 overflow-hidden"
       >
@@ -605,7 +602,7 @@ onMounted(() => {
 
   <div
     v-if="!store.isClientReady"
-    class="fixed inset-0 z-[120] bg-black/30 backdrop-blur-[2px] flex items-center justify-center text-white"
+    class="fixed inset-0 z-[120] bg-black/30 flex items-center justify-center text-white"
   >
     <div class="flex flex-col items-center gap-3 px-6 py-4 bg-black/60 rounded-2xl border border-white/10">
       <div class="w-8 h-8 border-4 border-white/20 border-t-white rounded-full animate-spin"></div>

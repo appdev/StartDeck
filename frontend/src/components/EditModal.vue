@@ -560,23 +560,21 @@ const submit = async () => {
     :show="show"
     :z-index="50"
     close-on-overlay
-    overlay-class="bg-black/20 backdrop-blur-sm p-4"
+    overlay-class="sd-overlay"
     panel-class="max-w-md"
     @close="close"
   >
     <div
-      class="rounded-2xl shadow-2xl w-full overflow-hidden"
-      :class="isNightDaylightMode ? 'night-settings bg-slate-900/60 backdrop-blur-xl border border-white/10' : 'bg-white'"
+      class="sd-modal-surface"
+      :class="isNightDaylightMode ? 'sd-modal-dark night-settings' : ''"
     >
-      <div
-        class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-white select-none"
-      >
-        <h3 class="text-lg font-bold text-gray-800">{{ data ? "修改项目" : "添加新项目" }}</h3>
+      <div class="sd-modal-header select-none">
+        <h3 class="sd-modal-title">{{ data ? "修改项目" : "添加新项目" }}</h3>
 
         <div class="flex items-center gap-2 ml-auto mr-4">
           <GroupSelector v-model="localGroupId" />
           <div class="w-px h-4 bg-gray-200 mx-1"></div>
-          <span class="text-xs font-bold text-gray-500">公开</span>
+          <span class="text-xs font-bold text-slate-500">公开</span>
           <label class="relative inline-flex items-center cursor-pointer">
             <input type="checkbox" v-model="form.isPublic" class="sr-only peer" />
             <div
@@ -585,29 +583,31 @@ const submit = async () => {
           </label>
         </div>
 
-        <button @click="close" class="text-gray-400 hover:text-gray-600 text-2xl leading-none">
-          &times;
+        <button type="button" @click="close" class="sd-icon-button" aria-label="关闭编辑弹窗">
+          <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 6l12 12M18 6L6 18" />
+          </svg>
         </button>
       </div>
 
-      <div class="p-6 space-y-5 max-h-[70vh] overflow-y-auto">
+      <div class="sd-modal-body space-y-5 max-h-[70vh]">
         <div class="flex gap-3">
           <div class="flex-1">
-            <label class="block text-sm font-medium text-gray-600 mb-1"
+            <label class="sd-label"
               >标题 <span class="text-red-500">*</span></label
             >
             <div class="relative">
               <input
                 v-model="form.title"
                 type="text"
-                class="w-full px-4 py-2 rounded-lg border border-gray-200 focus:border-gray-900 outline-none transition-colors pr-4"
+                class="sd-input"
                 placeholder="例如：我的博客"
               />
             </div>
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-600 mb-1">标题颜色</label>
-            <div class="flex items-center h-[42px] px-2 border border-gray-200 rounded-lg bg-white">
+            <label class="sd-label">标题颜色</label>
+            <div class="flex items-center h-10 px-2 border border-slate-200 rounded-lg bg-white">
               <input
                 v-model="form.titleColor"
                 type="color"
@@ -627,13 +627,13 @@ const submit = async () => {
         </div>
 
         <div v-if="!isVertical">
-          <label class="block text-xs font-medium text-gray-500 mb-1"
+          <label class="sd-label"
             >描述 (水平模式显示，每行对应一行文字)</label
           >
           <textarea
             v-model="mergedDescription"
             @input="autoResize"
-            class="w-full px-3 py-2 rounded-lg border border-gray-200 focus:border-gray-900 outline-none transition-colors text-sm resize-none overflow-hidden"
+            class="sd-textarea text-sm resize-none overflow-hidden"
             placeholder="第一行 (上)
 第二行 (中)
 第三行 (下)"
@@ -642,7 +642,7 @@ const submit = async () => {
         </div>
 
         <div>
-          <label class="block text-sm font-medium text-gray-600 mb-1"
+          <label class="sd-label"
             >外网链接 <span class="text-red-500">*</span>
             <button
               @click="addBackupUrl"
@@ -656,7 +656,7 @@ const submit = async () => {
             <input
               v-model="form.url"
               type="text"
-              class="w-full px-4 py-2 rounded-lg border border-gray-200 focus:border-gray-900 outline-none transition-colors pr-4"
+              class="sd-input"
               placeholder="https://example.com"
             />
           </div>
@@ -673,7 +673,7 @@ const submit = async () => {
                   v-model="item.name"
                   type="text"
                   maxlength="50"
-                  class="w-full px-3 py-2 rounded-lg border focus:border-gray-900 outline-none transition-colors text-sm pr-8"
+                  class="sd-input sd-input-action text-sm"
                   :class="[
                     form.backupUrls.filter(
                       (i, idx) => i.name && i.name === item.name && idx !== index,
@@ -710,7 +710,7 @@ const submit = async () => {
                   v-model="item.url"
                   type="text"
                   maxlength="500"
-                  class="w-full px-3 py-2 rounded-lg border focus:border-gray-900 outline-none transition-colors text-sm pr-8"
+                  class="sd-input sd-input-action text-sm"
                   :class="isValidUrl(item.url) ? 'border-gray-200' : 'border-red-300 bg-red-50'"
                   placeholder="请输入完整URL地址"
                   @keydown.enter.prevent
@@ -746,7 +746,7 @@ const submit = async () => {
         </div>
 
         <div>
-          <label class="block text-sm font-medium text-gray-600 mb-1"
+          <label class="sd-label"
             >内网链接 <span class="text-gray-400 text-xs">(选填，内网访问时优先跳转)</span>
             <button
               @click="addBackupLanUrl"
@@ -760,7 +760,7 @@ const submit = async () => {
             v-model="form.lanUrl"
             type="text"
             placeholder="http://192.168.1.x:8080"
-            class="w-full px-4 py-2 rounded-lg border border-gray-200 focus:border-gray-900 outline-none transition-colors"
+            class="sd-input"
           />
           <!-- Backup LAN URLs -->
           <div v-if="form.backupLanUrls && form.backupLanUrls.length > 0" class="space-y-2 mt-2">
@@ -775,7 +775,7 @@ const submit = async () => {
                   v-model="item.name"
                   type="text"
                   maxlength="50"
-                  class="w-full px-3 py-2 rounded-lg border focus:border-gray-900 outline-none transition-colors text-sm pr-8"
+                  class="sd-input sd-input-action text-sm"
                   :class="[
                     form.backupLanUrls.filter(
                       (i, idx) => i.name && i.name === item.name && idx !== index,
@@ -812,7 +812,7 @@ const submit = async () => {
                   v-model="item.url"
                   type="text"
                   maxlength="500"
-                  class="w-full px-3 py-2 rounded-lg border focus:border-gray-900 outline-none transition-colors text-sm pr-8"
+                  class="sd-input sd-input-action text-sm"
                   :class="isValidUrl(item.url) ? 'border-gray-200' : 'border-red-300 bg-red-50'"
                   placeholder="请输入完整URL地址"
                   @keydown.enter.prevent
@@ -848,7 +848,7 @@ const submit = async () => {
         </div>
 
         <div>
-          <label class="block text-sm font-medium text-gray-600 mb-3">图标</label>
+          <label class="sd-label mb-3">图标</label>
 
           <div class="flex items-start gap-4 mb-4">
             <!-- 预览框 -->
@@ -875,11 +875,11 @@ const submit = async () => {
               <div class="flex items-center gap-2">
                 <button
                   @click="saveIconToLocal = !saveIconToLocal"
-                  class="text-xs px-3 py-1.5 rounded-lg font-medium transition-all border"
+                  class="sd-btn min-h-0 px-3 py-1.5 text-xs"
                   :class="
                     saveIconToLocal
-                      ? 'bg-gray-900 text-white border-gray-900'
-                      : 'bg-white text-gray-500 border-gray-300 hover:border-gray-400'
+                      ? 'sd-btn-primary'
+                      : 'sd-btn-secondary'
                   "
                 >
                   {{ saveIconToLocal ? "已缓存" : "缓存到本地" }}
@@ -888,11 +888,11 @@ const submit = async () => {
                   type="button"
                   @click.prevent="smartMatchIcons"
                   :disabled="isSmartMatching"
-                  class="text-xs flex items-center gap-1 px-3 py-1.5 rounded-lg font-medium transition-all shrink-0"
+                  class="sd-btn min-h-0 px-3 py-1.5 text-xs shrink-0"
                   :class="
                     isSmartMatching
-                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                      : 'bg-blue-50 text-blue-600 hover:bg-blue-100'
+                      ? 'sd-btn-secondary'
+                      : 'sd-btn-primary'
                   "
                 >
                   <span
@@ -908,7 +908,7 @@ const submit = async () => {
 
               <div
                 v-if="showSmartMatchModal"
-                class="rounded-xl border border-blue-100 bg-blue-50/60 px-3 py-2.5"
+                class="sd-section border-blue-100 bg-blue-50/70 px-3 py-2.5"
               >
                 <div class="flex items-center justify-between gap-3">
                   <div class="flex items-center gap-2 min-w-0">
@@ -981,14 +981,14 @@ const submit = async () => {
                   min="20"
                   max="200"
                   step="5"
-                  class="flex-1 h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-400"
+                  class="sd-range flex-1"
                 />
                 <span class="text-xs text-gray-500 w-8 text-right">{{ form.iconSize }}%</span>
               </div>
 
               <div
                 v-if="!isIconHidden"
-                class="space-y-2 bg-gray-50 px-3 py-2.5 rounded-lg border border-gray-100"
+                class="sd-section space-y-2 px-3 py-2.5"
               >
                 <div class="flex items-center justify-between gap-3">
                   <span class="text-xs text-gray-400 whitespace-nowrap">背景</span>
@@ -1036,7 +1036,7 @@ const submit = async () => {
                     :value="iconCustomColorValue"
                     type="text"
                     maxlength="7"
-                    class="w-20 px-2 py-1 rounded-md border border-gray-200 bg-white text-xs text-gray-600 focus:border-gray-900 outline-none"
+                    class="sd-input min-h-0 w-20 px-2 py-1 text-xs"
                     placeholder="#111827"
                     @input="setCustomIconBackgroundColor(($event.target as HTMLInputElement).value)"
                   />
@@ -1058,7 +1058,7 @@ const submit = async () => {
               v-model="form.icon"
               type="text"
               placeholder="图片 URL 地址..."
-              class="w-full px-4 py-2 rounded-lg border border-gray-200 text-sm focus:border-gray-900 outline-none"
+              class="sd-input text-sm"
               @focus="iconInputFocused = true"
               @blur="onIconInputBlur"
             />
@@ -1074,7 +1074,7 @@ const submit = async () => {
         </div>
 
         <div class="pt-4 border-t border-gray-100">
-          <label class="block text-sm font-medium text-gray-600 mb-2"
+          <label class="sd-label"
             >卡片背景
             <span class="text-xs text-gray-400 font-normal">(可选，支持模糊和遮罩效果)</span></label
           >
@@ -1084,7 +1084,7 @@ const submit = async () => {
                 v-model="form.backgroundImage"
                 type="text"
                 placeholder="背景图 URL..."
-                class="flex-1 px-4 py-2 rounded-lg border border-gray-200 text-sm focus:border-gray-900 outline-none"
+                class="sd-input flex-1 text-sm"
               />
               <button
                 v-if="form.backgroundImage"
@@ -1110,7 +1110,7 @@ const submit = async () => {
 
             <div
               v-if="form.backgroundImage"
-              class="grid grid-cols-2 gap-4 mt-2 p-3 bg-gray-50 rounded-lg"
+              class="sd-section grid grid-cols-2 gap-4 mt-2 p-3"
             >
               <div>
                 <label class="block text-xs text-gray-500 mb-1 flex justify-between">
@@ -1123,7 +1123,7 @@ const submit = async () => {
                   min="0"
                   max="20"
                   step="1"
-                  class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-400"
+                  class="sd-range"
                 />
               </div>
               <div>
@@ -1137,7 +1137,7 @@ const submit = async () => {
                   min="0"
                   max="1"
                   step="0.1"
-                  class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-400"
+                  class="sd-range"
                 />
               </div>
               <div class="col-span-2 text-right">
@@ -1157,17 +1157,17 @@ const submit = async () => {
         </div>
       </div>
 
-      <div class="px-6 py-4 bg-white flex justify-end gap-3 border-t border-gray-100">
+      <div class="sd-modal-footer">
         <button
           @click="close"
-          class="px-4 py-2 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors text-sm font-medium"
+          class="sd-btn sd-btn-secondary"
         >
           取消
         </button>
         <button
           @click="submit"
           :disabled="isSaving"
-          class="px-6 py-2 rounded-lg bg-gray-900 text-white hover:bg-black transition-all active:scale-95 text-sm font-medium"
+          class="sd-btn sd-btn-primary px-6"
         >
           {{ isSaving ? "保存中..." : data ? "保存修改" : "确认添加" }}
         </button>
@@ -1188,19 +1188,21 @@ const submit = async () => {
       :show="showIconCropper"
       :z-index="999"
       close-on-overlay
-      overlay-class="bg-black/60 backdrop-blur-sm p-4"
+      overlay-class="sd-overlay-strong"
       panel-class="max-w-lg"
       @close="showIconCropper = false"
     >
       <div
-        class="bg-white w-full rounded-2xl overflow-hidden shadow-2xl flex flex-col h-[500px]"
+        class="sd-modal-surface flex flex-col h-[500px]"
         @mousedown.stop
         @mouseup.stop
       >
-        <div class="px-4 py-3 border-b border-gray-100 flex justify-between items-center">
-          <h3 class="font-bold text-gray-700">裁剪图标</h3>
-          <button @click="showIconCropper = false" class="text-gray-400 hover:text-gray-600 text-xl">
-            &times;
+        <div class="sd-modal-header">
+          <h3 class="sd-modal-title text-base">裁剪图标</h3>
+          <button type="button" @click="showIconCropper = false" class="sd-icon-button" aria-label="关闭图标裁剪弹窗">
+            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 6l12 12M18 6L6 18" />
+            </svg>
           </button>
         </div>
         <div class="flex-1 bg-gray-900 relative">
@@ -1231,16 +1233,16 @@ const submit = async () => {
             >{{ Math.round(iconZoom * 100) }}%</span
           >
         </div>
-        <div class="p-4 bg-gray-50 flex justify-end gap-3">
+        <div class="sd-modal-footer">
           <button
             @click="showIconCropper = false"
-            class="px-4 py-2 rounded-lg text-gray-600 hover:bg-gray-200 transition-colors"
+            class="sd-btn sd-btn-secondary"
           >
             取消
           </button>
           <button
             @click="confirmIconCrop"
-            class="px-6 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-200 transition-all"
+            class="sd-btn sd-btn-primary px-6"
           >
             确认使用
           </button>

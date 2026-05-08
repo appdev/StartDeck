@@ -314,14 +314,14 @@ const isSmall = computed(
       :show="showConfig"
       :z-index="50"
       close-on-overlay
-      overlay-class="bg-black/60 backdrop-blur-sm p-4"
+      overlay-class="sd-overlay"
       panel-class="max-w-sm"
       @close="saveConfig"
     >
-        <div class="bg-white text-gray-800 rounded-xl shadow-2xl w-full overflow-hidden flex flex-col">
-          <div class="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
-            <div class="font-bold text-lg">正计时设置</div>
-            <button @click="saveConfig" class="text-gray-400 hover:text-gray-600">
+        <div class="sd-modal-surface flex flex-col">
+          <div class="sd-modal-header">
+            <div class="sd-modal-title">正计时设置</div>
+            <button @click="saveConfig" class="sd-icon-button" aria-label="关闭正计时设置">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 class="h-5 w-5"

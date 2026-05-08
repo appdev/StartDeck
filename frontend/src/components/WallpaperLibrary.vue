@@ -758,7 +758,7 @@ onBeforeUnmount(() => {
     :show="show"
     :z-index="100"
     close-on-overlay
-    overlay-class="bg-black/50 backdrop-blur-sm"
+    overlay-class="sd-overlay-strong"
     panel-class="w-full md:max-w-5xl h-full md:h-[85vh]"
     @close="$emit('update:show', false)"
   >
@@ -1388,7 +1388,7 @@ onBeforeUnmount(() => {
     :show="showConfirmModal"
     :z-index="200"
     close-on-overlay
-    overlay-class="bg-black/60 backdrop-blur-sm p-4"
+    overlay-class="sd-overlay-strong"
     panel-class="max-w-sm"
     @close="closeConfirmModal"
   >

@@ -152,18 +152,18 @@ const formatNum = (num: number) => num.toString().padStart(2, "0");
     <OverlayMotion
       :show="showConfig"
       :z-index="50"
-      overlay-class="bg-black/60 backdrop-blur-sm p-4"
+      overlay-class="sd-overlay"
       panel-class="max-w-sm"
       @overlay-mousedown="onOverlayMouseDown"
       @overlay-mouseup="onOverlayMouseUp"
     >
         <div
-          class="bg-white text-gray-800 rounded-xl shadow-2xl w-full overflow-hidden flex flex-col"
+          class="sd-modal-surface flex flex-col"
           @mousedown.stop
         >
-          <div class="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
-            <div class="font-bold text-lg">倒计时设置</div>
-            <button @click="saveConfig" class="text-gray-400 hover:text-gray-600">
+          <div class="sd-modal-header">
+            <div class="sd-modal-title">倒计时设置</div>
+            <button @click="saveConfig" class="sd-icon-button" aria-label="关闭倒计时设置">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 class="h-5 w-5"

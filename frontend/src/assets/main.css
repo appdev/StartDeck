@@ -153,6 +153,358 @@
   }
 }
 
+.sd-overlay,
+.sd-overlay-strong {
+  padding: max(1rem, env(safe-area-inset-top))
+    max(1rem, env(safe-area-inset-right))
+    max(1rem, env(safe-area-inset-bottom))
+    max(1rem, env(safe-area-inset-left));
+}
+
+.sd-overlay {
+  background-color: rgba(15, 23, 42, 0.3);
+}
+
+.sd-overlay-strong {
+  background-color: rgba(15, 23, 42, 0.35);
+}
+
+.sd-modal-surface {
+  width: 100%;
+  overflow: hidden;
+  border: 1px solid rgba(226, 232, 240, 0.86);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.96);
+  color: #0f172a;
+  box-shadow:
+    0 24px 72px rgba(15, 23, 42, 0.24),
+    0 2px 8px rgba(15, 23, 42, 0.08);
+}
+
+.sd-modal-surface.sd-modal-dark {
+  border-color: rgba(255, 255, 255, 0.12);
+  background: rgba(15, 23, 42, 0.92);
+  color: #f8fafc;
+}
+
+.sd-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid rgba(226, 232, 240, 0.76);
+  background: rgba(248, 250, 252, 0.88);
+}
+
+.sd-modal-dark .sd-modal-header {
+  border-bottom-color: rgba(255, 255, 255, 0.1);
+  background: rgba(15, 23, 42, 0.72);
+}
+
+.sd-modal-title {
+  margin: 0;
+  color: #111827;
+  font-size: 1.125rem;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.sd-modal-dark .sd-modal-title {
+  color: #f8fafc;
+}
+
+.sd-modal-body {
+  padding: 1.5rem;
+  overflow-y: auto;
+}
+
+.sd-modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding: 1rem 1.5rem;
+  border-top: 1px solid rgba(226, 232, 240, 0.76);
+  background: rgba(248, 250, 252, 0.9);
+}
+
+.sd-modal-dark .sd-modal-footer {
+  border-top-color: rgba(255, 255, 255, 0.1);
+  background: rgba(15, 23, 42, 0.72);
+}
+
+.sd-icon-button {
+  display: inline-flex;
+  min-width: 2.5rem;
+  min-height: 2.5rem;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  color: #64748b;
+  transition:
+    background-color 0.16s ease,
+    color 0.16s ease,
+    border-color 0.16s ease,
+    transform 0.16s ease;
+}
+
+.sd-icon-button:hover {
+  border-color: rgba(203, 213, 225, 0.8);
+  background: rgba(241, 245, 249, 0.92);
+  color: #0f172a;
+}
+
+.sd-icon-button:active {
+  transform: scale(0.98);
+}
+
+.sd-modal-dark .sd-icon-button {
+  color: #cbd5e1;
+}
+
+.sd-modal-dark .sd-icon-button:hover {
+  border-color: rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+}
+
+.sd-btn {
+  display: inline-flex;
+  min-height: 2.5rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.25rem;
+  transition:
+    background-color 0.16s ease,
+    border-color 0.16s ease,
+    color 0.16s ease,
+    box-shadow 0.16s ease,
+    transform 0.16s ease;
+}
+
+.sd-btn:focus-visible,
+.sd-icon-button:focus-visible,
+.sd-input:focus-visible,
+.sd-select:focus-visible,
+.sd-textarea:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.18);
+}
+
+.sd-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+  transform: none;
+}
+
+.sd-btn:not(:disabled):active {
+  transform: scale(0.99);
+}
+
+.sd-btn-primary {
+  background: #2563eb;
+  color: #ffffff;
+  box-shadow: 0 10px 20px rgba(37, 99, 235, 0.18);
+}
+
+.sd-btn-primary:hover:not(:disabled) {
+  background: #1d4ed8;
+}
+
+.sd-btn-secondary {
+  border-color: #e2e8f0;
+  background: #f8fafc;
+  color: #334155;
+}
+
+.sd-btn-secondary:hover:not(:disabled) {
+  border-color: #cbd5e1;
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+.sd-btn-danger {
+  background: #dc2626;
+  color: #ffffff;
+  box-shadow: 0 10px 20px rgba(220, 38, 38, 0.16);
+}
+
+.sd-btn-danger:hover:not(:disabled) {
+  background: #b91c1c;
+}
+
+.sd-btn-danger-soft {
+  border-color: #fecaca;
+  background: #fef2f2;
+  color: #dc2626;
+}
+
+.sd-btn-danger-soft:hover:not(:disabled) {
+  border-color: #fca5a5;
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.sd-btn-ghost {
+  color: #475569;
+}
+
+.sd-btn-ghost:hover:not(:disabled) {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+.sd-input,
+.sd-select,
+.sd-textarea {
+  width: 100%;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #0f172a;
+  transition:
+    border-color 0.16s ease,
+    box-shadow 0.16s ease,
+    background-color 0.16s ease;
+}
+
+.sd-input,
+.sd-select {
+  min-height: 2.5rem;
+  padding: 0.5rem 0.75rem;
+}
+
+.sd-input-action {
+  padding-right: 2rem;
+}
+
+.sd-textarea {
+  min-height: 5rem;
+  padding: 0.625rem 0.75rem;
+}
+
+.sd-input:focus,
+.sd-select:focus,
+.sd-textarea:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.14);
+  outline: none;
+}
+
+.sd-input::placeholder,
+.sd-textarea::placeholder {
+  color: #94a3b8;
+}
+
+.sd-modal-dark .sd-input,
+.sd-modal-dark .sd-select,
+.sd-modal-dark .sd-textarea {
+  border-color: rgba(148, 163, 184, 0.28);
+  background: rgba(15, 23, 42, 0.68);
+  color: #f8fafc;
+}
+
+.sd-modal-dark .sd-input::placeholder,
+.sd-modal-dark .sd-textarea::placeholder {
+  color: rgba(203, 213, 225, 0.62);
+}
+
+.sd-range {
+  width: 100%;
+  height: 0.5rem;
+  cursor: pointer;
+  appearance: none;
+  border-radius: 9999px;
+  background: #e2e8f0;
+  accent-color: #2563eb;
+}
+
+.sd-section {
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #f8fafc;
+  padding: 1rem;
+}
+
+.sd-modal-dark .sd-section {
+  border-color: rgba(255, 255, 255, 0.12);
+  background: rgba(15, 23, 42, 0.52);
+}
+
+.sd-label {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: #475569;
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.sd-label-inline {
+  margin-bottom: 0;
+}
+
+.sd-modal-dark .sd-label {
+  color: #cbd5e1;
+}
+
+.sd-value-badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 6px;
+  background: #eff6ff;
+  color: #2563eb;
+  padding: 0.125rem 0.375rem;
+  font-family:
+    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+    "Courier New", monospace;
+  font-size: 0.75rem;
+  line-height: 1rem;
+}
+
+.sd-segmented {
+  display: flex;
+  gap: 0.25rem;
+  border-radius: 10px;
+  background: #f1f5f9;
+  padding: 0.25rem;
+}
+
+.sd-segment-button {
+  display: inline-flex;
+  min-height: 2.25rem;
+  flex: 1 1 0%;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  border-radius: 8px;
+  padding: 0.375rem 0.625rem;
+  color: #64748b;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  transition:
+    background-color 0.16s ease,
+    color 0.16s ease,
+    box-shadow 0.16s ease;
+}
+
+.sd-segment-button.is-active {
+  background: #ffffff;
+  color: #2563eb;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.12);
+}
+
+.sd-segment-button:not(.is-active):hover {
+  color: #334155;
+}
+
 .scrollbar-glass {
   scrollbar-width: thin;
   scrollbar-color: rgba(255, 255, 255, 0.32) rgba(255, 255, 255, 0.06);

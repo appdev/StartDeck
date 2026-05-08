@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount } from "vue";
+import { computed, onBeforeUnmount, ref } from "vue";
 import { useMainStore } from "../stores/main";
 import type { NavGroup } from "../types";
 import IconShape from "./IconShape.vue";
 import IconUploader from "./IconUploader.vue";
+import ConfirmDialog from "@/components/base/ConfirmDialog.vue";
 import OverlayMotion from "@/components/base/OverlayMotion.vue";
 
 const props = defineProps<{
@@ -13,6 +14,8 @@ const props = defineProps<{
 
 const emit = defineEmits(["update:show"]);
 const store = useMainStore();
+const showDeleteConfirm = ref(false);
+const showResetConfirm = ref(false);
 
 const group = computed(() => {
   return store.groups.find((g) => g.id === props.groupId);
@@ -44,31 +47,37 @@ const updateGroup = (updates: Partial<NavGroup>) => {
 
 const handleDeleteGroup = () => {
   if (!group.value) return;
-  if (confirm(`确定要删除分组 "${group.value.title}" 及其所有内容吗？`)) {
-    store.deleteGroup(group.value.id, true);
-    saveGroupChanges(true);
-    close();
-  }
+  showDeleteConfirm.value = true;
 };
 
 const handleReset = () => {
   if (!group.value) return;
-  if (confirm("确定要重置此分组的所有设置，恢复为全局默认吗？")) {
-    updateGroup({
-      titleColor: undefined,
-      cardLayout: undefined,
-      cardSize: undefined,
-      gridGap: undefined,
-      cardTitleSize: undefined,
-      cardBgColor: undefined,
-      showCardBackground: undefined,
-      iconShape: undefined,
-      backgroundImage: undefined,
-      backgroundBlur: undefined,
-      backgroundMask: undefined,
-      autoHideTitle: undefined,
-    });
-  }
+  showResetConfirm.value = true;
+};
+
+const confirmDeleteGroup = () => {
+  if (!group.value) return;
+  store.deleteGroup(group.value.id, true);
+  saveGroupChanges(true);
+  close();
+};
+
+const confirmResetGroup = () => {
+  if (!group.value) return;
+  updateGroup({
+    titleColor: undefined,
+    cardLayout: undefined,
+    cardSize: undefined,
+    gridGap: undefined,
+    cardTitleSize: undefined,
+    cardBgColor: undefined,
+    showCardBackground: undefined,
+    iconShape: undefined,
+    backgroundImage: undefined,
+    backgroundBlur: undefined,
+    backgroundMask: undefined,
+    autoHideTitle: undefined,
+  });
 };
 
 onBeforeUnmount(() => {
@@ -154,32 +163,32 @@ const bgAlpha = computed({
     :show="show && !!group"
     :z-index="50"
     close-on-overlay
-    overlay-class="bg-black/40 backdrop-blur-sm p-4"
+    overlay-class="sd-overlay"
     panel-class="max-w-md"
     @close="close"
   >
-    <div class="bg-white rounded-2xl shadow-2xl w-full overflow-hidden">
+    <div class="sd-modal-surface">
       <!-- Header -->
-      <div
-        class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50"
-      >
-        <h3 class="text-lg font-bold text-gray-800">分组设置</h3>
-        <button @click="close" class="text-gray-400 hover:text-gray-600 text-2xl leading-none">
-          &times;
+      <div class="sd-modal-header">
+        <h3 class="sd-modal-title">分组设置</h3>
+        <button type="button" @click="close" class="sd-icon-button" aria-label="关闭分组设置">
+          <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 6l12 12M18 6L6 18" />
+          </svg>
         </button>
       </div>
 
       <!-- Body -->
-      <div class="p-6 space-y-6 max-h-[70vh] overflow-y-auto">
+      <div class="sd-modal-body space-y-6 max-h-[70vh]">
         <!-- Group Title -->
         <div>
-          <label class="block text-sm font-bold text-gray-600 mb-2">分组标题</label>
+          <label class="sd-label">分组标题</label>
           <div class="flex gap-3 mb-3">
             <input
               :value="group.title"
               @input="(e) => updateGroup({ title: (e.target as HTMLInputElement).value })"
               type="text"
-              class="flex-1 px-4 py-2 rounded-lg border border-gray-200 focus:border-blue-500 outline-none transition-colors"
+              class="sd-input flex-1"
             />
             <input
               type="color"
@@ -192,22 +201,22 @@ const bgAlpha = computed({
 
           <!-- Is Public Toggle -->
           <div
-            class="flex items-center justify-between bg-gray-50 p-3 rounded-lg border border-gray-100"
+            class="sd-section flex items-center justify-between gap-3 p-3"
           >
             <div class="flex flex-col">
-              <span class="text-xs font-bold text-gray-700">公开此分组（一次性执行）</span>
+              <span class="text-xs font-bold text-slate-700">公开此分组（一次性执行）</span>
               <span class="text-[10px] text-gray-400">允许未登录访客查看此分组内容</span>
             </div>
             <div class="flex gap-2">
               <button
                 @click="handleBatchUnpublish"
-                class="px-3 py-1.5 bg-white border border-gray-200 text-gray-600 text-xs font-bold rounded-lg shadow-sm hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-colors"
+                class="sd-btn sd-btn-danger-soft min-h-0 px-3 py-1.5 text-xs"
               >
                 不公开
               </button>
               <button
                 @click="handleBatchPublish"
-                class="px-3 py-1.5 bg-white border border-gray-200 text-gray-600 text-xs font-bold rounded-lg shadow-sm hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 transition-colors"
+                class="sd-btn sd-btn-secondary min-h-0 px-3 py-1.5 text-xs hover:text-blue-600"
               >
                 公开
               </button>
@@ -216,10 +225,10 @@ const bgAlpha = computed({
 
           <!-- Auto Hide Title Toggle -->
           <div
-            class="flex items-center justify-between bg-gray-50 p-3 rounded-lg border border-gray-100"
+            class="sd-section mt-3 flex items-center justify-between gap-3 p-3"
           >
             <div class="flex flex-col">
-              <span class="text-xs font-bold text-gray-700">自动隐藏标题</span>
+              <span class="text-xs font-bold text-slate-700">自动隐藏标题</span>
               <span class="text-[10px] text-gray-400">鼠标悬停时才显示组名和操作按钮</span>
             </div>
             <label class="relative inline-flex items-center cursor-pointer">
@@ -243,7 +252,7 @@ const bgAlpha = computed({
         <!-- Layout & Spacing -->
         <div>
           <h4 class="text-sm font-bold text-gray-800 mb-4 flex items-center gap-2">
-            <span>📐 布局与间距</span>
+            <span>布局与间距</span>
             <span
               v-if="
                 group.cardLayout ||
@@ -252,7 +261,7 @@ const bgAlpha = computed({
                 group.iconSize !== undefined ||
                 group.cardTitleSize !== undefined
               "
-              class="text-[10px] px-2 py-0.5 bg-blue-100 text-blue-600 rounded-full"
+              class="sd-value-badge text-[10px]"
               >已自定义</span
             >
           </h4>
@@ -260,29 +269,29 @@ const bgAlpha = computed({
           <div class="space-y-4">
             <!-- Card Layout -->
             <div>
-              <label class="text-xs font-bold text-gray-500 mb-2 block">卡片布局</label>
-              <div class="flex gap-2 bg-gray-100 p-1 rounded-lg">
+              <label class="sd-label">卡片布局</label>
+              <div class="sd-segmented">
                 <button
                   @click="updateGroup({ cardLayout: 'vertical' })"
-                  class="flex-1 py-1.5 text-xs rounded-md transition-all flex items-center justify-center gap-1"
+                  class="sd-segment-button"
                   :class="
                     (group.cardLayout || store.appConfig.cardLayout) === 'vertical'
-                      ? 'bg-white shadow-sm text-blue-600 font-bold'
-                      : 'text-gray-500 hover:text-gray-700'
+                      ? 'is-active'
+                      : ''
                   "
                 >
-                  <span class="text-base">📱</span> 垂直
+                  垂直
                 </button>
                 <button
                   @click="updateGroup({ cardLayout: 'horizontal' })"
-                  class="flex-1 py-1.5 text-xs rounded-md transition-all flex items-center justify-center gap-1"
+                  class="sd-segment-button"
                   :class="
                     (group.cardLayout || store.appConfig.cardLayout) === 'horizontal'
-                      ? 'bg-white shadow-sm text-blue-600 font-bold'
-                      : 'text-gray-500 hover:text-gray-700'
+                      ? 'is-active'
+                      : ''
                   "
                 >
-                  <span class="text-base">💳</span> 水平
+                  水平
                 </button>
               </div>
             </div>
@@ -290,8 +299,8 @@ const bgAlpha = computed({
             <!-- Grid Gap -->
             <div>
               <div class="flex justify-between mb-2">
-                <label class="text-xs font-bold text-gray-500">卡片间距</label>
-                <span class="text-xs font-mono text-blue-600 bg-blue-50 px-1.5 rounded"
+                <label class="sd-label sd-label-inline">卡片间距</label>
+                <span class="sd-value-badge"
                   >{{ group.gridGap ?? store.appConfig.gridGap }}px</span
                 >
               </div>
@@ -305,15 +314,15 @@ const bgAlpha = computed({
                 min="4"
                 max="32"
                 step="2"
-                class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-400"
+                class="sd-range"
               />
             </div>
 
             <!-- Card Size -->
             <div>
               <div class="flex justify-between mb-2">
-                <label class="text-xs font-bold text-gray-500">卡片大小</label>
-                <span class="text-xs font-mono text-blue-600 bg-blue-50 px-1.5 rounded"
+                <label class="sd-label sd-label-inline">卡片大小</label>
+                <span class="sd-value-badge"
                   >{{ group.cardSize ?? store.appConfig.cardSize ?? 120 }}px</span
                 >
               </div>
@@ -327,15 +336,15 @@ const bgAlpha = computed({
                 min="60"
                 max="216"
                 step="4"
-                class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-400"
+                class="sd-range"
               />
             </div>
 
             <!-- Icon Size -->
             <div>
               <div class="flex justify-between mb-2">
-                <label class="text-xs font-bold text-gray-500">图标大小</label>
-                <span class="text-xs font-mono text-blue-600 bg-blue-50 px-1.5 rounded"
+                <label class="sd-label sd-label-inline">图标大小</label>
+                <span class="sd-value-badge"
                   >{{ group.iconSize ?? store.appConfig.iconSize ?? 48 }}px</span
                 >
               </div>
@@ -349,15 +358,15 @@ const bgAlpha = computed({
                 min="20"
                 max="100"
                 step="2"
-                class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-400"
+                class="sd-range"
               />
             </div>
 
             <!-- Text Size -->
             <div>
               <div class="flex justify-between mb-2">
-                <label class="text-xs font-bold text-gray-500">文字大小</label>
-                <span class="text-xs font-mono text-blue-600 bg-blue-50 px-1.5 rounded">
+                <label class="sd-label sd-label-inline">文字大小</label>
+                <span class="sd-value-badge">
                   {{ group.cardTitleSize == null ? "默认" : group.cardTitleSize + "px" }}
                 </span>
               </div>
@@ -374,7 +383,7 @@ const bgAlpha = computed({
                 min="10"
                 max="22"
                 step="1"
-                class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-400"
+                class="sd-range"
               />
             </div>
           </div>
@@ -385,10 +394,10 @@ const bgAlpha = computed({
         <!-- Card Style -->
         <div>
           <h4 class="text-sm font-bold text-gray-800 mb-4 flex items-center gap-2">
-            <span>🎨 卡片样式</span>
+            <span>卡片样式</span>
             <span
               v-if="group.cardBgColor || group.showCardBackground !== undefined || group.iconShape"
-              class="text-[10px] px-2 py-0.5 bg-purple-100 text-purple-600 rounded-full"
+              class="sd-value-badge text-[10px]"
               >已自定义</span
             >
           </h4>
@@ -441,7 +450,7 @@ const bgAlpha = computed({
                     max="1"
                     step="0.05"
                     v-model.number="bgAlpha"
-                    class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-400"
+                    class="sd-range"
                   />
                 </div>
 
@@ -483,7 +492,7 @@ const bgAlpha = computed({
                     "
                     type="text"
                     placeholder="背景图 URL..."
-                    class="flex-1 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm outline-none focus:border-blue-500"
+                    class="sd-input flex-1 text-sm"
                   />
                   <button
                     v-if="group.backgroundImage"
@@ -531,7 +540,7 @@ const bgAlpha = computed({
                       min="0"
                       max="20"
                       step="1"
-                      class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-400"
+                      class="sd-range"
                     />
                   </div>
                   <div>
@@ -552,7 +561,7 @@ const bgAlpha = computed({
                       min="0"
                       max="1"
                       step="0.1"
-                      class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-400"
+                      class="sd-range"
                     />
                   </div>
                 </div>
@@ -561,12 +570,12 @@ const bgAlpha = computed({
 
             <!-- Icon Shape -->
             <div>
-              <label class="text-xs font-bold text-gray-500 mb-2 block">图标形状</label>
+              <label class="sd-label">图标形状</label>
               <div class="flex gap-3 items-center">
                 <select
                   :value="group.iconShape || store.appConfig.iconShape"
                   @change="(e) => updateGroup({ iconShape: (e.target as HTMLInputElement).value })"
-                  class="flex-1 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm outline-none focus:border-blue-500"
+                  class="sd-select flex-1 text-sm"
                 >
                   <option value="none">无形状</option>
                   <option value="hidden">不使用图标</option>
@@ -598,21 +607,38 @@ const bgAlpha = computed({
         <div class="space-y-3">
           <button
             @click="handleReset"
-            class="w-full py-2.5 rounded-xl text-sm font-bold text-gray-600 bg-gray-100 hover:bg-gray-200 transition-colors flex items-center justify-center gap-2"
+            class="sd-btn sd-btn-secondary w-full"
           >
-            <span>🔄</span> 恢复默认设置
+            恢复默认设置
           </button>
 
           <button
             @click="handleDeleteGroup"
-            class="w-full py-2.5 rounded-xl text-sm font-bold text-red-600 bg-red-50 hover:bg-red-100 transition-colors flex items-center justify-center gap-2"
+            class="sd-btn sd-btn-danger-soft w-full"
           >
-            <span>🗑️</span> 删除此分组
+            删除此分组
           </button>
         </div>
       </div>
     </div>
   </OverlayMotion>
+
+  <ConfirmDialog
+    v-model:show="showResetConfirm"
+    title="恢复默认设置"
+    message="确定要重置此分组的所有设置，恢复为全局默认吗？"
+    confirm-label="恢复默认"
+    @confirm="confirmResetGroup"
+  />
+
+  <ConfirmDialog
+    v-model:show="showDeleteConfirm"
+    title="删除分组"
+    :message="`确定要删除分组 “${group?.title || ''}” 及其所有内容吗？此操作无法撤销。`"
+    confirm-label="删除"
+    tone="danger"
+    @confirm="confirmDeleteGroup"
+  />
 </template>
 
 <style scoped>

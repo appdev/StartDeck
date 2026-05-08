@@ -50,25 +50,27 @@ const confirm = async () => {
   <OverlayMotion
     :show="show"
     :z-index="60"
-    overlay-class="bg-black/50 backdrop-blur-sm p-4"
+    overlay-class="sd-overlay-strong"
     panel-class="max-w-sm"
   >
-    <div class="bg-white rounded-xl shadow-2xl w-full overflow-hidden border border-gray-100">
-      <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
-        <h3 class="font-bold text-gray-800">{{ title || "请输入密码确认操作" }}</h3>
-        <button @click="close" class="text-gray-400 hover:text-gray-600 leading-none text-xl">
-          &times;
+    <div class="sd-modal-surface">
+      <div class="sd-modal-header">
+        <h3 class="sd-modal-title text-base">{{ title || "请输入密码确认操作" }}</h3>
+        <button type="button" @click="close" class="sd-icon-button" aria-label="关闭密码确认弹窗">
+          <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 6l12 12M18 6L6 18" />
+          </svg>
         </button>
       </div>
 
-      <div class="p-6">
+      <div class="sd-modal-body">
         <div class="mb-4">
           <input
             ref="inputRef"
             v-model="password"
             type="password"
             placeholder="请输入管理员密码"
-            class="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all text-center text-lg tracking-widest"
+            class="sd-input text-center text-lg tracking-widest"
             @keyup.enter="confirm"
           />
           <p v-if="errorMsg" class="text-red-500 text-xs mt-2 text-center">{{ errorMsg }}</p>
@@ -77,13 +79,13 @@ const confirm = async () => {
         <div class="flex gap-3">
           <button
             @click="close"
-            class="flex-1 bg-gray-100 text-gray-600 py-2.5 rounded-lg font-bold hover:bg-gray-200 transition-all"
+            class="sd-btn sd-btn-secondary flex-1"
           >
             取消
           </button>
           <button
             @click="confirm"
-            class="flex-1 bg-blue-600 text-white py-2.5 rounded-lg font-bold hover:bg-blue-700 transition-all shadow-md"
+            class="sd-btn sd-btn-primary flex-1"
           >
             确认
           </button>

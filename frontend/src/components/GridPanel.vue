@@ -4259,30 +4259,30 @@ onUnmounted(() => {
       :show="showDeleteConfirm"
       :z-index="60"
       close-on-overlay
-      overlay-class="bg-black/50 backdrop-blur-sm p-4 pt-[calc(1rem+env(safe-area-inset-top))] pb-[calc(1rem+env(safe-area-inset-bottom))]"
+      overlay-class="sd-overlay-strong"
       panel-class="max-w-sm"
       @close="showDeleteConfirm = false"
     >
-      <div class="bg-white rounded-xl shadow-2xl p-6 w-full border border-gray-100">
-        <h3 class="text-lg font-bold text-gray-900 mb-2 flex items-center gap-2">
-          <span class="text-red-500 text-xl">⚠️</span> 删除确认
-        </h3>
+      <div class="sd-modal-surface">
+        <div class="sd-modal-body">
+        <h3 class="text-lg font-bold text-gray-900 mb-2">删除确认</h3>
         <p class="text-gray-600 mb-6">
           确定要删除这个{{ deleteType === "group" ? "分组" : "卡片" }}吗？此操作无法撤销。
         </p>
         <div class="flex justify-end gap-3">
           <button
             @click="showDeleteConfirm = false"
-            class="px-4 py-2 min-h-[44px] rounded-lg text-gray-600 hover:bg-gray-100 font-medium transition-colors"
+            class="sd-btn sd-btn-secondary"
           >
             取消
           </button>
           <button
             @click="confirmDelete"
-            class="px-4 py-2 min-h-[44px] rounded-lg bg-red-500 text-white hover:bg-red-600 font-medium shadow-sm transition-colors flex items-center gap-1"
+            class="sd-btn sd-btn-danger"
           >
-            <span>🗑️</span> 删除
+            删除
           </button>
+        </div>
         </div>
       </div>
     </OverlayMotion>

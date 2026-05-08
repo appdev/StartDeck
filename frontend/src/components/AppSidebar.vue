@@ -793,7 +793,7 @@ const toggle = () => {
   <!-- Mobile Backdrop -->
   <div
     v-if="isMobile && !isCollapsed"
-    class="fixed inset-0 z-30 bg-black/20 backdrop-blur-sm transition-opacity duration-300"
+    class="fixed inset-0 z-30 bg-black/20 transition-opacity duration-300"
     @click="toggle"
   ></div>
 
@@ -1208,7 +1208,7 @@ const toggle = () => {
         <!-- Mobile Backdrop for Flyout -->
         <div
           v-if="isMobile && activeCategory"
-          class="fixed inset-0 z-30 bg-black/10 backdrop-blur-[1px]"
+          class="fixed inset-0 z-30 bg-black/10"
           @click="activeCategory = null"
         ></div>
 
