@@ -252,7 +252,7 @@ const confirmSubmit = async () => {
         target.icon = newIcon.value;
         target.iconAutoBackgroundColor = newAutoBackgroundColor.value || undefined;
         if (target.iconBackgroundMode !== "custom") {
-          target.iconBackgroundMode = newAutoBackgroundColor.value ? "auto" : "default";
+          target.iconBackgroundMode = "auto";
         }
       }
     } else {
@@ -261,7 +261,7 @@ const confirmSubmit = async () => {
         title: newTitle.value,
         url: finalUrl,
         icon: newIcon.value,
-        iconBackgroundMode: newAutoBackgroundColor.value ? "auto" : "default",
+        iconBackgroundMode: "auto",
         iconAutoBackgroundColor: newAutoBackgroundColor.value || undefined,
       });
     }
@@ -564,7 +564,7 @@ const handleScrollIsolation = (e: WheelEvent) => {
               :bgClass="
                 resolveIconBackground(
                   {
-                    iconBackgroundMode: newAutoBackgroundColor ? 'auto' : 'default',
+                    iconBackgroundMode: 'auto',
                     iconAutoBackgroundColor: newAutoBackgroundColor,
                   },
                   { fallback: 'rgba(255, 255, 255, 0.14)', shape: 'rounded' },

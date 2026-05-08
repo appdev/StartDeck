@@ -52,7 +52,7 @@ describe("iconAppearance", () => {
   it("falls back to gray and marks none or hidden shapes as not visible", () => {
     expect(resolveIconBackground({}, { shape: "none" })).toMatchObject({
       color: "bg-gray-100",
-      source: "default",
+      source: "fallback",
       visible: false,
     });
     expect(resolveIconBackground({}, { shape: "hidden" }).visible).toBe(false);
@@ -66,7 +66,29 @@ describe("iconAppearance", () => {
       }),
     ).toMatchObject({
       color: "bg-gray-100",
-      source: "default",
+      source: "fallback",
+    });
+  });
+
+  it("treats missing or old default mode as automatic", () => {
+    expect(
+      resolveIconBackground({
+        iconAutoBackgroundColor: "#111827",
+      }),
+    ).toMatchObject({
+      mode: "auto",
+      color: "#111827",
+      source: "auto",
+    });
+    expect(
+      resolveIconBackground({
+        iconBackgroundMode: "default" as never,
+        iconAutoBackgroundColor: "#1d4ed8",
+      }),
+    ).toMatchObject({
+      mode: "auto",
+      color: "#1d4ed8",
+      source: "auto",
     });
   });
 });

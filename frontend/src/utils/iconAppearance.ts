@@ -7,7 +7,7 @@ export type IconAppearanceInput = {
   color?: string | null;
 };
 
-export type IconBackgroundSource = "custom" | "auto" | "legacy" | "default";
+export type IconBackgroundSource = "custom" | "auto" | "legacy" | "fallback";
 
 export type ResolvedIconBackground = {
   mode: IconBackgroundMode;
@@ -69,7 +69,7 @@ export const resolveIconBackground = (
 ): ResolvedIconBackground => {
   const fallback = options.fallback || "bg-gray-100";
   const shape = options.shape || "";
-  const mode = item.iconBackgroundMode || "default";
+  const mode: IconBackgroundMode = item.iconBackgroundMode === "custom" ? "custom" : "auto";
   const visible = shape !== "hidden" && shape !== "none";
   const legacy = normalizeLegacyIconBackground(item.color);
 
@@ -77,16 +77,11 @@ export const resolveIconBackground = (
     const custom = normalizeIconBackgroundColor(item.iconCustomBackgroundColor);
     if (custom) return { mode, color: custom, source: "custom", visible };
     if (legacy) return { mode, color: legacy, source: "legacy", visible };
-    return { mode, color: fallback, source: "default", visible };
+    return { mode, color: fallback, source: "fallback", visible };
   }
 
-  if (mode === "auto") {
-    const auto = normalizeIconBackgroundColor(item.iconAutoBackgroundColor);
-    if (auto) return { mode, color: auto, source: "auto", visible };
-    if (legacy) return { mode, color: legacy, source: "legacy", visible };
-    return { mode, color: fallback, source: "default", visible };
-  }
-
-  if (legacy) return { mode: "default", color: legacy, source: "legacy", visible };
-  return { mode: "default", color: fallback, source: "default", visible };
+  const auto = normalizeIconBackgroundColor(item.iconAutoBackgroundColor);
+  if (auto) return { mode, color: auto, source: "auto", visible };
+  if (legacy) return { mode, color: legacy, source: "legacy", visible };
+  return { mode, color: fallback, source: "fallback", visible };
 };

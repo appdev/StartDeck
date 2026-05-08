@@ -581,7 +581,7 @@ const openEditModal = (item: BookmarkItem | BookmarkCategory) => {
 const applySiteIconFallback = (item: BookmarkItem) => {
   item.icon = getSiteIconUrl(item.url);
   if (item.iconBackgroundMode !== "custom") {
-    item.iconBackgroundMode = item.iconAutoBackgroundColor ? "auto" : "default";
+    item.iconBackgroundMode = "auto";
   }
 };
 
@@ -596,7 +596,7 @@ const confirmEditBookmark = async () => {
       item.icon = editingBookmarkIcon.value || item.icon;
       item.iconAutoBackgroundColor = editingBookmarkAutoBackgroundColor.value || undefined;
       if (item.iconBackgroundMode !== "custom") {
-        item.iconBackgroundMode = editingBookmarkAutoBackgroundColor.value ? "auto" : "default";
+        item.iconBackgroundMode = "auto";
       }
 
       // Auto fetch icon if empty
@@ -735,7 +735,7 @@ const confirmAddBookmark = async () => {
     title: title,
     url: finalUrl,
     icon: icon,
-    iconBackgroundMode: iconAutoBackgroundColor ? "auto" : "default",
+    iconBackgroundMode: "auto",
     iconAutoBackgroundColor: iconAutoBackgroundColor || undefined,
   });
 
@@ -1746,7 +1746,7 @@ const toggle = () => {
                         :bgClass="
                           resolveIconBackground(
                             {
-                              iconBackgroundMode: editingBookmarkAutoBackgroundColor ? 'auto' : 'default',
+                              iconBackgroundMode: 'auto',
                               iconAutoBackgroundColor: editingBookmarkAutoBackgroundColor,
                             },
                             { fallback: 'bg-gray-100', shape: 'rounded' },

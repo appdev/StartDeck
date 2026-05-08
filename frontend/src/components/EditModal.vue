@@ -113,7 +113,7 @@ const form = ref<EditForm>({
   description1: "",
   description2: "",
   description3: "",
-  iconBackgroundMode: "default",
+  iconBackgroundMode: "auto",
   iconAutoBackgroundColor: "",
   iconCustomBackgroundColor: "",
   color: "bg-gray-100 text-gray-700",
@@ -142,7 +142,6 @@ const iconBackgroundResolution = computed(() =>
 
 const iconBackgroundModes = [
   { value: "auto", label: "自动" },
-  { value: "default", label: "默认" },
   { value: "custom", label: "自定义" },
 ] as const;
 
@@ -159,9 +158,6 @@ const iconBackgroundPresets = [
 
 const setIconBackgroundMode = (mode: (typeof iconBackgroundModes)[number]["value"]) => {
   form.value.iconBackgroundMode = mode;
-  if (mode === "default") {
-    form.value.iconCustomBackgroundColor = "";
-  }
   if (mode === "custom" && !normalizeIconBackgroundColor(form.value.iconCustomBackgroundColor)) {
     form.value.iconCustomBackgroundColor =
       normalizeIconBackgroundColor(form.value.iconAutoBackgroundColor) || "#111827";
@@ -182,7 +178,7 @@ const iconCustomColorValue = computed(
 const resolveCandidateBackground = (backgroundColor?: string) =>
   resolveIconBackground(
     {
-      iconBackgroundMode: backgroundColor ? "auto" : "default",
+      iconBackgroundMode: "auto",
       iconAutoBackgroundColor: backgroundColor || "",
     },
     {
@@ -196,7 +192,7 @@ const onIconSelect = (result: SmartIconMatchResult) => {
   const backgroundColor = normalizeIconBackgroundColor(result.backgroundColor);
   form.value.iconAutoBackgroundColor = backgroundColor || "";
   if (form.value.iconBackgroundMode !== "custom") {
-    form.value.iconBackgroundMode = backgroundColor ? "auto" : "default";
+    form.value.iconBackgroundMode = "auto";
   }
 };
 
@@ -235,7 +231,7 @@ watch(
           description1: props.data.description1 || "",
           description2: props.data.description2 || "",
           description3: props.data.description3 || "",
-          iconBackgroundMode: props.data.iconBackgroundMode || "default",
+          iconBackgroundMode: props.data.iconBackgroundMode === "custom" ? "custom" : "auto",
           iconAutoBackgroundColor: props.data.iconAutoBackgroundColor || "",
           iconCustomBackgroundColor: props.data.iconCustomBackgroundColor || "",
           titleColor: props.data.titleColor || "",
@@ -253,7 +249,7 @@ watch(
           backupUrls: [],
           backupLanUrls: [],
           icon: "",
-          iconBackgroundMode: "default",
+          iconBackgroundMode: "auto",
           iconAutoBackgroundColor: "",
           iconCustomBackgroundColor: "",
           color: "bg-gray-100 text-gray-700",
@@ -521,7 +517,7 @@ const submit = async () => {
     form.value.iconCustomBackgroundColor =
       normalizeIconBackgroundColor(form.value.iconCustomBackgroundColor) || "";
     if (form.value.iconBackgroundMode === "custom" && !form.value.iconCustomBackgroundColor) {
-      form.value.iconBackgroundMode = "default";
+      form.value.iconBackgroundMode = "auto";
     }
 
     if (saveIconToLocal.value) {
@@ -998,7 +994,7 @@ const submit = async () => {
                       @click="setIconBackgroundMode(mode.value)"
                       class="px-2 py-1 text-xs rounded-md transition-colors"
                       :class="
-                        (form.iconBackgroundMode || 'default') === mode.value
+                        (form.iconBackgroundMode || 'auto') === mode.value
                           ? 'bg-gray-900 text-white'
                           : 'text-gray-500 hover:text-gray-900'
                       "
@@ -1042,9 +1038,9 @@ const submit = async () => {
 
                 <div class="text-[11px] leading-4 text-gray-400">
                   <span v-if="isIconShapeNone">当前形状不显示背景，颜色会保留供切换形状后使用。</span>
-                  <span v-else-if="iconBackgroundResolution.source === 'auto'">已使用站点元数据背景色。</span>
+                  <span v-else-if="iconBackgroundResolution.source === 'auto'">已使用推荐背景色。</span>
                   <span v-else-if="iconBackgroundResolution.source === 'legacy'">正在读取旧图标背景配置。</span>
-                  <span v-else>未获取到背景色时使用浅灰默认背景。</span>
+                  <span v-else>未获取到推荐色时使用浅灰背景。</span>
                 </div>
               </div>
             </div>

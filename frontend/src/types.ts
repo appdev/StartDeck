@@ -1,4 +1,4 @@
-export type IconBackgroundMode = "auto" | "default" | "custom";
+export type IconBackgroundMode = "auto" | "custom";
 
 export interface NavItem {
   id: string;
