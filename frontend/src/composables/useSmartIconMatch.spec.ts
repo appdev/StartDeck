@@ -113,8 +113,16 @@ describe("useSmartIconMatch", () => {
         backgroundColor: "#111827",
       },
     ]);
+    expect(smartIconMatch.selectedSmartMatchCandidateUrl.value).toBe(
+      "/api/site/icon?url=https%3A%2F%2Fexample.com",
+    );
     expect(smartIconMatch.showSmartMatchModal.value).toBe(true);
-    expect(onSelect).not.toHaveBeenCalled();
+    expect(onSelect).toHaveBeenCalledWith({
+      icon: "/api/site/icon?url=https%3A%2F%2Fexample.com",
+      source: "site",
+      label: "Example",
+      backgroundColor: "#111827",
+    });
     expect(notify).not.toHaveBeenCalled();
   });
 
@@ -144,6 +152,9 @@ describe("useSmartIconMatch", () => {
 
     await smartIconMatch.smartMatchIcons();
 
+    expect(smartIconMatch.selectedSmartMatchCandidateUrl.value).toBe(
+      "/api/site/icon?url=https%3A%2F%2Fexample.com&size=64",
+    );
     expect(smartIconMatch.smartMatchCandidates.value).toEqual([
       {
         url: "/api/site/icon?url=https%3A%2F%2Fexample.com&size=64",
@@ -168,6 +179,10 @@ describe("useSmartIconMatch", () => {
       label: "Example",
       backgroundColor: "#111827",
     });
+    expect(smartIconMatch.selectedSmartMatchCandidateUrl.value).toBe(
+      "/api/site/icon?url=https%3A%2F%2Fexample.com",
+    );
+    expect(smartIconMatch.showSmartMatchModal.value).toBe(true);
 
     expect(onSelect).toHaveBeenCalledWith({
       icon: "/api/site/icon?url=https%3A%2F%2Fexample.com",

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, onBeforeUnmount } from "vue";
 import { useMainStore } from "../stores/main";
 import type { NavGroup } from "../types";
 import IconShape from "./IconShape.vue";
@@ -18,11 +18,27 @@ const group = computed(() => {
   return store.groups.find((g) => g.id === props.groupId);
 });
 
-const close = () => emit("update:show", false);
+const saveGroupChanges = (immediate = false) => {
+  if (!store.isLogged) return;
+  store.markDirty();
+  void store.saveData(immediate);
+};
+
+const flushGroupChanges = () => {
+  if (store.hasUnsavedChanges) {
+    void store.saveData(true);
+  }
+};
+
+const close = () => {
+  flushGroupChanges();
+  emit("update:show", false);
+};
 
 const updateGroup = (updates: Partial<NavGroup>) => {
   if (props.groupId) {
     store.updateGroup(props.groupId, updates);
+    saveGroupChanges();
   }
 };
 
@@ -30,6 +46,7 @@ const handleDeleteGroup = () => {
   if (!group.value) return;
   if (confirm(`确定要删除分组 "${group.value.title}" 及其所有内容吗？`)) {
     store.deleteGroup(group.value.id, true);
+    saveGroupChanges(true);
     close();
   }
 };
@@ -37,17 +54,12 @@ const handleDeleteGroup = () => {
 const handleReset = () => {
   if (!group.value) return;
   if (confirm("确定要重置此分组的所有设置，恢复为全局默认吗？")) {
-    // Keep title and id, reset others
-    const { id } = group.value;
-    // We need to remove the optional properties from the group object in the store
-    // Since we can't easily "delete" properties via partial update, we might need to manually handle this in store
-    // Or just set them to undefined if the store handles it.
-    // Let's try setting them to undefined.
-    store.updateGroup(id, {
+    updateGroup({
       titleColor: undefined,
       cardLayout: undefined,
       cardSize: undefined,
       gridGap: undefined,
+      cardTitleSize: undefined,
       cardBgColor: undefined,
       showCardBackground: undefined,
       iconShape: undefined,
@@ -58,6 +70,10 @@ const handleReset = () => {
     });
   }
 };
+
+onBeforeUnmount(() => {
+  flushGroupChanges();
+});
 
 const handleBatchPublish = () => {
   if (!group.value) return;
@@ -229,7 +245,13 @@ const bgAlpha = computed({
           <h4 class="text-sm font-bold text-gray-800 mb-4 flex items-center gap-2">
             <span>📐 布局与间距</span>
             <span
-              v-if="group.cardLayout || group.gridGap"
+              v-if="
+                group.cardLayout ||
+                group.gridGap !== undefined ||
+                group.cardSize !== undefined ||
+                group.iconSize !== undefined ||
+                group.cardTitleSize !== undefined
+              "
               class="text-[10px] px-2 py-0.5 bg-blue-100 text-blue-600 rounded-full"
               >已自定义</span
             >
@@ -279,6 +301,7 @@ const bgAlpha = computed({
                 @input="
                   (e) => updateGroup({ gridGap: parseInt((e.target as HTMLInputElement).value) })
                 "
+                @change="flushGroupChanges"
                 min="4"
                 max="32"
                 step="2"
@@ -300,6 +323,7 @@ const bgAlpha = computed({
                 @input="
                   (e) => updateGroup({ cardSize: parseInt((e.target as HTMLInputElement).value) })
                 "
+                @change="flushGroupChanges"
                 min="60"
                 max="216"
                 step="4"
@@ -321,9 +345,35 @@ const bgAlpha = computed({
                 @input="
                   (e) => updateGroup({ iconSize: parseInt((e.target as HTMLInputElement).value) })
                 "
+                @change="flushGroupChanges"
                 min="20"
                 max="100"
                 step="2"
+                class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-400"
+              />
+            </div>
+
+            <!-- Text Size -->
+            <div>
+              <div class="flex justify-between mb-2">
+                <label class="text-xs font-bold text-gray-500">文字大小</label>
+                <span class="text-xs font-mono text-blue-600 bg-blue-50 px-1.5 rounded">
+                  {{ group.cardTitleSize == null ? "默认" : group.cardTitleSize + "px" }}
+                </span>
+              </div>
+              <input
+                type="range"
+                :value="group.cardTitleSize ?? 14"
+                @input="
+                  (e) =>
+                    updateGroup({
+                      cardTitleSize: parseInt((e.target as HTMLInputElement).value, 10),
+                    })
+                "
+                @change="flushGroupChanges"
+                min="10"
+                max="22"
+                step="1"
                 class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-400"
               />
             </div>
@@ -477,6 +527,7 @@ const bgAlpha = computed({
                             backgroundBlur: parseInt((e.target as HTMLInputElement).value),
                           })
                       "
+                      @change="flushGroupChanges"
                       min="0"
                       max="20"
                       step="1"
@@ -497,6 +548,7 @@ const bgAlpha = computed({
                             backgroundMask: parseFloat((e.target as HTMLInputElement).value),
                           })
                       "
+                      @change="flushGroupChanges"
                       min="0"
                       max="1"
                       step="0.1"

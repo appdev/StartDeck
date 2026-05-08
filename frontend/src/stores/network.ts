@@ -80,7 +80,6 @@ export const useNetworkStore = defineStore("network", () => {
   // ---- Network events ----
   const bindNetworkEvents = (
     wsOpen: () => void,
-    wsSendRaw: (data: string) => void,
     getStatusValue: () => string,
     triggerOfflineQueueReplay: () => void,
   ) => {
@@ -94,9 +93,11 @@ export const useNetworkStore = defineStore("network", () => {
       const conn = (navigator as Navigator & { connection: EventTarget & { effectiveType?: string } }).connection;
       if (conn && typeof conn.addEventListener === "function") {
         conn.addEventListener("change", () => {
-          console.log("[Network] Connection type changed, rebuilding WS");
-          if (getStatusValue() === "OPEN") { try { wsSendRaw("close"); } catch { } }
-          setTimeout(() => wsOpen(), 1000);
+          console.log("[Network] Connection type changed");
+          if (getStatusValue() === "OPEN") return;
+          setTimeout(() => {
+            if (navigator.onLine && getStatusValue() !== "OPEN") wsOpen();
+          }, 1000);
         });
       }
     }
@@ -375,9 +376,9 @@ export const useNetworkStore = defineStore("network", () => {
     // Avoid probing a non-existent REST endpoint and spamming 404s.
   };
 
-  const initEventBindings = (wsOpen: () => void, wsSendRaw: (data: string) => void, getStatusValue: () => string, triggerOfflineQueueReplay: () => void) => {
+  const initEventBindings = (wsOpen: () => void, getStatusValue: () => string, triggerOfflineQueueReplay: () => void) => {
     bindWeatherNetworkEvents();
-    bindNetworkEvents(wsOpen, wsSendRaw, getStatusValue, triggerOfflineQueueReplay);
+    bindNetworkEvents(wsOpen, getStatusValue, triggerOfflineQueueReplay);
     if (typeof window !== "undefined") {
       window.addEventListener("beforeunload", () => { configStore.isPageUnloading = true; });
       window.addEventListener("pagehide", () => { configStore.isPageUnloading = true; });

@@ -137,6 +137,7 @@ const resolveTargetUrl = (form: SmartIconFormState): string => {
 
 export const useSmartIconMatch = ({ form, onSelect, notify }: SmartIconMatchOptions) => {
   const smartMatchCandidates = shallowRef<SmartIconCandidate[]>([]);
+  const selectedSmartMatchCandidateUrl = ref("");
   const showSmartMatchModal = ref(false);
   const isSmartMatching = ref(false);
   const activeRunId = ref(0);
@@ -153,15 +154,20 @@ export const useSmartIconMatch = ({ form, onSelect, notify }: SmartIconMatchOpti
     showSmartMatchModal.value = false;
   };
 
-  const selectSmartMatchCandidate = (candidate: SmartIconCandidate) => {
-    cancelActiveRun();
+  const applySmartMatchCandidate = (candidate: SmartIconCandidate) => {
+    selectedSmartMatchCandidateUrl.value = candidate.url;
     onSelect({
       icon: candidate.url,
       source: candidate.source,
       label: candidate.label,
       backgroundColor: candidate.backgroundColor,
     });
-    showSmartMatchModal.value = false;
+  };
+
+  const selectSmartMatchCandidate = (candidate: SmartIconCandidate) => {
+    cancelActiveRun();
+    applySmartMatchCandidate(candidate);
+    showSmartMatchModal.value = true;
   };
 
   const smartMatchIcons = async () => {
@@ -175,6 +181,7 @@ export const useSmartIconMatch = ({ form, onSelect, notify }: SmartIconMatchOpti
     const runId = activeRunId.value;
     isSmartMatching.value = true;
     smartMatchCandidates.value = [];
+    selectedSmartMatchCandidateUrl.value = "";
     showSmartMatchModal.value = true;
 
     try {
@@ -207,6 +214,10 @@ export const useSmartIconMatch = ({ form, onSelect, notify }: SmartIconMatchOpti
 
       if (activeRunId.value !== runId) return;
       smartMatchCandidates.value = candidates;
+      const firstCandidate = candidates[0];
+      if (firstCandidate) {
+        applySmartMatchCandidate(firstCandidate);
+      }
     } catch (e) {
       console.warn("Site metadata lookup failed", e);
     } finally {
@@ -221,6 +232,7 @@ export const useSmartIconMatch = ({ form, onSelect, notify }: SmartIconMatchOpti
 
   return {
     smartMatchCandidates,
+    selectedSmartMatchCandidateUrl,
     showSmartMatchModal,
     isSmartMatching,
     smartMatchIcons,

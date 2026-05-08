@@ -518,7 +518,6 @@ export const useSyncStore = defineStore("sync", () => {
   if (typeof window !== "undefined") {
     networkStore.initEventBindings(
       wsOpen,
-      wsSendRaw,
       () => status.value,
       () => saveStore.triggerOfflineQueueReplay(fetchVersionOnly, dataVersion, networkStore.getHeaders),
     );
@@ -563,6 +562,7 @@ export const useSyncStore = defineStore("sync", () => {
   });
   const markDirtyIfActive = () => { if (!isInitializing && !isApplyingServerData) saveStore.markDirty(); };
   watch(configStore.appConfig, markDirtyIfActive, { deep: true });
+  watch(groupsStore.groups, markDirtyIfActive, { deep: true });
   watch(widgetsStore.widgets, markDirtyIfActive, { deep: true });
   watch(rssFeeds, markDirtyIfActive, { deep: true });
   watch(rssCategories, markDirtyIfActive, { deep: true });

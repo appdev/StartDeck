@@ -2437,6 +2437,9 @@ const getLayoutConfig = (group: NavGroup) => {
 
   const modeScale = isNoBg ? 0.6 : 1.0;
   const finalScale = ratio * modeScale;
+  const h_w = 220 * finalScale;
+  const h_h = 80 * finalScale;
+  const horizontalIconMax = Math.max(20, h_h - 18);
 
   // Icon Size Logic
   const customIconSize = group.iconSize || store.appConfig.iconSize;
@@ -2450,11 +2453,11 @@ const getLayoutConfig = (group: NavGroup) => {
     } else {
       v_icon = customIconSize * modeScale;
     }
-    h_icon = customIconSize * (40 / 48) * modeScale;
+    h_icon = Math.min(customIconSize * (40 / 48) * modeScale, horizontalIconMax);
   } else {
     // Legacy behavior: scale with card size
     v_icon = 48 * finalScale;
-    h_icon = 40 * finalScale;
+    h_icon = Math.min(40 * finalScale, horizontalIconMax);
   }
 
   let v_w = 120 * finalScale;
@@ -2466,9 +2469,6 @@ const getLayoutConfig = (group: NavGroup) => {
     const minH = v_icon + 32; // Icon + Text space
     if (minH > v_h) v_h = minH;
   }
-
-  const h_w = 220 * finalScale;
-  const h_h = 80 * finalScale;
 
   return {
     minWidth: isHorizontal ? h_w : v_w,
@@ -3603,8 +3603,8 @@ onUnmounted(() => {
                     : '',
                   isEditMode ? 'animate-pulse cursor-move ring-2 ring-blue-400' : '',
                   (group.cardLayout || store.appConfig.cardLayout) === 'horizontal'
-                    ? 'flex-row px-4 py-3 gap-3 justify-start'
-                    : 'flex-col justify-center',
+                    ? 'flex-row px-4 py-2 gap-3 justify-start'
+                    : 'flex-col gap-1.5 justify-center',
                   (group.iconShape || store.appConfig.iconShape) === 'circle'
                     ? 'rounded-2xl'
                     : (group.iconShape || store.appConfig.iconShape) === 'rounded'
@@ -3624,7 +3624,14 @@ onUnmounted(() => {
                         : 'hover:scale-105 active:scale-95',
                 ]"
                 :style="{
-                  height: getLayoutConfig(group).height + 'px',
+                  height:
+                    (group.cardLayout || store.appConfig.cardLayout) === 'horizontal'
+                      ? getLayoutConfig(group).height + 'px'
+                      : undefined,
+                  minHeight:
+                    (group.cardLayout || store.appConfig.cardLayout) === 'horizontal'
+                      ? undefined
+                      : getLayoutConfig(group).height + 'px',
                   backgroundColor:
                     (group.showCardBackground ?? store.appConfig.showCardBackground) === false
                       ? 'transparent'
@@ -3940,7 +3947,7 @@ onUnmounted(() => {
                 <!-- Vertical Mode: Standard Title -->
                 <span
                   v-else
-                  class="font-medium truncate relative z-10"
+                  class="font-medium line-clamp-2 leading-tight relative z-10"
                   :class="'text-center px-2 w-full'"
                   :style="{
                     color:

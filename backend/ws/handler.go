@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/gorilla/websocket"
 	"github.com/google/uuid"
+	"github.com/gorilla/websocket"
 )
 
 const (
@@ -201,7 +201,14 @@ func handleMessage(client *Client, manager *WSManager, msg WSMessage) {
 	case "network_heartbeat":
 		handleNetworkHeartbeat(client, manager, msg.Payload)
 	case "ping":
-		// 心跳 ping，无需回复
+		pongMsg, _ := json.Marshal(map[string]string{"type": "pong"})
+		client.mu.Lock()
+		_ = client.conn.SetWriteDeadline(time.Now().Add(2 * time.Second))
+		err := client.conn.WriteMessage(websocket.TextMessage, pongMsg)
+		client.mu.Unlock()
+		if err != nil {
+			log.Printf("ws: pong write error %s: %v", client.sessionID, err)
+		}
 	default:
 		log.Printf("ws: unknown message type: %s", msg.Type)
 	}

@@ -198,6 +198,7 @@ const onIconSelect = (result: SmartIconMatchResult) => {
 
 const {
   smartMatchCandidates,
+  selectedSmartMatchCandidateUrl,
   showSmartMatchModal,
   isSmartMatching,
   smartMatchIcons,
@@ -945,7 +946,12 @@ const submit = async () => {
                     type="button"
                     @click="selectSmartMatchCandidate(candidate)"
                     :title="candidate.label || getIconNameFromUrl(candidate.url)"
-                    class="group w-20 h-20 rounded-xl border border-transparent bg-white/90 hover:border-blue-200 hover:bg-white hover:shadow-sm flex items-center justify-center overflow-hidden transition-all"
+                    class="group w-20 h-20 rounded-xl border-2 bg-white/90 hover:border-blue-200 hover:bg-white hover:shadow-sm flex items-center justify-center overflow-hidden transition-all"
+                    :class="
+                      selectedSmartMatchCandidateUrl === candidate.url
+                        ? 'border-blue-500 ring-2 ring-blue-100 shadow-sm'
+                        : 'border-transparent'
+                    "
                   >
                     <IconShape
                       :shape="effectiveIconShape"
