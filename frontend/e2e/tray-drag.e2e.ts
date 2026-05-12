@@ -72,9 +72,9 @@ test.beforeEach(async ({ page }) => {
     });
   });
   await page.addInitScript((cache) => {
-    localStorage.setItem("flat-nas-data-cache", JSON.stringify(cache));
-    localStorage.setItem("flat-nas-token", "e2e-token");
-    localStorage.setItem("flat-nas-username", "admin");
+    localStorage.setItem("start-deck-data-cache", JSON.stringify(cache));
+    localStorage.setItem("start-deck-token", "e2e-token");
+    localStorage.setItem("start-deck-username", "admin");
   }, seedCache);
 });
 
@@ -85,7 +85,7 @@ test("托盘拖拽不影响分组数据且位置更新", async ({ page }) => {
   await expect(page.getByTestId("tray-card-tray-card-1")).toHaveAttribute("draggable", "true");
 
   const beforeGroups = await page.evaluate(() => {
-    const json = localStorage.getItem("flat-nas-data-cache") || "{}";
+    const json = localStorage.getItem("start-deck-data-cache") || "{}";
     const parsed = JSON.parse(json);
     return parsed.groups;
   });
@@ -103,7 +103,7 @@ test("托盘拖拽不影响分组数据且位置更新", async ({ page }) => {
   ).toBeVisible();
 
   const afterGroups = await page.evaluate(() => {
-    const json = localStorage.getItem("flat-nas-data-cache") || "{}";
+    const json = localStorage.getItem("start-deck-data-cache") || "{}";
     const parsed = JSON.parse(json);
     return parsed.groups;
   });

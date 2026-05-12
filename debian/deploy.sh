@@ -12,14 +12,14 @@ IFS=$'\n\t'
 #   chmod +x deploy.sh
 #   sudo ./deploy.sh
 
-APP_NAME="flatnas"
-APP_USER="flatnas"
-SERVICE_NAME="flatnas"
-ICON_SERVICE_NAME="flatnas-iconserver"
-ICON_SERVICE_BINARY="flatnas-iconserver"
+APP_NAME="startdeck"
+APP_USER="startdeck"
+SERVICE_NAME="startdeck"
+ICON_SERVICE_NAME="startdeck-iconserver"
+ICON_SERVICE_BINARY="startdeck-iconserver"
 BASE_DIR="$(cd "$(dirname "$0")" && pwd)"
-BIN_SRC="${BASE_DIR}/flatnas"
-BIN_SRC_ALT="${BASE_DIR}/flatnas-server"
+BIN_SRC="${BASE_DIR}/startdeck"
+BIN_SRC_ALT="${BASE_DIR}/startdeck-server"
 ICON_BIN_SRC="${BASE_DIR}/${ICON_SERVICE_BINARY}"
 DIST_SRC="${BASE_DIR}/dist"
 DIST_SRC_ALT="${BASE_DIR}/server/public"
@@ -177,7 +177,7 @@ load_existing_config() {
 write_systemd_service() {
   cat > "${SYSTEMD_SERVICE}" <<EOF
 [Unit]
-Description=FlatNas Go Service
+Description=StartDeck Go Service
 Wants=${ICON_SERVICE_NAME}.service
 After=network.target ${ICON_SERVICE_NAME}.service
 
@@ -232,7 +232,7 @@ EOF
 write_icon_systemd_service() {
   cat > "${ICON_SYSTEMD_SERVICE}" <<EOF
 [Unit]
-Description=FlatNas Icon Service
+Description=StartDeck Icon Service
 After=network.target
 
 [Service]
@@ -340,7 +340,7 @@ EOF
 }
 
 verify_deploy() {
-  systemctl is-active --quiet "${SERVICE_NAME}" || fail_with_tip "flatnas 服务未处于运行状态"
+  systemctl is-active --quiet "${SERVICE_NAME}" || fail_with_tip "startdeck 服务未处于运行状态"
   systemctl is-active --quiet "${ICON_SERVICE_NAME}" || fail_with_tip "图标服务未处于运行状态"
   systemctl is-active --quiet nginx || fail_with_tip "nginx 服务未处于运行状态"
   
@@ -406,23 +406,23 @@ require_root
 require_debian
 
 echo "=============================="
-echo "FlatNas 部署脚本 (Nginx + Go)"
+echo "StartDeck 部署脚本 (Nginx + Go)"
 echo "=============================="
 
 load_existing_config
 
 # 端口配置
-FRONTEND_PORT="${FLATNAS_FRONTEND_PORT:-}"
+FRONTEND_PORT="${STARTDECK_FRONTEND_PORT:-}"
 if [ -z "${FRONTEND_PORT}" ]; then
   FRONTEND_PORT="$(prompt_port "前端访问端口 (Nginx)" "23000" "${EXISTING_FRONTEND_PORT}")"
 fi
 
-BACKEND_PORT="${FLATNAS_BACKEND_PORT:-}"
+BACKEND_PORT="${STARTDECK_BACKEND_PORT:-}"
 if [ -z "${BACKEND_PORT}" ]; then
   BACKEND_PORT="$(prompt_port "后端服务端口 (Internal)" "3000" "${EXISTING_BACKEND_PORT}")"
 fi
 
-ICON_SERVER_PORT="${FLATNAS_ICON_SERVER_PORT:-}"
+ICON_SERVER_PORT="${STARTDECK_ICON_SERVER_PORT:-}"
 if [ -z "${ICON_SERVER_PORT}" ]; then
   ICON_SERVER_PORT="$(prompt_port "图标服务端口 (Internal)" "8080" "${EXISTING_ICON_SERVER_PORT}")"
 fi

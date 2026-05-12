@@ -88,7 +88,7 @@ const onIframeLoad = () => {
   if (iframeRef.value?.contentWindow) {
     iframeRef.value.contentWindow.postMessage(
       {
-        type: "FLATNAS_INFO",
+        type: "STARTDECK_INFO",
         payload: {
           origin: window.location.origin,
           apiBase: getApiBaseUrl(),

@@ -1,10 +1,10 @@
-# FlatNas
+# StartDeck
 
-[![GitHub](https://img.shields.io/badge/GitHub-FlatNas-181717?style=flat&logo=github&logoColor=white)](https://github.com/Garry-QD/FlatNas)
-[![Gitee](https://img.shields.io/badge/Gitee-FlatNas-C71D23?style=flat&logo=gitee&logoColor=white)](https://gitee.com/gjx0808/FlatNas)
-[![Docker Image](https://img.shields.io/badge/Docker-qdnas%2Fflatnas-2496ED?style=flat&logo=docker&logoColor=white)](https://hub.docker.com/r/qdnas/flatnas)
+[![GitHub](https://img.shields.io/badge/GitHub-StartDeck-181717?style=flat&logo=github&logoColor=white)](https://github.com/Garry-QD/StartDeck)
+[![Gitee](https://img.shields.io/badge/Gitee-StartDeck-C71D23?style=flat&logo=gitee&logoColor=white)](https://gitee.com/gjx0808/StartDeck)
+[![Docker Image](https://img.shields.io/badge/Docker-qdnas%2Fstartdeck-2496ED?style=flat&logo=docker&logoColor=white)](https://hub.docker.com/r/qdnas/startdeck)
 
-FlatNas 是一个轻量级、高度可定制的个人导航页与仪表盘系统。它基于 Vue 3 与 Go(Gin) 构建，旨在为 NAS 用户、极客和开发者提供一个优雅的浏览器起始页。
+StartDeck 是一个轻量级、高度可定制的个人导航页与仪表盘系统。它基于 Vue 3 与 Go(Gin) 构建，旨在为 NAS 用户、极客和开发者提供一个优雅的浏览器起始页。
 交流QQ群:613835409
 ![debian/1.png](public/1.png)
 ![debian/7.png](public/7.png)
@@ -29,7 +29,7 @@ FlatNas 是一个轻量级、高度可定制的个人导航页与仪表盘系统
 
 ### 🧩 丰富的小组件
 
-FlatNas 内置了多种实用的小组件，满足日常需求：
+StartDeck 内置了多种实用的小组件，满足日常需求：
 ![tools.png](public/tools.png)
 
 - **文件传输助手**: 强大的跨设备传输工具。支持发送文本、文件与图片；支持断点续传、大文件上传；提供专属**图片**视图，自动归类并预览所有图片文件。
@@ -50,7 +50,7 @@ FlatNas 内置了多种实用的小组件，满足日常需求：
 
 ### 🎨 个性化定制
 
-FlatNas 提供了丰富的自定义选项，并自建了60000个图标的图标库，满足不同用户的需求：
+StartDeck 提供了丰富的自定义选项，并自建了60000个图标的图标库，满足不同用户的需求：
 ![icon.png](public/icon.png)
 
 - **自定义组件**: 支持添加自定义 HTML 组件，实现更多功能。
@@ -59,7 +59,7 @@ FlatNas 提供了丰富的自定义选项，并自建了60000个图标的图标�
 - **自定义HTML**: 支持添加自定义 HTML 代码，实现更多定制化效果。
 - **天气组件**: 支持添加天气组件，显示当前天气情况。
 - **图标管理**: 内置图标库，支持上传自定义图片，并全面支持 **Hex 颜色代码** (如 `#ffffff`) 自定义图标背景色。
-- **站点元数据服务**: 通过仓库内 Go `icon-service/` 获取网站标题、描述和图标，部署脚本会随 FlatNas 一起安装。
+- **站点元数据服务**: 通过仓库内 Go `icon-service/` 获取网站标题、描述和图标，部署脚本会随 StartDeck 一起安装。
 - **背景设置**: 支持自定义壁纸。
 - **分组卡片背景**: 支持在分组设置中统一配置该组所有卡片的背景（图片、模糊、遮罩），实现风格统一的视觉效果。
 - **访客统计**: 底部页脚显示网站总访问量、今日访问量及当前在线时长（需在设置中开启）。
@@ -71,7 +71,7 @@ FlatNas 提供了丰富的自定义选项，并自建了60000个图标的图标�
 
 ## 🌐 代理配置
 
-FlatNas 支持通过后端代理转发请求，以解决内网服务无法直接访问外网资源的问题，或实现简单的隐私保护。
+StartDeck 支持通过后端代理转发请求，以解决内网服务无法直接访问外网资源的问题，或实现简单的隐私保护。
 
 ### 启用方法
 
@@ -86,7 +86,7 @@ FlatNas 支持通过后端代理转发请求，以解决内网服务无法直接
    ```
 
 2. **前端开启**
-   当环境变量配置正确后，在卡片编辑或万能窗口配置中，会显示“代理”开关。开启后，该组件的所有请求将通过 FlatNas 后端服务器代为转发。
+   当环境变量配置正确后，在卡片编辑或万能窗口配置中，会显示“代理”开关。开启后，该组件的所有请求将通过 StartDeck 后端服务器代为转发。
 
 ### 调试与排查
 
@@ -98,7 +98,7 @@ FlatNas 支持通过后端代理转发请求，以解决内网服务无法直接
 
 ## 🌐 智能网络环境检测
 
-FlatNas 后端集成了智能网络环境识别功能，能够根据用户的访问来源自动切换内外网访问策略，完美解决混合网络环境下的访问难题。
+StartDeck 后端集成了智能网络环境识别功能，能够根据用户的访问来源自动切换内外网访问策略，完美解决混合网络环境下的访问难题。
 
 - **多维度识别**: 结合 **客户端 IP**、**访问域名** 和 **网络延迟** 三个维度，精准判断用户当前所处的网络环境（局域网/互联网）。
 - **自动路由**: 当检测到用户处于局域网（LAN）时，系统会自动优先使用配置的 **内网地址 (LanUrl)**，实现高速直连；在公网环境则自动切换至 **外网地址**。
@@ -112,7 +112,7 @@ FlatNas 后端集成了智能网络环境识别功能，能够根据用户的访
 - Nginx / 宝塔反代
 - Cloudflare 代理或 Cloudflare Tunnel
 - FRP / 其他内网穿透
-- 子路径部署，如 `/flatnas/`
+- 子路径部署，如 `/startdeck/`
 - 前后端分离部署
 
 请参考专门说明：[`README_NETWORK.md`](README_NETWORK.md)
@@ -124,7 +124,7 @@ FlatNas 后端集成了智能网络环境识别功能，能够根据用户的访
 适用于 Debian/Ubuntu，无需 Docker，脚本会自动下载最新 Release 并完成部署。
 
 ```bash
-wget -O deploy_debian.sh https://raw.githubusercontent.com/Garry-QD/FlatNas/main/deploy_debian.sh
+wget -O deploy_debian.sh https://raw.githubusercontent.com/Garry-QD/StartDeck/main/deploy_debian.sh
 chmod +x deploy_debian.sh
 sudo ./deploy_debian.sh
 ```
@@ -134,7 +134,7 @@ sudo ./deploy_debian.sh
 部署完成后，使用管理脚本进行常用运维操作（查看状态、修改端口、配置 HTTPS、查看日志、卸载）。
 
 ```bash
-wget -O manage.sh https://raw.githubusercontent.com/Garry-QD/FlatNas/main/manage.sh
+wget -O manage.sh https://raw.githubusercontent.com/Garry-QD/StartDeck/main/manage.sh
 chmod +x manage.sh
 sudo ./manage.sh
 ```
@@ -145,8 +145,8 @@ sudo ./manage.sh
 - 修改端口配置：修改前端端口与后端端口并自动重启服务
 - 配置 HTTPS：写入证书并更新 Nginx 配置
 - 查看实时日志：跟随服务日志
-- 重启所有服务：重启 Nginx 与 FlatNas 服务
-- 卸载服务：彻底卸载 FlatNas、配置与日志
+- 重启所有服务：重启 Nginx 与 StartDeck 服务
+- 卸载服务：彻底卸载 StartDeck、配置与日志
 
 #### Debian/Ubuntu 卸载（命令行）
 
@@ -161,17 +161,17 @@ sudo ./debian/manage.sh
 适用于已能访问服务器的场景，上传 Release 包内容后直接运行。
 
 1. 从 GitHub Releases 下载 `release.zip`
-2. 上传到服务器并解压到任意目录（例如 `/opt/flatnas`）
+2. 上传到服务器并解压到任意目录（例如 `/opt/startdeck`）
 3. 进入解压目录并启动服务
 
 ```bash
-cd /opt/flatnas
-chmod +x flatnas-server
-chmod +x flatnas-iconserver
+cd /opt/startdeck
+chmod +x startdeck-server
+chmod +x startdeck-iconserver
 cd icon-service
-CONFIG_FILE=./config.json ../flatnas-iconserver &
+CONFIG_FILE=./config.json ../startdeck-iconserver &
 cd ..
-ICON_SERVER_BASE_URL=http://127.0.0.1:8080 ./flatnas-server
+ICON_SERVER_BASE_URL=http://127.0.0.1:8080 ./startdeck-server
 ```
 
 访问地址：`http://<服务器IP>:3000`
@@ -190,8 +190,8 @@ docker run -d \
   -e ICON_SERVER_BASE_URL=http://127.0.0.1:8080 \
   -e ICON_SERVER_TIMEOUT_MS=5000 \
   -v /var/run/docker.sock:/var/run/docker.sock \
-  --name flatnas \
-  qdnas/flatnas:latest
+  --name startdeck \
+  qdnas/startdeck:latest
 ```
 
 ### 4. Docker Compose 部署
@@ -200,9 +200,9 @@ docker run -d \
 version: '3.8'
 
 services:
-  flatnas:
-    image: qdnas/flatnas:latest
-    container_name: flatnas
+  startdeck:
+    image: qdnas/startdeck:latest
+    container_name: startdeck
     restart: unless-stopped
     ports:
       - '23000:3000'
@@ -212,7 +212,7 @@ services:
       - ICON_SERVER_BASE_URL=http://127.0.0.1:8080
       - ICON_SERVER_TIMEOUT_MS=5000
       # 如需让后端自己识别子路径，可启用：
-      # - BASE_PATH=/flatnas
+      # - BASE_PATH=/startdeck
     volumes:
       - ./data:/app/server/data
       - ./doc:/app/server/doc
@@ -228,7 +228,7 @@ services:
 - **默认密码**: 系统初始密码为 `admin`，请登录后在设置中及时修改。
 - **数据文件**: 所有配置（布局、组件、书签等）均存储在 `server/data/data.json` 中。
 - **音乐文件**: 将 MP3 文件放入 `server/music` 目录，刷新页面后即可在播放器中看到。
-- **站点图标数据**: Go 图标服务使用 `icon-service/data`，Docker 挂载为 `/app/icon-service/data`，Debian 安装到 `/opt/flatnas/icon-service/data`。
+- **站点图标数据**: Go 图标服务使用 `icon-service/data`，Docker 挂载为 `/app/icon-service/data`，Debian 安装到 `/opt/startdeck/icon-service/data`。
 - **Docker 自动升级镜像**:
   - 入口：设置 → Docker 管理 → 自动升级镜像(每2小时)。
   - 关闭时：后台不会进行任何镜像拉取或版本对比。
@@ -247,7 +247,7 @@ services:
 在 **设置** -> **自定义 CSS** 中，您可以编写全局生效的 CSS 样式。
 
 **增强语法：**
-FlatNas 支持以下自定义标签，自动转换为媒体查询，方便响应式适配：
+StartDeck 支持以下自定义标签，自动转换为媒体查询，方便响应式适配：
 
 - `<mobile>...</mobile>`: 仅在移动端生效 (`max-width: 768px`)
 - `<desktop>...</desktop>`: 仅在桌面端生效 (`min-width: 769px`)
@@ -318,4 +318,4 @@ export default {
 
 ---
 
-Enjoy your FlatNas! 🚀
+Enjoy your StartDeck! 🚀

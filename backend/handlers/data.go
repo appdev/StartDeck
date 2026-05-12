@@ -2,10 +2,10 @@ package handlers
 
 import (
 	"crypto/sha256"
-	"flatnasgo-backend/config"
-	"flatnasgo-backend/models"
-	"flatnasgo-backend/utils"
-	"flatnasgo-backend/ws"
+	"startdeck-backend/config"
+	"startdeck-backend/models"
+	"startdeck-backend/utils"
+	"startdeck-backend/ws"
 	"fmt"
 	"log"
 	"net/http"

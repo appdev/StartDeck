@@ -191,7 +191,7 @@ export const useSyncStore = defineStore("sync", () => {
         : "";
     if (!nextUsername || nextUsername === auth.username) return;
     auth.username = nextUsername;
-    localStorage.setItem("flat-nas-username", nextUsername);
+    localStorage.setItem("start-deck-username", nextUsername);
   };
 
   // ---- HTTP Polling ----
@@ -496,8 +496,8 @@ export const useSyncStore = defineStore("sync", () => {
     stopPingCheck();
     auth.token = "";
     auth.username = "";
-    localStorage.removeItem("flat-nas-token");
-    localStorage.removeItem("flat-nas-username");
+    localStorage.removeItem("start-deck-token");
+    localStorage.removeItem("start-deck-username");
     await init();
   };
 

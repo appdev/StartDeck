@@ -319,7 +319,7 @@ func GetSiteIcon(c *gin.Context) {
 		c.String(http.StatusBadGateway, "failed to create icon request")
 		return
 	}
-	req.Header.Set("User-Agent", "FlatNas/1.0")
+	req.Header.Set("User-Agent", "StartDeck/1.0")
 
 	client := &http.Client{Timeout: siteIconProviderTimeout()}
 	resp, err := client.Do(req)

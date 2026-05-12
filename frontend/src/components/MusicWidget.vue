@@ -831,7 +831,7 @@ const fetchTracks = async () => {
           }
         }
       } catch (e) {
-        console.error("FlatNas music-list fallback failed", e);
+        console.error("StartDeck music-list fallback failed", e);
       }
     }
 
@@ -1221,7 +1221,7 @@ const playTrack = async (
         .join("/");
     };
 
-    // If we are using the default API (FlatNas) and the ID looks like a file path
+    // If we are using the default API (StartDeck) and the ID looks like a file path
     const isDefaultApi =
       API_BASE.value === "/api" || API_BASE.value === "/api/";
     // Simple check if it looks like a file (has extension)
@@ -1385,7 +1385,7 @@ const prevTrack = () => {
 };
 
 // --- Storage Logic ---
-const getStorageKey = () => `flatnas_music_player_state_${props.widget.id}`;
+const getStorageKey = () => `startdeck_music_player_state_${props.widget.id}`;
 
 const savePlaybackState = useDebounceFn(() => {
   const state = {
@@ -1606,7 +1606,7 @@ const stopPolling = () => {
 
 onMounted(() => {
   const globalEl = document.getElementById(
-    "flatnas-global-audio",
+    "startdeck-global-audio",
   ) as HTMLAudioElement | null;
   if (globalEl) {
     useGlobalAudio.value = true;

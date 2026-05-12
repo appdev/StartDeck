@@ -6,7 +6,7 @@ import { useMainStore } from "../stores/main";
 const store = useMainStore();
 const isPlaying = ref(false);
 const audioRef = ref<HTMLAudioElement | null>(null);
-const musicVolume = useStorage<number>("flat-nas-music-volume", 0.7);
+const musicVolume = useStorage<number>("start-deck-music-volume", 0.7);
 const musicList = ref<string[]>([]);
 const currentSongName = ref("加载中...");
 const titleWrapRef = ref<HTMLElement | null>(null);

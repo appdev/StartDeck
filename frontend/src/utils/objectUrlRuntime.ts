@@ -40,7 +40,7 @@ export type ObjectUrlRuntimeReport = {
 
 declare global {
   interface Window {
-    __flatnasObjectUrlRuntime?: {
+    __startdeckObjectUrlRuntime?: {
       originalCreate: typeof URL.createObjectURL;
       originalRevoke: typeof URL.revokeObjectURL;
       initialized: boolean;
@@ -143,7 +143,7 @@ const untrack = (url: string) => {
 };
 
 const createAndTrack = (obj: Blob | MediaSource, managed: boolean, key?: string) => {
-  const runtime = window.__flatnasObjectUrlRuntime;
+  const runtime = window.__startdeckObjectUrlRuntime;
   if (!runtime) return URL.createObjectURL(obj);
   const url = runtime.originalCreate(obj);
   const size = obj instanceof Blob ? obj.size : 0;
@@ -158,7 +158,7 @@ const sweep = () => {
     if (entry.refCount > 0) continue;
     if (now - entry.lastUsed < IDLE_TTL) continue;
     if (entry.key) keyMap.delete(entry.key);
-    const runtime = window.__flatnasObjectUrlRuntime;
+    const runtime = window.__startdeckObjectUrlRuntime;
     if (runtime) runtime.originalRevoke(entry.url);
     untrack(entry.url);
   }
@@ -172,7 +172,7 @@ const sweep = () => {
     for (const entry of remaining) {
       if (count <= MAX_MANAGED_COUNT && bytes <= MAX_MANAGED_BYTES) break;
       if (entry.key) keyMap.delete(entry.key);
-      const runtime = window.__flatnasObjectUrlRuntime;
+      const runtime = window.__startdeckObjectUrlRuntime;
       if (runtime) runtime.originalRevoke(entry.url);
       untrack(entry.url);
       count -= 1;
@@ -201,14 +201,14 @@ const startTimers = () => {
 };
 
 export const initObjectUrlRuntime = () => {
-  if (!window.__flatnasObjectUrlRuntime) {
-    window.__flatnasObjectUrlRuntime = {
+  if (!window.__startdeckObjectUrlRuntime) {
+    window.__startdeckObjectUrlRuntime = {
       originalCreate: URL.createObjectURL.bind(URL),
       originalRevoke: URL.revokeObjectURL.bind(URL),
       initialized: false,
     };
   }
-  const runtime = window.__flatnasObjectUrlRuntime;
+  const runtime = window.__startdeckObjectUrlRuntime;
   if (!runtime || runtime.initialized) return;
   runtime.initialized = true;
   const originalCreate = runtime.originalCreate;
@@ -276,7 +276,7 @@ export const releaseObjectUrl = (key: string, immediate?: boolean) => {
     entry.lastUsed = Date.now();
   }
   if (immediate) {
-    const runtime = window.__flatnasObjectUrlRuntime;
+    const runtime = window.__startdeckObjectUrlRuntime;
     if (runtime) runtime.originalRevoke(url);
     untrack(url);
     keyMap.delete(key);

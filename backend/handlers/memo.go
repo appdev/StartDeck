@@ -4,7 +4,7 @@ import (
 	"strings"
 	"time"
 
-	"flatnasgo-backend/config"
+	"startdeck-backend/config"
 
 	socketio "github.com/googollee/go-socket.io"
 	"github.com/golang-jwt/jwt/v5"

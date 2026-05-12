@@ -174,7 +174,7 @@ go run .
 或：
 
 ```bash
-./flatnas-iconserver
+./startdeck-iconserver
 ```
 
 ## API
@@ -227,10 +227,10 @@ curl -X DELETE 'http://127.0.0.1:8080/api/icon/cache?host=apkdv.com'
 ## 构建 Linux x86_64
 
 ```bash
-GOOS=linux GOARCH=amd64 go build -o flatnas-iconserver .
+GOOS=linux GOARCH=amd64 go build -o startdeck-iconserver .
 ```
 
-## FlatNas 接入
+## StartDeck 接入
 
 StartDeck server 保持前端 BFF，不直接让前端访问本服务。
 
@@ -241,4 +241,4 @@ ICON_SERVER_BASE_URL=http://127.0.0.1:8080
 ICON_SERVER_TIMEOUT_MS=5000
 ```
 
-这样 FlatNas 后端会继续对前端暴露 `/api/site/metadata` 与 `/api/site/icon`，内部再调用本服务。
+这样 StartDeck 后端会继续对前端暴露 `/api/site/metadata` 与 `/api/site/icon`，内部再调用本服务。

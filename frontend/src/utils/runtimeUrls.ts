@@ -7,7 +7,7 @@ type RuntimeConfig = {
 
 declare global {
   interface Window {
-    __FLATNAS_RUNTIME_CONFIG__?: RuntimeConfig;
+    __STARTDECK_RUNTIME_CONFIG__?: RuntimeConfig;
   }
 
   interface ImportMetaEnv {
@@ -103,7 +103,7 @@ const stripApiSuffix = (value: string) => {
 
 const getRuntimeConfig = (): RuntimeConfig => {
   if (typeof window === "undefined") return {};
-  return window.__FLATNAS_RUNTIME_CONFIG__ || {};
+  return window.__STARTDECK_RUNTIME_CONFIG__ || {};
 };
 
 const detectBasePathFromLocation = () => {
@@ -222,7 +222,7 @@ export const resolveManagedUrl = (value: string) => {
 
 export const installFetchUrlPatch = () => {
   if (typeof window === "undefined" || typeof window.fetch !== "function") return;
-  const patchedFlag = "__flatnasFetchPatched__";
+  const patchedFlag = "__startdeckFetchPatched__";
   if ((window.fetch as typeof window.fetch & { [patchedFlag]?: boolean })[patchedFlag]) return;
 
   const nativeFetch = window.fetch.bind(window);

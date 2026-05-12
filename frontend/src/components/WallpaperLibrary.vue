@@ -18,7 +18,7 @@ const store = useMainStore();
 /** GET / multipart：只带 Bearer，不设 Content-Type（避免破坏 FormData） */
 const authHeadersOnly = (): Record<string, string> => {
   const h: Record<string, string> = {};
-  const t = store.token || localStorage.getItem("flat-nas-token");
+  const t = store.token || localStorage.getItem("start-deck-token");
   if (t) h["Authorization"] = `Bearer ${t}`;
   return h;
 };

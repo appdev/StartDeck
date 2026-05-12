@@ -1,10 +1,10 @@
-# FlatNas
+# StartDeck
 
-[![GitHub](https://img.shields.io/badge/GitHub-FlatNas-181717?style=flat&logo=github&logoColor=white)](https://github.com/Garry-QD/FlatNas)
-[![Gitee](https://img.shields.io/badge/Gitee-FlatNas-C71D23?style=flat&logo=gitee&logoColor=white)](https://gitee.com/gjx0808/FlatNas)
-[![Docker Image](https://img.shields.io/badge/Docker-qdnas%2Fflatnas-2496ED?style=flat&logo=docker&logoColor=white)](https://hub.docker.com/r/qdnas/flatnas)
+[![GitHub](https://img.shields.io/badge/GitHub-StartDeck-181717?style=flat&logo=github&logoColor=white)](https://github.com/Garry-QD/StartDeck)
+[![Gitee](https://img.shields.io/badge/Gitee-StartDeck-C71D23?style=flat&logo=gitee&logoColor=white)](https://gitee.com/gjx0808/StartDeck)
+[![Docker Image](https://img.shields.io/badge/Docker-qdnas%2Fstartdeck-2496ED?style=flat&logo=docker&logoColor=white)](https://hub.docker.com/r/qdnas/startdeck)
 
-FlatNas 是一个轻量级、高度可定制的个人导航页与仪表盘系统。它基于 Vue 3 和 Go/Gin 构建，旨在为 NAS 用户、极客和开发者提供一个优雅的浏览器起始页。
+StartDeck 是一个轻量级、高度可定制的个人导航页与仪表盘系统。它基于 Vue 3 和 Go/Gin 构建，旨在为 NAS 用户、极客和开发者提供一个优雅的浏览器起始页。
 交流QQ群:613835409
 
 ## ✨ 主要功能
@@ -20,7 +20,7 @@ FlatNas 是一个轻量级、高度可定制的个人导航页与仪表盘系统
 
 ### 🧩 丰富的小组件
 
-FlatNas 内置了多种实用的小组件，满足日常需求：
+StartDeck 内置了多种实用的小组件，满足日常需求：
 
 - **文件传输助手**: 强大的跨设备传输工具。支持发送文本、文件与图片；支持断点续传、大文件上传；提供专属**图片**视图，自动归类并预览所有图片文件。
 - **书签组件**: 快速访问常用网站，支持自定义图标。首次启动时会自动填充常用的 10 个网站（如 GitHub, Bilibili 等）。
@@ -46,7 +46,7 @@ FlatNas 内置了多种实用的小组件，满足日常需求：
 
 ## 🌐 代理配置
 
-FlatNas 支持通过后端代理转发请求，以解决内网服务无法直接访问外网资源的问题，或实现简单的隐私保护。
+StartDeck 支持通过后端代理转发请求，以解决内网服务无法直接访问外网资源的问题，或实现简单的隐私保护。
 
 ### 启用方法
 
@@ -61,7 +61,7 @@ FlatNas 支持通过后端代理转发请求，以解决内网服务无法直接
    ```
 
 2. **前端开启**
-   当环境变量配置正确后，在卡片编辑或万能窗口配置中，会显示“代理”开关。开启后，该组件的所有请求将通过 FlatNas 后端服务器代为转发。
+   当环境变量配置正确后，在卡片编辑或万能窗口配置中，会显示“代理”开关。开启后，该组件的所有请求将通过 StartDeck 后端服务器代为转发。
 
 ### 调试与排查
 
@@ -73,7 +73,7 @@ FlatNas 支持通过后端代理转发请求，以解决内网服务无法直接
 
 ## 🌐 智能网络环境检测
 
-FlatNas 后端集成了智能网络环境识别功能，能够根据用户的访问来源自动切换内外网访问策略，完美解决混合网络环境下的访问难题。
+StartDeck 后端集成了智能网络环境识别功能，能够根据用户的访问来源自动切换内外网访问策略，完美解决混合网络环境下的访问难题。
 
 - **多维度识别**: 结合 **客户端 IP**、**访问域名** 和 **网络延迟** 三个维度，精准判断用户当前所处的网络环境（局域网/互联网）。
 - **自动路由**: 当检测到用户处于局域网（LAN）时，系统会自动优先使用配置的 **内网地址 (LanUrl)**，实现高速直连；在公网环境则自动切换至 **外网地址**。
@@ -87,7 +87,7 @@ FlatNas 后端集成了智能网络环境识别功能，能够根据用户的访
 
    ```bash
    git clone <your-repo-url>
-   cd FlatNas
+   cd StartDeck
    ```
 
 2. **安装依赖**
@@ -141,7 +141,7 @@ FlatNas 后端集成了智能网络环境识别功能，能够根据用户的访
 1. **构建镜像**
 
    ```bash
-   docker build -t flatnas .
+   docker build -t startdeck .
    ```
 
 2. **运行容器**
@@ -158,8 +158,8 @@ FlatNas 后端集成了智能网络环境识别功能，能够根据用户的访
      -e ICON_SERVER_BASE_URL=http://127.0.0.1:8080 \
      -e ICON_SERVER_TIMEOUT_MS=5000 \
      -v /var/run/docker.sock:/var/run/docker.sock \
-     --name flatnas \
-     qdnas/flatnas
+     --name startdeck \
+     qdnas/startdeck
    ```
 
    > **注意**: 建议挂载 `data`、`doc`、`music`、`PC`、`APP` 和 `icon-service-data` 目录，以确保配置数据、文件传输记录、媒体文件、自定义壁纸和图标服务缓存不会丢失。若需要使用 Docker 管理功能，必须挂载 `/var/run/docker.sock`。
@@ -170,9 +170,9 @@ FlatNas 后端集成了智能网络环境识别功能，能够根据用户的访
    version: '3.8'
 
    services:
-     flatnas:
-       image: qdnas/flatnas:latest
-       container_name: flatnas
+     startdeck:
+       image: qdnas/startdeck:latest
+       container_name: startdeck
        restart: unless-stopped
        ports:
          - '23000:3000'
@@ -199,14 +199,14 @@ FlatNas 后端集成了智能网络环境识别功能，能够根据用户的访
 无需手动下载代码，直接运行以下命令即可：
 
 ```bash
-wget -O deploy.sh https://raw.githubusercontent.com/Garry-QD/FlatNas/main/deploy.sh && sudo bash deploy.sh install
+wget -O deploy.sh https://raw.githubusercontent.com/Garry-QD/StartDeck/main/deploy.sh && sudo bash deploy.sh install
 ```
 
 ### 手动安装
 
 ```bash
-git clone https://github.com/Garry-QD/FlatNas.git
-cd FlatNas
+git clone https://github.com/Garry-QD/StartDeck.git
+cd StartDeck
 chmod +x deploy.sh
 sudo ./deploy.sh install
 ```
@@ -216,7 +216,7 @@ sudo ./deploy.sh install
 - **默认密码**: 系统初始密码为 `admin`，请登录后在设置中及时修改。
 - **数据文件**: 所有配置（布局、组件、书签等）均存储在 `server/data/data.json` 中。
 - **音乐文件**: 将 MP3 文件放入 `server/music` 目录，刷新页面后即可在播放器中看到。
-- **站点图标数据**: `icon-service/data` 保存种子图标、运行期缓存和站点 metadata，Debian 部署路径为 `/opt/flatnas/icon-service/data`。
+- **站点图标数据**: `icon-service/data` 保存种子图标、运行期缓存和站点 metadata，Debian 部署路径为 `/opt/startdeck/icon-service/data`。
 - CGI 脚本: 将自定义脚本放入 `server/cgi-bin` 目录，可通过 `/cgi-bin/script.cgi` 访问。
 - **Docker 自动升级镜像**:
   - 入口：设置 → Docker 管理 → 自动升级镜像(每2小时)。
@@ -233,7 +233,7 @@ sudo ./deploy.sh install
 
 ## 🛠️ 高级定制 (Advanced Customization)
 
-FlatNas 提供了强大的自定义能力，允许开发者或高级用户通过代码深度定制界面与交互。以下文档旨在帮助您（或您的 AI 助手）理解如何编写自定义内容。
+StartDeck 提供了强大的自定义能力，允许开发者或高级用户通过代码深度定制界面与交互。以下文档旨在帮助您（或您的 AI 助手）理解如何编写自定义内容。
 
 ### 🧩 自定义组件 (Custom Widget)
 
@@ -248,7 +248,7 @@ FlatNas 提供了强大的自定义能力，允许开发者或高级用户通过
 **AI 提示词参考 (Prompt):**
 如果您希望 AI 帮您生成组件，可以提供以下上下文：
 
-> 请生成一个 FlatNas 自定义组件配置。
+> 请生成一个 StartDeck 自定义组件配置。
 > 格式：JSON
 > 包含字段：`html` (字符串), `css` (字符串)
 > 要求：
@@ -270,7 +270,7 @@ FlatNas 提供了强大的自定义能力，允许开发者或高级用户通过
 在 **设置** -> **自定义 CSS** 中，您可以编写全局生效的 CSS 样式。
 
 **增强语法：**
-FlatNas 支持以下自定义标签，自动转换为媒体查询，方便响应式适配：
+StartDeck 支持以下自定义标签，自动转换为媒体查询，方便响应式适配：
 
 - `<mobile>...</mobile>`: 仅在移动端生效 (`max-width: 768px`)
 - `<desktop>...</desktop>`: 仅在桌面端生效 (`min-width: 769px`)
@@ -347,25 +347,25 @@ export default {
 
 ## � 多项目并行开发与集成 (Parallel Development)
 
-如果您正在开发多个复杂的子项目（如独立的 React/Vue 组件或工具应用），并希望将其集成到 FlatNas 中，以下是推荐的最佳实践。
+如果您正在开发多个复杂的子项目（如独立的 React/Vue 组件或工具应用），并希望将其集成到 StartDeck 中，以下是推荐的最佳实践。
 
 ### 1. 运行时集成 (Runtime Integration)
 
 #### 方案 A: Iframe 集成（最简单、隔离性最好）
 
-这是将独立 Web 应用集成到 FlatNas 的最推荐方式。
+这是将独立 Web 应用集成到 StartDeck 的最推荐方式。
 
-1. 将您的子项目独立构建并部署（或作为静态文件放入 FlatNas）。
-2. 在 FlatNas 中添加 **"Iframe 网页"** 组件。
+1. 将您的子项目独立构建并部署（或作为静态文件放入 StartDeck）。
+2. 在 StartDeck 中添加 **"Iframe 网页"** 组件。
 3. 填入子项目的 URL。
    - 优势：完全的样式和 JS 隔离，互不干扰，天然支持并行运行。
    - 劣势：与主应用通信较为麻烦（需通过 `postMessage`）。
 
 #### 方案 B: 静态资源托管 + 自定义 JS（深度集成）
 
-如果您希望子应用能与 FlatNas 深度交互（如读取 Store 数据），可以将子应用构建为库 (Library)。
+如果您希望子应用能与 StartDeck 深度交互（如读取 Store 数据），可以将子应用构建为库 (Library)。
 
-1. **放置资源**: FlatNas 内置了一个公共静态目录 `server/public`。
+1. **放置资源**: StartDeck 内置了一个公共静态目录 `server/public`。
    - 在 `server` 目录下新建 `public` 文件夹（如果没有）。
    - 将您的子项目构建产物（如 `my-widget.js`, `style.css`）放入其中。
    - 访问路径为: `/public/my-widget.js`。
@@ -382,7 +382,7 @@ export default {
    // 动态加载 JS (ES Module 方式)
    import("/public/my-widget.js").then((module) => {
      // 初始化您的组件，传入 ctx
-     module.default.init(FlatNasCustomCtx);
+     module.default.init(StartDeckCustomCtx);
    });
    ```
 
@@ -404,7 +404,7 @@ export default {
 ```
 
 - `run-p` (来自 `npm-run-all` 包) 会并行运行指定的脚本。
-- 这样您可以同时启动 FlatNas 主程序和多个子组件的开发服务器。
+- 这样您可以同时启动 StartDeck 主程序和多个子组件的开发服务器。
 
 ## �📝 待办事项 / 计划
 
@@ -419,4 +419,4 @@ export default {
 
 ---
 
-Enjoy your FlatNas! 🚀
+Enjoy your StartDeck! 🚀

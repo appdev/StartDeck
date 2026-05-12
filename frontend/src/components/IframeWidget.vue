@@ -47,7 +47,7 @@ const rawTargetUrl = computed(() => {
 const isBlocked = computed(() => {
   const target = rawTargetUrl.value;
   // Hardcode block for gitee repo to prevent browser blocking
-  return !!(target && target.includes("gitee.com/gjx0808/FlatNas"));
+  return !!(target && target.includes("gitee.com/gjx0808/StartDeck"));
 });
 
 const currentUrl = computed(() => {

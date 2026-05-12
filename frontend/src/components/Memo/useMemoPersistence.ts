@@ -1,7 +1,7 @@
 import { openDB, type IDBPDatabase } from 'idb';
 import { ref, type Ref } from 'vue';
 
-const DB_NAME = 'flatnas-memo-db';
+const DB_NAME = 'startdeck-memo-db';
 const STORE_NAME = 'memos';
 const HISTORY_STORE = 'memo_versions';
 const DB_VERSION = 2;
@@ -136,7 +136,7 @@ export function useMemoPersistence(
         }
       } else {
         // Fallback migration: import legacy LocalStorage cache if present
-        const legacyKey = `flatnas-memo-backup-${widgetId}`;
+        const legacyKey = `startdeck-memo-backup-${widgetId}`;
         const legacyValue = localStorage.getItem(legacyKey);
         if (legacyValue && legacyValue.length > 0) {
           // Heuristic: if contains HTML tags, treat as rich

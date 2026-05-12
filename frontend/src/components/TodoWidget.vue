@@ -112,7 +112,7 @@ const pushUpdate = useDebounceFn(() => {
   store.wsSend({
     type: "todo_update",
     payload: {
-      token: store.token || localStorage.getItem("flat-nas-token"),
+      token: store.token || localStorage.getItem("start-deck-token"),
       widgetId: props.widget.id,
       content: props.widget.data,
     },
@@ -135,7 +135,7 @@ const persistSave = useDebounceFn(async () => {
 }, 500);
 
 // 本地持久化备份：防止网络断开时数据丢失
-const localBackup = useStorage<TodoItem[]>(`flatnas-todo-backup-${props.widget.id}`, []);
+const localBackup = useStorage<TodoItem[]>(`startdeck-todo-backup-${props.widget.id}`, []);
 
 watch(
   () => props.widget.data,

@@ -1,7 +1,7 @@
 package ws
 
 import (
-	"flatnasgo-backend/config"
+	"startdeck-backend/config"
 	"strings"
 
 	"github.com/golang-jwt/jwt/v5"

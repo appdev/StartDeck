@@ -9,7 +9,7 @@ const display = ref("0");
 const expression = ref("");
 
 // Persist state
-const storageKey = "flatnas-calculator-state";
+const storageKey = "startdeck-calculator-state";
 const savedState = useStorage(storageKey, { display: "0", expression: "" });
 
 watch([display, expression], () => {

@@ -82,7 +82,7 @@ describe("win/组件 自定义组件", () => {
         if (!widget?.js?.trim()) return;
 
         if (isModuleScript(widget.js)) {
-          // 模块脚本需要 window.FlatNasWidgetCtx，此处仅校验不抛错即可
+          // 模块脚本需要 window.StartDeckWidgetCtx，此处仅校验不抛错即可
           return;
         }
 
@@ -103,12 +103,12 @@ describe("win/组件 自定义组件", () => {
         };
 
         const run = () => {
-          (window as unknown as Record<string, unknown>).FlatNasWidgetCtx = mockCtx;
+          (window as unknown as Record<string, unknown>).StartDeckWidgetCtx = mockCtx;
           try {
-            const wrapped = `;(function(ctx) {\ntry {\n${widget.js}\n} catch (e) {\nthrow e;\n}\n})(window.FlatNasWidgetCtx);`;
+            const wrapped = `;(function(ctx) {\ntry {\n${widget.js}\n} catch (e) {\nthrow e;\n}\n})(window.StartDeckWidgetCtx);`;
             new Function(wrapped)();
           } finally {
-            delete (window as unknown as Record<string, unknown>).FlatNasWidgetCtx;
+            delete (window as unknown as Record<string, unknown>).StartDeckWidgetCtx;
           }
         };
 

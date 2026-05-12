@@ -1,10 +1,10 @@
 package main
 
 import (
-	"flatnasgo-backend/config"
-	"flatnasgo-backend/handlers"
-	"flatnasgo-backend/middleware"
-	"flatnasgo-backend/ws"
+	"startdeck-backend/config"
+	"startdeck-backend/handlers"
+	"startdeck-backend/middleware"
+	"startdeck-backend/ws"
 	"fmt"
 	"log"
 	"mime"

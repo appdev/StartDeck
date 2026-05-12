@@ -16,9 +16,6 @@ ENV HTTP_PROXY=$HTTP_PROXY \
 
 WORKDIR /app
 
-# Copy server/public for Vite publicDir (contains static assets like icons)
-COPY server/public ./server/public
-
 WORKDIR /app/frontend
 
 # Copy package files first to cache dependencies
@@ -63,7 +60,7 @@ COPY backend/ .
 # Use ARG TARGETOS and TARGETARCH to support cross-compilation
 ARG TARGETOS=linux
 ARG TARGETARCH=amd64
-RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -ldflags="-s -w" -o flatnas-backend .
+RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -ldflags="-s -w" -o startdeck-backend .
 
 # Stage 3: Build Icon Service
 FROM --platform=$BUILDPLATFORM golang:alpine AS icon-service-builder
@@ -86,7 +83,7 @@ COPY icon-service/ .
 
 ARG TARGETOS=linux
 ARG TARGETARCH=amd64
-RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -ldflags="-s -w" -o flatnas-iconserver .
+RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -ldflags="-s -w" -o startdeck-iconserver .
 
 # Stage 4: Final Image
 FROM alpine:latest
@@ -105,10 +102,10 @@ ENV TZ=Asia/Shanghai \
     ICON_SERVER_TIMEOUT_MS=5000
 
 # Copy backend binary
-COPY --from=backend-builder /app/backend/flatnas-backend .
+COPY --from=backend-builder /app/backend/startdeck-backend .
 
 # Copy icon service binary, config, seed data, and startup script.
-COPY --from=icon-service-builder /app/icon-service/flatnas-iconserver ./icon-service/flatnas-iconserver
+COPY --from=icon-service-builder /app/icon-service/startdeck-iconserver ./icon-service/startdeck-iconserver
 COPY icon-service/config.json ./icon-service/config.json
 COPY icon-service/data ./icon-service-defaults/data
 COPY scripts/docker-entrypoint.sh ./scripts/docker-entrypoint.sh

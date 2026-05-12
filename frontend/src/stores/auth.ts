@@ -2,8 +2,8 @@ import { ref, computed } from "vue";
 import { defineStore } from "pinia";
 
 export const useAuthStore = defineStore("auth", () => {
-  const token = ref(localStorage.getItem("flat-nas-token") || "");
-  const username = ref(localStorage.getItem("flat-nas-username") || "");
+  const token = ref(localStorage.getItem("start-deck-token") || "");
+  const username = ref(localStorage.getItem("start-deck-username") || "");
   const isLogged = computed(() => !!token.value);
   const password = ref("");
 
@@ -26,8 +26,8 @@ export const useAuthStore = defineStore("auth", () => {
         const data = await res.json();
         token.value = data.token;
         username.value = data.username;
-        localStorage.setItem("flat-nas-token", data.token);
-        localStorage.setItem("flat-nas-username", data.username);
+        localStorage.setItem("start-deck-token", data.token);
+        localStorage.setItem("start-deck-username", data.username);
         return true;
       }
       const data = await res.json();
@@ -57,8 +57,8 @@ export const useAuthStore = defineStore("auth", () => {
   const logout = () => {
     token.value = "";
     username.value = "";
-    localStorage.removeItem("flat-nas-token");
-    localStorage.removeItem("flat-nas-username");
+    localStorage.removeItem("start-deck-token");
+    localStorage.removeItem("start-deck-username");
   };
 
   const changePassword = (newPwd: string) => {

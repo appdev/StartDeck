@@ -2,8 +2,8 @@ package handlers
 
 import (
 	"encoding/json"
-	"flatnasgo-backend/config"
-	"flatnasgo-backend/utils"
+	"startdeck-backend/config"
+	"startdeck-backend/utils"
 	"net/http"
 	"os"
 	"path/filepath"

@@ -50,7 +50,7 @@ export function useWeather(opts: UseWeatherOptions) {
 
   function getInitialCity(): string {
     if (opts.widget?.data?.city) return opts.widget.data.city;
-    const cache = safeReadCachedCity(localStorage.getItem("flatnas_auto_city"));
+    const cache = safeReadCachedCity(localStorage.getItem("startdeck_auto_city"));
     if (cache?.city) return cache.city;
     return "定位中...";
   }
@@ -97,7 +97,7 @@ export function useWeather(opts: UseWeatherOptions) {
     }
 
     // Priority 2: Cached auto-located city
-    const cached = safeReadCachedCity(localStorage.getItem("flatnas_auto_city"));
+    const cached = safeReadCachedCity(localStorage.getItem("startdeck_auto_city"));
     const status = await store.detectWeatherNetworkStatus();
     const ttl = getCacheTtl(status);
 

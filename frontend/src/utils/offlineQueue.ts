@@ -21,7 +21,7 @@ interface PendingSave {
   retries: number;
 }
 
-const DB_NAME = "FlatNasOfflineQueue";
+const DB_NAME = "StartDeckOfflineQueue";
 const STORE_NAME = "pendingSaves";
 const EXPIRY_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 

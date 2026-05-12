@@ -1,7 +1,7 @@
 package handlers
 
 import (
-	"flatnasgo-backend/config"
+	"startdeck-backend/config"
 	"fmt"
 	"net/http"
 	"path/filepath"

@@ -586,7 +586,7 @@ const performBroadcast = () => {
     store.wsSend({
       type: "memo_update",
       payload: {
-        token: store.token || localStorage.getItem("flat-nas-token"),
+        token: store.token || localStorage.getItem("start-deck-token"),
         widgetId: props.widget.id,
         content: payload,
       },

@@ -1,9 +1,12 @@
 version: "3.8"
 
 services:
-  flatnas:
-    image: qdnas/flatnas:latest
-    container_name: flatnas
+  startdeck:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: startdeck:local
+    container_name: startdeck
     restart: unless-stopped
     ports:
       - "23000:3000"

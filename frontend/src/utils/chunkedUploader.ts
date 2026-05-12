@@ -20,7 +20,7 @@ type UploadCallbacks = {
 
 type GetHeadersFn = () => Record<string, string>;
 
-const STORAGE_KEY_PREFIX = "flatnas-upload-session:";
+const STORAGE_KEY_PREFIX = "startdeck-upload-session:";
 const CHUNK_SIZE = 5 * 1024 * 1024; // 5MB
 const MAX_CHUNK_RETRIES = 3;
 const RETRY_BASE_DELAY_MS = 500;

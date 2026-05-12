@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"sync"
 
-	"flatnasgo-backend/config"
+	"startdeck-backend/config"
 )
 
 // GeoCoord stores geocoding result for a city

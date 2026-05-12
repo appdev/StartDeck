@@ -1,6 +1,6 @@
 
 // Utility for caching images in IndexedDB
-const DB_NAME = 'FlatNasImageCache';
+const DB_NAME = 'StartDeckImageCache';
 const STORE_NAME = 'images';
 const DB_VERSION = 1;
 const MAX_CACHE_AGE = 24 * 60 * 60 * 1000;

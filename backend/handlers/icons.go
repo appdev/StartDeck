@@ -19,7 +19,7 @@ import (
 	"strings"
 	"time"
 
-	"flatnasgo-backend/config"
+	"startdeck-backend/config"
 
 	"github.com/gin-gonic/gin"
 )

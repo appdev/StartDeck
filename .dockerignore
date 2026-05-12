@@ -9,17 +9,23 @@ docker-compose.yml
 # Dependencies
 node_modules
 frontend/node_modules
-flatnas-helper/node_modules
+startdeck-helper/node_modules
 
 # Build Artifacts
+frontend/dist
+frontend/tmp/vite-verify
+server/public/index.html
+server/public/assets
+debian/server/public/index.html
+debian/server/public/assets
 backend/*.exe
-backend/flatnas-backend
-backend/flatnas-linux
+backend/startdeck-backend
+backend/startdeck-linux
 backend/server.exe
 backend/server_debug.exe
 backend/server_run.exe
 backend/debug_weather.exe
-icon-service/flatnas-iconserver
+icon-service/startdeck-iconserver
 icon-service/dist
 icon-service/.gocache
 *.exe

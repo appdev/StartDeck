@@ -3,9 +3,9 @@ package handlers
 import (
 	"crypto/rand"
 	"errors"
-	"flatnasgo-backend/config"
-	"flatnasgo-backend/models"
-	"flatnasgo-backend/utils"
+	"startdeck-backend/config"
+	"startdeck-backend/models"
+	"startdeck-backend/utils"
 	"fmt"
 	"image"
 	_ "image/gif"

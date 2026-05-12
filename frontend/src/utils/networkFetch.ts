@@ -48,7 +48,7 @@ export const fetchWithRecovery = async (
 
 export const installNetworkFetchPatch = () => {
   if (typeof window === "undefined" || typeof window.fetch !== "function") return;
-  const patchedFlag = "__flatnasNetworkFetchPatched__";
+  const patchedFlag = "__startdeckNetworkFetchPatched__";
   if ((window.fetch as typeof window.fetch & { [patchedFlag]?: boolean })[patchedFlag]) return;
 
   const nativeFetch = window.fetch.bind(window);

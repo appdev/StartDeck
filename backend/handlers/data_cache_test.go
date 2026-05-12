@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
-	"flatnasgo-backend/config"
-	"flatnasgo-backend/models"
+	"startdeck-backend/config"
+	"startdeck-backend/models"
 
 	"github.com/gin-gonic/gin"
 )

@@ -129,7 +129,7 @@ type CachedAmapWeather = {
   timestamp: number;
 };
 
-const getCacheKey = (city: string) => `flatnas_amap_cache_${city}`;
+const getCacheKey = (city: string) => `startdeck_amap_cache_${city}`;
 
 const loadCachedWeather = (city: string) => {
   try {

@@ -103,7 +103,7 @@ func ProxyWallpaper(c *gin.Context) {
 
 	// Forward necessary headers? Or just simple GET.
 	// User-Agent might be needed for some APIs
-	req.Header.Set("User-Agent", "FlatNas/1.0")
+	req.Header.Set("User-Agent", "StartDeck/1.0")
 
 	// Reuse shared client or use a dedicated global one if needed.
 	// For now, let's use the shared proxy client to support environments behind proxy.
@@ -191,7 +191,7 @@ func ProxyRequest(c *gin.Context) {
 		}
 	}
 	if req.Header.Get("User-Agent") == "" {
-		req.Header.Set("User-Agent", "FlatNas/1.0")
+		req.Header.Set("User-Agent", "StartDeck/1.0")
 	}
 
 	client, err := buildProxyClient()

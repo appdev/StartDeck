@@ -2,7 +2,7 @@
 set -euo pipefail
 IFS=$'\n\t'
 
-# FlatNas Debian 部署脚本 (全能版)
+# StartDeck Debian 部署脚本 (全能版)
 # 功能：安装 (install) / 卸载 (uninstall) / 回滚 (rollback)
 # 说明：
 #   本脚本基于 debian/deploy.sh 和 debian/manage.sh 整合优化而来。
@@ -11,25 +11,25 @@ IFS=$'\n\t'
 #
 # 使用方式：
 #   1. 下载脚本：
-#      wget -O deploy_debian.sh https://raw.githubusercontent.com/Garry-QD/FlatNas/main/deploy_debian.sh
+#      wget -O deploy_debian.sh https://raw.githubusercontent.com/Garry-QD/StartDeck/main/deploy_debian.sh
 #   2. 运行安装：
 #      chmod +x deploy_debian.sh
 #      sudo ./deploy_debian.sh
 #
 # 前置要求：
-#   - 确保 GitHub 仓库 (Garry-QD/FlatNas) 发布了包含 release.zip 的 Release。
-#   - release.zip 应包含 flatnas-server、flatnas-iconserver、server/public 和 icon-service/data。
+#   - 确保 GitHub 仓库 (Garry-QD/StartDeck) 发布了包含 release.zip 的 Release。
+#   - release.zip 应包含 startdeck-server、startdeck-iconserver、server/public 和 icon-service/data。
 
 MODE="${1:-install}"
 
 # ==========================================
 # 基础配置与变量
 # ==========================================
-APP_NAME="flatnas"
-APP_USER="flatnas"
-SERVICE_NAME="flatnas"
-ICON_SERVICE_NAME="flatnas-iconserver"
-ICON_SERVICE_BINARY="flatnas-iconserver"
+APP_NAME="startdeck"
+APP_USER="startdeck"
+SERVICE_NAME="startdeck"
+ICON_SERVICE_NAME="startdeck-iconserver"
+ICON_SERVICE_BINARY="startdeck-iconserver"
 BASE_DIR="$(cd "$(dirname "$0")" && pwd)"
 
 # 默认安装路径
@@ -262,7 +262,7 @@ write_systemd_service() {
   
   cat > "${SYSTEMD_SERVICE}" <<EOF
 [Unit]
-Description=FlatNas Go Service
+Description=StartDeck Go Service
 Wants=${ICON_SERVICE_NAME}.service
 After=network.target ${ICON_SERVICE_NAME}.service
 
@@ -323,7 +323,7 @@ write_icon_systemd_service() {
 
   cat > "${ICON_SYSTEMD_SERVICE}" <<EOF
 [Unit]
-Description=FlatNas Icon Service
+Description=StartDeck Icon Service
 After=network.target
 
 [Service]
@@ -533,13 +533,44 @@ EOF
   apparmor_parser -r "/etc/apparmor.d/${APP_NAME}" >/dev/null || true
 }
 
+detect_ssh_ports() {
+  local ports=()
+  local current_port=""
+
+  if [ -n "${SSH_CONNECTION:-}" ]; then
+    current_port="$(printf '%s\n' "${SSH_CONNECTION}" | awk '{print $4}')"
+    if validate_port "${current_port}"; then
+      ports+=("${current_port}")
+    fi
+  fi
+
+  if [ -f /etc/ssh/sshd_config ]; then
+    while IFS= read -r ssh_port; do
+      if validate_port "${ssh_port}"; then
+        ports+=("${ssh_port}")
+      fi
+    done < <(awk 'BEGIN { IGNORECASE = 1 } /^[[:space:]]*Port[[:space:]]+/ { print $2 }' /etc/ssh/sshd_config)
+  fi
+
+  if [ "${#ports[@]}" -eq 0 ]; then
+    ports=("22")
+  fi
+
+  printf '%s\n' "${ports[@]}" | awk '!seen[$0]++'
+}
+
 configure_ufw() {
   local port="$1"
   local https_port="$2"
+  local ssh_port=""
   if ! command -v ufw >/dev/null 2>&1; then
     return 0
   fi
   log_info "配置 UFW 防火墙..."
+  while IFS= read -r ssh_port; do
+    [ -n "${ssh_port}" ] || continue
+    ufw allow "${ssh_port}/tcp" >/dev/null || true
+  done < <(detect_ssh_ports)
   ufw allow "${port}/tcp" >/dev/null || true
   if [ -n "${https_port}" ]; then
     ufw allow "${https_port}/tcp" >/dev/null || true
@@ -625,7 +656,7 @@ install_flow() {
   require_debian
   
   echo "=============================="
-  echo "   FlatNas 一键部署脚本"
+  echo "   StartDeck 一键部署脚本"
   echo "=============================="
   
   # 1. 配置收集
@@ -665,7 +696,7 @@ install_flow() {
   # 注册清理函数，确保退出时删除临时目录
   trap 'rm -rf "${tmp_dir}"' EXIT
 
-  local download_url="https://github.com/Garry-QD/FlatNas/releases/latest/download/release.zip"
+  local download_url="https://github.com/Garry-QD/StartDeck/releases/latest/download/release.zip"
   local zip_file="${tmp_dir}/release.zip"
   
   log_info "下载: ${download_url}"
@@ -676,20 +707,20 @@ install_flow() {
   log_info "解压资源..."
   unzip -q "${zip_file}" -d "${tmp_dir}/source"
   
-  # 自动寻找包含 flatnas-server 的目录
+  # 自动寻找包含 startdeck-server 的目录
   local source_dir=""
   local binary_src=""
   
   # 深度为 2 的搜索，防止 zip 包有一层文件夹
   local found_bin
-  found_bin="$(find "${tmp_dir}/source" -maxdepth 2 -type f -name "flatnas-server" | head -n 1)"
+  found_bin="$(find "${tmp_dir}/source" -maxdepth 2 -type f -name "startdeck-server" | head -n 1)"
   
   if [ -n "${found_bin}" ]; then
     binary_src="${found_bin}"
     source_dir="$(dirname "${binary_src}")"
   else
-    # 尝试找 flatnas (兼容旧命名)
-    found_bin="$(find "${tmp_dir}/source" -maxdepth 2 -type f -name "flatnas" | head -n 1)"
+    # 尝试找 startdeck (兼容旧命名)
+    found_bin="$(find "${tmp_dir}/source" -maxdepth 2 -type f -name "startdeck" | head -n 1)"
     if [ -n "${found_bin}" ]; then
         binary_src="${found_bin}"
         source_dir="$(dirname "${binary_src}")"
@@ -697,7 +728,7 @@ install_flow() {
   fi
   
   if [ -z "${source_dir}" ]; then
-    fail_with_tip "在下载包中未找到 flatnas-server 二进制文件"
+    fail_with_tip "在下载包中未找到 startdeck-server 二进制文件"
   fi
   
   local static_src="${source_dir}/server/public"
@@ -807,7 +838,7 @@ uninstall_flow() {
   require_root
   
   echo "!!!"
-  echo "警告：此操作将完全删除 FlatNas 服务、配置文件、日志及数据！"
+  echo "警告：此操作将完全删除 StartDeck 服务、配置文件、日志及数据！"
   echo "!!!"
   
   if ! confirm_twice "确定要卸载吗？"; then

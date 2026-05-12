@@ -23,10 +23,10 @@ if [ -d "${ICON_SERVICE_DEFAULTS_DIR}/data/cache" ] && [ -z "$(ls -A "${ICON_SER
   cp -R "${ICON_SERVICE_DEFAULTS_DIR}/data/cache/." "${ICON_SERVICE_DIR}/data/cache/"
 fi
 
-CONFIG_FILE="${ICON_SERVICE_CONFIG_FILE}" "${ICON_SERVICE_DIR}/flatnas-iconserver" &
+CONFIG_FILE="${ICON_SERVICE_CONFIG_FILE}" "${ICON_SERVICE_DIR}/startdeck-iconserver" &
 icon_pid="$!"
 
-./flatnas-backend &
+./startdeck-backend &
 backend_pid="$!"
 
 shutdown() {

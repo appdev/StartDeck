@@ -4,7 +4,7 @@ import { useMainStore } from "../stores/main";
 import type { RssCategory, RssFeed, WidgetConfig } from "@/types";
 
 const store = useMainStore();
-const RSS_COLLAPSED_STORAGE_KEY = "flatnas-rss-settings-collapsed";
+const RSS_COLLAPSED_STORAGE_KEY = "startdeck-rss-settings-collapsed";
 
 const rssWidget = computed(() => store.widgets.find((w: WidgetConfig) => w.type === "rss"));
 const rssFeeds = computed(() => (Array.isArray(store.rssFeeds) ? store.rssFeeds : []));

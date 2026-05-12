@@ -1,9 +1,9 @@
 package handlers
 
 import (
-	"flatnasgo-backend/config"
-	"flatnasgo-backend/models"
-	"flatnasgo-backend/utils"
+	"startdeck-backend/config"
+	"startdeck-backend/models"
+	"startdeck-backend/utils"
 	"net/http"
 	"path/filepath"
 	"sync"

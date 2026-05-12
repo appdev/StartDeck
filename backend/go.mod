@@ -1,4 +1,4 @@
-module flatnasgo-backend
+module startdeck-backend
 
 go 1.25.5
 

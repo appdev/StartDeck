@@ -209,7 +209,7 @@ const daylightMaskPercent = computed({
     store.markDirty();
   },
 });
-const musicVolume = useStorage<number>("flat-nas-music-volume", 0.7);
+const musicVolume = useStorage<number>("start-deck-music-volume", 0.7);
 const musicVolumePercent = computed({
   get: () => Math.round((musicVolume.value ?? 0.7) * 100),
   set: (val: number) => {
@@ -690,7 +690,7 @@ const deleteMusicFile = async (filePath: string) => {
   if (!filePath) return;
   // Removed native confirm as per user request for cleaner UI
   try {
-    const token = localStorage.getItem("flat-nas-token");
+    const token = localStorage.getItem("start-deck-token");
     const headers: Record<string, string> = { "Content-Type": "application/json" };
     if (token) headers["Authorization"] = `Bearer ${token}`;
 
@@ -725,7 +725,7 @@ const uploadMusic = async (event: Event) => {
 
   uploadStatus.value = `正在上传 ${files.length} 个文件...`;
   try {
-    const token = localStorage.getItem("flat-nas-token");
+    const token = localStorage.getItem("start-deck-token");
     const headers: Record<string, string> = {};
     if (token) headers["Authorization"] = `Bearer ${token}`;
 
@@ -882,7 +882,7 @@ const handleUltrawideChange = (e: Event) => {
   const checked = (e.target as HTMLInputElement).checked;
   if (checked) {
     alert(
-      "温馨提示：\n1. 分辨率比例判定依据是显示器的物理分辨率或浏览器窗口大小。\n2. 开启此功能后，在分屏显示（如左右并排）时，布局效果可能会变差。\n3. 此模式最适合多屏用户，或将 FlatNas 作为主力办公面板使用的用户。",
+      "温馨提示：\n1. 分辨率比例判定依据是显示器的物理分辨率或浏览器窗口大小。\n2. 开启此功能后，在分屏显示（如左右并排）时，布局效果可能会变差。\n3. 此模式最适合多屏用户，或将 StartDeck 作为主力办公面板使用的用户。",
     );
   }
 };
@@ -1006,7 +1006,7 @@ const regenerateAllThumbs = async () => {
   thumbRegenerationStats.value = null;
   
   try {
-    const token = localStorage.getItem("flat-nas-token");
+    const token = localStorage.getItem("start-deck-token");
     const headers: Record<string, string> = { "Content-Type": "application/json" };
     if (token) headers["Authorization"] = `Bearer ${token}`;
     
@@ -1036,7 +1036,7 @@ const regenerateAllThumbs = async () => {
 const fetchVersions = async () => {
   try {
     loadingVersions.value = true;
-    const token = localStorage.getItem("flat-nas-token");
+    const token = localStorage.getItem("start-deck-token");
     const headers: Record<string, string> = { "Content-Type": "application/json" };
     if (token) headers["Authorization"] = `Bearer ${token}`;
     const r = await fetch("/api/config-versions", { headers });
@@ -1050,7 +1050,7 @@ const fetchVersions = async () => {
 
 const saveVersion = async () => {
   try {
-    const token = localStorage.getItem("flat-nas-token");
+    const token = localStorage.getItem("start-deck-token");
     const headers: Record<string, string> = { "Content-Type": "application/json" };
     if (token) headers["Authorization"] = `Bearer ${token}`;
     const r = await fetch("/api/config-versions", {
@@ -1073,7 +1073,7 @@ const saveVersion = async () => {
 const restoreVersion = async (id: string) => {
   try {
     if (!confirm("确认恢复该版本？当前配置将被覆盖（密码不变）")) return;
-    const token = localStorage.getItem("flat-nas-token");
+    const token = localStorage.getItem("start-deck-token");
     const headers: Record<string, string> = { "Content-Type": "application/json" };
     if (token) headers["Authorization"] = `Bearer ${token}`;
     const r = await fetch("/api/config-versions/restore", {
@@ -1094,7 +1094,7 @@ const restoreVersion = async (id: string) => {
 
 const deleteVersion = async (id: string) => {
   try {
-    const token = localStorage.getItem("flat-nas-token");
+    const token = localStorage.getItem("start-deck-token");
     const headers: Record<string, string> = { "Content-Type": "application/json" };
     if (token) headers["Authorization"] = `Bearer ${token}`;
     const r = await fetch(`/api/config-versions/${encodeURIComponent(id)}`, {
@@ -1127,13 +1127,13 @@ const getWebhookUrl = () => {
 
 const browserHelperHandshakeLink = computed(() => {
   if (typeof window === "undefined") return "";
-  const token = localStorage.getItem("flat-nas-token") || "";
+  const token = localStorage.getItem("start-deck-token") || "";
   if (!token) return "";
 
   const origin = window.location.origin;
   const url = new URL(`${origin}/`);
   const params = new URLSearchParams();
-  params.set("flatnas-helper-handshake", "1");
+  params.set("startdeck-helper-handshake", "1");
   params.set("origin", origin);
   params.set("token", token);
   params.set("source", "open-center");
@@ -1144,7 +1144,7 @@ const browserHelperHandshakeLink = computed(() => {
 const copyBrowserHelperHandshakeLink = async () => {
   const link = browserHelperHandshakeLink.value;
   if (!link) {
-    alert("请先登录 FlatNas，再生成浏览器助手握手链接。");
+    alert("请先登录 StartDeck，再生成浏览器助手握手链接。");
     return;
   }
   await navigator.clipboard.writeText(link);
@@ -1154,7 +1154,7 @@ const copyBrowserHelperHandshakeLink = async () => {
 const openBrowserHelperHandshakeLink = () => {
   const link = browserHelperHandshakeLink.value;
   if (!link) {
-    alert("请先登录 FlatNas，再生成浏览器助手握手链接。");
+    alert("请先登录 StartDeck，再生成浏览器助手握手链接。");
     return;
   }
   window.open(link, "_blank", "noopener,noreferrer");
@@ -1349,7 +1349,7 @@ const handleExport = async () => {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `flat-nas-backup-${new Date().toISOString().substring(0, 10).replace(/-/g, "")}.json`;
+    a.download = `start-deck-backup-${new Date().toISOString().substring(0, 10).replace(/-/g, "")}.json`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -1503,7 +1503,7 @@ const handleFileChange = (event: Event) => {
       importProgress.value = 0;
       importTotal.value = 0;
 
-      const token = localStorage.getItem("flat-nas-token");
+      const token = localStorage.getItem("start-deck-token");
       const headers: Record<string, string> = { "Content-Type": "application/json" };
       if (token) headers["Authorization"] = `Bearer ${token}`;
 
@@ -1572,7 +1572,7 @@ const handleReset = async () => {
   requestAuth(async () => {
     // 密码验证通过后直接执行
     try {
-      const token = localStorage.getItem("flat-nas-token");
+      const token = localStorage.getItem("start-deck-token");
       const headers: Record<string, string> = { "Content-Type": "application/json" };
       if (token) headers["Authorization"] = `Bearer ${token}`;
 
@@ -1598,7 +1598,7 @@ const handleSaveAsDefault = async () => {
   requestAuth(async () => {
     // 密码验证通过后直接执行
     try {
-      const token = localStorage.getItem("flat-nas-token");
+      const token = localStorage.getItem("start-deck-token");
       const headers: Record<string, string> = { "Content-Type": "application/json" };
       if (token) headers["Authorization"] = `Bearer ${token}`;
 
@@ -3253,7 +3253,7 @@ watch(activeTab, (val) => {
             </div>
           </div>
 
-          <div v-if="activeTab === 'universal-window'" class="flatnas-handshake-signal space-y-4">
+          <div v-if="activeTab === 'universal-window'" class="startdeck-handshake-signal space-y-4">
             <!-- Universal Window Widget Section -->
             <div class="flex items-center justify-between mb-4 border-b border-gray-100 pb-4">
               <div class="flex items-center gap-2">
@@ -3273,7 +3273,7 @@ watch(activeTab, (val) => {
             <template v-for="w in store.widgets" :key="'iframe-' + w.id">
               <div
                 v-if="w.type === 'iframe'"
-                class="flatnas-handshake-signal flex flex-col gap-3 p-4 border border-gray-100 rounded-xl hover:shadow-md transition-all glass-card"
+                class="startdeck-handshake-signal flex flex-col gap-3 p-4 border border-gray-100 rounded-xl hover:shadow-md transition-all glass-card"
               >
                 <div class="flex items-center justify-between">
                   <div class="flex items-center gap-4">
@@ -3400,8 +3400,8 @@ watch(activeTab, (val) => {
                   </div>
                   <p class="text-[10px] text-gray-500 mt-1">
                     点击<a
-                      href="/flatnas-helper.zip"
-                      download="flatnas-helper.zip"
+                      href="/startdeck-helper.zip"
+                      download="startdeck-helper.zip"
                       target="_blank"
                       class="text-blue-500 underline mx-1"
                       >下载浏览器插件</a
@@ -3433,7 +3433,7 @@ watch(activeTab, (val) => {
             <template v-for="w in store.widgets" :key="'amap-' + w.id">
               <div
                 v-if="w.type === 'amap-weather'"
-                class="flatnas-handshake-signal flex flex-col gap-3 p-4 border border-gray-100 rounded-xl bg-gray-50 hover:bg-white hover:shadow-md transition-all"
+                class="startdeck-handshake-signal flex flex-col gap-3 p-4 border border-gray-100 rounded-xl bg-gray-50 hover:bg-white hover:shadow-md transition-all"
               >
                 <div class="flex items-center justify-between">
                   <div class="flex items-center gap-4">
@@ -3523,7 +3523,7 @@ watch(activeTab, (val) => {
             <template v-for="w in store.widgets" :key="'cd-' + w.id">
               <div
                 v-if="w.type === 'countdown'"
-                class="flatnas-handshake-signal flex flex-col gap-3 p-4 border border-gray-100 rounded-xl bg-gray-50 hover:bg-white hover:shadow-md transition-all"
+                class="startdeck-handshake-signal flex flex-col gap-3 p-4 border border-gray-100 rounded-xl bg-gray-50 hover:bg-white hover:shadow-md transition-all"
               >
                 <div class="flex items-center justify-between">
                   <div class="flex items-center gap-4">
@@ -3632,7 +3632,7 @@ watch(activeTab, (val) => {
             <template v-for="w in store.widgets" :key="'cup-' + w.id">
               <div
                 v-if="w.type === 'countup'"
-                class="flatnas-handshake-signal flex flex-col gap-3 p-4 border border-gray-100 rounded-xl bg-gray-50 hover:bg-white hover:shadow-md transition-all"
+                class="startdeck-handshake-signal flex flex-col gap-3 p-4 border border-gray-100 rounded-xl bg-gray-50 hover:bg-white hover:shadow-md transition-all"
               >
                 <div class="flex items-center justify-between">
                   <div class="flex items-center gap-4">
@@ -3842,7 +3842,7 @@ watch(activeTab, (val) => {
                 <div>
                   <h4 class="text-base font-bold text-gray-900">浏览器助手通信</h4>
                   <p class="text-xs text-gray-500 mt-1">
-                    为 `flatnas-helper` 生成专用握手链接。插件在当前页点击图标时会优先读取它并自动保存站点与令牌。
+                    为 `startdeck-helper` 生成专用握手链接。插件在当前页点击图标时会优先读取它并自动保存站点与令牌。
                   </p>
                 </div>
               </div>
@@ -3850,7 +3850,7 @@ watch(activeTab, (val) => {
               <template v-if="browserHelperHandshakeLink">
                 <a
                   :href="browserHelperHandshakeLink"
-                  :data-flatnas-helper-link="browserHelperHandshakeLink"
+                  :data-startdeck-helper-link="browserHelperHandshakeLink"
                   target="_blank"
                   rel="noopener noreferrer"
                   class="block w-full px-3 py-2 rounded-lg border border-gray-200 bg-white text-[11px] text-blue-600 break-all hover:border-blue-300 transition-colors"
@@ -3884,7 +3884,7 @@ watch(activeTab, (val) => {
                 </p>
               </template>
               <p v-else class="text-[11px] text-amber-600">
-                当前未检测到登录令牌。请先登录 FlatNas，随后这里会自动生成浏览器助手握手链接。
+                当前未检测到登录令牌。请先登录 StartDeck，随后这里会自动生成浏览器助手握手链接。
               </p>
             </div>
 
@@ -3966,7 +3966,7 @@ watch(activeTab, (val) => {
                     {{ testMusicAuthResult.message }}
                   </span>
                   <span class="text-[15px] text-gray-400"
-                    >TIPS:道理鱼歌词不准管我FlatNas什么事</span
+                    >TIPS:道理鱼歌词不准管我StartDeck什么事</span
                   >
                 </div>
 
@@ -4797,11 +4797,11 @@ document.querySelector('.card-item').addEventListener('click', () => {
                   <div class="text-xs text-gray-500">
                     官网与介绍：
                     <a
-                      href="https://flatnas.top/"
+                      href="https://startdeck.top/"
                       target="_blank"
                       class="text-gray-600 underline hover:text-gray-900"
                     >
-                      https://flatnas.top/
+                      https://startdeck.top/
                     </a>
                   </div>
                   <div class="text-xs text-gray-500">
@@ -4818,7 +4818,7 @@ document.querySelector('.card-item').addEventListener('click', () => {
 
                 <div class="mt-4 flex items-center justify-end gap-6">
                   <a
-                    href="https://github.com/Garry-QD/FlatNas"
+                    href="https://github.com/Garry-QD/StartDeck"
                     target="_blank"
                     class="text-gray-700 hover:text-gray-900 hover:opacity-80 transition-opacity"
                     title="GitHub"
@@ -4835,7 +4835,7 @@ document.querySelector('.card-item').addEventListener('click', () => {
                     </svg>
                   </a>
                   <a
-                    href="https://gitee.com/gjx0808/FlatNas"
+                    href="https://gitee.com/gjx0808/StartDeck"
                     target="_blank"
                     class="text-gray-700 hover:text-gray-900 hover:opacity-80 transition-opacity"
                     title="Gitee"
@@ -4854,7 +4854,7 @@ document.querySelector('.card-item').addEventListener('click', () => {
                     </svg>
                   </a>
                   <a
-                    href="https://hub.docker.com/r/qdnas/flatnas"
+                    href="https://hub.docker.com/r/qdnas/startdeck"
                     target="_blank"
                     class="text-blue-600 hover:text-blue-700 hover:opacity-80 transition-opacity"
                     title="Docker"

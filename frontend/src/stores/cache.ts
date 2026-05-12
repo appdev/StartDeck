@@ -11,7 +11,7 @@ import {
 } from "@/utils/storeHelpers";
 import type { AppConfig, WidgetConfig, NavGroup, RssFeed, RssCategory } from "@/types";
 
-const CACHE_KEY = "flat-nas-data-cache";
+const CACHE_KEY = "start-deck-data-cache";
 const CACHE_WRITE_GUARD_MS = 15000;
 const SERVER_SNAPSHOT_RETRY_COUNT = 3;
 const SERVER_SNAPSHOT_RETRY_DELAY_MS = 1000;

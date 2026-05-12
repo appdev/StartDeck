@@ -51,7 +51,7 @@ const isSmallLayout = computed(
 );
 
 const activeTab = useStorage<"chat" | "files" | "photos">(
-  `flatnas-transfer-tab-${props.widget.id}`,
+  `startdeck-transfer-tab-${props.widget.id}`,
   "chat",
 );
 const loading = ref(false);
@@ -146,7 +146,7 @@ const toggleSelectAll = () => {
 const toggleSelected = (id: string) => setSelected(id, !selectedIds.value[id]);
 
 const authHeaderOnly = () => {
-  const token = store.token || localStorage.getItem("flat-nas-token");
+  const token = store.token || localStorage.getItem("start-deck-token");
   const headers: Record<string, string> = {};
   if (token) headers["Authorization"] = `Bearer ${token}`;
   return headers;
@@ -155,7 +155,7 @@ const authHeaderOnly = () => {
 const withAuthToken = (rawUrl?: string) => {
   const value = String(rawUrl || "").trim();
   if (!value) return "";
-  const token = store.token || localStorage.getItem("flat-nas-token");
+  const token = store.token || localStorage.getItem("start-deck-token");
   const resolvedValue = toBackendUrl(value);
   if (!token) return resolvedValue;
   try {

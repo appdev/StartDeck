@@ -111,7 +111,7 @@ watch(cssContent, () => {
 //   ctx.query     — querySelector scoped to widget
 //   ctx.queryAll  — querySelectorAll scoped to widget
 //   ctx.onCleanup — register a cleanup callback
-//   ctx.on / ctx.emit — flatnas:* event bus
+//   ctx.on / ctx.emit — startdeck:* event bus
 
 const jsScriptClass = computed(() => `widget-js-${props.widget.id}`);
 const jsCleanupFns: Array<() => void> = [];
@@ -142,17 +142,17 @@ const applyWidgetJs = () => {
     queryAll: (sel: string) => Array.from(widgetEl.querySelectorAll(sel)),
     onCleanup: (fn: () => void) => { if (typeof fn === "function") jsCleanupFns.push(fn); },
     emit: (type: string, detail?: unknown) => {
-      window.dispatchEvent(new CustomEvent(`flatnas:${type}`, { detail }));
+      window.dispatchEvent(new CustomEvent(`startdeck:${type}`, { detail }));
     },
     on: (type: string, handler: (ev: CustomEvent) => void) => {
-      const t = `flatnas:${type}`;
+      const t = `startdeck:${type}`;
       const wrapped = (e: Event) => handler(e as CustomEvent);
       window.addEventListener(t, wrapped as EventListener);
       jsCleanupFns.push(() => window.removeEventListener(t, wrapped as EventListener));
     },
   };
 
-  (window as unknown as Record<string, unknown>).FlatNasWidgetCtx = widgetCtx;
+  (window as unknown as Record<string, unknown>).StartDeckWidgetCtx = widgetCtx;
 
   const looksModule =
     /^\s*\/\/\s*@module\b/m.test(src) ||
@@ -168,10 +168,10 @@ const applyWidgetJs = () => {
   } else {
     const id = props.widget.id;
     script.textContent =
-      `;(async (ctx) => {\ntry {\n${src}\n} catch (e) {\nconsole.error('[FlatNas Widget JS ${id}]', e);\n}\n})(window.FlatNasWidgetCtx);`;
+      `;(async (ctx) => {\ntry {\n${src}\n} catch (e) {\nconsole.error('[StartDeck Widget JS ${id}]', e);\n}\n})(window.StartDeckWidgetCtx);`;
   }
 
-  script.onerror = (e) => console.error(`[FlatNas Widget JS ${props.widget.id}] load error:`, e);
+  script.onerror = (e) => console.error(`[StartDeck Widget JS ${props.widget.id}] load error:`, e);
   document.body.appendChild(script);
 };
 

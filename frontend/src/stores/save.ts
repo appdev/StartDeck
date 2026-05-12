@@ -217,7 +217,7 @@ export const useSaveStore = defineStore("save", () => {
 
         if (res.status === 401) {
           auth.token = ""; auth.username = "";
-          localStorage.removeItem("flat-nas-token"); localStorage.removeItem("flat-nas-username");
+          localStorage.removeItem("start-deck-token"); localStorage.removeItem("start-deck-username");
           return "unauthorized";
         }
 

@@ -9,7 +9,7 @@ import (
 	"sync"
 	"time"
 
-	"flatnasgo-backend/config"
+	"startdeck-backend/config"
 )
 
 // WeatherPoller periodically fetches weather for all configured cities

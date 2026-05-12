@@ -19,14 +19,14 @@ if (-not $SkipBackend) {
         $env:CGO_ENABLED = "0"
         $env:GOOS = "linux"
         $env:GOARCH = "amd64"
-        go build -ldflags="-s -w" -o flatnas-server .
+        go build -ldflags="-s -w" -o startdeck-server .
     } finally {
         Remove-Item Env:GOARCH -ErrorAction SilentlyContinue
         Remove-Item Env:GOOS -ErrorAction SilentlyContinue
         Remove-Item Env:CGO_ENABLED -ErrorAction SilentlyContinue
         Pop-Location
     }
-    Copy-Item -Force (Join-Path $repoRoot "backend\flatnas-server") (Join-Path $debianRoot "flatnas-server")
+    Copy-Item -Force (Join-Path $repoRoot "backend\startdeck-server") (Join-Path $debianRoot "startdeck-server")
 }
 
 if (-not $SkipIconService) {
@@ -35,14 +35,14 @@ if (-not $SkipIconService) {
         $env:CGO_ENABLED = "0"
         $env:GOOS = "linux"
         $env:GOARCH = "amd64"
-        go build -ldflags="-s -w" -o flatnas-iconserver .
+        go build -ldflags="-s -w" -o startdeck-iconserver .
     } finally {
         Remove-Item Env:GOARCH -ErrorAction SilentlyContinue
         Remove-Item Env:GOOS -ErrorAction SilentlyContinue
         Remove-Item Env:CGO_ENABLED -ErrorAction SilentlyContinue
         Pop-Location
     }
-    Copy-Item -Force (Join-Path $repoRoot "icon-service\flatnas-iconserver") (Join-Path $debianRoot "flatnas-iconserver")
+    Copy-Item -Force (Join-Path $repoRoot "icon-service\startdeck-iconserver") (Join-Path $debianRoot "startdeck-iconserver")
 }
 
 if (-not $SkipFrontend) {
@@ -78,4 +78,4 @@ if (Test-Path $srcIconConfig) {
     Copy-Item -Force $srcIconConfig $dstIconConfig
 }
 
-Write-Host "已同步: flatnas-server + flatnas-iconserver + server/public + icon-service/data -> debian/"
+Write-Host "已同步: startdeck-server + startdeck-iconserver + server/public + icon-service/data -> debian/"

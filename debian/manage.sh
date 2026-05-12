@@ -2,9 +2,9 @@
 set -euo pipefail
 IFS=$'\n\t'
 
-# FlatNas Debian 管理脚本 (优化版)
+# StartDeck Debian 管理脚本 (优化版)
 # 说明：
-#   用于管理 FlatNas 服务 (启动/停止/重启/查看日志/修改端口/配置HTTPS)
+#   用于管理 StartDeck 服务 (启动/停止/重启/查看日志/修改端口/配置HTTPS)
 #   基于 deploy.sh 的配置结构进行统一
 #
 # 使用方式：
@@ -12,11 +12,11 @@ IFS=$'\n\t'
 #   chmod +x manage.sh
 #   sudo ./manage.sh
 
-APP_NAME="flatnas"
-APP_USER="flatnas"
-SERVICE_NAME="flatnas"
-ICON_SERVICE_NAME="flatnas-iconserver"
-ICON_SERVICE_BINARY="flatnas-iconserver"
+APP_NAME="startdeck"
+APP_USER="startdeck"
+SERVICE_NAME="startdeck"
+ICON_SERVICE_NAME="startdeck-iconserver"
+ICON_SERVICE_BINARY="startdeck-iconserver"
 
 # 目录结构 (保持与 deploy.sh 一致)
 INSTALL_DIR="/opt/${APP_NAME}"
@@ -113,7 +113,7 @@ require_free_port() {
   local port="$1"
   local name="$2"
   if is_port_in_use "${port}"; then
-    # 如果是 Nginx 或 FlatNas 自己占用了，可以接受(因为我们要重启它们)
+    # 如果是 Nginx 或 StartDeck 自己占用了，可以接受(因为我们要重启它们)
     if systemctl is-active --quiet nginx || systemctl is-active --quiet "${SERVICE_NAME}" || systemctl is-active --quiet "${ICON_SERVICE_NAME}"; then
        return 0
     fi
@@ -304,7 +304,7 @@ EOF
 write_systemd_service() {
   cat > "${SYSTEMD_SERVICE}" <<EOF
 [Unit]
-Description=FlatNas Go Service
+Description=StartDeck Go Service
 Wants=${ICON_SERVICE_NAME}.service
 After=network.target ${ICON_SERVICE_NAME}.service
 
@@ -359,7 +359,7 @@ EOF
 write_icon_systemd_service() {
   cat > "${ICON_SYSTEMD_SERVICE}" <<EOF
 [Unit]
-Description=FlatNas Icon Service
+Description=StartDeck Icon Service
 After=network.target
 
 [Service]
@@ -537,7 +537,7 @@ view_logs_flow() {
 
 uninstall_flow() {
   echo "!!!"
-  echo "警告：此操作将完全删除 FlatNas 服务、配置文件、日志及数据！"
+  echo "警告：此操作将完全删除 StartDeck 服务、配置文件、日志及数据！"
   echo "!!!"
   
   if ! confirm_twice "确定要卸载吗？"; then
@@ -582,7 +582,7 @@ uninstall_flow() {
 main_menu() {
   while true; do
     echo "=============================="
-    echo "   FlatNas 管理面板"
+    echo "   StartDeck 管理面板"
     echo "=============================="
     echo "1. 查看服务状态"
     echo "2. 修改端口配置"

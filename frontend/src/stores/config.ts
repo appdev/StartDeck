@@ -9,7 +9,7 @@ const DEFAULT_MARKETPLACE_LIST_URL = "http://qdnas.icu:23111/";
 export const useConfigStore = defineStore("config", () => {
   // Pure client-only states (NOT synced to server)
   const forceNetworkMode = useStorage<"auto" | "lan" | "wan" | "latency">(
-    "flatnas-force-network-mode",
+    "startdeck-force-network-mode",
     "auto",
   );
   const isExpandedMode = ref(false);
@@ -28,7 +28,7 @@ export const useConfigStore = defineStore("config", () => {
   const currentVersion = "1.2.3";
   const latestVersion = ref("");
   const dockerUpdateAvailable = ref(false);
-  const updateCheckLastAt = useStorage<number>("flat-nas-update-check-last-at", 0);
+  const updateCheckLastAt = useStorage<number>("start-deck-update-check-last-at", 0);
   const UPDATE_CHECK_TTL = 30 * 60 * 1000;
 
   const hasUpdate = computed(() => {
@@ -40,7 +40,7 @@ export const useConfigStore = defineStore("config", () => {
   });
 
   // Resource version for cache busting
-  const resourceVersion = useStorage("flat-nas-resource-version", Date.now());
+  const resourceVersion = useStorage("start-deck-resource-version", Date.now());
 
   const refreshResources = () => {
     resourceVersion.value = Date.now();
@@ -161,7 +161,7 @@ export const useConfigStore = defineStore("config", () => {
 
       if (shouldCheckRemote) {
         updateCheckLastAt.value = now;
-        const res = await fetch("https://gitee.com/api/v5/repos/gjx0808/FlatNas/tags");
+        const res = await fetch("https://gitee.com/api/v5/repos/gjx0808/StartDeck/tags");
         if (res.ok) {
           const data = await res.json();
           if (data.length > 0) {
@@ -193,13 +193,13 @@ export const useConfigStore = defineStore("config", () => {
   watch(
     () => appConfig.value.iconShape,
     (val) => {
-      if (typeof val === "string") localStorage.setItem("flat-nas-icon-shape", val);
+      if (typeof val === "string") localStorage.setItem("start-deck-icon-shape", val);
     },
   );
   watch(
     () => appConfig.value.cardBgColor,
     (val) => {
-      if (typeof val === "string") localStorage.setItem("flat-nas-card-bg-color", val);
+      if (typeof val === "string") localStorage.setItem("start-deck-card-bg-color", val);
     },
   );
 

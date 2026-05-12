@@ -44,7 +44,7 @@ const filteredData = computed(() => {
 
 // Local Backup
 const localBackup = useStorage<BookmarkCategory[]>(
-  `flatnas-bookmark-backup-${props.widget.id}`,
+  `startdeck-bookmark-backup-${props.widget.id}`,
   [],
 );
 
