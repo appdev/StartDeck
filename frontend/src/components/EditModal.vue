@@ -29,6 +29,7 @@ const store = useMainStore();
 
 const currentHour = ref(new Date().getHours());
 let daylightTimer: number | null = null;
+let smartMatchToastTimer: number | null = null;
 const updateHour = () => {
   currentHour.value = new Date().getHours();
 };
@@ -42,6 +43,7 @@ onMounted(() => {
 });
 onUnmounted(() => {
   if (daylightTimer) clearInterval(daylightTimer);
+  if (smartMatchToastTimer) window.clearTimeout(smartMatchToastTimer);
 });
 
 const isVertical = computed(() => {
@@ -196,6 +198,25 @@ const onIconSelect = (result: SmartIconMatchResult) => {
   }
 };
 
+const smartMatchToast = ref("");
+
+const clearSmartMatchToast = () => {
+  smartMatchToast.value = "";
+  if (smartMatchToastTimer) {
+    window.clearTimeout(smartMatchToastTimer);
+    smartMatchToastTimer = null;
+  }
+};
+
+const showSmartMatchToast = (message: string) => {
+  smartMatchToast.value = message;
+  if (smartMatchToastTimer) window.clearTimeout(smartMatchToastTimer);
+  smartMatchToastTimer = window.setTimeout(() => {
+    smartMatchToast.value = "";
+    smartMatchToastTimer = null;
+  }, 2400);
+};
+
 const {
   smartMatchCandidates,
   selectedSmartMatchCandidateUrl,
@@ -207,6 +228,7 @@ const {
 } = useSmartIconMatch({
   form,
   onSelect: onIconSelect,
+  notify: showSmartMatchToast,
 });
 
 // 监听弹窗打开，初始化表单
@@ -262,6 +284,8 @@ watch(
           iconSize: 100,
         };
       }
+    } else {
+      clearSmartMatchToast();
     }
   },
   { immediate: true },
@@ -565,7 +589,7 @@ const submit = async () => {
     @close="close"
   >
     <div
-      class="sd-modal-surface"
+      class="sd-modal-surface relative"
       :class="isNightDaylightMode ? 'sd-modal-dark night-settings' : ''"
     >
       <div class="sd-modal-header select-none">
@@ -1176,6 +1200,22 @@ const submit = async () => {
           {{ isSaving ? "保存中..." : data ? "保存修改" : "确认添加" }}
         </button>
       </div>
+
+      <Transition
+        enter-active-class="transition ease-out duration-150"
+        enter-from-class="opacity-0 translate-y-2"
+        enter-to-class="opacity-100 translate-y-0"
+        leave-active-class="transition ease-in duration-150"
+        leave-from-class="opacity-100 translate-y-0"
+        leave-to-class="opacity-0 translate-y-2"
+      >
+        <div
+          v-if="smartMatchToast"
+          class="pointer-events-none absolute bottom-20 left-1/2 z-20 max-w-[calc(100%-2rem)] -translate-x-1/2 rounded-lg bg-slate-950/90 px-3 py-2 text-center text-xs font-medium leading-5 text-white shadow-lg ring-1 ring-white/10"
+        >
+          {{ smartMatchToast }}
+        </div>
+      </Transition>
     </div>
 
     <IconSelectionModal

@@ -142,7 +142,7 @@ export const useSmartIconMatch = ({ form, onSelect, notify }: SmartIconMatchOpti
   const isSmartMatching = ref(false);
   const activeRunId = ref(0);
 
-  const announce = notify ?? ((message: string) => window.alert(message));
+  const announce = notify ?? (() => undefined);
 
   const cancelActiveRun = () => {
     activeRunId.value += 1;
