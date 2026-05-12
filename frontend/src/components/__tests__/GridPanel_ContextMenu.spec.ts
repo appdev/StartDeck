@@ -1,8 +1,9 @@
 // @vitest-environment jsdom
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { mount, VueWrapper } from '@vue/test-utils';
 import GridPanel from '../GridPanel.vue';
 import { createTestingPinia } from '@pinia/testing';
+import { useMainStore } from '../../stores/main';
 
 // Mock dependencies
 vi.mock('vue-draggable-plus', () => ({
@@ -36,14 +37,50 @@ vi.mock('../utils/gridLayout', () => ({
 }));
 vi.mock('@/utils/network', () => ({
   isInternalNetwork: () => false,
-  getNetworkConfig: () => ({})
+  getNetworkConfig: () => ({
+    internalDomains: '',
+    networkRules: '',
+    forceNetworkMode: 'auto',
+    latencyThresholdMs: 200
+  }),
+  computeEffectiveNetworkMode: () => ({ isLan: false, reason: 'test', measuredLatencyMs: 0 })
 }));
 
 describe('GridPanel Context Menu', () => {
   let wrapper: VueWrapper;
+  let store: ReturnType<typeof useMainStore>;
 
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = String(input);
+        if (url.startsWith('/api/ip')) {
+          return new Response(
+            JSON.stringify({
+              success: true,
+              ip: '127.0.0.1',
+              clientIp: '127.0.0.1',
+              clientIpSource: 'test',
+              location: 'test'
+            }),
+            { status: 200, headers: { 'Content-Type': 'application/json' } }
+          );
+        }
+        if (url.startsWith('/api/ping')) {
+          return new Response(JSON.stringify({ success: true, latency: 1 }), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' }
+          });
+        }
+        return new Response(JSON.stringify({ success: true }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' }
+        });
+      })
+    );
+    document.body.innerHTML = '';
 
     wrapper = mount(GridPanel, {
       global: {
@@ -51,8 +88,10 @@ describe('GridPanel Context Menu', () => {
           createTestingPinia({
             createSpy: () => vi.fn().mockResolvedValue(undefined),
             initialState: {
-              main: {
-                isLogged: true,
+              auth: {
+                token: 'test-token'
+              },
+              widgets: {
                 widgets: [
                   {
                     id: 'div-card-1',
@@ -61,9 +100,20 @@ describe('GridPanel Context Menu', () => {
                     x: 0, y: 0, w: 1, h: 1, i: 'div-card-1',
                     enable: true,
                     isPublic: true
+                  },
+                  {
+                    id: 'clock-1',
+                    type: 'clock',
+                    x: 1, y: 0, w: 1, h: 1, i: 'clock-1',
+                    enable: true,
+                    isPublic: true
                   }
-                ],
-                groups: [],
+                ]
+              },
+              groups: {
+                groups: []
+              },
+              config: {
                 appConfig: {}
               }
             }
@@ -101,7 +151,13 @@ describe('GridPanel Context Menu', () => {
         }
       }
     });
-    // store = useMainStore();
+    store = useMainStore();
+  });
+
+  afterEach(() => {
+    wrapper.unmount();
+    vi.unstubAllGlobals();
+    document.body.innerHTML = '';
   });
 
   it('renders div-card widget correctly', () => {
@@ -112,35 +168,51 @@ describe('GridPanel Context Menu', () => {
 
   it('opens context menu on right click on div-card', async () => {
     const divCard = wrapper.find('.div-card-click-target');
-    await divCard.trigger('contextmenu.prevent');
+    await divCard.trigger('contextmenu', { clientX: 12, clientY: 16 });
+    await wrapper.vm.$nextTick();
 
-    const menu = wrapper.find('[data-grid-context-menu]');
-    expect(menu.exists()).toBe(true);
-    expect(menu.isVisible()).toBe(true);
+    const menu = document.body.querySelector('[data-grid-context-menu]');
+    expect(menu).not.toBeNull();
 
     // Check menu items
-    expect(menu.text()).toContain('编辑卡片');
-    expect(menu.text()).toContain('删除卡片');
+    expect(menu?.textContent).toContain('编辑卡片');
+    expect(menu?.textContent).toContain('删除卡片');
 
     // Check SVGs are present (w-4 h-4 class)
-    const svgs = menu.findAll('svg.w-4.h-4');
+    const svgs = menu?.querySelectorAll('svg.w-4.h-4') ?? [];
     expect(svgs.length).toBeGreaterThan(0);
   });
 
   it('clicking delete calls confirm delete logic', async () => {
     const divCard = wrapper.find('.div-card-click-target');
-    await divCard.trigger('contextmenu.prevent');
+    await divCard.trigger('contextmenu', { clientX: 12, clientY: 16 });
+    await wrapper.vm.$nextTick();
 
-    const menu = wrapper.find('[data-grid-context-menu]');
+    const menu = document.body.querySelector('[data-grid-context-menu]');
+    expect(menu).not.toBeNull();
     // Find delete button (last item usually)
-    const items = menu.findAll('[role="menuitem"]');
+    const items = Array.from(menu!.querySelectorAll('[role="menuitem"]'));
     const deleteBtn = items[items.length - 1];
 
     if (!deleteBtn) throw new Error('Delete button not found');
-    expect(deleteBtn.text()).toContain('删除卡片');
-    await deleteBtn.trigger('click');
+    expect(deleteBtn.textContent).toContain('删除卡片');
+    deleteBtn.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    await wrapper.vm.$nextTick();
 
     // Check if delete confirm modal is shown
-    expect(wrapper.text()).toContain('删除确认');
+    expect(document.body.textContent).toContain('删除确认');
+  });
+
+  it('disables ordinary widgets from edit mode close button', async () => {
+    const editButton = wrapper.findAll('button').find((button) => button.text().trim() === '编辑');
+    if (!editButton) throw new Error('Edit button not found');
+
+    await editButton.trigger('click');
+    const disableButton = wrapper.find('[aria-label="禁用组件"]');
+
+    expect(disableButton.exists()).toBe(true);
+    await disableButton.trigger('click');
+
+    expect(store.widgets.find((w) => w.id === 'clock-1')?.enable).toBe(false);
   });
 });

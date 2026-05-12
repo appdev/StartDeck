@@ -1882,7 +1882,7 @@ watch(activeTab, (val) => {
       </button>
 
       <div
-        class="w-full md:w-1/4 bg-transparent border-b md:border-b-0 md:border-r border-gray-100 p-3 flex flex-col md:flex-col shrink-0 cursor-move glass-panel"
+        class="settings-sidebar w-full md:w-1/4 border-b md:border-b-0 md:border-r border-gray-100 p-3 flex flex-col md:flex-col shrink-0 cursor-move"
         @mousedown="onMouseDown"
       >
         <h3 class="text-xl font-bold text-gray-900 mb-3 md:mb-4 px-2">设置</h3>
@@ -1991,7 +1991,7 @@ watch(activeTab, (val) => {
         </div>
       </div>
 
-      <div class="flex-1 flex flex-col bg-transparent overflow-hidden glass-panel">
+      <div class="settings-content-panel flex-1 flex flex-col overflow-hidden">
         <div class="flex-1 p-3 overflow-y-auto overscroll-contain" @wheel.stop>
           <div v-if="activeTab === 'style'" class="space-y-4">
             <div class="bg-white/60 border border-gray-100 rounded-xl p-4">
@@ -5041,6 +5041,18 @@ document.querySelector('.card-item').addEventListener('click', () => {
 .night-settings :deep(input::placeholder),
 .night-settings :deep(textarea::placeholder) {
   color: rgba(248, 250, 252, 0.6);
+}
+.settings-sidebar {
+  position: relative;
+  z-index: 2;
+  background: rgba(255, 255, 255, 0.96);
+}
+.settings-content-panel {
+  background: rgba(255, 255, 255, 0.82);
+}
+.night-settings .settings-sidebar,
+.night-settings .settings-content-panel {
+  background: rgba(15, 23, 42, 0.62);
 }
 .glass-panel,
 .glass-card,

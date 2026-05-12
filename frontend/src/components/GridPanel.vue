@@ -1529,6 +1529,24 @@ const deleteDivCardWidget = (id: string) => {
   handleLayoutUpdated(newLayout);
   store.markDirty();
 };
+const disableWidgetFromGrid = (id: string) => {
+  const widget = store.widgets.find((w) => w.id === id);
+  if (!widget) return;
+  widget.enable = false;
+  layoutData.value = layoutData.value.filter((w) => w.i !== id && w.id !== id);
+  if (activeResizeWidgetId.value === id) activeResizeWidgetId.value = null;
+  const newLayout = compactVertical(layoutData.value);
+  layoutData.value = newLayout;
+  handleLayoutUpdated(newLayout);
+  store.markDirty();
+};
+const closeWidgetFromGrid = (widget: WidgetConfig) => {
+  if (widget.type === "div-card") {
+    deleteDivCardWidget(widget.id);
+    return;
+  }
+  disableWidgetFromGrid(widget.id);
+};
 
 // --- Heartbeat / Polling Mechanism for Layout ---
 // Active (Edit Mode): Stop polling to prevent interference.
@@ -3238,9 +3256,11 @@ onUnmounted(() => {
             ]"
           >
             <button
-              v-if="isEditMode && widget.type === 'div-card'"
-              @click.stop="deleteDivCardWidget(widget.id)"
+              v-if="isEditMode"
+              @click.stop="closeWidgetFromGrid(widget)"
               class="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center shadow-lg z-50 hover:bg-red-600 hover:scale-110 transition-all"
+              :title="widget.type === 'div-card' ? '删除卡片' : '禁用组件'"
+              :aria-label="widget.type === 'div-card' ? '删除卡片' : '禁用组件'"
             >
               ✕
             </button>
