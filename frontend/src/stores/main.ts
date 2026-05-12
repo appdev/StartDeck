@@ -133,7 +133,12 @@ export const useMainStore = defineStore("main", () => {
   };
 
   // ---- Groups ----
-  const groups = computed(() => groupsStore.groups);
+  const groups = computed({
+    get: () => groupsStore.groups,
+    set: (v) => {
+      groupsStore.groups = v;
+    },
+  });
   const items = computed(() => groupsStore.items);
   const addGroup = groupsStore.addGroup;
   const deleteGroup = groupsStore.deleteGroup;
