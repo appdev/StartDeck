@@ -2484,7 +2484,9 @@ const getLayoutConfig = (group: NavGroup) => {
   // Optimization: Ensure container fits the icon in vertical no-bg mode
   if (isNoBg && !isHorizontal) {
     if (v_icon > v_w) v_w = v_icon + 8;
-    const minH = v_icon + 32; // Icon + Text space
+    const titleSize = group.cardTitleSize || 13;
+    const titleBlockHeight = Math.max(36, titleSize * 2.5);
+    const minH = v_icon + titleBlockHeight + 8;
     if (minH > v_h) v_h = minH;
   }
 
@@ -3616,7 +3618,7 @@ onUnmounted(() => {
                 @touchmove="onCardTouchMove"
                 @touchend="onCardTouchEnd"
                 @touchcancel="onCardTouchEnd"
-                class="card-item flex items-center justify-center cursor-pointer transition-all select-none relative group hover:z-[999]"
+                class="card-item flex items-center cursor-pointer transition-all select-none relative group hover:z-[999] overflow-hidden"
                 :class="[
                   item.containerId && isUpdating.has(item.containerId)
                     ? 'opacity-50 pointer-events-none !cursor-not-allowed animate-pulse ring-2 ring-yellow-400'
@@ -3624,7 +3626,7 @@ onUnmounted(() => {
                   isEditMode ? 'animate-pulse cursor-move ring-2 ring-blue-400' : '',
                   (group.cardLayout || store.appConfig.cardLayout) === 'horizontal'
                     ? 'flex-row px-4 py-2 gap-3 justify-start'
-                    : 'flex-col gap-1.5 justify-center',
+                    : 'flex-col gap-1.5 justify-start',
                   (group.iconShape || store.appConfig.iconShape) === 'circle'
                     ? 'rounded-2xl'
                     : (group.iconShape || store.appConfig.iconShape) === 'rounded'
@@ -3644,14 +3646,7 @@ onUnmounted(() => {
                         : 'hover:scale-105 active:scale-95',
                 ]"
                 :style="{
-                  height:
-                    (group.cardLayout || store.appConfig.cardLayout) === 'horizontal'
-                      ? getLayoutConfig(group).height + 'px'
-                      : undefined,
-                  minHeight:
-                    (group.cardLayout || store.appConfig.cardLayout) === 'horizontal'
-                      ? undefined
-                      : getLayoutConfig(group).height + 'px',
+                  height: getLayoutConfig(group).height + 'px',
                   backgroundColor:
                     (group.showCardBackground ?? store.appConfig.showCardBackground) === false
                       ? 'transparent'
@@ -3967,7 +3962,7 @@ onUnmounted(() => {
                 <!-- Vertical Mode: Standard Title -->
                 <span
                   v-else
-                  class="font-medium line-clamp-2 leading-tight relative z-10"
+                  class="font-medium line-clamp-2 leading-tight relative z-10 h-[2.5em] overflow-hidden"
                   :class="'text-center px-2 w-full'"
                   :style="{
                     color:
@@ -3975,7 +3970,7 @@ onUnmounted(() => {
                       (item.backgroundImage || group.backgroundImage
                         ? '#ffffff'
                         : group.cardTitleColor || store.appConfig.cardTitleColor || '#111827'),
-                    fontSize: group.cardTitleSize ? group.cardTitleSize + 'px' : undefined,
+                    fontSize: (group.cardTitleSize ?? 13) + 'px',
                     textShadow:
                       item.backgroundImage || group.backgroundImage
                         ? '0 2px 4px rgba(0,0,0,0.8)'

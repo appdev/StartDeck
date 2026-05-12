@@ -67,7 +67,7 @@ const handleCommand = (item: CommandItem) => {
 </script>
 
 <template>
-  <div class="flex items-center gap-1 mt-0 pt-0 border-t border-gray-200/20 flex-wrap -mx-4 -mb-4 px-0 pb-0">
+  <div class="flex items-center gap-1 mt-2 pt-2 border-t border-white/10 flex-wrap">
     <template v-for="(item, index) in commands" :key="index">
       <div v-if="item.separator" class="w-px h-4 bg-gray-400/30 mx-1"></div>
       <button
@@ -75,8 +75,8 @@ const handleCommand = (item: CommandItem) => {
         type="button"
         class="
           p-1.5 rounded transition-all duration-200
-          text-gray-600 hover:text-[#0052D9] hover:bg-white/40
-          focus:outline-none focus:ring-2 focus:ring-[#0052D9]/50
+          text-white/65 hover:text-white hover:bg-white/10
+          focus:outline-none focus:ring-2 focus:ring-white/25
           disabled:opacity-40 disabled:cursor-not-allowed
           active:scale-95
         "

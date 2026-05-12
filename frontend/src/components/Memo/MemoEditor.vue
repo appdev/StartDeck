@@ -65,7 +65,7 @@ defineExpose({
   <div
     ref="editorRef"
     :contenteditable="editable"
-    class="w-full h-full bg-transparent outline-none text-sm text-gray-800 break-words font-sans leading-relaxed overflow-y-auto p-2 empty:before:content-[attr(data-placeholder)] empty:before:text-gray-400"
+    class="w-full h-full bg-transparent outline-none text-sm text-white break-words font-sans leading-relaxed overflow-y-auto p-1 empty:before:content-[attr(data-placeholder)] empty:before:text-white/45"
     :data-placeholder="placeholder"
     @input="handleInput"
     @focus="handleFocus"
@@ -84,7 +84,7 @@ defineExpose({
   font-size: 1.25em;
   font-weight: 700;
   margin: 0.5em 0;
-  border-bottom: 1px dashed rgba(0, 0, 0, 0.2);
+  border-bottom: 1px dashed rgba(255, 255, 255, 0.2);
 }
 :deep(ul) {
   list-style-type: disc;
@@ -92,8 +92,8 @@ defineExpose({
   margin: 0.5em 0;
 }
 :deep(pre) {
-  background-color: #1e293b;
-  color: #e2e8f0;
+  background-color: rgba(255, 255, 255, 0.1);
+  color: #f8fafc;
   padding: 0.5em;
   border-radius: 4px;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
@@ -103,10 +103,10 @@ defineExpose({
   white-space: pre-wrap;
 }
 :deep(blockquote) {
-  border-left: 4px solid #cbd5e1;
+  border-left: 4px solid rgba(255, 255, 255, 0.35);
   padding-left: 1em;
   margin: 0.5em 0;
-  color: #64748b;
+  color: rgba(255, 255, 255, 0.72);
   font-style: italic;
 }
 </style>

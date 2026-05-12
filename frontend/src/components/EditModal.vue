@@ -1010,36 +1010,40 @@ const submit = async () => {
                   </div>
                 </div>
 
-                <div v-if="form.iconBackgroundMode === 'custom'" class="flex items-center gap-2">
-                  <button
-                    v-for="color in iconBackgroundPresets"
-                    :key="color"
-                    type="button"
-                    class="w-5 h-5 rounded-full border transition-all"
-                    :class="
-                      iconCustomColorValue === color
-                        ? 'border-gray-900 ring-2 ring-gray-300'
-                        : 'border-gray-200 hover:border-gray-400'
-                    "
-                    :style="{ backgroundColor: color }"
-                    :title="color"
-                    @click="setCustomIconBackgroundColor(color)"
-                  ></button>
-                  <input
-                    :value="iconCustomColorValue"
-                    type="color"
-                    class="w-7 h-7 rounded cursor-pointer border-none p-0 bg-transparent"
-                    title="选择图标背景色"
-                    @input="setCustomIconBackgroundColor(($event.target as HTMLInputElement).value)"
-                  />
-                  <input
-                    :value="iconCustomColorValue"
-                    type="text"
-                    maxlength="7"
-                    class="sd-input min-h-0 w-20 px-2 py-1 text-xs"
-                    placeholder="#111827"
-                    @input="setCustomIconBackgroundColor(($event.target as HTMLInputElement).value)"
-                  />
+                <div v-if="form.iconBackgroundMode === 'custom'" class="flex flex-col gap-2">
+                  <div class="flex flex-wrap items-center gap-2">
+                    <button
+                      v-for="color in iconBackgroundPresets"
+                      :key="color"
+                      type="button"
+                      class="h-5 w-5 shrink-0 rounded-full border transition-all"
+                      :class="
+                        iconCustomColorValue === color
+                          ? 'border-gray-900 ring-2 ring-gray-300'
+                          : 'border-gray-200 hover:border-gray-400'
+                      "
+                      :style="{ backgroundColor: color }"
+                      :title="color"
+                      @click="setCustomIconBackgroundColor(color)"
+                    ></button>
+                  </div>
+                  <div class="grid grid-cols-[32px_minmax(0,1fr)] items-center gap-2">
+                    <input
+                      :value="iconCustomColorValue"
+                      type="color"
+                      class="h-8 w-8 shrink-0 cursor-pointer rounded border border-gray-200 bg-transparent p-0"
+                      title="选择图标背景色"
+                      @input="setCustomIconBackgroundColor(($event.target as HTMLInputElement).value)"
+                    />
+                    <input
+                      :value="iconCustomColorValue"
+                      type="text"
+                      maxlength="7"
+                      class="sd-input min-h-0 w-full min-w-0 px-2 py-1 text-xs"
+                      placeholder="#111827"
+                      @input="setCustomIconBackgroundColor(($event.target as HTMLInputElement).value)"
+                    />
+                  </div>
                 </div>
 
                 <div class="text-[11px] leading-4 text-gray-400">

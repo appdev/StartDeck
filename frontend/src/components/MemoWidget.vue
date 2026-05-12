@@ -103,8 +103,8 @@ const selectedVersionLabel = computed(() => {
 
 // Computed Styles
 const containerStyle = computed(() => ({
-  backgroundColor: `rgba(254, 249, 195, ${props.widget.opacity ?? 0.9})`,
-  color: props.widget.textColor || "#374151",
+  backgroundColor: `rgba(0, 0, 0, ${Math.min(0.85, Math.max(0.15, props.widget.opacity ?? 0.35))})`,
+  color: props.widget.textColor || "#ffffff",
 }));
 
 // Methods
@@ -980,24 +980,29 @@ onUnmounted(() => {
 
 <template>
   <div
-    class="w-full h-full rounded-2xl backdrop-blur border border-white/10 relative group flex flex-col transition-colors duration-300 overflow-hidden"
-    :class="mode === 'simple' ? 'p-0' : 'p-4'"
+    class="w-full h-full rounded-2xl backdrop-blur border border-white/10 relative group flex flex-col text-white transition-colors duration-300 overflow-hidden"
+    :class="mode === 'simple' ? 'p-0' : 'p-3'"
     :style="containerStyle"
   >
-    <!-- Page Curl Toggle -->
-    <div 
-      class="absolute top-0 left-0 w-3 h-3 cursor-pointer z-50 overflow-hidden group/curl"
+    <button
+      type="button"
+      class="absolute top-2 right-2 z-30 flex h-7 w-7 items-center justify-center rounded-full bg-white/10 text-white/70 opacity-0 transition-all hover:bg-white/20 hover:text-white group-hover:opacity-100 active:scale-95"
       @click="toggleMode"
       title="切换模式 (Switch Mode)"
+      aria-label="切换便签模式"
     >
-      <!-- The shadow of the curl -->
-      <div class="absolute top-0 left-0 w-0 h-0 border-t-[12px] border-r-[12px] border-t-white/0 border-r-black/20 transform translate-x-0.5 translate-y-0.5 blur-[1px] transition-all duration-300 group-hover/curl:scale-105"></div>
-      <!-- The curled part -->
-      <div class="absolute top-0 left-0 w-0 h-0 border-t-[12px] border-r-[12px] border-t-white/90 border-r-transparent shadow-sm transition-all duration-300 group-hover/curl:border-t-white group-hover/curl:scale-105"></div>
-    </div>
+      <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="1.8"
+          d="M4 7h16M4 12h10M4 17h7m7.5-2.5 1.5 1.5-4 4H14v-2l4.5-4.5Z"
+        />
+      </svg>
+    </button>
 
     <!-- Header / Controls -->
-    <div v-if="mode === 'rich'" class="flex items-center justify-end gap-2 mb-2 z-10 -mt-4 -mr-4">
+    <div v-if="mode === 'rich'" class="flex items-center justify-end gap-2 mb-2 pr-8 z-10">
       <div
         ref="versionWrapperRef"
         class="relative"
@@ -1006,7 +1011,7 @@ onUnmounted(() => {
       >
         <button
           type="button"
-          class="flex items-center justify-between gap-2 px-2 h-7 w-[120px] rounded-md text-xs font-medium text-gray-700 bg-white/40 border border-white/20 hover:bg-white/60 transition-colors"
+          class="flex items-center justify-between gap-2 px-2 h-7 w-[120px] rounded-md text-xs font-medium text-white bg-white/10 border border-white/10 hover:bg-white/20 transition-colors"
           :aria-expanded="versionMenuOpen"
           @click="toggleVersionMenu"
         >
@@ -1027,7 +1032,7 @@ onUnmounted(() => {
 
         <div
           v-if="versionMenuOpen && !isMobile"
-          class="absolute right-0 top-full mt-1 z-40 w-[128px] max-h-[200px] overflow-y-auto no-scrollbar rounded-lg border border-white/20 bg-white/80 backdrop-blur shadow-lg p-1"
+          class="absolute right-0 top-full mt-1 z-40 w-[128px] max-h-[200px] overflow-y-auto no-scrollbar rounded-lg border border-white/10 bg-black/70 text-white backdrop-blur shadow-lg p-1"
           @wheel="handleInnerWheel"
         >
           <div
@@ -1035,8 +1040,8 @@ onUnmounted(() => {
             :key="option.id"
             class="flex items-center gap-1 rounded-md transition-colors"
             :class="[
-              activeVersionIndex === index ? 'bg-[#0052D9]/10 text-[#0052D9]' : 'text-gray-700 hover:bg-white/60',
-              selectedVersionId === option.id ? 'bg-[#0052D9]/20 text-[#0052D9]' : ''
+              activeVersionIndex === index ? 'bg-white/20 text-white' : 'text-white/80 hover:bg-white/10',
+              selectedVersionId === option.id ? 'bg-white/25 text-white' : ''
             ]"
           >
             <button
@@ -1049,7 +1054,7 @@ onUnmounted(() => {
             <button
               v-if="option.kind === 'history'"
               type="button"
-              class="shrink-0 p-1 rounded-md text-gray-400 hover:text-red-500 hover:bg-white/60"
+              class="shrink-0 p-1 rounded-md text-white/40 hover:text-red-300 hover:bg-white/10"
               aria-label="删除版本"
               @click.stop="deleteVersionEntry(option)"
             >
@@ -1072,10 +1077,10 @@ onUnmounted(() => {
         @click="triggerSave"
         class="
           flex items-center justify-center gap-1 px-2 h-7 w-[72px] rounded-md text-xs font-medium text-white transition-all duration-300
-          focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-[#0052D9] border border-white/10 border-t-0 border-r-0
+          focus:outline-none focus:ring-2 focus:ring-white/30 border border-white/10
         "
         :class="[
-          status === 'success' ? 'bg-green-500 animate-pulse' : 'bg-[#0052D9] hover:brightness-110',
+          status === 'success' ? 'bg-green-500/90 animate-pulse' : 'bg-white/10 hover:bg-white/20',
           status === 'saving' ? 'opacity-70 cursor-wait' : ''
         ]"
         :disabled="status === 'saving'"
@@ -1098,7 +1103,7 @@ onUnmounted(() => {
           <textarea
             v-if="mode === 'simple'"
             v-model="localData"
-            class="w-full h-full bg-transparent resize-none outline-none text-sm placeholder-gray-600 font-medium p-4 pt-4"
+            class="w-full h-full bg-transparent resize-none outline-none text-sm text-white placeholder-white/45 font-normal leading-relaxed p-4 pr-11"
             :placeholder="store.isLogged ? '写点什么...' : '请先登录'"
             :readonly="!store.isLogged"
             @focus="handleFocus"
@@ -1161,14 +1166,14 @@ onUnmounted(() => {
       @click="closeVersionMenu"
     >
       <div
-        class="absolute inset-0 bg-white/95 text-gray-800 flex flex-col"
+        class="absolute inset-0 bg-black/90 text-white flex flex-col backdrop-blur"
         @click.stop
       >
-        <div class="flex items-center justify-between p-4 border-b border-gray-200/60">
+        <div class="flex items-center justify-between p-4 border-b border-white/10">
           <span class="text-sm font-semibold">选择版本</span>
           <button
             type="button"
-            class="text-xs text-gray-500 hover:text-gray-700 px-2 py-1 rounded-md hover:bg-gray-100"
+            class="text-xs text-white/60 hover:text-white px-2 py-1 rounded-md hover:bg-white/10"
             @click="closeVersionMenu"
           >
             关闭
@@ -1180,8 +1185,8 @@ onUnmounted(() => {
             :key="option.id"
             class="flex items-center gap-2 rounded-md transition-colors"
             :class="[
-              activeVersionIndex === index ? 'bg-[#0052D9]/10 text-[#0052D9]' : 'text-gray-700 hover:bg-gray-100',
-              selectedVersionId === option.id ? 'bg-[#0052D9]/20 text-[#0052D9]' : ''
+              activeVersionIndex === index ? 'bg-white/20 text-white' : 'text-white/80 hover:bg-white/10',
+              selectedVersionId === option.id ? 'bg-white/25 text-white' : ''
             ]"
           >
             <button
@@ -1194,7 +1199,7 @@ onUnmounted(() => {
             <button
               v-if="option.kind === 'history'"
               type="button"
-              class="shrink-0 mr-2 p-1 rounded-md text-gray-400 hover:text-red-500 hover:bg-gray-100"
+              class="shrink-0 mr-2 p-1 rounded-md text-white/40 hover:text-red-300 hover:bg-white/10"
               aria-label="删除版本"
               @click.stop="deleteVersionEntry(option)"
             >
@@ -1252,40 +1257,41 @@ div::-webkit-scrollbar-thumb {
   scrollbar-width: none;
 }
 
-/* Page Tear Animation */
+/* Mode switch transition */
 .page-tear-leave-active {
-  animation: tear-off 0.6s ease-in forwards;
-  transform-origin: top left;
-  position: absolute; /* Prevent layout shift */
+  animation: memo-mode-out 0.18s ease-in forwards;
+  position: absolute;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
   z-index: 10;
-  pointer-events: none; /* Prevent clicks during animation */
+  pointer-events: none;
 }
 
 .page-tear-enter-active {
-  animation: fade-in 0.6s ease-out;
+  animation: memo-mode-in 0.18s ease-out;
 }
 
-@keyframes tear-off {
+@keyframes memo-mode-out {
   0% {
-    transform: rotate(0deg) translateY(0);
+    transform: translateY(0);
     opacity: 1;
-    mask-image: linear-gradient(to bottom, black 100%, transparent 100%);
-    -webkit-mask-image: linear-gradient(to bottom, black 100%, transparent 100%);
   }
   100% {
-    transform: rotate(-10deg) translateY(120%) translateX(-20px);
+    transform: translateY(4px);
     opacity: 0;
-    mask-image: linear-gradient(to bottom, black 50%, transparent 100%);
-    -webkit-mask-image: linear-gradient(to bottom, black 50%, transparent 100%);
   }
 }
 
-@keyframes fade-in {
-  0% { opacity: 0; }
-  100% { opacity: 1; }
+@keyframes memo-mode-in {
+  0% {
+    transform: translateY(-4px);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 </style>

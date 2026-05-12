@@ -372,7 +372,7 @@ const bgAlpha = computed({
               </div>
               <input
                 type="range"
-                :value="group.cardTitleSize ?? 14"
+                :value="group.cardTitleSize ?? 13"
                 @input="
                   (e) =>
                     updateGroup({
