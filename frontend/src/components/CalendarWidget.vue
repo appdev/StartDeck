@@ -1,5 +1,4 @@
 <script setup lang="ts">
-/* eslint-disable vue/no-mutating-props */
 import { ref, computed, onMounted, onUnmounted, watch } from "vue";
 import type { WidgetConfig } from "@/types";
 import { useMainStore } from "../stores/main";
@@ -7,22 +6,44 @@ import { Lunar, Solar, HolidayUtil } from "lunar-javascript";
 
 const props = defineProps<{ widget: WidgetConfig }>();
 const store = useMainStore();
+const styles = ["day", "month-lunar", "month-memorial"] as const;
+type CalendarStyle = (typeof styles)[number];
+const DEFAULT_STYLE: CalendarStyle = "day";
 
-// Default to 'day' if not set
-if (!props.widget.data) {
-  props.widget.data = { style: "day" };
-}
+const storeWidget = computed(() => store.widgets.find((item) => item.id === props.widget.id));
 
-// Ensure reactivity if data is replaced
+const ensureStoreWidgetData = () => {
+  const widget = storeWidget.value;
+  if (!widget) return null;
+
+  if (!widget.data) {
+    widget.data = { style: DEFAULT_STYLE };
+  }
+
+  const style = widget.data.style;
+  if (!styles.includes(style as CalendarStyle)) {
+    widget.data.style = DEFAULT_STYLE;
+  }
+
+  return widget.data;
+};
+
+ensureStoreWidgetData();
+
 watch(
-  () => props.widget.data,
+  () => storeWidget.value?.data,
   (newVal) => {
     if (!newVal) {
-      props.widget.data = { style: "day" };
+      ensureStoreWidgetData();
     }
   },
   { deep: true },
 );
+
+const currentStyle = computed<CalendarStyle>(() => {
+  const style = storeWidget.value?.data?.style ?? props.widget.data?.style;
+  return styles.includes(style as CalendarStyle) ? (style as CalendarStyle) : DEFAULT_STYLE;
+});
 
 // Reactive date
 const now = ref(new Date());
@@ -169,16 +190,15 @@ const calendarDays = computed(() => {
   return days;
 });
 
-// Styles: day, month-lunar, month-memorial
-const styles = ["day", "month-lunar", "month-memorial"] as const;
 const toggleStyle = () => {
-  if (!props.widget.data) props.widget.data = {};
-  const cur = props.widget.data.style || "day";
-  let idx = styles.indexOf(cur as (typeof styles)[number]);
+  const data = ensureStoreWidgetData();
+  if (!data) return;
+
+  let idx = styles.indexOf(currentStyle.value);
   if (idx === -1) idx = 0; // Default to day if unknown style
 
   const next = styles[(idx + 1) % styles.length];
-  props.widget.data.style = next;
+  data.style = next;
   store.markDirty();
   void store.saveData();
 };
@@ -223,7 +243,7 @@ const isHovered = ref(false);
       @click.stop="toggleStyle"
       class="absolute top-2 right-2 z-20 opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-full hover:bg-black/10 active:scale-95"
       title="切换视图"
-      :class="widget.data?.style !== 'day' ? 'text-white/70' : 'text-white'"
+      :class="currentStyle !== 'day' ? 'text-white/70' : 'text-white'"
     >
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -242,7 +262,7 @@ const isHovered = ref(false);
     </button>
 
     <div
-      v-if="widget.data?.style === 'day'"
+      v-if="currentStyle === 'day'"
       class="w-full h-full flex flex-row cursor-pointer relative overflow-hidden"
       @click="toggleStyle"
     >
@@ -358,8 +378,8 @@ const isHovered = ref(false);
             }}</span>
             <span
               v-if="
-                widget.data?.style === 'month-lunar' ||
-                (widget.data?.style === 'month-memorial' &&
+                currentStyle === 'month-lunar' ||
+                (currentStyle === 'month-memorial' &&
                   (d.origin === 'holiday' || d.origin === 'solarFest' || d.origin === 'lunarFest'))
               "
               class="text-[9px] md:text-[11px] opacity-80 mt-0 whitespace-nowrap"

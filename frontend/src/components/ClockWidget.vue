@@ -1,37 +1,59 @@
 <script setup lang="ts">
-/* eslint-disable vue/no-mutating-props */
 import { ref, onMounted, onUnmounted, computed, watch } from "vue";
 import type { WidgetConfig } from "@/types";
 import { useMainStore } from "../stores/main";
 
 const props = defineProps<{ widget: WidgetConfig }>();
 const store = useMainStore();
+const styles = ["digital", "analog", "retro"] as const;
+type ClockStyle = (typeof styles)[number];
+const DEFAULT_STYLE: ClockStyle = "digital";
 
-// Default style
-if (!props.widget.data) {
-  props.widget.data = { style: "digital" };
-}
+const storeWidget = computed(() => store.widgets.find((item) => item.id === props.widget.id));
+
+const ensureStoreWidgetData = () => {
+  const widget = storeWidget.value;
+  if (!widget) return null;
+
+  if (!widget.data) {
+    widget.data = { style: DEFAULT_STYLE };
+  }
+
+  const style = widget.data.style;
+  if (!styles.includes(style as ClockStyle)) {
+    widget.data.style = DEFAULT_STYLE;
+  }
+
+  return widget.data;
+};
+
+ensureStoreWidgetData();
 
 watch(
-  () => props.widget.data,
+  () => storeWidget.value?.data,
   (newVal) => {
     if (!newVal) {
-      props.widget.data = { style: "digital" };
+      ensureStoreWidgetData();
     }
   },
   { deep: true },
 );
 
-const styles = ["digital", "analog", "retro"];
+const currentStyle = computed<ClockStyle>(() => {
+  const style = storeWidget.value?.data?.style ?? props.widget.data?.style;
+  return styles.includes(style as ClockStyle) ? (style as ClockStyle) : DEFAULT_STYLE;
+});
+
 const styleIndex = computed(() => {
-  const s = props.widget.data?.style || "digital";
-  return styles.indexOf(s) === -1 ? 0 : styles.indexOf(s);
+  return styles.indexOf(currentStyle.value);
 });
 
 const toggleStyle = () => {
-  if (!props.widget.data) props.widget.data = {};
+  const data = ensureStoreWidgetData();
+  if (!data) return;
+
   const nextIndex = (styleIndex.value + 1) % styles.length;
-  props.widget.data.style = styles[nextIndex];
+  data.style = styles[nextIndex];
   store.markDirty();
   void store.saveData();
 };
@@ -87,17 +109,17 @@ const hourDeg = computed(() => hours.value * 30);
   <div
     class="w-full h-full relative group transition-all overflow-hidden rounded-2xl border border-white/10"
     :class="[
-      widget.data?.style === 'digital'
+      currentStyle === 'digital'
         ? `backdrop-blur hover:bg-black/30 ${!widget.textColor ? 'text-white' : ''}`
-        : widget.data?.style === 'retro'
+        : currentStyle === 'retro'
           ? `${!widget.textColor ? 'text-gray-900' : ''} border-[#8b5a2b]`
           : `${!widget.textColor ? 'text-gray-800' : ''}`,
     ]"
     :style="{
       backgroundColor:
-        widget.data?.style === 'digital'
+        currentStyle === 'digital'
           ? `rgba(0, 0, 0, ${widget.opacity ?? 0.2})`
-          : widget.data?.style === 'retro'
+          : currentStyle === 'retro'
             ? `rgba(232, 220, 196, ${widget.opacity ?? 1})`
             : `rgba(255, 255, 255, ${widget.opacity ?? 0.9})`,
       color: widget.textColor
@@ -108,7 +130,7 @@ const hourDeg = computed(() => hours.value * 30);
       @click.stop="toggleStyle"
       class="absolute top-2 right-2 z-20 opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-full hover:bg-black/10 active:scale-95"
       title="切换风格"
-      :class="widget.data?.style === 'digital' ? 'text-white' : 'text-gray-600'"
+      :class="currentStyle === 'digital' ? 'text-white' : 'text-gray-600'"
     >
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -128,7 +150,7 @@ const hourDeg = computed(() => hours.value * 30);
 
     <!-- Digital Style -->
     <div
-      v-if="widget.data?.style === 'digital'"
+      v-if="currentStyle === 'digital'"
       class="w-full h-full flex flex-col items-center justify-center"
     >
       <div class="text-4xl font-mono font-bold">{{ timeStr }}</div>
@@ -137,7 +159,7 @@ const hourDeg = computed(() => hours.value * 30);
 
     <!-- Analog Style (Modern) -->
     <div
-      v-else-if="widget.data?.style === 'analog'"
+      v-else-if="currentStyle === 'analog'"
       class="w-full h-full flex items-center justify-center p-2"
     >
       <div class="relative w-full max-w-[140px] aspect-square">
@@ -198,7 +220,7 @@ const hourDeg = computed(() => hours.value * 30);
 
     <!-- Retro Style (Pocket Watch) -->
     <div
-      v-else-if="widget.data?.style === 'retro'"
+      v-else-if="currentStyle === 'retro'"
       class="w-full h-full flex items-center justify-center p-2"
     >
       <div class="relative w-full max-w-[140px] aspect-square">
