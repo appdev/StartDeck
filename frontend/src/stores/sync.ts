@@ -160,6 +160,7 @@ export const useSyncStore = defineStore("sync", () => {
   let activeStateRole: "auth" | "guest" | "unknown" = "unknown";
   // True if the current active layout contains non-public widgets/groups
   let hasNonPublicLayout = false;
+  let logoutInProgress = false;
 
   const detectHasNonPublicLayout = (): boolean => {
     const widgets = widgetsStore.widgets;
@@ -170,6 +171,8 @@ export const useSyncStore = defineStore("sync", () => {
   };
 
   const detectResponseRole = (data: Record<string, unknown>): "auth" | "guest" => {
+    if (data.isGuest === true) return "guest";
+    if (data.isGuest === false) return "auth";
     if (data.username && data.version !== undefined) return "auth";
     if (Array.isArray(data.widgets)) {
       const allPublic = (data.widgets as any[]).every((w: any) => w.isPublic === true);
@@ -228,6 +231,33 @@ export const useSyncStore = defineStore("sync", () => {
     version: typeof data.version !== "undefined" ? data.version : dataVersion.value,
   });
 
+  const resetActiveStateForGuest = () => {
+    isApplyingServerData = true;
+    groupsStore.groups = [];
+    widgetsStore.widgets = [];
+    widgetsStore.uiStateMap = {};
+    widgetsStore.serverLayoutMap = {};
+    widgetsStore.serverLayoutSignature = "";
+    rssFeeds.value = [];
+    rssCategories.value = [];
+    luckyStunData.value = null;
+    dataVersion.value = 0;
+    pendingServerVersion.value = 0;
+    activeStateRole = "guest";
+    hasNonPublicLayout = false;
+    cacheStore.removeAuthCaches();
+    widgetsStore.updateLastSavedLayout();
+    saveStore.hasUnsavedChanges = false;
+    saveStore.hasPendingSave = false;
+    saveStore.conflictState = { show: false, serverVersion: 0, clientVersion: 0 };
+    saveStore.syncConfirmModal = { show: false, serverVersion: 0 };
+    saveStore.offlineQueueConflictState = { show: false, item: null, serverVersion: 0 };
+    cacheStore.hasServerSnapshot = false;
+    cacheStore.cacheLoadedAt = null;
+    cacheStore.deferredSaveRequested = false;
+    isApplyingServerData = false;
+  };
+
   const startHttpPolling = () => {
     if (isHttpPollingActive || status.value === "OPEN") return;
     isHttpPollingActive = true;
@@ -245,7 +275,7 @@ export const useSyncStore = defineStore("sync", () => {
   const handleDataUpdate = (data: Record<string, unknown>) => {
     isApplyingServerData = true;
     // Route by role: guest responses must never overwrite auth state layout
-    const responseRole = detectResponseRole(data);
+    const responseRole = auth.isLogged ? detectResponseRole(data) : "guest";
     const shouldApply = responseRole === "auth"
       ? auth.isLogged
       : true; // guest data can always update guest state
@@ -395,7 +425,7 @@ export const useSyncStore = defineStore("sync", () => {
       if (configStore.systemConfig.authMode !== oldMode) {
         setTimeout(async () => {
           await networkStore.fetchSystemConfig();
-          if (configStore.systemConfig.authMode !== oldMode) { if (auth.isLogged) doLogout(); else init(); }
+          if (configStore.systemConfig.authMode !== oldMode) { if (auth.isLogged) logout(); else init(); }
         }, 500);
       }
     } else if (newStatus === "CLOSED") {
@@ -416,6 +446,8 @@ export const useSyncStore = defineStore("sync", () => {
       case "auth_success": break;
       case "memo_updated": case "todo_updated": {
         const p = msg.payload || {};
+        const username = typeof p.username === "string" ? p.username : "";
+        if (username && username !== auth.username && !(auth.username === "admin" && username === "admin")) return;
         if (p.widgetId) { const w = widgetsStore.widgets.find((x) => x.id === p.widgetId); if (w) w.data = p.content; }
         break;
       }
@@ -488,17 +520,22 @@ export const useSyncStore = defineStore("sync", () => {
   };
 
   // ---- Logout ----
-  const doLogout = async () => {
+  const logout = async () => {
+    if (logoutInProgress) return;
+    logoutInProgress = true;
     // Explicitly close WS to stop reconnect storms
-    if (status.value === "OPEN") wsClose();
-    networkStore.stopNetworkHeartbeat();
-    stopHttpPolling();
-    stopPingCheck();
-    auth.token = "";
-    auth.username = "";
-    localStorage.removeItem("start-deck-token");
-    localStorage.removeItem("start-deck-username");
-    await init();
+    try {
+      if (status.value === "OPEN") wsClose();
+      networkStore.stopNetworkHeartbeat();
+      stopHttpPolling();
+      stopPingCheck();
+      cacheStore.removeCacheForCurrentUser();
+      auth.logout();
+      resetActiveStateForGuest();
+      await init();
+    } finally {
+      logoutInProgress = false;
+    }
   };
 
   // ---- saveData wrapper ----
@@ -558,6 +595,10 @@ export const useSyncStore = defineStore("sync", () => {
       if (status.value === "OPEN") wsClose();
       stopHttpPolling();
       stopPingCheck();
+      if (!logoutInProgress) {
+        resetActiveStateForGuest();
+        void init();
+      }
     }
   });
   const markDirtyIfActive = () => { if (!isInitializing && !isApplyingServerData) saveStore.markDirty(); };
@@ -582,7 +623,7 @@ export const useSyncStore = defineStore("sync", () => {
     status, wsRawData, wsSend, wsSendRaw, wsOpen, isConnected, forceWsReconnect,
     dataVersion, pendingServerVersion, rssFeeds, rssCategories, luckyStunData,
     isSaving: saveStore.isSaving, hasPendingSave: saveStore.hasPendingSave, hasUnsavedChanges: saveStore.hasUnsavedChanges,
-    markDirty: saveStore.markDirty, saveData, resolveConflict,
+    markDirty: saveStore.markDirty, saveData, resolveConflict, logout,
     conflictState: saveStore.conflictState,
     isServerSnapshotReady: cacheStore.isServerSnapshotReady, isClientReady: computed(() => cacheStore.isClientReady || initCompleted.value),
     cacheLoadedAt: cacheStore.cacheLoadedAt, hasServerSnapshot: cacheStore.hasServerSnapshot,

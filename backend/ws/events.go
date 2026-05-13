@@ -24,9 +24,10 @@ func handleMemoUpdate(client *Client, manager *WSManager, rawPayload json.RawMes
 		"payload": map[string]interface{}{
 			"widgetId": p.WidgetID,
 			"content":  p.Content,
+			"username": client.username,
 		},
 	})
-	manager.Broadcast(replyMsg, "")
+	manager.BroadcastToUser(replyMsg, client.username, "")
 }
 
 // handleTodoUpdate 处理待办更新
@@ -44,9 +45,10 @@ func handleTodoUpdate(client *Client, manager *WSManager, rawPayload json.RawMes
 		"payload": map[string]interface{}{
 			"widgetId": p.WidgetID,
 			"content":  p.Content,
+			"username": client.username,
 		},
 	})
-	manager.Broadcast(replyMsg, "")
+	manager.BroadcastToUser(replyMsg, client.username, "")
 }
 
 // handleNetworkMode 处理网络模式切换
@@ -66,7 +68,7 @@ func handleNetworkMode(client *Client, manager *WSManager, rawPayload json.RawMe
 			"username": client.username,
 		},
 	})
-	manager.Broadcast(replyMsg, "")
+	manager.BroadcastToUser(replyMsg, client.username, "")
 }
 
 // handleNetworkHeartbeat 处理网络心跳，回复给发送者
@@ -90,7 +92,7 @@ func isValidNetworkMode(mode string) bool {
 }
 
 // BroadcastMemoUpdated REST API 保存 memo 后通过 WebSocket 广播
-func BroadcastMemoUpdated(manager *WSManager, widgetID string, content interface{}) {
+func BroadcastMemoUpdated(manager *WSManager, username string, widgetID string, content interface{}) {
 	if manager == nil {
 		return
 	}
@@ -99,9 +101,10 @@ func BroadcastMemoUpdated(manager *WSManager, widgetID string, content interface
 		"payload": map[string]interface{}{
 			"widgetId": widgetID,
 			"content":  content,
+			"username": username,
 		},
 	})
-	manager.Broadcast(replyMsg, "")
+	manager.BroadcastToUser(replyMsg, username, "")
 }
 
 // BroadcastDataUpdated REST API 保存数据后通过 WebSocket 广播
@@ -116,7 +119,7 @@ func BroadcastDataUpdated(manager *WSManager, username string, version int64) {
 			"version":  version,
 		},
 	})
-	manager.Broadcast(replyMsg, "")
+	manager.BroadcastToUser(replyMsg, username, "")
 }
 
 // WSBroadcaster 辅助结构体，让 handlers 能方便调用广播
@@ -124,20 +127,20 @@ type WSBroadcaster struct {
 	Manager *WSManager
 }
 
-func (b *WSBroadcaster) BroadcastMemo(widgetID string, content interface{}) {
-	BroadcastMemoUpdated(b.Manager, widgetID, content)
+func (b *WSBroadcaster) BroadcastMemo(username string, widgetID string, content interface{}) {
+	BroadcastMemoUpdated(b.Manager, username, widgetID, content)
 }
 
 func (b *WSBroadcaster) BroadcastData(username string, version int64) {
 	BroadcastDataUpdated(b.Manager, username, version)
 }
 
-func (b *WSBroadcaster) BroadcastTodo(widgetID string, content interface{}) {
-	BroadcastTodoUpdated(b.Manager, widgetID, content)
+func (b *WSBroadcaster) BroadcastTodo(username string, widgetID string, content interface{}) {
+	BroadcastTodoUpdated(b.Manager, username, widgetID, content)
 }
 
 // BroadcastTodoUpdated REST API 保存 todo 后通过 WebSocket 广播
-func BroadcastTodoUpdated(manager *WSManager, widgetID string, content interface{}) {
+func BroadcastTodoUpdated(manager *WSManager, username string, widgetID string, content interface{}) {
 	if manager == nil {
 		return
 	}
@@ -146,9 +149,10 @@ func BroadcastTodoUpdated(manager *WSManager, widgetID string, content interface
 		"payload": map[string]interface{}{
 			"widgetId": widgetID,
 			"content":  content,
+			"username": username,
 		},
 	})
-	manager.Broadcast(replyMsg, "")
+	manager.BroadcastToUser(replyMsg, username, "")
 }
 
 // globalBroadcaster 全局广播器（由 main.go 初始化）

@@ -1,16 +1,29 @@
 // @vitest-environment jsdom
 import { mount, DOMWrapper, VueWrapper } from '@vue/test-utils';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import MemoWidget from './MemoWidget.vue';
 import type { WidgetConfig } from '../types';
 import { nextTick } from 'vue';
 
 // Hoist mocks
-const { mockPut, mockGet, mockFetch } = vi.hoisted(() => {
+const { mockPut, mockGet, mockDelete, mockGetAllFromIndex, mockFetch, mockStore } = vi.hoisted(() => {
   return {
     mockPut: vi.fn(),
     mockGet: vi.fn(),
+    mockDelete: vi.fn(),
+    mockGetAllFromIndex: vi.fn(),
     mockFetch: vi.fn(),
+    mockStore: {
+      isLogged: true,
+      username: 'admin',
+      isLanModeInited: true,
+      effectiveIsLan: true,
+      isConnected: false,
+      appConfig: { deviceMode: 'desktop' },
+      getHeaders: vi.fn(() => ({})),
+      wsSend: vi.fn(),
+      token: 'fake-token',
+    },
   };
 });
 
@@ -19,7 +32,8 @@ vi.mock('idb', () => ({
   openDB: vi.fn().mockResolvedValue({
     put: mockPut,
     get: mockGet,
-    getAllFromIndex: vi.fn().mockResolvedValue([]),
+    delete: mockDelete,
+    getAllFromIndex: mockGetAllFromIndex,
     objectStoreNames: { contains: vi.fn().mockReturnValue(true) },
     createObjectStore: vi.fn(),
   })
@@ -34,14 +48,7 @@ vi.stubGlobal('fetch', mockFetch);
 
 // Mock Store
 vi.mock('../stores/main', () => ({
-  useMainStore: vi.fn(() => ({
-    isLogged: true,
-    saveWidget: vi.fn(),
-    getHeaders: vi.fn(() => ({})),
-    socket: { emit: vi.fn(), on: vi.fn(), off: vi.fn() },
-    token: 'fake-token',
-    user: { id: 1, username: 'test' }
-  }))
+  useMainStore: vi.fn(() => mockStore)
 }));
 
 describe('MemoWidget', () => {
@@ -58,8 +65,19 @@ describe('MemoWidget', () => {
   };
 
   beforeEach(() => {
+    vi.useRealTimers();
     vi.clearAllMocks();
+    mockStore.isLogged = true;
+    mockStore.username = 'admin';
+    mockStore.isLanModeInited = true;
+    mockStore.effectiveIsLan = true;
+    mockStore.isConnected = false;
+    mockStore.token = 'fake-token';
+    mockStore.appConfig = { deviceMode: 'desktop' };
+    mockStore.getHeaders.mockReturnValue({});
+    mockStore.wsSend.mockClear();
     mockGet.mockResolvedValue(null); // Default empty DB
+    mockGetAllFromIndex.mockResolvedValue([]);
     mockFetch.mockResolvedValue({
       ok: true,
       status: 200,
@@ -85,6 +103,11 @@ describe('MemoWidget', () => {
       }
     });
   };
+
+  afterEach(() => {
+    wrapper?.unmount();
+    vi.useRealTimers();
+  });
 
   it('renders correctly', () => {
     wrapper = createWrapper();
@@ -190,6 +213,7 @@ describe('MemoWidget', () => {
     const [url, init] = mockFetch.mock.calls[0] as [string, RequestInit];
     expect(url).toContain('/api/memo/123');
     expect(init.method).toBe('PUT');
+    vi.useRealTimers();
   });
 
   it('applies remote widget data updates from store sync', async () => {
@@ -206,5 +230,23 @@ describe('MemoWidget', () => {
 
     const textarea = wrapper.find('textarea');
     expect((textarea.element as HTMLTextAreaElement).value).toBe('remote sync content');
+  });
+
+  it('does not write IndexedDB or save while logged out', async () => {
+    mockStore.isLogged = false;
+    wrapper = createWrapper();
+    await nextTick();
+
+    const textarea = wrapper.find('textarea');
+    expect(textarea.attributes('readonly')).toBeDefined();
+    expect(wrapper.find('[title="切换模式 (Switch Mode)"]').exists()).toBe(false);
+
+    await textarea.setValue('guest edit attempt');
+    await textarea.trigger('blur');
+    await new Promise(resolve => setTimeout(resolve, 50));
+
+    expect(mockPut).not.toHaveBeenCalled();
+    expect(mockFetch).not.toHaveBeenCalled();
+    expect(mockStore.wsSend).not.toHaveBeenCalled();
   });
 });

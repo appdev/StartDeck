@@ -1,11 +1,11 @@
 package handlers
 
 import (
+	"net/http"
+	"path/filepath"
 	"startdeck-backend/config"
 	"startdeck-backend/utils"
 	"startdeck-backend/ws"
-	"net/http"
-	"path/filepath"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -86,9 +86,9 @@ func SaveSingleWidget(c *gin.Context) {
 			serverWidgetVer := normalizeVersion(widgetMap["widgetVersion"])
 			if clientWidgetVerN := normalizeVersion(clientWidgetVer); clientWidgetVerN != serverWidgetVer {
 				c.JSON(http.StatusConflict, gin.H{
-					"error":            "Widget version conflict",
-					"currentVersion":   existingVersion,
-					"widgetVersion":    serverWidgetVer,
+					"error":          "Widget version conflict",
+					"currentVersion": existingVersion,
+					"widgetVersion":  serverWidgetVer,
 				})
 				return
 			}
@@ -161,11 +161,11 @@ func SaveSingleWidget(c *gin.Context) {
 	switch wType {
 	case "memo":
 		if b := ws.GetBroadcaster(); b != nil {
-			ws.BroadcastMemoUpdated(b.Manager, widgetID, payload["data"])
+			ws.BroadcastMemoUpdated(b.Manager, username, widgetID, payload["data"])
 		}
 	case "todo":
 		if b := ws.GetBroadcaster(); b != nil {
-			ws.BroadcastTodoUpdated(b.Manager, widgetID, payload["data"])
+			ws.BroadcastTodoUpdated(b.Manager, username, widgetID, payload["data"])
 		}
 	}
 

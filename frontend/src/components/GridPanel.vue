@@ -15,6 +15,7 @@ import { VueDraggable } from "vue-draggable-plus";
 import { GridLayout, GridItem } from "grid-layout-plus";
 import { useStorage, useWindowSize, useIntervalFn } from "@vueuse/core";
 import { useMainStore } from "../stores/main";
+import { canReadResource } from "@/utils/permissions";
 import { useWallpaperRotation } from "../composables/useWallpaperRotation";
 import { useDevice } from "../composables/useDevice";
 import { generateLayout, type GridLayoutItem } from "../utils/gridLayout";
@@ -710,8 +711,7 @@ const checkVisible = (obj?: WidgetConfig | NavItem) => {
   if (!obj) return false;
   if ("enable" in obj && !obj.enable) return false;
   if ("hideOnMobile" in obj && obj.hideOnMobile && isMobile.value) return false;
-  if (store.isLogged) return true;
-  return !!obj.isPublic;
+  return canReadResource(obj, store.isLogged);
 };
 const isGridWidget = (widget: WidgetConfig) => gridWidgetTypes.has(widget.type);
 const isTabletPortrait = computed(() => deviceKey.value === "tablet" && height.value > width.value);
@@ -833,7 +833,7 @@ const compactVertical = (layout: GridLayoutItem[]) => {
 };
 
 watch(
-  () => [store.mergedWidgets, widgetColNum.value, deviceKey.value],
+  () => [store.mergedWidgets, widgetColNum.value, deviceKey.value, store.isLogged],
   () => {
     const nextDeviceKey = deviceKey.value;
     const nextColNum = widgetColNum.value;

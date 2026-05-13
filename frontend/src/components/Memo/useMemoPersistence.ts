@@ -1,5 +1,5 @@
 import { openDB, type IDBPDatabase } from 'idb';
-import { ref, type Ref } from 'vue';
+import { ref, unref, type Ref } from 'vue';
 
 const DB_NAME = 'startdeck-memo-db';
 const STORE_NAME = 'memos';
@@ -63,15 +63,22 @@ function getDB() {
   return dbPromise;
 }
 
-const lastVersionChecksum = new Map<string | number, string>();
+const lastVersionChecksum = new Map<string, string>();
 
 export function useMemoPersistence(
   widgetId: string | number,
   localData: Ref<string>,
-  mode: Ref<'simple' | 'rich'>
+  mode: Ref<'simple' | 'rich'>,
+  storageScope?: Ref<string> | string,
 ) {
   const status = ref<'idle' | 'saving' | 'success' | 'error'>('idle');
   const progress = ref(0);
+  const getStorageScope = () => {
+    const raw = storageScope ? unref(storageScope) : 'guest';
+    return raw && raw.trim() ? raw.trim() : 'guest';
+  };
+  const getStorageId = () => `${getStorageScope()}:${String(widgetId)}`;
+  const isGuestScope = () => getStorageScope() === 'guest';
 
   const saveToIndexedDB = async (retryCount = 0) => {
     status.value = 'saving';
@@ -81,9 +88,10 @@ export function useMemoPersistence(
       const db = await getDB();
       const content = localData.value;
       const checksum = generateChecksum(content);
+      const storageId = getStorageId();
 
       const data: MemoData = {
-        id: widgetId,
+        id: storageId,
         content,
         mode: mode.value,
         updatedAt: Date.now(),
@@ -94,11 +102,11 @@ export function useMemoPersistence(
       await db.put(STORE_NAME, data);
 
       // Verify
-      const saved = await db.get(STORE_NAME, widgetId);
+      const saved = await db.get(STORE_NAME, storageId);
       if (!saved || saved.checksum !== checksum) {
         throw new Error('Checksum validation failed');
       }
-      lastVersionChecksum.set(widgetId, checksum);
+      lastVersionChecksum.set(storageId, checksum);
 
       progress.value = 100;
       status.value = 'success';
@@ -123,18 +131,26 @@ export function useMemoPersistence(
   const loadFromIndexedDB = async () => {
     try {
       const db = await getDB();
-      const data = await db.get(STORE_NAME, widgetId);
+      const storageId = getStorageId();
+      let data = await db.get(STORE_NAME, storageId);
+      if (!data && !isGuestScope()) {
+        const legacyData = await db.get(STORE_NAME, widgetId);
+        if (legacyData) {
+          data = { ...legacyData, id: storageId };
+          await db.put(STORE_NAME, data);
+        }
+      }
       if (data) {
         // Validate checksum
         const currentChecksum = generateChecksum(data.content);
         if (currentChecksum === data.checksum) {
           localData.value = data.content;
           mode.value = data.mode;
-          lastVersionChecksum.set(widgetId, data.checksum);
+          lastVersionChecksum.set(storageId, data.checksum);
         } else {
           reportError(new Error('Data corruption detected on load'), 'MemoPersistenceLoad');
         }
-      } else {
+      } else if (!isGuestScope()) {
         // Fallback migration: import legacy LocalStorage cache if present
         const legacyKey = `startdeck-memo-backup-${widgetId}`;
         const legacyValue = localStorage.getItem(legacyKey);
@@ -146,14 +162,14 @@ export function useMemoPersistence(
           // Persist into IndexedDB immediately
           const checksum = generateChecksum(legacyValue);
           const imported: MemoData = {
-            id: widgetId,
+            id: storageId,
             content: legacyValue,
             mode: importMode,
             updatedAt: Date.now(),
             checksum,
           };
           await db.put(STORE_NAME, imported);
-          lastVersionChecksum.set(widgetId, checksum);
+          lastVersionChecksum.set(storageId, checksum);
           // Clean up legacy key to avoid confusion
           try { localStorage.removeItem(legacyKey); } catch {}
         }
@@ -168,19 +184,20 @@ export function useMemoPersistence(
       const db = await getDB();
       const content = localData.value;
       const checksum = generateChecksum(content);
-      const lastChecksum = lastVersionChecksum.get(widgetId);
+      const storageId = getStorageId();
+      const lastChecksum = lastVersionChecksum.get(storageId);
       if (!force && checksum === lastChecksum) return;
       const updatedAt = Date.now();
       const data: MemoVersion = {
-        id: `${widgetId}-${updatedAt}-${Math.random().toString(36).slice(2, 8)}`,
-        widgetId,
+        id: `${storageId}-${updatedAt}-${Math.random().toString(36).slice(2, 8)}`,
+        widgetId: storageId,
         content,
         mode: mode.value,
         updatedAt,
         checksum
       };
       await db.put(HISTORY_STORE, data);
-      lastVersionChecksum.set(widgetId, checksum);
+      lastVersionChecksum.set(storageId, checksum);
     } catch (e) {
       reportError(e, 'MemoPersistenceSnapshot');
     }
@@ -189,7 +206,7 @@ export function useMemoPersistence(
   const loadVersions = async () => {
     try {
       const db = await getDB();
-      const items = await db.getAllFromIndex(HISTORY_STORE, 'by-widget', widgetId);
+      const items = await db.getAllFromIndex(HISTORY_STORE, 'by-widget', getStorageId());
       return (items as MemoVersion[]).sort((a, b) => b.updatedAt - a.updatedAt);
     } catch (e) {
       reportError(e, 'MemoPersistenceHistoryLoad');

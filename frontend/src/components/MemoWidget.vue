@@ -6,10 +6,15 @@ import { useDevice } from "@/composables/useDevice";
 import MemoEditor from "./Memo/MemoEditor.vue";
 import MemoToolbar from "./Memo/MemoToolbar.vue";
 import { useMemoPersistence, type MemoVersion } from "./Memo/useMemoPersistence";
+import { canWriteResource } from "@/utils/permissions";
 
 const props = defineProps<{ widget: WidgetConfig }>();
 const store = useMainStore();
 const { isMobile } = useDevice(toRef(store.appConfig, "deviceMode"));
+const canWriteMemo = computed(() => canWriteResource(store.isLogged));
+const memoStorageScope = computed(() =>
+  store.isLogged ? `auth:${encodeURIComponent(store.username || "admin")}` : "guest",
+);
 
 // --- Configuration ---
 const CONFIG = {
@@ -56,7 +61,8 @@ const { saveToIndexedDB, loadFromIndexedDB, status, saveVersionSnapshot, loadVer
   useMemoPersistence(
   props.widget.id,
   localData,
-  mode
+  mode,
+  memoStorageScope,
 );
 
 // Toast State
@@ -109,6 +115,7 @@ const containerStyle = computed(() => ({
 
 // Methods
 const handleCommand = (cmd: string, val?: string) => {
+  if (!canWriteMemo.value) return;
   editorRef.value?.execCommand(cmd, val);
 };
 
@@ -123,6 +130,7 @@ const syncLocalFromEditorIfRich = () => {
 };
 
 const triggerSave = async () => {
+  if (!canWriteMemo.value) return;
   syncLocalFromEditorIfRich();
   await saveVersionSnapshot(true);
   await saveToIndexedDB();
@@ -137,6 +145,7 @@ const triggerSave = async () => {
 };
 
 const toggleMode = () => {
+  if (!canWriteMemo.value) return;
   mode.value = mode.value === "simple" ? "rich" : "simple";
   saveToServer(true);
 };
@@ -284,6 +293,7 @@ const parseJsonBody = async (res: Response) => {
 };
 
 const scheduleSaveRetry = () => {
+  if (!canWriteMemo.value) return;
   if (saveRetryTimer || saveRetryCount >= CONFIG.SAVE_RETRY_LIMIT) return;
   pendingSave.value = true;
   const delay = Math.min(CONFIG.SAVE_RETRY_BASE_DELAY_MS * Math.pow(2, saveRetryCount), 8000);
@@ -306,7 +316,7 @@ const markSaveError = (message: string, allowRetry = true) => {
 };
 
 const saveToServer = async (immediate = false, keepalive = false) => {
-  if (!store.isLogged) return;
+  if (!canWriteMemo.value) return;
   // If conflict is active, block further auto-saves until resolved
   if (conflictState.value.hasConflict && !immediate) return;
   if (!immediate && Date.now() < conflictCooldownUntil.value) {
@@ -439,6 +449,10 @@ const saveToServer = async (immediate = false, keepalive = false) => {
         clearTimeout(saveRetryTimer);
         saveRetryTimer = null;
       }
+      if (autoSaveTimer) {
+        clearTimeout(autoSaveTimer);
+        autoSaveTimer = undefined;
+      }
     } catch {
       markSaveError("保存失败：网络异常，正在重试");
     } finally {
@@ -462,6 +476,7 @@ const saveToServer = async (immediate = false, keepalive = false) => {
 };
 
 const resolveConflict = (action: 'local' | 'remote') => {
+  if (!canWriteMemo.value) return;
   if (!conflictState.value.hasConflict || !conflictState.value.remoteData) return;
   const remote = conflictState.value.remoteData;
   const remoteParsed = parsePayload(remote);
@@ -510,6 +525,16 @@ const applyRemotePayload = (payload: WidgetConfig["data"], force = false) => {
   }
 };
 
+const applyWidgetPayloadToLocal = (payload: WidgetConfig["data"] | undefined) => {
+  if (!payload) return;
+  const parsed = parsePayload(payload);
+  localData.value = parsed.content;
+  if (parsed.mode === "simple" || parsed.mode === "rich") {
+    mode.value = parsed.mode;
+  }
+  serverTs.value = parsed.serverTs;
+};
+
 let pollTimer: ReturnType<typeof setTimeout> | null = null;
 let idleCheckTimer: ReturnType<typeof setInterval> | null = null;
 let currentPollInterval = CONFIG.POLL_ACTIVE_INTERVAL;
@@ -519,7 +544,7 @@ const pollRemote = async (force = false) => {
   // Fix Risk 3: Check isSaving to avoid race condition
   // 外网/隧道场景下 socket.io 可能不稳定，但 HTTP `/api/memo/:id` 仍可用。
   // 因此只要用户已登录且组件状态允许，就继续用 HTTP 轮询兜底。
-  if (!store.isLogged || isEditing.value || isSaving.value || syncState.value !== "idle") return;
+  if (!canWriteMemo.value || isEditing.value || isSaving.value || syncState.value !== "idle") return;
   const id = props.widget.id;
   if (!id) return;
   
@@ -555,6 +580,7 @@ const pollRemote = async (force = false) => {
 
 const scheduleNextPoll = () => {
   if (pollTimer) clearTimeout(pollTimer);
+  if (!canWriteMemo.value) return;
   
   if (syncState.value !== "idle") return;
 
@@ -579,7 +605,7 @@ let lastBroadcastTime = 0;
 let broadcastRetryCount = 0;
 
 const performBroadcast = () => {
-  if (!store.isLogged || !preferSocketSync.value || !store.isConnected) return;
+  if (!canWriteMemo.value || !preferSocketSync.value || !store.isConnected) return;
   const payload = buildPayload();
 
   try {
@@ -601,7 +627,7 @@ const performBroadcast = () => {
 };
 
 const scheduleBroadcast = () => {
-  if (!isBroadcasting.value || !store.isLogged) return;
+  if (!isBroadcasting.value || !canWriteMemo.value) return;
   
   const now = Date.now();
   const remaining = CONFIG.BROADCAST_THROTTLE - (now - lastBroadcastTime);
@@ -623,6 +649,16 @@ const scheduleBroadcast = () => {
 };
 
 const updateSyncMode = () => {
+  if (!canWriteMemo.value) {
+    syncState.value = "idle";
+    isBroadcasting.value = false;
+    if (pollTimer) {
+      clearTimeout(pollTimer);
+      pollTimer = null;
+    }
+    return;
+  }
+
   // If in conflict, stay in conflict state until resolved
   if (conflictState.value.hasConflict) {
     syncState.value = "conflict";
@@ -676,7 +712,7 @@ const updateSyncMode = () => {
 const handleVisibilityChange = () => {
   isPageVisible.value = document.visibilityState === "visible";
   updateSyncMode();
-  if (isPageVisible.value && pendingSave.value) {
+  if (canWriteMemo.value && isPageVisible.value && pendingSave.value) {
     void saveToServer(true);
   }
 };
@@ -698,7 +734,7 @@ const handleUserActivity = () => {
 const handleOnline = () => {
   isNetworkOnline.value = true;
   updateSyncMode();
-  if (pendingSave.value || syncState.value === "cooldown") {
+  if (canWriteMemo.value && (pendingSave.value || syncState.value === "cooldown")) {
     void saveToServer(true);
   }
 };
@@ -709,18 +745,24 @@ const handleOffline = () => {
 };
 
 const handleFocus = () => {
+  if (!canWriteMemo.value) return;
   isEditing.value = true;
   lastInputAt.value = Date.now();
   updateSyncMode();
 };
 
 const handleBlur = () => {
+  if (!canWriteMemo.value) {
+    isEditing.value = false;
+    return;
+  }
   isEditing.value = false;
   updateSyncMode();
   saveToServer(true);
 };
 
 const handleInputActivity = () => {
+  if (!canWriteMemo.value) return;
   lastInputAt.value = Date.now();
   handleUserActivity(); // Also trigger activity
   updateSyncMode();
@@ -756,10 +798,15 @@ const extractPreviewLabel = (value: string) => {
 };
 
 const refreshVersions = async () => {
+  if (!canWriteMemo.value) {
+    historyVersions.value = [];
+    return;
+  }
   historyVersions.value = await loadVersions();
 };
 
 const openVersionMenu = async () => {
+  if (!canWriteMemo.value) return;
   versionMenuOpen.value = true;
   await nextTick();
   const idx = versionOptions.value.findIndex((opt) => opt.id === selectedVersionId.value);
@@ -771,6 +818,7 @@ const closeVersionMenu = () => {
 };
 
 const toggleVersionMenu = () => {
+  if (!canWriteMemo.value) return;
   if (versionMenuOpen.value) {
     closeVersionMenu();
   } else {
@@ -779,12 +827,14 @@ const toggleVersionMenu = () => {
 };
 
 const createNewMemo = async () => {
+  if (!canWriteMemo.value) return;
   localData.value = "";
   await saveToIndexedDB();
   saveToServer(true);
 };
 
 const applyVersion = async (version: MemoVersion) => {
+  if (!canWriteMemo.value) return;
   localData.value = version.content;
   mode.value = version.mode;
   await saveToIndexedDB();
@@ -804,6 +854,7 @@ const selectVersionOption = async (option: VersionOption, index: number) => {
 };
 
 const deleteVersionEntry = async (option: VersionOption) => {
+  if (!canWriteMemo.value) return;
   if (option.kind !== "history") return;
   if (!option.version) return;
   await deleteVersion(option.id);
@@ -814,6 +865,7 @@ const deleteVersionEntry = async (option: VersionOption) => {
 };
 
 const handleVersionKeydown = (e: KeyboardEvent) => {
+  if (!canWriteMemo.value) return;
   const options = versionOptions.value;
   if (!options.length) return;
   if (!versionMenuOpen.value) {
@@ -856,6 +908,7 @@ const handleDocPointerDown = (e: PointerEvent) => {
 };
 
 const handleBeforeUnload = () => {
+  if (!canWriteMemo.value) return;
   if (serverSaveTimer) {
     clearTimeout(serverSaveTimer);
     serverSaveTimer = null;
@@ -865,26 +918,25 @@ const handleBeforeUnload = () => {
   saveToServer(true, true);
 };
 
-// Initial Load
-loadFromIndexedDB().then(async () => {
+const loadInitialMemo = async () => {
+  if (canWriteMemo.value) {
+    await loadFromIndexedDB();
+  }
   if (!localData.value && props.widget.data) {
-     if (typeof props.widget.data === "string") {
-        localData.value = props.widget.data;
-     } else {
-        const d = props.widget.data as { rich?: string; simple?: string; mode?: "simple" | "rich"; server_ts?: number; updatedAt?: number };
-        localData.value = d.rich || d.simple || "";
-        mode.value = d.mode || "simple";
-        serverTs.value = typeof d.server_ts === "number" ? d.server_ts : (typeof d.updatedAt === "number" ? d.updatedAt : 0);
-     }
+    applyWidgetPayloadToLocal(props.widget.data);
   }
   await refreshVersions();
-});
+};
+
+// Initial Load
+void loadInitialMemo();
 
 // Auto-save wrapper (optional, but requested "Persistent Button" behavior implies manual action is the focus, 
 // but user data usually needs autosave. The prompt emphasizes the "Persistent Button" feedback.)
 // I will keep manual save for the "Persistent Button" requirement demo, and maybe autosave silently.
 let autoSaveTimer: ReturnType<typeof setTimeout> | undefined;
 watch([localData, mode], () => {
+  if (!canWriteMemo.value) return;
   clearTimeout(autoSaveTimer);
   autoSaveTimer = setTimeout(() => {
     saveToIndexedDB();
@@ -897,6 +949,33 @@ watch(historyVersions, () => {
   const exists = historyVersions.value.some((v) => v.id === selectedVersionId.value);
   if (!exists) selectedVersionId.value = "new";
 });
+
+watch(
+  () => store.isLogged,
+  async (isLogged) => {
+    if (!isLogged) {
+      if (serverSaveTimer) {
+        clearTimeout(serverSaveTimer);
+        serverSaveTimer = null;
+      }
+      if (saveRetryTimer) {
+        clearTimeout(saveRetryTimer);
+        saveRetryTimer = null;
+      }
+      pendingSave.value = false;
+      isSaving.value = false;
+      conflictState.value = { hasConflict: false, remoteData: null };
+      versionMenuOpen.value = false;
+      historyVersions.value = [];
+      showToast.value = false;
+      applyWidgetPayloadToLocal(props.widget.data);
+      updateSyncMode();
+      return;
+    }
+    await loadInitialMemo();
+    updateSyncMode();
+  },
+);
 
 watch(
   () => props.widget.data,
@@ -985,6 +1064,7 @@ onUnmounted(() => {
     :style="containerStyle"
   >
     <button
+      v-if="canWriteMemo"
       type="button"
       class="absolute top-2 right-2 z-30 flex h-7 w-7 items-center justify-center rounded-full bg-white/10 text-white/70 opacity-0 transition-all hover:bg-white/20 hover:text-white group-hover:opacity-100 active:scale-95"
       @click="toggleMode"
@@ -1002,7 +1082,7 @@ onUnmounted(() => {
     </button>
 
     <!-- Header / Controls -->
-    <div v-if="mode === 'rich'" class="flex items-center justify-end gap-2 mb-2 pr-8 z-10">
+    <div v-if="mode === 'rich' && canWriteMemo" class="flex items-center justify-end gap-2 mb-2 pr-8 z-10">
       <div
         ref="versionWrapperRef"
         class="relative"
@@ -1073,7 +1153,7 @@ onUnmounted(() => {
       <!-- Persistent Save Button -->
       <!-- Triple Feedback 1: Button Pulse Animation -->
       <button
-        v-if="mode === 'rich'"
+        v-if="mode === 'rich' && canWriteMemo"
         @click="triggerSave"
         class="
           flex items-center justify-center gap-1 px-2 h-7 w-[72px] rounded-md text-xs font-medium text-white transition-all duration-300
@@ -1104,8 +1184,8 @@ onUnmounted(() => {
             v-if="mode === 'simple'"
             v-model="localData"
             class="w-full h-full bg-transparent resize-none outline-none text-sm text-white placeholder-white/45 font-normal leading-relaxed p-4 pr-11"
-            :placeholder="store.isLogged ? '写点什么...' : '请先登录'"
-            :readonly="!store.isLogged"
+            :placeholder="canWriteMemo ? '写点什么...' : '请先登录'"
+            :readonly="!canWriteMemo"
             @focus="handleFocus"
             @blur="handleBlur"
             @input="handleInputActivity"
@@ -1116,8 +1196,8 @@ onUnmounted(() => {
             v-else
             ref="editorRef"
             v-model:content="localData"
-            :editable="store.isLogged"
-            :placeholder="store.isLogged ? '在此输入内容...' : '请先登录'"
+            :editable="canWriteMemo"
+            :placeholder="canWriteMemo ? '在此输入内容...' : '请先登录'"
             @focus="handleFocus"
             @blur="handleBlur"
             @input="handleInputActivity"
@@ -1129,7 +1209,7 @@ onUnmounted(() => {
 
     <!-- Conflict Resolution Overlay -->
     <div
-      v-if="conflictState.hasConflict"
+      v-if="canWriteMemo && conflictState.hasConflict"
       class="absolute inset-x-0 bottom-0 z-40 bg-red-50/95 border-t border-red-200 p-2 sm:p-3 backdrop-blur-sm flex flex-col gap-2 shadow-lg"
     >
       <div class="text-xs text-red-600 font-bold flex items-center gap-2">
@@ -1158,7 +1238,7 @@ onUnmounted(() => {
     </div>
 
     <!-- Toolbar (Rich Mode Only) -->
-    <MemoToolbar v-if="mode === 'rich'" @command="handleCommand" />
+    <MemoToolbar v-if="mode === 'rich' && canWriteMemo" @command="handleCommand" />
 
     <div
       v-if="versionMenuOpen && isMobile"

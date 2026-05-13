@@ -82,6 +82,39 @@ func (m *WSManager) Broadcast(message []byte, excludeSessionID string) {
 	}
 }
 
+// BroadcastToUser 向同一用户的已授权客户端广播消息（排除指定 sessionID）。
+func (m *WSManager) BroadcastToUser(message []byte, username string, excludeSessionID string) {
+	if username == "" {
+		return
+	}
+	m.mu.RLock()
+	clients := make([]*Client, 0, len(m.clients))
+	for id, c := range m.clients {
+		if id == excludeSessionID {
+			continue
+		}
+		if c.authorized && c.username == username {
+			clients = append(clients, c)
+		}
+	}
+	m.mu.RUnlock()
+
+	for _, c := range clients {
+		go func(client *Client) {
+			client.mu.Lock()
+			defer client.mu.Unlock()
+			if client.ctx.Err() != nil {
+				return
+			}
+			_ = client.conn.SetWriteDeadline(time.Now().Add(2 * time.Second))
+			err := client.conn.WriteMessage(websocket.TextMessage, message)
+			if err != nil {
+				go m.Unregister(client)
+			}
+		}(c)
+	}
+}
+
 // SendTo 向指定客户端发送消息
 func (m *WSManager) SendTo(sessionID string, message []byte) {
 	m.mu.RLock()

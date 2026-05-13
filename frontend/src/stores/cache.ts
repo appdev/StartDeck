@@ -11,7 +11,10 @@ import {
 } from "@/utils/storeHelpers";
 import type { AppConfig, WidgetConfig, NavGroup, RssFeed, RssCategory } from "@/types";
 
-const CACHE_KEY = "start-deck-data-cache";
+const LEGACY_CACHE_KEY = "start-deck-data-cache";
+const CACHE_KEY_PREFIX = "start-deck-data-cache";
+const GUEST_CACHE_KEY = `${CACHE_KEY_PREFIX}:guest`;
+const GUEST_CACHE_USER = "__guest__";
 const CACHE_WRITE_GUARD_MS = 15000;
 const SERVER_SNAPSHOT_RETRY_COUNT = 3;
 const SERVER_SNAPSHOT_RETRY_DELAY_MS = 1000;
@@ -29,9 +32,9 @@ export const useCacheStore = defineStore("cache", () => {
   const cacheLoadedAt = ref<number | null>(null);
   const hasServerSnapshot = ref(false);
   const deferredSaveRequested = ref(false);
-  const isFetchingData = false;
+  const isFetchingData = ref(false);
   let isLoadingSnapshot = false;
-  const serverSnapshotRetryTimer: ReturnType<typeof setTimeout> | null = null;
+  const serverSnapshotRetryTimer = ref<ReturnType<typeof setTimeout> | null>(null);
 
   const getHeaders = (): Record<string, string> => {
     const headers: Record<string, string> = { "Content-Type": "application/json" };
@@ -41,15 +44,36 @@ export const useCacheStore = defineStore("cache", () => {
     return headers;
   };
 
+  const authCacheKey = (username: string) =>
+    `${CACHE_KEY_PREFIX}:auth:${encodeURIComponent(username || "admin")}`;
+
+  const currentAuthUsername = () => auth.username || "admin";
+
+  const getCurrentCacheKey = () =>
+    auth.isLogged ? authCacheKey(currentAuthUsername()) : GUEST_CACHE_KEY;
+
+  const getCacheScopeForData = (data: Record<string, unknown>) => {
+    if (!auth.isLogged) {
+      return { key: GUEST_CACHE_KEY, username: GUEST_CACHE_USER };
+    }
+    const authMode = ((data.systemConfig as Record<string, unknown> | undefined)?.authMode ??
+      configStore.systemConfig.authMode) === "single"
+      ? "single"
+      : "multi";
+    const username = authMode === "single"
+      ? "admin"
+      : typeof data.username === "string" && data.username.trim()
+        ? data.username.trim()
+        : currentAuthUsername();
+    return { key: authCacheKey(username), username };
+  };
+
   const saveToCache = (data: Record<string, unknown>) => {
     try {
-      const authMode = ((data.systemConfig as Record<string, unknown> | undefined)?.authMode ??
-        configStore.systemConfig.authMode) === "single"
-        ? "single"
-        : "multi";
       const cacheWidgets = Array.isArray(data.widgets)
         ? (data.widgets as WidgetConfig[]).map((widget) => stripWidgetUiState(widget))
         : data.widgets;
+      const { key, username } = getCacheScopeForData(data);
       const cacheData = {
         groups: data.groups,
         widgets: cacheWidgets,
@@ -59,13 +83,38 @@ export const useCacheStore = defineStore("cache", () => {
         rssFeeds: data.rssFeeds,
         rssCategories: data.rssCategories,
         systemConfig: data.systemConfig,
-        username: authMode === "single" ? "admin" : data.username || auth.username,
+        username,
         version: data.version,
         timestamp: Date.now(),
       };
-      localStorage.setItem(CACHE_KEY, JSON.stringify(cacheData));
+      localStorage.setItem(key, JSON.stringify(cacheData));
+      localStorage.removeItem(LEGACY_CACHE_KEY);
     } catch (e) {
       console.warn("Cache save failed", e);
+    }
+  };
+
+  const removeCacheForCurrentUser = () => {
+    try {
+      localStorage.removeItem(getCurrentCacheKey());
+      localStorage.removeItem(LEGACY_CACHE_KEY);
+    } catch (e) {
+      console.warn("Cache remove failed", e);
+    }
+  };
+
+  const removeAuthCaches = () => {
+    try {
+      const authPrefix = `${CACHE_KEY_PREFIX}:auth:`;
+      for (let i = localStorage.length - 1; i >= 0; i--) {
+        const key = localStorage.key(i);
+        if (key?.startsWith(authPrefix)) {
+          localStorage.removeItem(key);
+        }
+      }
+      localStorage.removeItem(LEGACY_CACHE_KEY);
+    } catch (e) {
+      console.warn("Auth cache remove failed", e);
     }
   };
 
@@ -75,13 +124,15 @@ export const useCacheStore = defineStore("cache", () => {
     dataVersionRef: ReturnType<typeof ref<number>>,
   ): boolean => {
     try {
-      const json = localStorage.getItem(CACHE_KEY);
+      const json = localStorage.getItem(getCurrentCacheKey());
       if (!json) return false;
       const cache = JSON.parse(json);
 
       const cachedUser = cache.username || "";
-      const currentUser = auth.username || "";
-      const isMatch = cachedUser === currentUser || (currentUser === "" && cachedUser === "admin");
+      const currentUser = auth.isLogged ? currentAuthUsername() : GUEST_CACHE_USER;
+      const isMatch = auth.isLogged
+        ? cachedUser === currentUser || (currentUser === "admin" && cachedUser === "admin")
+        : cachedUser === GUEST_CACHE_USER;
       if (!isMatch) return false;
 
       if (cache.groups) groupsStore.groups = cache.groups;
@@ -196,6 +247,8 @@ export const useCacheStore = defineStore("cache", () => {
     isLoadingSnapshot,
     serverSnapshotRetryTimer,
     saveToCache,
+    removeCacheForCurrentUser,
+    removeAuthCaches,
     loadFromCache,
     isCacheWriteGuardActive,
     markServerSnapshotReady,

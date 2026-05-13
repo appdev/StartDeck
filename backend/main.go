@@ -1,10 +1,6 @@
 package main
 
 import (
-	"startdeck-backend/config"
-	"startdeck-backend/handlers"
-	"startdeck-backend/middleware"
-	"startdeck-backend/ws"
 	"fmt"
 	"log"
 	"mime"
@@ -12,6 +8,10 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"startdeck-backend/config"
+	"startdeck-backend/handlers"
+	"startdeck-backend/middleware"
+	"startdeck-backend/ws"
 	"strings"
 	"time"
 
@@ -288,7 +288,7 @@ func main() {
 		api.GET("/docker-status", handlers.GetDockerStatus)                                        // Added Docker Status
 		api.GET("/docker/debug", handlers.GetDockerDebug)
 		api.GET("/config/proxy-status", handlers.GetProxyStatus)
-		api.GET("/widgets/:id", handlers.GetWidget) // Added Widget Data
+		api.GET("/widgets/:id", middleware.OptionalAuthMiddleware(), handlers.GetWidget) // Added Widget Data
 		api.GET("/memo/:id", middleware.AuthMiddleware(), handlers.GetMemo)
 
 		// Icon Routes

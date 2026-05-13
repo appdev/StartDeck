@@ -2,15 +2,15 @@ package handlers
 
 import (
 	"crypto/sha256"
-	"startdeck-backend/config"
-	"startdeck-backend/models"
-	"startdeck-backend/utils"
-	"startdeck-backend/ws"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
 	"path/filepath"
+	"startdeck-backend/config"
+	"startdeck-backend/models"
+	"startdeck-backend/utils"
+	"startdeck-backend/ws"
 	"strconv"
 	"strings"
 	"sync"
@@ -456,6 +456,7 @@ func GetData(c *gin.Context) {
 
 	// Inject system config
 	userData["systemConfig"] = sysConfig
+	userData["isGuest"] = isGuest
 	// Single-user mode must always present as admin, even if old data files carry stale usernames.
 	if sysConfig.AuthMode == "single" && username == "admin" {
 		userData["username"] = "admin"
@@ -545,6 +546,7 @@ func GetVersion(c *gin.Context) {
 
 func GetWidget(c *gin.Context) {
 	username := c.GetString("username")
+	isGuest := username == ""
 	if username == "" {
 		username = "admin"
 	}
@@ -569,10 +571,25 @@ func GetWidget(c *gin.Context) {
 	}
 
 	id := c.Param("id")
+	sensitiveKeys := map[string]struct{}{
+		"lanUrl":        {},
+		"backupLanUrls": {},
+		"lanHost":       {},
+	}
 	for _, w := range widgets {
 		if widgetMap, ok := w.(map[string]interface{}); ok {
 			if wId, ok := widgetMap["id"].(string); ok && wId == id {
+				if isGuest {
+					isPublic, _ := widgetMap["isPublic"].(bool)
+					if !isPublic {
+						c.JSON(http.StatusNotFound, gin.H{"error": "Widget not found"})
+						return
+					}
+				}
 				data, _ := widgetMap["data"]
+				if isGuest {
+					removeSensitiveFields(data, sensitiveKeys)
+				}
 				c.JSON(http.StatusOK, gin.H{"success": true, "data": data})
 				return
 			}
@@ -828,7 +845,7 @@ func SaveMemo(c *gin.Context) {
 		})
 	}
 	if b := ws.GetBroadcaster(); b != nil {
-		ws.BroadcastMemoUpdated(b.Manager, widgetID, next)
+		ws.BroadcastMemoUpdated(b.Manager, username, widgetID, next)
 	}
 
 	body := gin.H{"success": true, "data": next}

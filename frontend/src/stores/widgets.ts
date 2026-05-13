@@ -8,6 +8,7 @@ import {
 } from "@/utils/storeHelpers";
 import { normalizeIncomingWidgets as normalizeIncomingWidgetsUtil } from "@/utils/widgetUtils";
 import type { WidgetConfig, MarketplaceItem } from "@/types";
+import { useAuthStore } from "./auth";
 
 export const useWidgetsStore = defineStore("widgets", () => {
   const widgets = ref<WidgetConfig[]>([]);
@@ -182,6 +183,9 @@ export const useWidgetsStore = defineStore("widgets", () => {
           (w as unknown as Record<string, unknown>)["widgetVersion"] = (result as { widgetVersion?: number }).widgetVersion;
         }
         return true;
+      }
+      if (res.status === 401) {
+        useAuthStore().logout();
       }
       return false;
     } catch (e) {

@@ -1,10 +1,11 @@
 <script setup lang="ts">
 /* eslint-disable vue/no-mutating-props */
 import { computed, onMounted, onUnmounted, ref, watch } from "vue";
-import { useStorage, useDebounceFn } from "@vueuse/core";
+import { useDebounceFn } from "@vueuse/core";
 import type { WidgetConfig } from "@/types";
 import { useMainStore } from "../stores/main";
 import { useResumeRefresh } from "@/composables/useResumeRefresh";
+import { canWriteResource } from "@/utils/permissions";
 
 interface TodoItem {
   id: string;
@@ -21,7 +22,7 @@ const saveStatus = ref<"saved" | "saving" | "unsaved">("saved");
 const shouldUseSocket = computed(
   () => store.isLanModeInited && store.effectiveIsLan && store.isConnected,
 );
-const canUseTodo = computed(() => store.isLogged);
+const canUseTodo = computed(() => canWriteResource(store.isLogged));
 const TODO_POLL_INTERVAL_MS = 10000;
 const TODO_POLL_TIMEOUT_MS = 8000;
 const TODO_LOCAL_CHANGE_GRACE_MS = 8000;
@@ -157,22 +158,54 @@ const persistSave = useDebounceFn(async () => {
   }
 }, 500);
 
-// 本地持久化备份：防止网络断开时数据丢失
-const localBackup = useStorage<TodoItem[]>(
-  `startdeck-todo-backup-${props.widget.id}`,
-  [],
-);
+// 本地持久化备份：按登录用户隔离，防止访客状态恢复私有待办
+const localBackup = ref<TodoItem[]>([]);
+
+const todoBackupKey = () => {
+  const scope = store.isLogged
+    ? `auth:${encodeURIComponent(store.username || "admin")}`
+    : "guest";
+  return `startdeck-todo-backup-${scope}-${props.widget.id}`;
+};
+
+const readLocalBackup = () => {
+  if (!store.isLogged) return [];
+  try {
+    const raw = localStorage.getItem(todoBackupKey());
+    if (!raw) return [];
+    return normalizeTodoItems(JSON.parse(raw));
+  } catch {
+    return [];
+  }
+};
+
+const refreshLocalBackup = () => {
+  localBackup.value = readLocalBackup();
+};
+
+const writeLocalBackup = (items: TodoItem[]) => {
+  if (!store.isLogged) return;
+  try {
+    localStorage.setItem(todoBackupKey(), JSON.stringify(items));
+  } catch {
+    // Ignore storage quota/private mode failures; server remains source of truth.
+  }
+};
 
 watch(
   () => props.widget.data,
   (newVal) => {
-    if (store.isLogged && newVal) localBackup.value = newVal;
+    if (store.isLogged && newVal) {
+      localBackup.value = normalizeTodoItems(newVal);
+      writeLocalBackup(localBackup.value);
+    }
     // Removed auto-save here to prevent loop with backend updates
   },
   { deep: true },
 );
 
 onMounted(() => {
+  refreshLocalBackup();
   // 如果服务端数据为空，但本地有备份，则恢复备份
   if (
     store.isLogged &&
@@ -238,9 +271,11 @@ useResumeRefresh({
 
 watch([() => store.isLogged, shouldUseSocket], ([isLogged, useSocket]) => {
   if (!isLogged) {
+    localBackup.value = [];
     stopPolling();
     return;
   }
+  refreshLocalBackup();
   if (useSocket) {
     stopPolling();
     return;

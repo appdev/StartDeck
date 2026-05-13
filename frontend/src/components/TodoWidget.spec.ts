@@ -7,6 +7,7 @@ import type { WidgetConfig } from "../types";
 const { mockStore } = vi.hoisted(() => ({
   mockStore: {
     isLogged: false,
+    username: "admin",
     isLanModeInited: true,
     effectiveIsLan: true,
     isConnected: true,
@@ -38,6 +39,7 @@ describe("TodoWidget", () => {
 
   beforeEach(() => {
     mockStore.isLogged = false;
+    mockStore.username = "admin";
     mockStore.isLanModeInited = true;
     mockStore.effectiveIsLan = true;
     mockStore.isConnected = true;
