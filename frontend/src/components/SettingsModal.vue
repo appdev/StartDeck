@@ -4533,7 +4533,7 @@ document.querySelector('.card-item').addEventListener('click', () => {
                   }}
                 </p>
                 <p class="text-xs text-gray-500 mt-1">
-                  单用户默认密码:admin 多用户模式用户名密码都默认：admin
+                  默认管理员为 admin；Docker 可通过 STARTDECK_ADMIN_PASSWORD 指定启动密码。
                 </p>
               </div>
               <div class="bg-gray-50 p-5 rounded-xl border border-gray-200 mb-6">

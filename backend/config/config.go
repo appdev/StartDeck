@@ -5,11 +5,14 @@ import (
 	_ "embed"
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"log"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
+
+	"golang.org/x/crypto/bcrypt"
 )
 
 //go:embed default.json
@@ -30,6 +33,12 @@ var (
 	PublicDir            string
 	ConfigVersionsDir    string
 	SecretKey            []byte
+)
+
+const (
+	AdminPasswordEnv          = "STARTDECK_ADMIN_PASSWORD"
+	fallbackAdminPassword     = "admin"
+	defaultBcryptPasswordCost = 10
 )
 
 func Init() {
@@ -85,7 +94,91 @@ func Init() {
 	ensureDefaultTemplateFile()
 	ensureDataFile()
 	ensureAdditionalDataFiles()
+	if err := syncAdminPasswordFromEnv(); err != nil {
+		log.Printf("Failed to sync admin password from %s: %v", AdminPasswordEnv, err)
+	}
 	loadSecretKey()
+}
+
+func DefaultAdminPassword() string {
+	if password := strings.TrimSpace(os.Getenv(AdminPasswordEnv)); password != "" {
+		return password
+	}
+	return fallbackAdminPassword
+}
+
+func syncAdminPasswordFromEnv() error {
+	password := strings.TrimSpace(os.Getenv(AdminPasswordEnv))
+	if password == "" {
+		return nil
+	}
+
+	authMode := readAuthMode()
+	adminFile := filepath.Join(DataDir, "data.json")
+	if authMode == "multi" {
+		adminFile = filepath.Join(UsersDir, "admin.json")
+	}
+	changed, err := syncAdminPasswordFile(adminFile, password)
+	if err != nil {
+		return err
+	}
+	if changed {
+		log.Printf("Synced admin password from %s for %s auth mode", AdminPasswordEnv, authMode)
+	}
+	return nil
+}
+
+func readAuthMode() string {
+	data, err := os.ReadFile(SystemConfigFile)
+	if err != nil {
+		return "single"
+	}
+	var current map[string]interface{}
+	if err := json.Unmarshal(data, &current); err != nil {
+		return "single"
+	}
+	if authMode, ok := current["authMode"].(string); ok && authMode == "multi" {
+		return "multi"
+	}
+	return "single"
+}
+
+func syncAdminPasswordFile(adminFile, password string) (bool, error) {
+	adminData := map[string]interface{}{}
+	if data, err := os.ReadFile(adminFile); err == nil {
+		if strings.TrimSpace(string(data)) != "" {
+			if err := json.Unmarshal(data, &adminData); err != nil {
+				return false, fmt.Errorf("parse %s: %w", adminFile, err)
+			}
+		}
+	} else if !os.IsNotExist(err) {
+		return false, fmt.Errorf("read %s: %w", adminFile, err)
+	}
+
+	currentPassword, _ := adminData["password"].(string)
+	currentUsername, _ := adminData["username"].(string)
+	if currentUsername == "admin" && bcrypt.CompareHashAndPassword([]byte(currentPassword), []byte(password)) == nil {
+		return false, nil
+	}
+
+	hashed, err := bcrypt.GenerateFromPassword([]byte(password), defaultBcryptPasswordCost)
+	if err != nil {
+		return false, err
+	}
+	adminData["username"] = "admin"
+	adminData["password"] = string(hashed)
+
+	if err := os.MkdirAll(filepath.Dir(adminFile), 0755); err != nil {
+		return false, fmt.Errorf("create admin data dir: %w", err)
+	}
+	data, err := json.MarshalIndent(adminData, "", "  ")
+	if err != nil {
+		return false, fmt.Errorf("marshal admin data: %w", err)
+	}
+	if err := os.WriteFile(adminFile, data, 0644); err != nil {
+		return false, fmt.Errorf("write %s: %w", adminFile, err)
+	}
+	return true, nil
 }
 
 func dirExists(path string) bool {

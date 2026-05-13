@@ -11,6 +11,7 @@ services:
     ports:
       - "23000:3000"
     environment:
+      - STARTDECK_ADMIN_PASSWORD=violet
       - ICON_SERVER_BASE_URL=http://127.0.0.1:8080
       - ICON_SERVER_TIMEOUT_MS=5000
     volumes:

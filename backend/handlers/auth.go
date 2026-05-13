@@ -1,12 +1,12 @@
 package handlers
 
 import (
-	"startdeck-backend/config"
-	"startdeck-backend/models"
-	"startdeck-backend/utils"
 	"net/http"
 	"os"
 	"path/filepath"
+	"startdeck-backend/config"
+	"startdeck-backend/models"
+	"startdeck-backend/utils"
 	"strings"
 	"time"
 
@@ -43,7 +43,7 @@ func Login(c *gin.Context) {
 	if err := utils.ReadJSON(userFile, &user); err != nil {
 		// If admin user not found, create default admin
 		if req.Username == "admin" {
-			hashed, err := bcrypt.GenerateFromPassword([]byte("admin"), 10)
+			hashed, err := bcrypt.GenerateFromPassword([]byte(config.DefaultAdminPassword()), 10)
 			if err != nil {
 				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to hash password"})
 				return
@@ -71,7 +71,7 @@ func Login(c *gin.Context) {
 		// User exists logic...
 		storedPwd := user.Password
 		if storedPwd == "" {
-			storedPwd = "admin"
+			storedPwd = config.DefaultAdminPassword()
 		}
 
 		if len(storedPwd) > 0 && storedPwd[0] == '$' {

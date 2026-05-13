@@ -65,7 +65,7 @@ StartDeck 提供了丰富的自定义选项，并自建了60000个图标的图�
 - **访客统计**: 底部页脚显示网站总访问量、今日访问量及当前在线时长（需在设置中开启）。
 - **数据安全**:
   - 本地存储配置 (`server/data/data.json`)，数据完全掌握在自己手中。
-  - 简单的密码访问保护（默认密码：`admin`），保护隐私配置。
+  - 简单的密码访问保护（默认密码：`admin`，Docker 可通过 `STARTDECK_ADMIN_PASSWORD` 指定），保护隐私配置。
 - **更新提醒**: 内置版本检测功能，自动检查 GitHub 最新 Release 版本，并在设置面板提示 Docker 更新。
   ![自定义脚本.png](public/自定义脚本.png)
 
@@ -209,6 +209,7 @@ services:
     environment:
       - HOST=0.0.0.0
       - PORT=3000
+      - STARTDECK_ADMIN_PASSWORD=violet
       - ICON_SERVER_BASE_URL=http://127.0.0.1:8080
       - ICON_SERVER_TIMEOUT_MS=5000
       # 如需让后端自己识别子路径，可启用：
@@ -225,7 +226,7 @@ services:
 
 ## ⚙️ 配置说明
 
-- **默认密码**: 系统初始密码为 `admin`，请登录后在设置中及时修改。
+- **默认密码**: 系统初始密码为 `admin`。Docker 部署可设置 `STARTDECK_ADMIN_PASSWORD`，容器启动时会同步 admin 密码；未设置时请登录后在设置中及时修改。
 - **数据文件**: 所有配置（布局、组件、书签等）均存储在 `server/data/data.json` 中。
 - **音乐文件**: 将 MP3 文件放入 `server/music` 目录，刷新页面后即可在播放器中看到。
 - **站点图标数据**: Go 图标服务使用 `icon-service/data`，Docker 挂载为 `/app/icon-service/data`，Debian 安装到 `/opt/startdeck/icon-service/data`。

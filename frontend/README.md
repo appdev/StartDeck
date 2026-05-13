@@ -40,7 +40,7 @@ StartDeck 内置了多种实用的小组件，满足日常需求：
 - **访客统计**: 底部页脚显示网站总访问量、今日访问量及当前在线时长（需在设置中开启）。
 - **数据安全**:
   - 本地存储配置 (`server/data/data.json`)，数据完全掌握在自己手中。
-  - 简单的密码访问保护（默认密码：`admin`），保护隐私配置。
+  - 简单的密码访问保护（默认密码：`admin`，Docker 可通过 `STARTDECK_ADMIN_PASSWORD` 指定），保护隐私配置。
 - **CGI 扩展**: 支持通过 Node.js 编写 CGI 脚本扩展后端功能（位于 `server/cgi-bin`）。
 - **更新提醒**: 内置版本检测功能，自动检查 GitHub 最新 Release 版本，并在设置面板提示 Docker 更新。
 
@@ -177,6 +177,7 @@ StartDeck 后端集成了智能网络环境识别功能，能够根据用户的�
        ports:
          - '23000:3000'
        environment:
+         - STARTDECK_ADMIN_PASSWORD=violet
          - ICON_SERVER_BASE_URL=http://127.0.0.1:8080
          - ICON_SERVER_TIMEOUT_MS=5000
        volumes:
@@ -213,7 +214,7 @@ sudo ./deploy.sh install
 
 ## ⚙️ 配置说明
 
-- **默认密码**: 系统初始密码为 `admin`，请登录后在设置中及时修改。
+- **默认密码**: 系统初始密码为 `admin`。Docker 部署可设置 `STARTDECK_ADMIN_PASSWORD`，容器启动时会同步 admin 密码；未设置时请登录后在设置中及时修改。
 - **数据文件**: 所有配置（布局、组件、书签等）均存储在 `server/data/data.json` 中。
 - **音乐文件**: 将 MP3 文件放入 `server/music` 目录，刷新页面后即可在播放器中看到。
 - **站点图标数据**: `icon-service/data` 保存种子图标、运行期缓存和站点 metadata，Debian 部署路径为 `/opt/startdeck/icon-service/data`。
