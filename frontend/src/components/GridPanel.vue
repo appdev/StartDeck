@@ -387,6 +387,12 @@ const showLoginModal = ref(false);
 const isEditMode = ref(false);
 /** 切换编辑模式；进入编辑时设 layoutEditInProgress，退出时 await 保存后再清空，避免外网竞态导致布局被覆盖 */
 const toggleEditMode = async () => {
+  if (!store.isLogged) {
+    isEditMode.value = false;
+    store.layoutEditInProgress = false;
+    showLoginModal.value = true;
+    return;
+  }
   if (isEditMode.value) {
     isEditMode.value = false;
     try {
@@ -432,6 +438,12 @@ watch(
 );
 
 watch(showGroupSettingsModal, (val) => {
+  if (val && !store.isLogged) {
+    showGroupSettingsModal.value = false;
+    isEditMode.value = false;
+    store.layoutEditInProgress = false;
+    return;
+  }
   const wasEditing = isEditMode.value;
   isEditMode.value = val;
   if (val) {
@@ -1378,11 +1390,19 @@ const doSearch = () => {
 };
 
 const openAddModal = (groupId: string) => {
+  if (!store.isLogged) {
+    showLoginModal.value = true;
+    return;
+  }
   currentEditItem.value = null;
   currentGroupId.value = groupId;
   showEditModal.value = true;
 };
 const openEditModal = (item: NavItem, groupId?: string) => {
+  if (!store.isLogged) {
+    showLoginModal.value = true;
+    return;
+  }
   currentEditItem.value = item;
   if (groupId) {
     currentGroupId.value = groupId;
@@ -1390,6 +1410,10 @@ const openEditModal = (item: NavItem, groupId?: string) => {
   showEditModal.value = true;
 };
 const handleSave = async (payload: { item: NavItem; groupId?: string }) => {
+  if (!store.isLogged) {
+    showLoginModal.value = true;
+    throw new Error("请先登录后再编辑");
+  }
   // Check if it's a div-card widget update
   const widget = store.widgets.find((w) => w.id === payload.item.id && w.type === "div-card");
   if (widget) {
@@ -1462,6 +1486,10 @@ const normalizeDivCardWidgets = () => {
   if (changed) store.markDirty();
 };
 const addDivCardWidget = () => {
+  if (!store.isLogged) {
+    showLoginModal.value = true;
+    return;
+  }
   const newId = `div-card-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
   const { w, h } = getDivCardDefaultSize();
   const newWidget: WidgetConfig = {
@@ -1521,6 +1549,7 @@ const handleDivCardClick = (widget: WidgetConfig) => {
   }
 };
 const deleteDivCardWidget = (id: string) => {
+  if (!store.isLogged) return;
   store.widgets = store.widgets.filter((w) => w.id !== id);
   layoutData.value = layoutData.value.filter((w) => w.i !== id && w.id !== id);
   if (activeResizeWidgetId.value === id) activeResizeWidgetId.value = null;
@@ -1530,6 +1559,7 @@ const deleteDivCardWidget = (id: string) => {
   store.markDirty();
 };
 const disableWidgetFromGrid = (id: string) => {
+  if (!store.isLogged) return;
   const widget = store.widgets.find((w) => w.id === id);
   if (!widget) return;
   widget.enable = false;
@@ -2359,6 +2389,11 @@ const handleMenuOpen = (url: string | { url: string }) => {
 };
 
 const handleMenuEdit = () => {
+  if (!store.isLogged) {
+    showLoginModal.value = true;
+    closeContextMenu();
+    return;
+  }
   if (contextMenuItem.value) {
     openEditModal(contextMenuItem.value, contextMenuGroupId.value);
   }
@@ -2366,6 +2401,11 @@ const handleMenuEdit = () => {
 };
 
 const handleMenuDelete = () => {
+  if (!store.isLogged) {
+    showLoginModal.value = true;
+    closeContextMenu();
+    return;
+  }
   const item = contextMenuItem.value;
   closeContextMenu();
   if (item) {
@@ -2380,18 +2420,31 @@ const itemToDelete = ref<string | null>(null);
 const groupToDelete = ref<string | null>(null);
 
 const openDeleteConfirm = (id: string) => {
+  if (!store.isLogged) {
+    showLoginModal.value = true;
+    return;
+  }
   deleteType.value = "item";
   itemToDelete.value = id;
   showDeleteConfirm.value = true;
 };
 
 const openGroupDeleteConfirm = (id: string) => {
+  if (!store.isLogged) {
+    showLoginModal.value = true;
+    return;
+  }
   deleteType.value = "group";
   groupToDelete.value = id;
   showDeleteConfirm.value = true;
 };
 
 const confirmDelete = async () => {
+  if (!store.isLogged) {
+    showLoginModal.value = true;
+    showDeleteConfirm.value = false;
+    return;
+  }
   if (deleteType.value === "item" && itemToDelete.value) {
     const isDivCard = store.widgets.some((w) => w.id === itemToDelete.value && w.type === "div-card");
     if (isDivCard) {
@@ -2415,6 +2468,18 @@ const confirmDelete = async () => {
   }
 };
 
+watch(
+  () => store.isLogged,
+  (logged) => {
+    if (logged) return;
+    isEditMode.value = false;
+    showEditModal.value = false;
+    showGroupSettingsModal.value = false;
+    showDeleteConfirm.value = false;
+    store.layoutEditInProgress = false;
+  },
+);
+
 onMounted(() => {
   document.addEventListener("pointerdown", onDocPointerDownCapture, true);
   document.addEventListener("scroll", closeContextMenu, true);
@@ -2433,6 +2498,10 @@ onUnmounted(() => {
 const activeGroupId = ref<string | null>(null);
 
 const toggleGroupSettings = (id: string) => {
+  if (!store.isLogged) {
+    showLoginModal.value = true;
+    return;
+  }
   activeGroupId.value = id;
   showGroupSettingsModal.value = true;
 };

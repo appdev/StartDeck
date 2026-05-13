@@ -4739,140 +4739,85 @@ document.querySelector('.card-item').addEventListener('click', () => {
             </div>
           </div>
           <div v-if="activeTab === 'about'" class="min-h-full flex flex-col p-8 -mt-4">
-            <div class="bg-white/60 border border-gray-100 rounded-xl p-4">
-              <h5 class="text-sm font-bold text-gray-900 mb-2">感谢</h5>
-              <div class="text-xs text-gray-600 leading-relaxed">
-                <div class="text-sm">
-                  <span class="font-medium text-gray-800">投喂人：</span>
-                  小浣熊；*俊；*牛社区主理人；*a；*甜蜜主理人；*坤；T*t;*O；*陈等
+            <section class="bg-white/70 border border-gray-100 rounded-xl p-5">
+              <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                <div>
+                  <p class="text-xs font-semibold text-gray-500">项目介绍</p>
+                  <h5 class="mt-1 text-2xl font-bold text-gray-900">StartDeck</h5>
                 </div>
-                <div class="mt-2">
-                  <span class="font-medium text-gray-800">特别鸣谢意见反馈：</span>
-                  Excel;徐大大;时也,命也;大星;友人A;汪仔饭;Assassin;多度;Wheezer;苍蝇炖粉条等
-                </div>
+                <span class="text-sm text-gray-400 font-mono">v{{ store.currentVersion }}</span>
               </div>
-            </div>
-            <div
-              class="mt-4 bg-white/60 border border-gray-100 rounded-xl p-4 flex flex-row items-center justify-center gap-6"
-            >
-              <div
-                class="text-lg font-bold text-gray-700"
-                style="writing-mode: vertical-rl; text-orientation: mixed"
-              >
-                ☕ 投喂作者
-              </div>
-              <div class="flex flex-row flex-wrap items-start justify-center gap-6">
-                <div class="flex flex-col items-center gap-2">
-                  <img
-                    src="/public/alipay.jpg"
-                    class="w-36 h-36 rounded-lg shadow-sm border border-gray-100 object-contain transition-all"
-                    alt="支付宝"
-                  />
-                  <span class="text-sm text-gray-500">支付宝</span>
-                </div>
-                <div class="flex flex-col items-center gap-2">
-                  <img
-                    src="/public/wechat.jpg"
-                    class="w-36 h-36 rounded-lg shadow-sm border border-gray-100 object-contain transition-all"
-                    alt="微信"
-                  />
-                  <span class="text-sm text-gray-500">微信</span>
-                </div>
-              </div>
-            </div>
+              <p class="mt-4 text-sm text-gray-600 leading-relaxed">
+                StartDeck 是面向 NAS、自托管和个人工作台场景的浏览器起始页。它把常用网站、
+                内网服务、文件传输、媒体播放、RSS、天气、系统状态和 Docker 管理集中到一个
+                可配置的仪表盘中，让家庭服务器、开发环境和日常信息入口可以在同一页面完成组织。
+              </p>
+            </section>
 
-            <div class="mt-auto pt-4">
+            <section class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div class="bg-white/60 border border-gray-100 rounded-xl p-4">
-                <div class="flex items-center justify-between gap-4">
-                  <div class="flex items-baseline gap-2">
-                    <span class="text-xs text-gray-500">QQ群</span>
-                    <span class="text-lg text-gray-700 font-mono">613835409</span>
-                  </div>
-                  <div class="flex items-center gap-2">
-                    <span class="text-lg text-gray-400 font-mono">v{{ store.currentVersion }}</span>
-                  </div>
-                </div>
+                <h6 class="text-sm font-bold text-gray-900">核心定位</h6>
+                <p class="mt-2 text-xs text-gray-600 leading-relaxed">
+                  以“个人导航 + NAS 工具面板”为中心，提供分组书签、可拖拽布局、组件化信息区和
+                  多端响应式访问体验，适合放在浏览器首页、内网入口或家庭服务控制台。
+                </p>
+              </div>
+              <div class="bg-white/60 border border-gray-100 rounded-xl p-4">
+                <h6 class="text-sm font-bold text-gray-900">数据与运行</h6>
+                <p class="mt-2 text-xs text-gray-600 leading-relaxed">
+                  配置、上传文件、壁纸、音乐和图标缓存都落在本地运行目录，便于迁移、备份和
+                  Docker 卷挂载。后端负责 API、代理、文件服务和站点元数据解析。
+                </p>
+              </div>
+            </section>
 
-                <div class="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2">
-                  <div class="text-xs text-gray-500">
-                    官网与介绍：
-                    <a
-                      href="https://startdeck.top/"
-                      target="_blank"
-                      class="text-gray-600 underline hover:text-gray-900"
-                    >
-                      https://startdeck.top/
-                    </a>
-                  </div>
-                  <div class="text-xs text-gray-500">
-                    飞牛百科：
-                    <a
-                      href="http://qdnas.icu/"
-                      target="_blank"
-                      class="text-gray-600 underline hover:text-gray-900"
-                    >
-                      http://qdnas.icu/
-                    </a>
-                  </div>
+            <section class="mt-4 bg-white/60 border border-gray-100 rounded-xl p-4">
+              <h6 class="text-sm font-bold text-gray-900">主要能力</h6>
+              <div class="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-3 text-xs text-gray-600">
+                <div>
+                  <span class="font-semibold text-gray-800">导航组织：</span>
+                  分组、卡片、内外网地址、图标库、搜索入口和自定义卡片样式。
                 </div>
-
-                <div class="mt-4 flex items-center justify-end gap-6">
-                  <a
-                    href="https://github.com/Garry-QD/StartDeck"
-                    target="_blank"
-                    class="text-gray-700 hover:text-gray-900 hover:opacity-80 transition-opacity"
-                    title="GitHub"
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 24 24"
-                      fill="currentColor"
-                      class="w-6 h-6"
-                    >
-                      <path
-                        d="M12 .296c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61-.546-1.385-1.332-1.754-1.332-1.754-1.09-.744.084-.729.084-.729 1.205.084 1.84 1.236 1.84 1.236 1.07 1.835 2.807 1.305 3.492.998.108-.776.418-1.305.762-1.604-2.665-.305-5.467-1.335-5.467-5.932 0-1.31.465-2.38 1.235-3.22-.135-.304-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23a11.52 11.52 0 013.003-.405c1.02.006 2.045.138 3.003.405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.872.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.922.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.296c0-6.627-5.373-12-12-12"
-                      />
-                    </svg>
-                  </a>
-                  <a
-                    href="https://gitee.com/gjx0808/StartDeck"
-                    target="_blank"
-                    class="text-gray-700 hover:text-gray-900 hover:opacity-80 transition-opacity"
-                    title="Gitee"
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 24 24"
-                      fill="currentColor"
-                      class="w-6 h-6"
-                    >
-                      <path
-                        fill-rule="evenodd"
-                        clip-rule="evenodd"
-                        d="M11.984 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0zm5.811 17.914l-.943-.896c-.342-.325-.92-.332-1.19-.026l-2.72 3.067a.772.772 0 0 1-1.05.09l-6.55-5.314a.775.775 0 0 1 .1-1.267l6.894-4.003a.775.775 0 0 1  1.03.22l2.214 3.285a.775.775 0 0 0 1.19.12l1.024-.967a.775.775 0 0 0 .08-1.02l-3.65-5.504a.775.775 0 0 0-1.17-.14l-8.78 7.32a.775.775 0 0 0-.15 1.08l7.87 6.38a.775.775 0 0 0 1.05-.09l3.58-4.034a.775.775 0 0 0 .02-1.08z"
-                      />
-                    </svg>
-                  </a>
-                  <a
-                    href="https://hub.docker.com/r/qdnas/startdeck"
-                    target="_blank"
-                    class="text-blue-600 hover:text-blue-700 hover:opacity-80 transition-opacity"
-                    title="Docker"
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 24 24"
-                      fill="currentColor"
-                      class="w-6 h-6"
-                    >
-                      <path
-                        d="M13.84 10.74H16v2.14h-2.16v-2.14zm-2.38 0h2.16v2.14h-2.16v-2.14zm-2.38 0h2.16v2.14H9.08v-2.14zm-2.38 0h2.16v2.14H6.7v-2.14zm2.38-2.32h2.16v2.14H9.08V8.42zm2.38 0h2.16v2.14h-2.16V8.42zm-2.38-2.32h2.16v2.14H9.08V6.1zM22.45 11.09c-.2-.14-.66-.28-1.2-.2a3.22 3.22 0 00-1.52.72 4.86 4.86 0 00-.98-1.6l-.22-.2-.2.22a4.42 4.42 0 00-.9 1.46 8.92 8.92 0 00-.56 2.1H1.53a.25.25 0 00-.24.28 8.47 8.47 0 001.14 3.24c1.22 1.86 3.22 2.8 5.98 2.8 5.98 0 10.4-2.76 12.16-7.56.66.04 2.08-.02 2.42-1.3.02-.06.18-.72-.54-1.06z"
-                      />
-                    </svg>
-                  </a>
+                <div>
+                  <span class="font-semibold text-gray-800">桌面组件：</span>
+                  时钟、天气、日历、倒计时、备忘录、待办、RSS、热榜和 iframe。
+                </div>
+                <div>
+                  <span class="font-semibold text-gray-800">文件媒体：</span>
+                  跨设备文件传输、本地音乐播放器、桌面壁纸和移动端壁纸管理。
+                </div>
+                <div>
+                  <span class="font-semibold text-gray-800">服务管理：</span>
+                  Docker 容器管理、系统状态、代理转发和混合网络环境识别。
+                </div>
+                <div>
+                  <span class="font-semibold text-gray-800">个性化：</span>
+                  自定义 CSS、JavaScript、HTML 组件、布局尺寸和组件可见性。
+                </div>
+                <div>
+                  <span class="font-semibold text-gray-800">站点元数据：</span>
+                  独立 Go 图标服务负责抓取网站标题、描述和图标，并与前端卡片编辑联动。
                 </div>
               </div>
-            </div>
+            </section>
+
+            <section class="mt-4 bg-white/60 border border-gray-100 rounded-xl p-4">
+              <h6 class="text-sm font-bold text-gray-900">技术组成</h6>
+              <div class="mt-3 flex flex-wrap gap-2">
+                <span class="px-2.5 py-1 rounded-md bg-gray-900 text-white text-xs">Vue 3</span>
+                <span class="px-2.5 py-1 rounded-md bg-gray-100 text-gray-700 text-xs">TypeScript</span>
+                <span class="px-2.5 py-1 rounded-md bg-gray-100 text-gray-700 text-xs">Pinia</span>
+                <span class="px-2.5 py-1 rounded-md bg-gray-100 text-gray-700 text-xs">Vite</span>
+                <span class="px-2.5 py-1 rounded-md bg-gray-100 text-gray-700 text-xs">Go / Gin</span>
+                <span class="px-2.5 py-1 rounded-md bg-gray-100 text-gray-700 text-xs">Icon Service</span>
+                <span class="px-2.5 py-1 rounded-md bg-gray-100 text-gray-700 text-xs">Docker</span>
+                <span class="px-2.5 py-1 rounded-md bg-gray-100 text-gray-700 text-xs">Debian</span>
+              </div>
+              <p class="mt-3 text-xs text-gray-500 leading-relaxed">
+                前端负责仪表盘交互和组件配置，Go 后端负责本地数据持久化、系统能力和文件接口，
+                图标元数据服务独立运行，便于在 Docker、Debian 或本地开发环境中组合部署。
+              </p>
+            </section>
           </div>
         </div>
       </div>
