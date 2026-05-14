@@ -6,7 +6,8 @@
 - 图标
 - 默认壁纸
 - 固定图片素材
-- `favicon.ico`
+- `favicon.svg`
+- `favicon.ico` 仅保留给旧浏览器兼容
 
 注意：
 - `server/public` 是构建输出目录，不是素材源目录。

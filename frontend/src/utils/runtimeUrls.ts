@@ -18,7 +18,14 @@ declare global {
   }
 }
 
-const APP_LOCAL_PREFIXES = ["/assets", "/icons", "/favicon.ico", "/default-wallpaper.svg", "/rain-texture.png"];
+const APP_LOCAL_PREFIXES = [
+  "/assets",
+  "/icons",
+  "/favicon.ico",
+  "/favicon.svg",
+  "/default-wallpaper.svg",
+  "/rain-texture.png",
+];
 const BACKEND_PREFIXES = ["/api", "/backgrounds", "/mobile_backgrounds", "/icon-cache", "/music", "/public", "/proxy", "/socket.io"];
 
 const isBlank = (value: unknown) => String(value ?? "").trim() === "";

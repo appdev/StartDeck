@@ -568,7 +568,7 @@
               "url": "https://github.com/taseikyo/bili-favorite-downloader"
             },
             {
-              "icon": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAADFklEQVR4nFxTS2idRRT+zsz89+Ylpjc0WhAXSulKovgAC9Iq2oW0REGwxUW3guDGhVa6EXwtFAsKKiULkQoujGjBVqFwJRYUFN1qLdS2NMWaNOnNvf8/M2fO8fxJ3TgwzPM8vu98JwBKz63KG0r0fK4xVQrARUky0M7CIGaoJNtHAEkUQoPSlI/PzneP0qF/8ptuMhwRe1Qzbh2U1tAMhO0/bznS9tzYGrccqdj5xvBtevZvqQOhEzfiT/WArqmQ05vGLEoslIl9kUahTHZvpqLbJIfHJHMKoUNjvNb8uL6wdJjCXeslOfJtmjYKrTp5eO4jc3JvHlFW2xBc0KY+SxXOhInqicAO2sSycu71fZcuAA3+N/aclFkHujtkLUUdORvC7mq+zhd4VCnNXxJBltXB+RvHedC9TIWc5IJsuMngiKvmQH7csGsLq9hbUB7GUWd/GultIRu2SjATJscfimt6h0Xz9gXw3gzYGaFZjAG0VSlWgCTFhbBdEt9uOw2ucpRW6u/TOycO/7B44irQ1//S72MvHVn49muGf4BjTiUqOg7djYTTdRk7OT2G/W4zrSQ1lt5bI/SNZ+Pu5nzUzq7yt1Bw0wa9p6E7M+OXbz3V233gxbF3dw03QPT4b1b9osN4cfCFruByUQ0mFhgzrS7IoOwo2QWr6SYvXandAj35zCDtCC+sH5eQk5Jx0CWmbTFy43zwraDEPLQCyiPRIpQ0txpwpFqVg/G7z+/jn+d7+fok7fnVhHFleKb30ssHFz/8YB1//EL95ft1rzHwGra7r8Z3fcPiHzQpZ5jAAkwBMS5dG3az8fFUsMpTTqDzvXG/c/F9j1Pn8OfOT4C/ZhSzcHP7XiGoh2aFy2o6sjrlhnoulSxToEdO81AZrrlSf5lXZZkUHrzZE2r9QKAw5VDBQJC2PVG4kMhE5omnNTbByCnHXNV5NUxPHWJLkUdog5iHrVUbY5O17QHrTGOVzUQ7cFZsV4Zv+Yufhf6dB3Z3lPUeE2vgQRRuTPaJVW1aNxmZRXPMbXBViw/mAdLasd8/nT36LwAAAP//DaATgAAAAAZJREFUAwDmagdm66Zp1gAAAABJRU5ErkJggg==",
+              "icon": "/favicon.svg",
               "id": "17651980358831h7t64f5k",
               "title": "StartDeck",
               "url": "http://localhost:5173/"
@@ -610,7 +610,7 @@
               "url": "http://192.168.100.70:3002/"
             },
             {
-              "icon": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAADFklEQVR4nFxTS2idRRT+zsz89+Ylpjc0WhAXSulKovgAC9Iq2oW0REGwxUW3guDGhVa6EXwtFAsKKiULkQoujGjBVqFwJRYUFN1qLdS2NMWaNOnNvf8/M2fO8fxJ3TgwzPM8vu98JwBKz63KG0r0fK4xVQrARUky0M7CIGaoJNtHAEkUQoPSlI/PzneP0qF/8ptuMhwRe1Qzbh2U1tAMhO0/bznS9tzYGrccqdj5xvBtevZvqQOhEzfiT/WArqmQ05vGLEoslIl9kUahTHZvpqLbJIfHJHMKoUNjvNb8uL6wdJjCXeslOfJtmjYKrTp5eO4jc3JvHlFW2xBc0KY+SxXOhInqicAO2sSycu71fZcuAA3+N/aclFkHujtkLUUdORvC7mq+zhd4VCnNXxJBltXB+RvHedC9TIWc5IJsuMngiKvmQH7csGsLq9hbUB7GUWd/GultIRu2SjATJscfimt6h0Xz9gXw3gzYGaFZjAG0VSlWgCTFhbBdEt9uOw2ucpRW6u/TOycO/7B44irQ1//S72MvHVn49muGf4BjTiUqOg7djYTTdRk7OT2G/W4zrSQ1lt5bI/SNZ+Pu5nzUzq7yt1Bw0wa9p6E7M+OXbz3V233gxbF3dw03QPT4b1b9osN4cfCFruByUQ0mFhgzrS7IoOwo2QWr6SYvXandAj35zCDtCC+sH5eQk5Jx0CWmbTFy43zwraDEPLQCyiPRIpQ0txpwpFqVg/G7z+/jn+d7+fok7fnVhHFleKb30ssHFz/8YB1//EL95ft1rzHwGra7r8Z3fcPiHzQpZ5jAAkwBMS5dG3az8fFUsMpTTqDzvXG/c/F9j1Pn8OfOT4C/ZhSzcHP7XiGoh2aFy2o6sjrlhnoulSxToEdO81AZrrlSf5lXZZkUHrzZE2r9QKAw5VDBQJC2PVG4kMhE5omnNTbByCnHXNV5NUxPHWJLkUdog5iHrVUbY5O17QHrTGOVzUQ7cFZsV4Zv+Yufhf6dB3Z3lPUeE2vgQRRuTPaJVW1aNxmZRXPMbXBViw/mAdLasd8/nT36LwAAAP//DaATgAAAAAZJREFUAwDmagdm66Zp1gAAAABJRU5ErkJggg==",
+              "icon": "/favicon.svg",
               "id": "17651980358839e8ws2uii",
               "title": "StartDeck",
               "url": "http://192.168.100.70:23000/"
@@ -871,7 +871,7 @@
         "description1": "",
         "description2": "",
         "description3": "",
-        "icon": "https://icon-manager.1851365c.er.aliyun-esa.net/icon/startdeck.PNG",
+        "icon": "/favicon.svg",
         "iconSize": 185,
         "lanUrl": "https://startdeck.top/",
         "title": "startdeck",

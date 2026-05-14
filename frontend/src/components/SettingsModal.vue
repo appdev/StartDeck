@@ -332,8 +332,6 @@ watch(activeTab, (val) => {
   console.log("Active Tab Changed:", val);
 });
 
-const iconSrc = ref("/ICON.PNG");
-
 // Ensure Docker Widget Exists
 onMounted(async () => {
   if (import.meta.env.MODE === "test") return;
@@ -1986,9 +1984,6 @@ watch(activeTab, (val) => {
             关于
           </button>
         </nav>
-        <div v-if="iconSrc" class="mt-auto px-3 pb-3 hidden md:flex justify-center">
-          <img :src="iconSrc" class="w-1/4 h-auto rounded-lg shadow-sm" alt="Custom Icon" />
-        </div>
       </div>
 
       <div class="settings-content-panel flex-1 flex flex-col overflow-hidden">

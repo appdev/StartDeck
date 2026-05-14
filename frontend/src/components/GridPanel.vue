@@ -804,6 +804,33 @@ const mainContentMaxWidth = computed(() => {
   const target = Math.min(required, maxAllowed);
   return `${Math.max(0, target)}px`;
 });
+const headerTitleText = computed(() => store.appConfig.customTitle || "");
+const headerTitleMaxWidth = computed(() => {
+  if (!isHeaderRowLayout.value) {
+    const available = Math.max(160, width.value - 64);
+    return Math.min(448, available);
+  }
+
+  const base = 1280;
+  const contentWidth =
+    desktopWidgetAreaCols.value <= 4
+      ? Math.min(base, Math.round(width.value * 0.89))
+      : Math.min(
+          Math.round((base / 4) * desktopWidgetAreaCols.value),
+          Math.round(width.value * 0.89),
+        );
+  const searchWidth = isWideLayout.value ? 576 : 448;
+  const sideControlsReserve = 188;
+  const sideSlot = (contentWidth - searchWidth) / 2 - sideControlsReserve;
+  return Math.max(144, Math.min(360, Math.floor(sideSlot)));
+});
+const headerTitleFontSize = computed(() => {
+  const configured = Math.max(20, Math.min(80, store.appConfig.titleSize || 48));
+  const maxByLayout = isMobile.value ? 30 : isHeaderRowLayout.value ? 38 : 40;
+  const textLength = Math.max(1, Array.from(headerTitleText.value.trim() || "StartDeck").length);
+  const fitByWidth = Math.floor((headerTitleMaxWidth.value / textLength) * 1.62);
+  return Math.max(20, Math.min(configured, maxByLayout, fitByWidth));
+});
 const widgetColNum = computed(() => {
   if (deviceKey.value === "mobile") return 1;
   if (deviceKey.value === "tablet") return isTabletPortrait.value ? 2 : 4;
@@ -3112,9 +3139,11 @@ onUnmounted(() => {
             :style="{ order: isHeaderRowLayout && store.appConfig.titleAlign === 'right' ? 2 : 0 }"
           >
             <h1
-              class="font-bold transition-all duration-300 whitespace-nowrap"
+              class="font-bold transition-all duration-300 whitespace-nowrap overflow-hidden text-ellipsis max-w-full"
               :style="{
-                fontSize: store.appConfig.titleSize + 'px',
+                fontSize: headerTitleFontSize + 'px',
+                lineHeight: '1.05',
+                maxWidth: headerTitleMaxWidth + 'px',
                 color: store.appConfig.titleColor,
                 textShadow: store.appConfig.background ? '0 2px 8px rgba(0,0,0,0.5)' : 'none',
               }"

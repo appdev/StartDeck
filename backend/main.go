@@ -42,7 +42,8 @@ func staticCacheControlForPath(reqPath string) string {
 		strings.HasPrefix(reqPath, "/mobile_backgrounds/"),
 		strings.HasPrefix(reqPath, "/icon-cache/"),
 		strings.HasPrefix(reqPath, "/public/"),
-		reqPath == "/favicon.ico":
+		reqPath == "/favicon.ico",
+		reqPath == "/favicon.svg":
 		return "public, max-age=604800, stale-while-revalidate=86400"
 	case reqPath != "/" && reqPath != "/index.html" && path.Ext(reqPath) != "":
 		return "public, max-age=604800, stale-while-revalidate=86400"
@@ -228,6 +229,7 @@ func main() {
 		c.File(indexPath)
 	})
 	r.StaticFile(mountPath(basePath, "/favicon.ico"), filepath.Join(config.PublicDir, "favicon.ico"))
+	r.StaticFile(mountPath(basePath, "/favicon.svg"), filepath.Join(config.PublicDir, "favicon.svg"))
 	r.Static(mountPath(basePath, "/music"), config.MusicDir)
 	r.Static(mountPath(basePath, "/backgrounds"), config.BackgroundsDir)
 	r.Static(mountPath(basePath, "/mobile_backgrounds"), config.MobileBackgroundsDir)
