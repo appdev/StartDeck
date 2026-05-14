@@ -83,9 +83,13 @@ export function normalizeIncomingWidgets(
   input?: WidgetConfig[],
   isLoggedIn?: boolean,
 ): WidgetConfig[] {
-  const nextWidgets = Array.isArray(input) ? input.map((widget) => ({ ...widget })) : [];
+  const hasIncomingList = Array.isArray(input);
+  const nextWidgets = hasIncomingList ? input.map((widget) => ({ ...widget })) : [];
 
   if (nextWidgets.length === 0) {
+    if (!isLoggedIn && hasIncomingList) {
+      return [];
+    }
     return createDefaultWidgetList(!!isLoggedIn);
   }
 
@@ -168,10 +172,12 @@ export function normalizeIncomingWidgets(
     nextWidgets.push(...listWithoutDocker);
   }
 
-  // Keep normalization and "restore defaults" aligned to the same source of truth.
-  for (const fallback of createDefaultWidgetList(!!isLoggedIn)) {
-    if (!nextWidgets.some((widget) => widget.type === fallback.type)) {
-      nextWidgets.push(fallback);
+  // 游客数据已经由后端按公开权限过滤，不能补齐缺失默认组件，避免私有组件被重新显示。
+  if (isLoggedIn) {
+    for (const fallback of createDefaultWidgetList(true)) {
+      if (!nextWidgets.some((widget) => widget.type === fallback.type)) {
+        nextWidgets.push(fallback);
+      }
     }
   }
 

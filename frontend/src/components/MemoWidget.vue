@@ -6,11 +6,12 @@ import { useDevice } from "@/composables/useDevice";
 import MemoEditor from "./Memo/MemoEditor.vue";
 import MemoToolbar from "./Memo/MemoToolbar.vue";
 import { useMemoPersistence, type MemoVersion } from "./Memo/useMemoPersistence";
-import { canWriteResource } from "@/utils/permissions";
+import { canReadResource, canWriteResource } from "@/utils/permissions";
 
 const props = defineProps<{ widget: WidgetConfig }>();
 const store = useMainStore();
 const { isMobile } = useDevice(toRef(store.appConfig, "deviceMode"));
+const canReadMemo = computed(() => canReadResource(props.widget, store.isLogged));
 const canWriteMemo = computed(() => canWriteResource(store.isLogged));
 const memoStorageScope = computed(() =>
   store.isLogged ? `auth:${encodeURIComponent(store.username || "admin")}` : "guest",
@@ -526,6 +527,7 @@ const applyRemotePayload = (payload: WidgetConfig["data"], force = false) => {
 };
 
 const applyWidgetPayloadToLocal = (payload: WidgetConfig["data"] | undefined) => {
+  if (!canReadMemo.value) return;
   if (!payload) return;
   const parsed = parsePayload(payload);
   localData.value = parsed.content;
@@ -919,6 +921,10 @@ const handleBeforeUnload = () => {
 };
 
 const loadInitialMemo = async () => {
+  if (!canReadMemo.value) {
+    localData.value = "";
+    return;
+  }
   if (canWriteMemo.value) {
     await loadFromIndexedDB();
   }
@@ -980,31 +986,17 @@ watch(
 watch(
   () => props.widget.data,
   (nextData) => {
+    if (!canReadMemo.value) return;
     if (!nextData) return;
     applyRemotePayload(nextData as WidgetConfig["data"]);
   },
 );
 
-// Socket 监听已迁移到 store
-let memoSocketBound = false;
-const bindMemoSocketListeners = () => {
-  memoSocketBound = true;
-};
-const unbindMemoSocketListeners = () => {
-  memoSocketBound = false;
-};
-
 watch(
   [() => store.isLogged, preferSocketSync],
-  ([isLogged, useSocket]) => {
+  ([isLogged]) => {
     if (!isLogged) {
-      unbindMemoSocketListeners();
       return;
-    }
-    if (useSocket) {
-      bindMemoSocketListeners();
-    } else {
-      unbindMemoSocketListeners();
     }
     void pollRemote(true);
   },
@@ -1046,9 +1038,6 @@ onUnmounted(() => {
   document.removeEventListener("keydown", handleUserActivity);
   document.removeEventListener("touchstart", handleUserActivity);
   window.removeEventListener("beforeunload", handleBeforeUnload);
-
-  unbindMemoSocketListeners();
-
   if (activityTimer) clearTimeout(activityTimer);
   saveToServer(true, true);
 });
@@ -1063,6 +1052,14 @@ onUnmounted(() => {
     :class="mode === 'simple' ? 'p-0' : 'p-3'"
     :style="containerStyle"
   >
+    <div
+      v-if="!canReadMemo"
+      class="flex h-full items-center justify-center px-6 text-center text-white/70"
+    >
+      <div class="text-sm font-bold text-white">登录后查看备忘</div>
+    </div>
+
+    <template v-else>
     <button
       v-if="canWriteMemo"
       type="button"
@@ -1184,7 +1181,7 @@ onUnmounted(() => {
             v-if="mode === 'simple'"
             v-model="localData"
             class="w-full h-full bg-transparent resize-none outline-none text-sm text-white placeholder-white/45 font-normal leading-relaxed p-4 pr-11"
-            :placeholder="canWriteMemo ? '写点什么...' : '请先登录'"
+            :placeholder="canWriteMemo ? '写点什么...' : '暂无备忘'"
             :readonly="!canWriteMemo"
             @focus="handleFocus"
             @blur="handleBlur"
@@ -1197,7 +1194,7 @@ onUnmounted(() => {
             ref="editorRef"
             v-model:content="localData"
             :editable="canWriteMemo"
-            :placeholder="canWriteMemo ? '在此输入内容...' : '请先登录'"
+            :placeholder="canWriteMemo ? '在此输入内容...' : '暂无备忘'"
             @focus="handleFocus"
             @blur="handleBlur"
             @input="handleInputActivity"
@@ -1315,6 +1312,7 @@ onUnmounted(() => {
         {{ toastMessage }}
       </div>
     </Transition>
+    </template>
   </div>
 </template>
 

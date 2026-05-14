@@ -239,6 +239,8 @@ describe('MemoWidget', () => {
 
     const textarea = wrapper.find('textarea');
     expect(textarea.attributes('readonly')).toBeDefined();
+    expect((textarea.element as HTMLTextAreaElement).value).toBe('initial data');
+    expect(textarea.attributes('placeholder')).toBe('暂无备忘');
     expect(wrapper.find('[title="切换模式 (Switch Mode)"]').exists()).toBe(false);
 
     await textarea.setValue('guest edit attempt');
@@ -248,5 +250,24 @@ describe('MemoWidget', () => {
     expect(mockPut).not.toHaveBeenCalled();
     expect(mockFetch).not.toHaveBeenCalled();
     expect(mockStore.wsSend).not.toHaveBeenCalled();
+  });
+
+  it('does not expose private memo content while logged out', async () => {
+    mockStore.isLogged = false;
+    wrapper = mount(MemoWidget, {
+      props: {
+        widget: {
+          ...widgetProps.widget,
+          isPublic: false,
+          data: 'private memo',
+        },
+      },
+    });
+    await nextTick();
+
+    expect(wrapper.text()).toContain('登录后查看备忘');
+    expect(wrapper.text()).not.toContain('private memo');
+    expect(wrapper.find('textarea').exists()).toBe(false);
+    expect(mockFetch).not.toHaveBeenCalled();
   });
 });

@@ -5,7 +5,7 @@ import { useDebounceFn } from "@vueuse/core";
 import type { WidgetConfig } from "@/types";
 import { useMainStore } from "../stores/main";
 import { useResumeRefresh } from "@/composables/useResumeRefresh";
-import { canWriteResource } from "@/utils/permissions";
+import { canReadResource, canWriteResource } from "@/utils/permissions";
 
 interface TodoItem {
   id: string;
@@ -22,7 +22,8 @@ const saveStatus = ref<"saved" | "saving" | "unsaved">("saved");
 const shouldUseSocket = computed(
   () => store.isLanModeInited && store.effectiveIsLan && store.isConnected,
 );
-const canUseTodo = computed(() => canWriteResource(store.isLogged));
+const canReadTodo = computed(() => canReadResource(props.widget, store.isLogged));
+const canWriteTodo = computed(() => canWriteResource(store.isLogged));
 const TODO_POLL_INTERVAL_MS = 10000;
 const TODO_POLL_TIMEOUT_MS = 8000;
 const TODO_LOCAL_CHANGE_GRACE_MS = 8000;
@@ -49,7 +50,7 @@ const normalizeTodoItems = (value: unknown): TodoItem[] => {
 };
 
 const remainingCount = computed(() => {
-  if (!canUseTodo.value) return 0;
+  if (!canReadTodo.value) return 0;
   return normalizeTodoItems(props.widget.data).filter((item) => !item.done)
     .length;
 });
@@ -224,7 +225,7 @@ onUnmounted(() => {
 });
 
 const handleSave = () => {
-  if (!canUseTodo.value) return;
+  if (!canWriteTodo.value) return;
   lastLocalMutationAt = Date.now();
   saveStatus.value = "unsaved";
   pushUpdate();
@@ -232,7 +233,7 @@ const handleSave = () => {
 };
 
 const add = () => {
-  if (!canUseTodo.value) return;
+  if (!canWriteTodo.value) return;
   if (!newItem.value) return;
   if (!props.widget.data) props.widget.data = [];
   props.widget.data.push({
@@ -245,7 +246,7 @@ const add = () => {
 };
 
 const remove = (index: number | string) => {
-  if (!canUseTodo.value || !props.widget.data) return;
+  if (!canWriteTodo.value || !props.widget.data) return;
   const targetIndex = typeof index === "string" ? Number(index) : index;
   if (Number.isNaN(targetIndex)) return;
   props.widget.data.splice(targetIndex, 1);
@@ -312,20 +313,20 @@ const handleScrollIsolation = (e: WheelEvent) => {
       <div class="flex items-center gap-2">
         <span>待办</span>
         <span
-          v-if="canUseTodo && saveStatus !== 'saved'"
+          v-if="canWriteTodo && saveStatus !== 'saved'"
           class="text-[10px] font-normal text-white/60 transition-opacity"
         >
           {{ saveStatus === "saving" ? "..." : "" }}
         </span>
       </div>
-      <span v-if="canUseTodo" class="text-[10px] text-white/60"
-        >{{ remainingCount }} 待完成</span
+      <span v-if="canReadTodo" class="text-[10px] text-white/60"
+        >{{ canWriteTodo ? "" : "只读 · " }}{{ remainingCount }} 待完成</span
       >
       <span v-else class="text-[10px] text-white/60">需登录</span>
     </div>
 
     <div
-      v-if="!canUseTodo"
+      v-if="!canReadTodo"
       class="flex-1 flex items-center justify-center text-white/70"
     >
       <div class="text-center px-6">
@@ -347,7 +348,9 @@ const handleScrollIsolation = (e: WheelEvent) => {
             type="checkbox"
             v-model="item.done"
             @change="handleSave"
-            class="rounded text-white focus:ring-0 cursor-pointer mt-0.5"
+            :disabled="!canWriteTodo"
+            class="rounded text-white focus:ring-0 mt-0.5 disabled:cursor-not-allowed disabled:opacity-60"
+            :class="canWriteTodo ? 'cursor-pointer' : 'cursor-default'"
           />
           <span
             class="text-xs flex-1 break-all whitespace-normal leading-tight"
@@ -356,6 +359,7 @@ const handleScrollIsolation = (e: WheelEvent) => {
             >{{ item.text }}</span
           >
           <button
+            v-if="canWriteTodo"
             @click="remove(idx)"
             class="text-xs text-white/50 hover:text-white/80 border border-white/10 rounded px-2 py-0.5 hover:bg-white/10 transition-colors whitespace-nowrap shrink-0"
           >
@@ -370,7 +374,7 @@ const handleScrollIsolation = (e: WheelEvent) => {
         </div>
       </div>
 
-      <div class="mt-2 pt-2 border-t border-white/10 flex gap-2">
+      <div v-if="canWriteTodo" class="mt-2 pt-2 border-t border-white/10 flex gap-2">
         <input
           v-model="newItem"
           @keyup.enter="add"

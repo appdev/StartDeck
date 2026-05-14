@@ -22,11 +22,11 @@ vi.mock("../stores/main", () => ({
   useMainStore: () => mockStore,
 }));
 
-const createWidget = (data: WidgetConfig["data"] = []): WidgetConfig => ({
+const createWidget = (data: WidgetConfig["data"] = [], isPublic = true): WidgetConfig => ({
   id: "todo-1",
   type: "todo",
   enable: true,
-  isPublic: true,
+  isPublic,
   x: 0,
   y: 0,
   w: 1,
@@ -56,9 +56,9 @@ describe("TodoWidget", () => {
     vi.unstubAllGlobals();
   });
 
-  it("未登录时隐藏待办操作入口", () => {
+  it("未登录公开待办时只读展示内容", () => {
     const widget = createWidget([
-      { id: "1", text: "访客不可编辑", done: false },
+      { id: "1", text: "访客可查看", done: false },
     ]);
     const originalData = JSON.stringify(widget.data);
 
@@ -66,13 +66,32 @@ describe("TodoWidget", () => {
       props: { widget },
     });
 
-    expect(wrapper.text()).toContain("登录后使用待办");
-    expect(wrapper.text()).toContain("需登录");
-    expect(wrapper.find("input").exists()).toBe(false);
+    expect(wrapper.text()).toContain("访客可查看");
+    expect(wrapper.text()).toContain("只读 · 1 待完成");
+    expect(wrapper.text()).not.toContain("登录后使用待办");
+    const checkbox = wrapper.find('input[type="checkbox"]');
+    expect(checkbox.exists()).toBe(true);
+    expect(checkbox.attributes("disabled")).toBeDefined();
     expect(wrapper.find("button").exists()).toBe(false);
     expect(JSON.stringify(widget.data)).toBe(originalData);
     expect(mockStore.saveSingleWidget).not.toHaveBeenCalled();
     expect(mockStore.wsSend).not.toHaveBeenCalled();
+  });
+
+  it("未登录私有待办时显示登录限制", () => {
+    const widget = createWidget([
+      { id: "1", text: "访客不可查看", done: false },
+    ], false);
+
+    wrapper = mount(TodoWidget, {
+      props: { widget },
+    });
+
+    expect(wrapper.text()).toContain("登录后使用待办");
+    expect(wrapper.text()).toContain("需登录");
+    expect(wrapper.text()).not.toContain("访客不可查看");
+    expect(wrapper.find("input").exists()).toBe(false);
+    expect(wrapper.find("button").exists()).toBe(false);
   });
 
   it("登录后允许添加待办", async () => {
