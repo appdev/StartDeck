@@ -6,12 +6,12 @@ import { useDevice } from "@/composables/useDevice";
 import MemoEditor from "./Memo/MemoEditor.vue";
 import MemoToolbar from "./Memo/MemoToolbar.vue";
 import { useMemoPersistence, type MemoVersion } from "./Memo/useMemoPersistence";
-import { canReadResource, canWriteResource } from "@/utils/permissions";
+import { canWriteResource } from "@/utils/permissions";
 
 const props = defineProps<{ widget: WidgetConfig }>();
 const store = useMainStore();
 const { isMobile } = useDevice(toRef(store.appConfig, "deviceMode"));
-const canReadMemo = computed(() => canReadResource(props.widget, store.isLogged));
+const canReadMemo = computed(() => store.isLogged);
 const canWriteMemo = computed(() => canWriteResource(store.isLogged));
 const memoStorageScope = computed(() =>
   store.isLogged ? `auth:${encodeURIComponent(store.username || "admin")}` : "guest",
@@ -1056,7 +1056,7 @@ onUnmounted(() => {
       v-if="!canReadMemo"
       class="flex h-full items-center justify-center px-6 text-center text-white/70"
     >
-      <div class="text-sm font-bold text-white">登录后查看备忘</div>
+      <div class="text-sm font-bold text-white">登录后使用备忘</div>
     </div>
 
     <template v-else>

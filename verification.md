@@ -48,20 +48,20 @@
 
 执行者：Codex
 
-验收结果：针对本次权限修复通过；完整前端测试套件仍存在其他失败项。
+验收结果：针对本次隐私限制修复通过；备忘录、待办即使公开也需要登录。
 
 修复点：
 
-- 公开待办：未登录时只读展示内容，不再显示“登录后使用待办”；勾选、删除、新增仍需登录。
+- 公开待办：未登录时不展示内容，只显示“登录后使用待办”和“需登录”。
 - 私有待办：未登录时不展示内容，只显示登录限制。
-- 公开备忘录：未登录时只读展示内容，空内容显示“暂无备忘”。
+- 公开备忘录：未登录时不展示内容，只显示“登录后使用备忘”。
 - 私有备忘录：未登录时不暴露内容。
-- 游客组件归一化：不再把后端已过滤掉的默认备忘录/待办补回页面。
+- 后端公开接口：游客访问 `/api/data` 或 `/api/widgets/:id` 时，即使 `memo`、`todo` 标记为 `isPublic: true`，也不会返回这两类用户数据组件内容。
 
 命令记录：
 
 - `npm test -- --run src/components/TodoWidget.spec.ts src/components/MemoWidget.spec.ts src/utils/widgetUtils.spec.ts src/stores/cache.spec.ts`：通过，16 tests passed。
 - `npx eslint src/components/TodoWidget.vue src/components/MemoWidget.vue src/components/TodoWidget.spec.ts src/components/MemoWidget.spec.ts src/utils/widgetUtils.ts src/utils/widgetUtils.spec.ts`：通过。
+- `go test ./...`（backend）：通过。
 - `npm run build`：通过，含既有 Browserslist/baseline 数据过期、大 chunk 等非阻塞提示。
 - `git diff --check`：通过。
-- `npm test -- --run`：未通过；失败项为 `CustomWidgets.spec.ts` 组件目录数为 0、`GroupSelector.spec.ts` 4 个断言失败、`Memo/MemoConflictRepro.spec.ts` 版本时间戳断言失败。

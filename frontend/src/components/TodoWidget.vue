@@ -5,7 +5,7 @@ import { useDebounceFn } from "@vueuse/core";
 import type { WidgetConfig } from "@/types";
 import { useMainStore } from "../stores/main";
 import { useResumeRefresh } from "@/composables/useResumeRefresh";
-import { canReadResource, canWriteResource } from "@/utils/permissions";
+import { canWriteResource } from "@/utils/permissions";
 
 interface TodoItem {
   id: string;
@@ -22,7 +22,7 @@ const saveStatus = ref<"saved" | "saving" | "unsaved">("saved");
 const shouldUseSocket = computed(
   () => store.isLanModeInited && store.effectiveIsLan && store.isConnected,
 );
-const canReadTodo = computed(() => canReadResource(props.widget, store.isLogged));
+const canReadTodo = computed(() => store.isLogged);
 const canWriteTodo = computed(() => canWriteResource(store.isLogged));
 const TODO_POLL_INTERVAL_MS = 10000;
 const TODO_POLL_TIMEOUT_MS = 8000;
@@ -319,9 +319,7 @@ const handleScrollIsolation = (e: WheelEvent) => {
           {{ saveStatus === "saving" ? "..." : "" }}
         </span>
       </div>
-      <span v-if="canReadTodo" class="text-[10px] text-white/60"
-        >{{ canWriteTodo ? "" : "只读 · " }}{{ remainingCount }} 待完成</span
-      >
+      <span v-if="canReadTodo" class="text-[10px] text-white/60">{{ remainingCount }} 待完成</span>
       <span v-else class="text-[10px] text-white/60">需登录</span>
     </div>
 

@@ -210,6 +210,16 @@ func removeSensitiveFields(value interface{}, keys map[string]struct{}) {
 	}
 }
 
+func widgetRequiresLoginForGuest(widgetMap map[string]interface{}) bool {
+	wType, _ := widgetMap["type"].(string)
+	switch wType {
+	case "memo", "todo":
+		return true
+	default:
+		return false
+	}
+}
+
 func normalizeEmbeddedAssetString(raw string) (string, bool) {
 	trimmed := strings.TrimSpace(raw)
 	if !strings.HasPrefix(trimmed, "data:image/") {
@@ -437,6 +447,9 @@ func GetData(c *gin.Context) {
 			var filteredWidgets []interface{}
 			for _, w := range widgets {
 				if widgetMap, ok := w.(map[string]interface{}); ok {
+					if widgetRequiresLoginForGuest(widgetMap) {
+						continue
+					}
 					if isPublic, ok := widgetMap["isPublic"].(bool); ok && isPublic {
 						filteredWidgets = append(filteredWidgets, widgetMap)
 					}
@@ -581,7 +594,7 @@ func GetWidget(c *gin.Context) {
 			if wId, ok := widgetMap["id"].(string); ok && wId == id {
 				if isGuest {
 					isPublic, _ := widgetMap["isPublic"].(bool)
-					if !isPublic {
+					if !isPublic || widgetRequiresLoginForGuest(widgetMap) {
 						c.JSON(http.StatusNotFound, gin.H{"error": "Widget not found"})
 						return
 					}

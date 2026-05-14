@@ -179,6 +179,8 @@ func TestGetWidgetGuestCanOnlyReadPublicWidget(t *testing.T) {
 			"groups": [],
 			"widgets": [
 				{"id":"private-todo","type":"todo","enable":true,"isPublic":false,"data":[{"id":"1","text":"secret","done":false}]},
+				{"id":"public-todo","type":"todo","enable":true,"isPublic":true,"data":[{"id":"2","text":"public todo","done":false}]},
+				{"id":"public-memo","type":"memo","enable":true,"isPublic":true,"data":{"content":"public memo","server_ts":1,"mode":"simple"}},
 				{"id":"public-widget","type":"custom","enable":true,"isPublic":true,"data":{"title":"public","lanUrl":"http://secret.lan","nested":{"lanHost":"private-host"}}}
 			],
 			"version": 1
@@ -193,6 +195,20 @@ func TestGetWidgetGuestCanOnlyReadPublicWidget(t *testing.T) {
 	router.ServeHTTP(privateRecorder, privateRequest)
 	if privateRecorder.Code != http.StatusNotFound {
 		t.Fatalf("expected guest private widget read to be 404, got %d", privateRecorder.Code)
+	}
+
+	publicTodoRecorder := httptest.NewRecorder()
+	publicTodoRequest := httptest.NewRequest(http.MethodGet, "/api/widgets/public-todo", nil)
+	router.ServeHTTP(publicTodoRecorder, publicTodoRequest)
+	if publicTodoRecorder.Code != http.StatusNotFound {
+		t.Fatalf("expected guest public todo read to be 404, got %d", publicTodoRecorder.Code)
+	}
+
+	publicMemoRecorder := httptest.NewRecorder()
+	publicMemoRequest := httptest.NewRequest(http.MethodGet, "/api/widgets/public-memo", nil)
+	router.ServeHTTP(publicMemoRecorder, publicMemoRequest)
+	if publicMemoRecorder.Code != http.StatusNotFound {
+		t.Fatalf("expected guest public memo read to be 404, got %d", publicMemoRecorder.Code)
 	}
 
 	publicRecorder := httptest.NewRecorder()
@@ -215,6 +231,51 @@ func TestGetWidgetGuestCanOnlyReadPublicWidget(t *testing.T) {
 	nested, _ := data["nested"].(map[string]interface{})
 	if _, exists := nested["lanHost"]; exists {
 		t.Fatalf("expected nested lanHost to be stripped for guests")
+	}
+}
+
+func TestGetDataGuestExcludesPublicMemoAndTodo(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	withTempDataConfig(
+		t,
+		`{"authMode":"single"}`,
+		`{
+			"groups": [],
+			"widgets": [
+				{"id":"public-clock","type":"clock","enable":true,"isPublic":true},
+				{"id":"public-todo","type":"todo","enable":true,"isPublic":true,"data":[{"id":"1","text":"public todo","done":false}]},
+				{"id":"public-memo","type":"memo","enable":true,"isPublic":true,"data":{"content":"public memo","server_ts":1,"mode":"simple"}}
+			],
+			"version": 1
+		}`,
+	)
+
+	router := gin.New()
+	router.GET("/api/data", GetData)
+
+	recorder := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/api/data", nil)
+	router.ServeHTTP(recorder, request)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected guest data read to be 200, got %d", recorder.Code)
+	}
+	var body map[string]interface{}
+	if err := json.Unmarshal(recorder.Body.Bytes(), &body); err != nil {
+		t.Fatalf("decode response: %v", err)
+	}
+	widgets, ok := body["widgets"].([]interface{})
+	if !ok {
+		t.Fatalf("expected widgets array, got %#v", body["widgets"])
+	}
+	if len(widgets) != 1 {
+		t.Fatalf("expected only public non-user-data widget, got %d widgets", len(widgets))
+	}
+	widget, ok := widgets[0].(map[string]interface{})
+	if !ok {
+		t.Fatalf("expected widget object, got %#v", widgets[0])
+	}
+	if widget["id"] != "public-clock" {
+		t.Fatalf("expected public-clock to remain, got %#v", widget["id"])
 	}
 }
 

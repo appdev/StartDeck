@@ -232,19 +232,15 @@ describe('MemoWidget', () => {
     expect((textarea.element as HTMLTextAreaElement).value).toBe('remote sync content');
   });
 
-  it('does not write IndexedDB or save while logged out', async () => {
+  it('requires login for public memo while logged out', async () => {
     mockStore.isLogged = false;
     wrapper = createWrapper();
     await nextTick();
 
-    const textarea = wrapper.find('textarea');
-    expect(textarea.attributes('readonly')).toBeDefined();
-    expect((textarea.element as HTMLTextAreaElement).value).toBe('initial data');
-    expect(textarea.attributes('placeholder')).toBe('暂无备忘');
+    expect(wrapper.text()).toContain('登录后使用备忘');
+    expect(wrapper.text()).not.toContain('initial data');
+    expect(wrapper.find('textarea').exists()).toBe(false);
     expect(wrapper.find('[title="切换模式 (Switch Mode)"]').exists()).toBe(false);
-
-    await textarea.setValue('guest edit attempt');
-    await textarea.trigger('blur');
     await new Promise(resolve => setTimeout(resolve, 50));
 
     expect(mockPut).not.toHaveBeenCalled();
@@ -265,7 +261,7 @@ describe('MemoWidget', () => {
     });
     await nextTick();
 
-    expect(wrapper.text()).toContain('登录后查看备忘');
+    expect(wrapper.text()).toContain('登录后使用备忘');
     expect(wrapper.text()).not.toContain('private memo');
     expect(wrapper.find('textarea').exists()).toBe(false);
     expect(mockFetch).not.toHaveBeenCalled();
