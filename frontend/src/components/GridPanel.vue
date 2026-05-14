@@ -4013,7 +4013,7 @@ onUnmounted(() => {
                   <!-- 外网备用地址 (左上角, 蓝色) -->
                   <div
                     v-if="item.backupUrls && item.backupUrls.length > 0"
-                    class="absolute -top-1 -left-4 z-20 flex flex-col gap-0.5 pointer-events-auto"
+                    class="absolute -top-1 -left-1 z-20 flex flex-col gap-0.5 pointer-events-auto"
                   >
                     <div
                       v-for="(url, idx) in item.backupUrls"
@@ -4037,7 +4037,7 @@ onUnmounted(() => {
                   <!-- 内网备用地址 (右上角, 绿色) -->
                   <div
                     v-if="item.backupLanUrls && item.backupLanUrls.length > 0"
-                    class="absolute -top-1 -right-4 z-20 flex flex-col gap-0.5 pointer-events-auto"
+                    class="absolute -top-1 -right-1 z-20 flex flex-col gap-0.5 pointer-events-auto"
                   >
                     <div
                       v-for="(url, idx) in item.backupLanUrls"
