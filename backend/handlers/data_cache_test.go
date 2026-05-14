@@ -234,7 +234,7 @@ func TestGetWidgetGuestCanOnlyReadPublicWidget(t *testing.T) {
 	}
 }
 
-func TestGetDataGuestExcludesPublicMemoAndTodo(t *testing.T) {
+func TestGetDataGuestKeepsPublicMemoAndTodoShells(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	withTempDataConfig(
 		t,
@@ -267,15 +267,29 @@ func TestGetDataGuestExcludesPublicMemoAndTodo(t *testing.T) {
 	if !ok {
 		t.Fatalf("expected widgets array, got %#v", body["widgets"])
 	}
-	if len(widgets) != 1 {
-		t.Fatalf("expected only public non-user-data widget, got %d widgets", len(widgets))
+	if len(widgets) != 3 {
+		t.Fatalf("expected public widgets to remain visible, got %d widgets", len(widgets))
 	}
-	widget, ok := widgets[0].(map[string]interface{})
-	if !ok {
-		t.Fatalf("expected widget object, got %#v", widgets[0])
+	byID := map[string]map[string]interface{}{}
+	for _, raw := range widgets {
+		widget, ok := raw.(map[string]interface{})
+		if !ok {
+			t.Fatalf("expected widget object, got %#v", raw)
+		}
+		id, _ := widget["id"].(string)
+		byID[id] = widget
 	}
-	if widget["id"] != "public-clock" {
-		t.Fatalf("expected public-clock to remain, got %#v", widget["id"])
+	if _, ok := byID["public-clock"]; !ok {
+		t.Fatal("expected public-clock to remain")
+	}
+	for _, id := range []string{"public-todo", "public-memo"} {
+		widget, ok := byID[id]
+		if !ok {
+			t.Fatalf("expected %s shell to remain", id)
+		}
+		if _, exists := widget["data"]; exists {
+			t.Fatalf("expected %s data to be hidden from guest response", id)
+		}
 	}
 }
 

@@ -65,3 +65,22 @@
 - `go test ./...`（backend）：通过。
 - `npm run build`：通过，含既有 Browserslist/baseline 数据过期、大 chunk 等非阻塞提示。
 - `git diff --check`：通过。
+
+## 2026-05-14 公开组件外壳与登录同步修复
+
+执行者：Codex
+
+验收结果：通过。
+
+修复点：
+
+- 游客 `/api/data` 会保留 `isPublic: true` 的待办、备忘录组件外壳，避免登出后组件消失。
+- 游客响应会删除公开待办、备忘录的 `data` 字段，前端仍只显示登录限制，不暴露内容。
+- 登录成功后立即拉取认证态 `/api/data`，不再依赖手动刷新。
+- 认证态下晚返回的游客快照不会覆盖登录后的页面状态。
+
+命令记录：
+
+- `go test ./...`（backend）：通过。
+- `npm test -- --run src/components/TodoWidget.spec.ts src/components/MemoWidget.spec.ts src/utils/widgetUtils.spec.ts src/stores/cache.spec.ts`：通过，16 tests passed。
+- `npm run type-check`：通过。

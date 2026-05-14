@@ -278,10 +278,12 @@ export const useSyncStore = defineStore("sync", () => {
     const responseRole = auth.isLogged ? detectResponseRole(data) : "guest";
     const shouldApply = responseRole === "auth"
       ? auth.isLogged
-      : true; // guest data can always update guest state
+      : !auth.isLogged; // guest data must not overwrite an authenticated session
 
-    if (!shouldApply && responseRole === "guest" && activeStateRole === "auth") {
-      console.warn("[DualState] Dropping guest data while auth state is active");
+    if (!shouldApply) {
+      if (responseRole === "guest") {
+        console.warn("[DualState] Dropping guest data while auth state is active");
+      }
       isApplyingServerData = false;
       return;
     }

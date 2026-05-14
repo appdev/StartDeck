@@ -220,6 +220,12 @@ func widgetRequiresLoginForGuest(widgetMap map[string]interface{}) bool {
 	}
 }
 
+func hideGuestWidgetData(widgetMap map[string]interface{}) {
+	if widgetRequiresLoginForGuest(widgetMap) {
+		delete(widgetMap, "data")
+	}
+}
+
 func normalizeEmbeddedAssetString(raw string) (string, bool) {
 	trimmed := strings.TrimSpace(raw)
 	if !strings.HasPrefix(trimmed, "data:image/") {
@@ -447,10 +453,8 @@ func GetData(c *gin.Context) {
 			var filteredWidgets []interface{}
 			for _, w := range widgets {
 				if widgetMap, ok := w.(map[string]interface{}); ok {
-					if widgetRequiresLoginForGuest(widgetMap) {
-						continue
-					}
 					if isPublic, ok := widgetMap["isPublic"].(bool); ok && isPublic {
+						hideGuestWidgetData(widgetMap)
 						filteredWidgets = append(filteredWidgets, widgetMap)
 					}
 				}
@@ -482,28 +486,30 @@ func GetData(c *gin.Context) {
 	}
 
 	// Align memo widget data with memo files to avoid rollback on full refresh
-	if widgets, ok := userData["widgets"].([]interface{}); ok {
-		for _, w := range widgets {
-			widgetMap, ok := w.(map[string]interface{})
-			if !ok {
-				continue
+	if !isGuest {
+		if widgets, ok := userData["widgets"].([]interface{}); ok {
+			for _, w := range widgets {
+				widgetMap, ok := w.(map[string]interface{})
+				if !ok {
+					continue
+				}
+				wType, _ := widgetMap["type"].(string)
+				if wType != "memo" {
+					continue
+				}
+				widgetID, _ := widgetMap["id"].(string)
+				if widgetID == "" {
+					continue
+				}
+				memoFile := memoFilePath(username, widgetID)
+				memoFileMu.Lock()
+				data, err := ensureMemoFile(userFile, memoFile, widgetID, widgetMap["data"], userData)
+				memoFileMu.Unlock()
+				if err != nil {
+					continue
+				}
+				widgetMap["data"] = data
 			}
-			wType, _ := widgetMap["type"].(string)
-			if wType != "memo" {
-				continue
-			}
-			widgetID, _ := widgetMap["id"].(string)
-			if widgetID == "" {
-				continue
-			}
-			memoFile := memoFilePath(username, widgetID)
-			memoFileMu.Lock()
-			data, err := ensureMemoFile(userFile, memoFile, widgetID, widgetMap["data"], userData)
-			memoFileMu.Unlock()
-			if err != nil {
-				continue
-			}
-			widgetMap["data"] = data
 		}
 	}
 

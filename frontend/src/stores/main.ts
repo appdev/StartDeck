@@ -20,7 +20,13 @@ export const useMainStore = defineStore("main", () => {
   const username = computed(() => auth.username);
   const isLogged = computed(() => auth.isLogged);
   const password = computed(() => auth.password);
-  const login = auth.login;
+  const login = async (usr: string, pwd: string): Promise<boolean> => {
+    const success = await auth.login(usr, pwd);
+    if (success) {
+      await sync.fetchData();
+    }
+    return success;
+  };
   const register = auth.register;
   const changePassword = auth.changePassword;
   const fetchUsers = auth.fetchUsers;
