@@ -3,6 +3,7 @@ import { defineStore } from "pinia";
 import { useStorage } from "@vueuse/core";
 import type { AppConfig, SystemConfig } from "@/types";
 import { resolveManagedUrl } from "@/utils/runtimeUrls";
+import { createDefaultSearchEngines } from "@/utils/searchEngines";
 
 const DEFAULT_MARKETPLACE_LIST_URL = "http://qdnas.icu:23111/";
 
@@ -89,11 +90,7 @@ export const useConfigStore = defineStore("config", () => {
     cardBorderColor: "transparent",
     showCardBackground: true,
     iconShape: "rounded",
-    searchEngines: [
-      { id: "google", key: "google", label: "Google", urlTemplate: "https://www.google.com/search?q={q}" },
-      { id: "bing", key: "bing", label: "Bing", urlTemplate: "https://cn.bing.com/search?q={q}" },
-      { id: "baidu", key: "baidu", label: "百度", urlTemplate: "https://www.baidu.com/s?wd={q}" },
-    ],
+    searchEngines: createDefaultSearchEngines(),
     defaultSearchEngine: "google",
     rememberLastEngine: true,
     groupTitleColor: "#ffffff",

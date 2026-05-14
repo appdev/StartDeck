@@ -10,6 +10,7 @@ import { useConfigStore } from "./config";
 import { useCacheStore } from "./cache";
 import { useSaveStore } from "./save";
 import { useNetworkStore } from "./network";
+import { createDefaultSearchEngines } from "@/utils/searchEngines";
 import { toWsUrl } from "@/utils/runtimeUrls";
 
 export const useSyncStore = defineStore("sync", () => {
@@ -346,11 +347,7 @@ export const useSyncStore = defineStore("sync", () => {
       ) as string;
     }
     if (!configStore.appConfig.searchEngines?.length) {
-      configStore.appConfig.searchEngines = [
-        { id: "google", key: "google", label: "Google", urlTemplate: "https://www.google.com/search?q={q}" },
-        { id: "bing", key: "bing", label: "Bing", urlTemplate: "https://cn.bing.com/search?q={q}" },
-        { id: "baidu", key: "baidu", label: "百度", urlTemplate: "https://www.baidu.com/s?wd={q}" },
-      ];
+      configStore.appConfig.searchEngines = createDefaultSearchEngines();
     }
     if (!configStore.appConfig.defaultSearchEngine) configStore.appConfig.defaultSearchEngine = "google";
     if (typeof configStore.appConfig.rememberLastEngine !== "boolean") configStore.appConfig.rememberLastEngine = true;

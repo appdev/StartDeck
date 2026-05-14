@@ -79,6 +79,12 @@ export interface SearchEngine {
   key: string;
   label: string;
   urlTemplate: string;
+  icon?: string;
+  iconSourceUrl?: string;
+  iconFetchedAt?: string;
+  iconBackgroundMode?: IconBackgroundMode;
+  iconAutoBackgroundColor?: string;
+  iconCustomBackgroundColor?: string;
 }
 
 export interface WallpaperConfig {

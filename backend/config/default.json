@@ -94,19 +94,22 @@
         "id": "baidu",
         "key": "baidu",
         "label": "百度",
-        "urlTemplate": "https://www.baidu.com/s?wd={q}"
+        "urlTemplate": "https://www.baidu.com/s?wd={q}",
+        "iconSourceUrl": "https://www.baidu.com"
       },
       {
         "id": "google",
         "key": "google",
         "label": "谷歌",
-        "urlTemplate": "https://www.google.com/search?q={q}"
+        "urlTemplate": "https://www.google.com/search?q={q}",
+        "iconSourceUrl": "https://www.google.com"
       },
       {
         "id": "bing",
         "key": "bing",
         "label": "Bing",
-        "urlTemplate": "https://cn.bing.com/search?q={q}"
+        "urlTemplate": "https://cn.bing.com/search?q={q}",
+        "iconSourceUrl": "https://cn.bing.com"
       }
     ],
     "showCardBackground": false,

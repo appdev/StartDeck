@@ -19,10 +19,15 @@ import { canReadResource } from "@/utils/permissions";
 import { useWallpaperRotation } from "../composables/useWallpaperRotation";
 import { useDevice } from "../composables/useDevice";
 import { generateLayout, type GridLayoutItem } from "../utils/gridLayout";
-import type { NavItem, WidgetConfig, NavGroup } from "@/types";
+import type { NavItem, SearchEngine, WidgetConfig, NavGroup } from "@/types";
 import OverlayMotion from "@/components/base/OverlayMotion.vue";
 import { isInternalNetwork, getNetworkConfig, computeEffectiveNetworkMode } from "@/utils/network";
 import { resolveIconBackground } from "@/utils/iconAppearance";
+import {
+  buildSearchEngineUrl,
+  hydrateSearchEngineIcons,
+  normalizeSearchEngines,
+} from "@/utils/searchEngines";
 import DOMPurify from "dompurify";
 const CHUNK_RELOAD_KEY = "startdeck:chunk-reload-at";
 const loadAsync = <T extends Component>(loader: AsyncComponentLoader<T>) =>
@@ -68,6 +73,7 @@ const HotWidget = loadAsync(() => import("./HotWidget.vue"));
 const ClockWeatherWidget = loadAsync(() => import("./ClockWeatherWidget.vue"));
 const RssWidget = loadAsync(() => import("./RssWidget.vue"));
 const IconShape = loadAsync(() => import("./IconShape.vue"));
+const SearchEngineIcon = loadAsync(() => import("./SearchEngineIcon.vue"));
 const IframeWidget = loadAsync(() => import("./IframeWidget.vue"));
 const SimpleWeatherWidget = loadAsync(() => import("./SimpleWeatherWidget.vue"));
 const CalendarWidget = loadAsync(() => import("./CalendarWidget.vue"));
@@ -511,19 +517,7 @@ const toggleForceMode = () => {
 };
 
 const searchEngineStored = useStorage("start-deck-engine", "google");
-const engines = computed(
-  () =>
-    store.appConfig.searchEngines || [
-      {
-        id: "google",
-        key: "google",
-        label: "Google",
-        urlTemplate: "https://www.google.com/search?q={q}",
-      },
-      { id: "bing", key: "bing", label: "Bing", urlTemplate: "https://cn.bing.com/search?q={q}" },
-      { id: "baidu", key: "baidu", label: "百度", urlTemplate: "https://www.baidu.com/s?wd={q}" },
-    ],
-);
+const engines = computed(() => normalizeSearchEngines(store.appConfig.searchEngines));
 const sessionEngine = ref<string | null>(null);
 const effectiveEngine = computed({
   get: () =>
@@ -540,6 +534,52 @@ const effectiveEngine = computed({
 });
 const searchText = ref("");
 const searchInputRef = ref<HTMLInputElement | null>(null);
+const searchEnginePickerRef = ref<HTMLElement | null>(null);
+const isSearchEngineMenuOpen = ref(false);
+let searchEngineIconSaveTimer: number | null = null;
+
+const activeSearchEngine = computed<SearchEngine | undefined>(() => {
+  return (
+    engines.value.find((engine) => engine.key === effectiveEngine.value) ||
+    engines.value.find((engine) => engine.key === store.appConfig.defaultSearchEngine) ||
+    engines.value[0]
+  );
+});
+
+const searchEngineIconFingerprint = computed(() =>
+  engines.value
+    .map((engine) => `${engine.key}:${engine.urlTemplate}:${engine.iconSourceUrl || ""}`)
+    .join("|"),
+);
+
+const closeSearchEngineMenu = (event?: MouseEvent) => {
+  if (!event) {
+    isSearchEngineMenuOpen.value = false;
+    return;
+  }
+  const target = event.target;
+  if (target instanceof Node && searchEnginePickerRef.value?.contains(target)) return;
+  isSearchEngineMenuOpen.value = false;
+};
+
+const toggleSearchEngineMenu = () => {
+  isSearchEngineMenuOpen.value = !isSearchEngineMenuOpen.value;
+};
+
+const selectSearchEngine = (key: string) => {
+  effectiveEngine.value = key;
+  isSearchEngineMenuOpen.value = false;
+  nextTick(() => searchInputRef.value?.focus());
+};
+
+const scheduleSearchEngineIconSave = () => {
+  if (!store.isLogged) return;
+  if (searchEngineIconSaveTimer) window.clearTimeout(searchEngineIconSaveTimer);
+  searchEngineIconSaveTimer = window.setTimeout(() => {
+    searchEngineIconSaveTimer = null;
+    void store.saveData();
+  }, 700);
+};
 
 const hexToRgb = (hex: string) => {
   let h = hex.trim();
@@ -590,6 +630,30 @@ watch(
       }
     }
   },
+);
+
+watch(
+  engines,
+  (list) => {
+    if (!list.some((engine) => engine.key === effectiveEngine.value)) {
+      effectiveEngine.value =
+        list.find((engine) => engine.key === store.appConfig.defaultSearchEngine)?.key ||
+        list[0]?.key ||
+        "google";
+    }
+  },
+  { immediate: true },
+);
+
+watch(
+  [() => store.isClientReady, searchEngineIconFingerprint],
+  ([ready]) => {
+    if (!ready) return;
+    void hydrateSearchEngineIcons(engines.value, {
+      onChanged: scheduleSearchEngineIconSave,
+    });
+  },
+  { immediate: true },
 );
 
 // --- 核心修复逻辑开始 ---
@@ -1193,10 +1257,16 @@ const closeResizeSelector = () => {
 
 onMounted(() => {
   document.addEventListener("click", closeResizeSelector);
+  document.addEventListener("click", closeSearchEngineMenu);
 });
 
 onUnmounted(() => {
   document.removeEventListener("click", closeResizeSelector);
+  document.removeEventListener("click", closeSearchEngineMenu);
+  if (searchEngineIconSaveTimer) {
+    window.clearTimeout(searchEngineIconSaveTimer);
+    searchEngineIconSaveTimer = null;
+  }
 });
 
 const toggleDevTools = () => {
@@ -1382,9 +1452,7 @@ watch(
 
 const doSearch = () => {
   if (!searchText.value) return;
-  const eng = engines.value.find((e) => e.key === effectiveEngine.value);
-  const template = eng?.urlTemplate || "https://www.google.com/search?q={q}";
-  const url = template.replace("{q}", encodeURIComponent(searchText.value));
+  const url = buildSearchEngineUrl(activeSearchEngine.value, searchText.value);
   window.open(url, "_blank");
   searchText.value = "";
 };
@@ -3143,10 +3211,10 @@ onUnmounted(() => {
           <div
             v-if="checkVisible(store.widgets.find((w) => w.id === 'w5'))"
             class="w-full xl:absolute xl:left-1/2 xl:-translate-x-1/2 z-50 transition-all duration-300"
-            :class="isWideLayout ? 'xl:w-[32rem]' : 'xl:w-64'"
+            :class="isWideLayout ? 'xl:w-[36rem]' : 'xl:w-[28rem]'"
           >
             <form
-              class="mx-auto shadow-lg hover:shadow-xl transition-shadow rounded-full bg-white/90 backdrop-blur-md border border-white/40 flex items-center p-1 startdeck-search-form"
+              class="relative mx-auto shadow-lg hover:shadow-xl transition-shadow rounded-full bg-white/90 backdrop-blur-md border border-white/40 flex items-center p-1 startdeck-search-form"
               :style="{
                 width: '100%',
                 height: '41px',
@@ -3157,6 +3225,58 @@ onUnmounted(() => {
               @submit.prevent="doSearch"
               action="."
             >
+              <div
+                ref="searchEnginePickerRef"
+                class="relative flex h-full shrink-0 items-center pl-1"
+              >
+                <button
+                  type="button"
+                  class="startdeck-search-engine-button"
+                  :title="activeSearchEngine?.label || '搜索引擎'"
+                  :aria-label="`搜索引擎：${activeSearchEngine?.label || '默认'}`"
+                  :aria-expanded="isSearchEngineMenuOpen"
+                  aria-haspopup="menu"
+                  @click.stop="toggleSearchEngineMenu"
+                >
+                  <SearchEngineIcon :engine="activeSearchEngine" :size="20" />
+                  <svg
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                    class="h-3.5 w-3.5 opacity-55 transition-transform"
+                    :class="{ 'rotate-180': isSearchEngineMenuOpen }"
+                    aria-hidden="true"
+                  >
+                    <path
+                      fill-rule="evenodd"
+                      d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 11.17l3.71-3.94a.75.75 0 1 1 1.08 1.04l-4.25 4.5a.75.75 0 0 1-1.08 0l-4.25-4.5a.75.75 0 0 1 .02-1.06Z"
+                      clip-rule="evenodd"
+                    />
+                  </svg>
+                </button>
+                <div
+                  v-if="isSearchEngineMenuOpen"
+                  class="startdeck-search-engine-menu"
+                  role="menu"
+                  @click.stop
+                  @mousedown.stop
+                >
+                  <button
+                    v-for="engine in engines"
+                    :key="engine.key"
+                    type="button"
+                    class="startdeck-search-engine-option"
+                    :class="{ 'is-active': engine.key === activeSearchEngine?.key }"
+                    :title="engine.label"
+                    :aria-label="`使用 ${engine.label} 搜索`"
+                    role="menuitemradio"
+                    :aria-checked="engine.key === activeSearchEngine?.key"
+                    @click.stop="selectSearchEngine(engine.key)"
+                  >
+                    <SearchEngineIcon :engine="engine" :size="22" />
+                  </button>
+                </div>
+              </div>
+              <div class="mx-1 h-5 w-px shrink-0 bg-slate-200/80"></div>
               <input
                 ref="searchInputRef"
                 id="main-search-input"
@@ -3169,23 +3289,9 @@ onUnmounted(() => {
                 aria-label="搜索框"
                 autocomplete="off"
                 autofocus
-                class="h-full pl-6 pr-4 rounded-full bg-transparent border-0 outline-none startdeck-search-input"
-                :style="{ width: 'calc(100% - 33.75%)' }"
-                :placeholder="
-                  (engines.find((e) => e.key === effectiveEngine)?.label || '搜索') + ' 搜索...'
-                "
+                class="h-full min-w-0 flex-1 rounded-full bg-transparent border-0 outline-none startdeck-search-input"
+                placeholder="搜索..."
               />
-              <div class="flex items-center justify-end" :style="{ width: '33.75%' }">
-                <select
-                  v-model="effectiveEngine"
-                  aria-label="搜索引擎"
-                  class="h-[34px] px-3 py-0 bg-transparent rounded-full border border-gray-200 focus:border-blue-400 outline-none startdeck-search-select"
-                  :style="{ width: 'calc(100%)', fontSize: '15px' }"
-                  @click.stop
-                >
-                  <option v-for="e in engines" :key="e.key" :value="e.key">{{ e.label }}</option>
-                </select>
-              </div>
             </form>
           </div>
 
@@ -4382,12 +4488,91 @@ onUnmounted(() => {
 .shadow-text {
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.6);
 }
-.startdeck-search-input,
-.startdeck-search-select {
+.startdeck-search-input {
+  padding: 0 1rem 0 0.5rem;
   color: var(--startdeck-search-text-color, #111827);
 }
 .startdeck-search-input::placeholder {
   color: var(--startdeck-search-placeholder-color, rgba(107, 114, 128, 1));
+}
+.startdeck-search-engine-button {
+  display: inline-flex;
+  width: 3.25rem;
+  height: 2.125rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  border: 1px solid rgba(203, 213, 225, 0.8);
+  border-radius: 9999px;
+  color: var(--startdeck-search-text-color, #334155);
+  background: rgba(255, 255, 255, 0.56);
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms ease;
+}
+.startdeck-search-engine-button:hover {
+  border-color: rgba(148, 163, 184, 0.82);
+  background: rgba(255, 255, 255, 0.78);
+}
+.startdeck-search-engine-button:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.18);
+}
+.startdeck-search-engine-button:active {
+  transform: scale(0.98);
+}
+.startdeck-search-engine-menu {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  left: 0;
+  z-index: 80;
+  display: flex;
+  max-height: 15rem;
+  width: 3.75rem;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.375rem;
+  overflow-y: auto;
+  border: 1px solid rgba(226, 232, 240, 0.88);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.96);
+  padding: 0.4375rem;
+  box-shadow:
+    0 16px 40px rgba(15, 23, 42, 0.18),
+    0 2px 8px rgba(15, 23, 42, 0.08);
+  backdrop-filter: blur(14px);
+}
+.startdeck-search-engine-option {
+  display: inline-flex;
+  width: 2.75rem;
+  height: 2.75rem;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  color: #475569;
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease,
+    color 160ms ease,
+    transform 160ms ease;
+}
+.startdeck-search-engine-option:hover {
+  border-color: rgba(203, 213, 225, 0.82);
+  background: rgba(241, 245, 249, 0.92);
+  color: #0f172a;
+}
+.startdeck-search-engine-option.is-active {
+  border-color: rgba(37, 99, 235, 0.35);
+  background: #eff6ff;
+  color: #2563eb;
+}
+.startdeck-search-engine-option:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.18);
 }
 .card-item {
   border-color: var(--card-border-color);
