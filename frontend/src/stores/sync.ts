@@ -2,7 +2,7 @@ import { ref, computed, watch } from "vue";
 import { defineStore } from "pinia";
 import { useWebSocket } from "@vueuse/core";
 import { normalizeVersion } from "@/utils/storeHelpers";
-import type { LuckyStunData } from "@/types";
+import type { LuckyStunData, NavGroup, RssCategory, RssFeed, WidgetConfig } from "@/types";
 import { useAuthStore } from "./auth";
 import { useWidgetsStore } from "./widgets";
 import { useGroupsStore } from "./groups";
@@ -10,7 +10,7 @@ import { useConfigStore } from "./config";
 import { useCacheStore } from "./cache";
 import { useSaveStore } from "./save";
 import { useNetworkStore } from "./network";
-import { createDefaultSearchEngines } from "@/utils/searchEngines";
+import { createDefaultSearchEngines, hydrateSearchEngineIcons } from "@/utils/searchEngines";
 import { toWsUrl } from "@/utils/runtimeUrls";
 
 export const useSyncStore = defineStore("sync", () => {
@@ -118,16 +118,6 @@ export const useSyncStore = defineStore("sync", () => {
     }, 2000);
   };
 
-  const getWsNetworkSignature = (): { url: string; hostname: string; isDev: boolean } => {
-    const current = wsUrl.value;
-    try {
-      const parsed = new URL(current);
-      return { url: current, hostname: parsed.hostname, isDev: import.meta.env.DEV };
-    } catch {
-      return { url: current, hostname: "", isDev: import.meta.env.DEV };
-    }
-  };
-
   const wsSend = (message: Record<string, unknown>) => {
     if (status.value === "OPEN") wsSendRaw(JSON.stringify(message));
   };
@@ -137,8 +127,8 @@ export const useSyncStore = defineStore("sync", () => {
   // ---- Data state ----
   const dataVersion = ref(0);
   const pendingServerVersion = ref(0);
-  const rssFeeds = ref([]);
-  const rssCategories = ref([]);
+  const rssFeeds = ref<RssFeed[]>([]);
+  const rssCategories = ref<RssCategory[]>([]);
   const luckyStunData = ref<LuckyStunData | null>(null);
 
   // ---- State flags ----
@@ -155,29 +145,20 @@ export const useSyncStore = defineStore("sync", () => {
   const isHttpPollingActiveRef = computed(() => isHttpPollingActive);
   let httpPollTimer: ReturnType<typeof setInterval> | null = null;
   let activePollAbortController: AbortController | null = null;
+  let searchEngineIconHydrateTimer: ReturnType<typeof setTimeout> | null = null;
+  let searchEngineIconHydrateInFlight: Promise<void> | null = null;
+  let lastSearchEngineIconHydrateFingerprint = "";
 
-  // ---- Guest/Auth dual state tree isolation ----
-  // Tracks the source role of the current active layout state
-  let activeStateRole: "auth" | "guest" | "unknown" = "unknown";
-  // True if the current active layout contains non-public widgets/groups
-  let hasNonPublicLayout = false;
   let logoutInProgress = false;
-
-  const detectHasNonPublicLayout = (): boolean => {
-    const widgets = widgetsStore.widgets;
-    const hasNonPublicWidget = widgets.some((w: any) => w.isPublic !== true);
-    const groups = groupsStore.groups;
-    const hasNonPublicGroup = (groups || []).some((g: any) => g.isPublic !== true);
-    return hasNonPublicWidget || hasNonPublicGroup;
-  };
 
   const detectResponseRole = (data: Record<string, unknown>): "auth" | "guest" => {
     if (data.isGuest === true) return "guest";
     if (data.isGuest === false) return "auth";
     if (data.username && data.version !== undefined) return "auth";
     if (Array.isArray(data.widgets)) {
-      const allPublic = (data.widgets as any[]).every((w: any) => w.isPublic === true);
-      if (allPublic && (data.widgets as any[]).length > 0) return "guest";
+      const widgets = data.widgets as WidgetConfig[];
+      const allPublic = widgets.every((w) => w.isPublic === true);
+      if (allPublic && widgets.length > 0) return "guest";
     }
     return "auth";
   };
@@ -232,6 +213,57 @@ export const useSyncStore = defineStore("sync", () => {
     version: typeof data.version !== "undefined" ? data.version : dataVersion.value,
   });
 
+  const getSearchEngineIconHydrateFingerprint = () =>
+    (configStore.appConfig.searchEngines || [])
+      .map((engine) =>
+        [
+          engine.key,
+          engine.urlTemplate,
+          engine.iconSourceUrl || "",
+          engine.icon || "",
+          engine.iconBackgroundMode || "",
+          engine.iconAutoBackgroundColor || "",
+          engine.iconCustomBackgroundColor || "",
+        ].join("\u0001"),
+      )
+      .join("\u0002");
+
+  const hydrateConfiguredSearchEngineIcons = async () => {
+    if (typeof window === "undefined") return;
+    const engines = configStore.appConfig.searchEngines;
+    if (!Array.isArray(engines) || engines.length === 0) return;
+    const fingerprint = getSearchEngineIconHydrateFingerprint();
+    if (searchEngineIconHydrateInFlight) return searchEngineIconHydrateInFlight;
+    if (fingerprint && fingerprint === lastSearchEngineIconHydrateFingerprint) return;
+
+    searchEngineIconHydrateInFlight = (async () => {
+      const changed = await hydrateSearchEngineIcons(engines);
+      if (!changed) return;
+      cacheStore.saveToCache(buildCacheSnapshot({}));
+      if (auth.isLogged) {
+        await saveData(true);
+      }
+    })()
+      .catch((e) => {
+        console.warn("Search engine icon hydration failed", e);
+      })
+      .finally(() => {
+        searchEngineIconHydrateInFlight = null;
+        lastSearchEngineIconHydrateFingerprint = getSearchEngineIconHydrateFingerprint();
+      });
+
+    return searchEngineIconHydrateInFlight;
+  };
+
+  const scheduleSearchEngineIconHydration = () => {
+    if (typeof window === "undefined") return;
+    if (searchEngineIconHydrateTimer) clearTimeout(searchEngineIconHydrateTimer);
+    searchEngineIconHydrateTimer = setTimeout(() => {
+      searchEngineIconHydrateTimer = null;
+      void hydrateConfiguredSearchEngineIcons();
+    }, 0);
+  };
+
   const resetActiveStateForGuest = () => {
     isApplyingServerData = true;
     groupsStore.groups = [];
@@ -244,8 +276,6 @@ export const useSyncStore = defineStore("sync", () => {
     luckyStunData.value = null;
     dataVersion.value = 0;
     pendingServerVersion.value = 0;
-    activeStateRole = "guest";
-    hasNonPublicLayout = false;
     cacheStore.removeAuthCaches();
     widgetsStore.updateLastSavedLayout();
     saveStore.hasUnsavedChanges = false;
@@ -298,10 +328,13 @@ export const useSyncStore = defineStore("sync", () => {
     syncUsernameFromServer(data, responseRole);
     if (typeof data.version !== "undefined") dataVersion.value = normalizeVersion(data.version);
 
-    if (data.groups) groupsStore.groups = data.groups as any;
+    if (data.groups) groupsStore.groups = data.groups as NavGroup[];
     else groupsStore.groups = [];
 
-    const normalizedWidgets = widgetsStore.normalizeIncomingWidgets(data.widgets as any, auth.isLogged);
+    const normalizedWidgets = widgetsStore.normalizeIncomingWidgets(
+      data.widgets as WidgetConfig[] | undefined,
+      auth.isLogged,
+    );
     widgetsStore.applyServerWidgets(normalizedWidgets, auth.isLogged, widgetsStore.layoutEditInProgress);
 
     if (data.appConfig) {
@@ -357,18 +390,15 @@ export const useSyncStore = defineStore("sync", () => {
     if (typeof configStore.appConfig.widgetAreaRows !== "number") {
       configStore.appConfig.widgetAreaRows = typeof configStore.appConfig.widgetAreaSize === "number" ? configStore.appConfig.widgetAreaSize : 4;
     }
-    if (data.rssFeeds) rssFeeds.value = data.rssFeeds as any;
-    if (data.rssCategories) rssCategories.value = data.rssCategories as any;
-
-    // Update dual state tree role tracking
-    activeStateRole = responseRole;
-    hasNonPublicLayout = detectHasNonPublicLayout();
+    if (data.rssFeeds) rssFeeds.value = data.rssFeeds as RssFeed[];
+    if (data.rssCategories) rssCategories.value = data.rssCategories as RssCategory[];
 
     networkStore.fetchCustomScripts();
     widgetsStore.updateLastSavedLayout();
     cacheStore.saveToCache(buildCacheSnapshot(data));
     saveStore.hasUnsavedChanges = false;
     isApplyingServerData = false;
+    scheduleSearchEngineIconHydration();
   };
 
   // ---- fetchAndProcessData ----
@@ -506,6 +536,7 @@ export const useSyncStore = defineStore("sync", () => {
     } finally {
       isInitializing = false;
       initCompleted.value = true;
+      scheduleSearchEngineIconHydration();
       if (!wsMessageHandlerBound) {
         wsMessageHandlerBound = true;
         if (typeof document !== "undefined" && !visibilityVersionCheckBound) {

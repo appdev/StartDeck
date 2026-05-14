@@ -2,10 +2,13 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { SearchEngine } from "@/types";
 import {
   buildSearchEngineUrl,
+  createDefaultSearchEngines,
   getSearchEngineIcon,
   getSearchEngineSourceUrl,
   hydrateSearchEngineIcon,
+  hydrateSearchEngineIcons,
   resetSearchEngineMetadataCacheForTests,
+  shouldHydrateSearchEngineIcon,
 } from "./searchEngines";
 
 describe("searchEngines", () => {
@@ -73,5 +76,87 @@ describe("searchEngines", () => {
     expect(engine.iconFetchedAt).toBe("2026-05-14T00:00:00Z");
     expect(engine.iconBackgroundMode).toBe("auto");
     expect(engine.iconAutoBackgroundColor).toBe("#aabbcc");
+  });
+
+  it("hydrates an existing icon when the background metadata is missing", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => ({
+        ok: true,
+        json: async () => ({
+          code: 200,
+          data: {
+            url: "https://example.com",
+            icon: "/icons/example.svg",
+            backgroundColor: "#ffffff",
+          },
+        }),
+      })),
+    );
+
+    const engine: SearchEngine = {
+      id: "custom",
+      key: "custom",
+      label: "Custom",
+      urlTemplate: "https://example.com/search?q={q}",
+      icon: "/icons/old.svg",
+      iconSourceUrl: "https://example.com",
+    };
+
+    expect(shouldHydrateSearchEngineIcon(engine)).toBe(true);
+    await expect(hydrateSearchEngineIcon(engine)).resolves.toBe(true);
+    expect(engine.icon).toBe("/icons/example.svg");
+    expect(engine.iconBackgroundMode).toBe("auto");
+    expect(engine.iconAutoBackgroundColor).toBe("#ffffff");
+  });
+
+  it("skips metadata requests when icon and background mode are already hydrated", async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+
+    const engine: SearchEngine = {
+      id: "custom",
+      key: "custom",
+      label: "Custom",
+      urlTemplate: "https://example.com/search?q={q}",
+      icon: "/icons/example.svg",
+      iconSourceUrl: "https://example.com",
+      iconBackgroundMode: "auto",
+      iconAutoBackgroundColor: "#ffffff",
+    };
+
+    expect(shouldHydrateSearchEngineIcon(engine)).toBe(false);
+    await expect(hydrateSearchEngineIcon(engine)).resolves.toBe(false);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("hydrates default search engine icons in a startup pass", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: string | URL | Request) => {
+        const request = new URL(String(input), "http://localhost");
+        const targetUrl = request.searchParams.get("url") || "";
+        const host = new URL(targetUrl).hostname;
+        return {
+          ok: true,
+          json: async () => ({
+            code: 200,
+            data: {
+              url: targetUrl,
+              icon: `/icons/${host}.svg`,
+              backgroundColor: "#f8fafc",
+              fetchedAt: `2026-05-14T00:00:00Z:${host}`,
+            },
+          }),
+        };
+      }),
+    );
+
+    const engines = createDefaultSearchEngines();
+
+    await expect(hydrateSearchEngineIcons(engines)).resolves.toBe(true);
+    expect(engines.every((engine) => engine.icon?.startsWith("/icons/"))).toBe(true);
+    expect(engines.every((engine) => engine.iconBackgroundMode === "auto")).toBe(true);
+    expect(engines.every((engine) => engine.iconAutoBackgroundColor === "#f8fafc")).toBe(true);
   });
 });

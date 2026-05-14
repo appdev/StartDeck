@@ -64,6 +64,19 @@ export const getSearchEngineIcon = (engine?: SearchEngine | null) => {
   return sourceUrl ? getSiteIconUrl(sourceUrl) : "";
 };
 
+export const shouldHydrateSearchEngineIcon = (
+  engine?: SearchEngine | null,
+  force = false,
+) => {
+  if (!engine) return false;
+  const sourceUrl = getSearchEngineSourceUrl(engine);
+  if (!sourceUrl) return false;
+  if (force) return true;
+  if (!engine.icon?.trim()) return true;
+  if (engine.iconSourceUrl !== sourceUrl) return true;
+  return engine.iconBackgroundMode !== "auto" && engine.iconBackgroundMode !== "custom";
+};
+
 export const buildSearchEngineUrl = (engine: SearchEngine | undefined, query: string) => {
   const encodedQuery = encodeURIComponent(query);
   const template = engine?.urlTemplate || createDefaultSearchEngines()[0].urlTemplate;
@@ -84,7 +97,7 @@ export const buildSearchEngineUrl = (engine: SearchEngine | undefined, query: st
 export const hydrateSearchEngineIcon = async (engine: SearchEngine, force = false) => {
   const sourceUrl = getSearchEngineSourceUrl(engine);
   if (!sourceUrl) return false;
-  if (!force && engine.icon?.trim() && engine.iconSourceUrl === sourceUrl) return false;
+  if (!shouldHydrateSearchEngineIcon(engine, force)) return false;
 
   let request = metadataRequests.get(sourceUrl);
   if (!request || force) {
