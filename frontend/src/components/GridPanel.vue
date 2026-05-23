@@ -18,17 +18,88 @@ import { useMainStore } from "../stores/main";
 import { canReadResource } from "@/utils/permissions";
 import { useWallpaperRotation } from "../composables/useWallpaperRotation";
 import { useDevice } from "../composables/useDevice";
+import {
+  resolveWidgetSizeState,
+  useWidgetResize,
+  type WidgetSize,
+} from "../composables/useWidgetResize";
+import { resolveWidgetDisplaySize } from "@/composables/useWidgetDisplaySize";
 import { generateLayout, type GridLayoutItem } from "../utils/gridLayout";
 import type { NavItem, SearchEngine, WidgetConfig, NavGroup } from "@/types";
-import OverlayMotion from "@/components/base/OverlayMotion.vue";
-import { isInternalNetwork, getNetworkConfig, computeEffectiveNetworkMode } from "@/utils/network";
+import ConfirmDialog from "@/components/base/ConfirmDialog.vue";
+import ContextMenuSurface from "@/components/base/ContextMenuSurface.vue";
+import HomeActionBar from "@/components/home/HomeActionBar.vue";
+import HomeGroupTabs from "@/components/home/HomeGroupTabs.vue";
+import HomeTopActions from "@/components/home/HomeTopActions.vue";
+import MainWidgetShell from "@/components/home/MainWidgetShell.vue";
+import WidgetEditFrame from "@/components/home/WidgetEditFrame.vue";
+import WidgetResizeOverlay from "@/components/home/WidgetResizeOverlay.vue";
+import WidgetSizeStrip from "@/components/home/WidgetSizeStrip.vue";
+import { toCatalogWidgetSizeKey } from "@/utils/widgetSizePresets";
+import WidgetRuntimeFrame from "@/features/widget-runtime/WidgetRuntimeFrame.vue";
+import WidgetRuntimeMenu from "@/features/widget-runtime/WidgetRuntimeMenu.vue";
+import WidgetOpenedPanelHost from "@/features/widget-runtime/WidgetOpenedPanelHost.vue";
+import {
+  applyRuntimeWidgetSize,
+  isRuntimeWidget,
+  normalizeWidgetRuntimeData,
+  resolveWidgetRuntimeSizeKey,
+  type WidgetRuntimeData,
+} from "@/features/widget-runtime/widgetRuntimeRegistry";
+import {
+  toRuntimeWidgetSizeKey,
+  type RuntimeWidgetSizeKey,
+} from "@/features/widget-runtime/widgetRuntimeSizes";
+import { toItabWidgetSizeKey } from "@/features/itab-widgets/itabSizePresets";
+import {
+  ITAB_GRID_CELL,
+  ITAB_GRID_GAP,
+  ITAB_GRID_MAX_COLUMNS,
+  ITAB_GRID_PITCH,
+  resolveItabGridColumns,
+  resolveItabGridContainerWidth,
+  withItabGridData,
+} from "@/features/itab-widgets/itabGrid";
+import { ITAB_TODO_WIDGET_TYPE } from "@/features/itab-todo/itabTodoTypes";
+import {
+  ITAB_MEMO_CATALOG_ID,
+  ITAB_MEMO_WIDGET_TYPE,
+} from "@/features/itab-memo/itabMemoTypes";
+import { ITAB_CLOCK_WIDGET_TYPE } from "@/features/itab-clock/itabClockTypes";
+import { ITAB_DAILY_ENGLISH_WIDGET_TYPE } from "@/features/itab-daily-english/itabDailyEnglishTypes";
+import { ITAB_POEM_WIDGET_TYPE } from "@/features/itab-poem/itabPoemTypes";
+import { ITAB_POMODORO_WIDGET_TYPE } from "@/features/itab-pomodoro/itabPomodoroTypes";
+import {
+  ITAB_ANNIVERSARY_CATALOG_ID,
+  ITAB_ANNIVERSARY_WIDGET_TYPE,
+} from "@/features/itab-anniversary/itabAnniversaryTypes";
+import { createDefaultItabAnniversaryWidget } from "@/features/itab-anniversary/itabAnniversaryModel";
+import ItabMemoFixedLayer from "@/features/itab-memo/ItabMemoFixedLayer.vue";
+import { useUiFeedbackStore } from "@/stores/uiFeedback";
+import {
+  isInternalNetwork,
+  getNetworkConfig,
+  computeEffectiveNetworkMode,
+} from "@/utils/network";
 import { resolveIconBackground } from "@/utils/iconAppearance";
 import {
   buildSearchEngineUrl,
   hydrateSearchEngineIcons,
   normalizeSearchEngines,
 } from "@/utils/searchEngines";
+import {
+  createWidgetFromCatalog,
+  findExistingCatalogWidget,
+  getWidgetCatalogItem,
+} from "@/utils/widgetCatalog";
+import type {
+  AddComponentPayload,
+  AddComponentResult,
+} from "@/utils/addComponentTypes";
+import { cacheNavItemIconToLocal } from "@/utils/navItemAdapter";
+import { isDuplicateSiteShortcut } from "@/utils/siteShortcutCatalog";
 import DOMPurify from "dompurify";
+const uiFeedback = useUiFeedbackStore();
 const CHUNK_RELOAD_KEY = "startdeck:chunk-reload-at";
 const loadAsync = <T extends Component>(loader: AsyncComponentLoader<T>) =>
   defineAsyncComponent({
@@ -61,32 +132,23 @@ const loadAsync = <T extends Component>(loader: AsyncComponentLoader<T>) =>
 const EditModal = loadAsync(() => import("./EditModal.vue"));
 const SettingsModal = loadAsync(() => import("./SettingsModal.vue"));
 const GroupSettingsModal = loadAsync(() => import("./GroupSettingsModal.vue"));
+const AddWidgetModal = loadAsync(() => import("./AddWidgetModal.vue"));
 /** 同步导入，避免生产/Docker 下动态 chunk 请求失败导致登录框无法弹出；LoginModal 内已做 store/authMode 防御 */
 import LoginModal from "./LoginModal.vue";
 const BookmarkWidget = loadAsync(() => import("./BookmarkWidget.vue"));
-const MemoWidget = loadAsync(() => import("./MemoWidget.vue"));
-const TodoWidget = loadAsync(() => import("./TodoWidget.vue"));
 const CalculatorWidget = loadAsync(() => import("./CalculatorWidget.vue"));
-const MusicWidget = loadAsync(() => import("./MusicWidget.vue"));
-const MiniPlayer = loadAsync(() => import("./MiniPlayer.vue"));
 const HotWidget = loadAsync(() => import("./HotWidget.vue"));
-const ClockWeatherWidget = loadAsync(() => import("./ClockWeatherWidget.vue"));
 const RssWidget = loadAsync(() => import("./RssWidget.vue"));
 const IconShape = loadAsync(() => import("./IconShape.vue"));
 const SearchEngineIcon = loadAsync(() => import("./SearchEngineIcon.vue"));
 const IframeWidget = loadAsync(() => import("./IframeWidget.vue"));
-const SimpleWeatherWidget = loadAsync(() => import("./SimpleWeatherWidget.vue"));
-const CalendarWidget = loadAsync(() => import("./CalendarWidget.vue"));
-const ClockWidget = loadAsync(() => import("./ClockWidget.vue"));
 const AppSidebar = loadAsync(() => import("./AppSidebar.vue"));
 const CountdownWidget = loadAsync(() => import("./CountdownWidget.vue"));
 const CountUpWidget = loadAsync(() => import("./CountUpWidget.vue"));
 const DockerWidget = loadAsync(() => import("./DockerWidget.vue"));
 const SystemStatusWidget = loadAsync(() => import("./SystemStatusWidget.vue"));
 const CustomCssWidget = loadAsync(() => import("./CustomCssWidget.vue"));
-const AmapWeatherWidget = loadAsync(() => import("./AmapWeatherWidget.vue"));
 const FileTransferWidget = loadAsync(() => import("./FileTransferWidget.vue"));
-const SizeSelector = loadAsync(() => import("./SizeSelector.vue"));
 
 const store = useMainStore();
 useWallpaperRotation();
@@ -94,12 +156,14 @@ const { deviceKey, isMobile } = useDevice(toRef(store.appConfig, "deviceMode"));
 const { width, height } = useWindowSize();
 const isHeaderRowLayout = computed(() => width.value >= 1280);
 const gridWidgetTypes = new Set([
-  "clock",
-  "weather",
-  "calendar",
-  "memo",
-  "todo",
-  "music",
+  ITAB_CLOCK_WIDGET_TYPE,
+  "itab-weather-00",
+  ITAB_TODO_WIDGET_TYPE,
+  ITAB_MEMO_WIDGET_TYPE,
+  ITAB_POEM_WIDGET_TYPE,
+  ITAB_DAILY_ENGLISH_WIDGET_TYPE,
+  ITAB_POMODORO_WIDGET_TYPE,
+  ITAB_ANNIVERSARY_WIDGET_TYPE,
   "calculator",
   "ip",
   "div-card",
@@ -108,8 +172,6 @@ const gridWidgetTypes = new Set([
   "iframe",
   "bookmarks",
   "hot",
-  "clockweather",
-  "amap-weather",
   "rss",
   "docker",
   "system-status",
@@ -122,266 +184,22 @@ let daylightTimer: ReturnType<typeof setInterval> | null = null;
 const updateHour = () => {
   currentHour.value = new Date().getHours();
 };
-const isNightTime = computed(() => currentHour.value >= 18 || currentHour.value < 6);
+const isNightTime = computed(
+  () => currentHour.value >= 18 || currentHour.value < 6,
+);
 const effectiveBackgroundMask = computed(() => {
   const base = store.appConfig.backgroundMask ?? 0;
   const daylightMask = store.appConfig.daylightMask ?? 0.5;
-  if (store.appConfig.daylightModeEnabled && isNightTime.value) return daylightMask;
+  if (store.appConfig.daylightModeEnabled && isNightTime.value)
+    return daylightMask;
   return base;
 });
 const effectiveMobileBackgroundMask = computed(() => {
   const base = store.appConfig.mobileBackgroundMask ?? 0;
   const daylightMask = store.appConfig.daylightMask ?? 0.5;
-  if (store.appConfig.daylightModeEnabled && isNightTime.value) return daylightMask;
+  if (store.appConfig.daylightModeEnabled && isNightTime.value)
+    return daylightMask;
   return base;
-});
-
-const weatherText = ref("");
-const weatherLoading = ref(false);
-const weatherEffectEnabled = computed(() => !!store.appConfig.weatherEffectEnabled);
-const isRainWeather = computed(() => /雨|雷/.test(weatherText.value || ""));
-const isFogWeather = computed(() => /雾|霾/.test(weatherText.value || ""));
-const showFogEffect = computed(() => weatherEffectEnabled.value && isFogWeather.value);
-const showRainEffect = computed(() => weatherEffectEnabled.value && isRainWeather.value);
-
-const getWeatherCity = () => {
-  try {
-    const cached = localStorage.getItem("startdeck_auto_city");
-    if (cached) {
-      const data = JSON.parse(cached);
-      if (data?.city) return data.city;
-    }
-  } catch {
-    return "Shanghai";
-  }
-  return "Shanghai";
-};
-
-const buildWeatherUrl = (city: string) => {
-  if (store.appConfig.weatherApiUrl) {
-    let url = store.appConfig.weatherApiUrl;
-    if (url.includes("{city}")) {
-      url = url.replace("{city}", encodeURIComponent(city));
-    }
-    return url;
-  }
-  const source = store.appConfig.weatherSource || "uapi";
-  const key = store.appConfig.amapKey || "";
-  const projectId = store.appConfig.qweatherProjectId || "";
-  const keyId = store.appConfig.qweatherKeyId || "";
-  const privateKey = store.appConfig.qweatherPrivateKey || "";
-  let url = `/api/weather?city=${encodeURIComponent(city)}&source=${source}&key=${encodeURIComponent(key)}`;
-  if (source === "qweather") {
-    url += `&projectId=${encodeURIComponent(projectId)}&keyId=${encodeURIComponent(keyId)}&privateKey=${encodeURIComponent(privateKey)}`;
-  }
-  return url;
-};
-
-const fetchWeatherForEffect = async () => {
-  if (!weatherEffectEnabled.value || weatherLoading.value) return;
-  weatherLoading.value = true;
-  const city = getWeatherCity();
-  try {
-    const res = await fetch(buildWeatherUrl(city));
-    if (!res.ok) throw new Error("weather");
-    const data = await res.json();
-    if (data?.data?.text) {
-      weatherText.value = data.data.text;
-    } else if (data?.text) {
-      weatherText.value = data.text;
-    } else if (data?.weather) {
-      weatherText.value = data.weather;
-    } else {
-      weatherText.value = "";
-    }
-  } catch {
-    weatherText.value = "";
-  } finally {
-    weatherLoading.value = false;
-  }
-};
-
-type RainRenderer = { stop: () => void; resize: () => void };
-const rainCanvasRef = ref<HTMLCanvasElement | null>(null);
-const rainRenderer = ref<RainRenderer | null>(null);
-
-const createRainRenderer = (canvas: HTMLCanvasElement): RainRenderer | null => {
-  const gl = canvas.getContext("webgl", { alpha: true, premultipliedAlpha: false });
-  if (!gl) return null;
-
-  const vertexSource = `
-    attribute vec3 a_position;
-    uniform float u_time;
-    uniform float u_speed;
-    varying float v_alpha;
-    void main() {
-      float z = a_position.z;
-      float speed = mix(0.4, 1.2, z) * u_speed;
-      float y = fract(a_position.y - u_time * speed);
-      float x = a_position.x * 2.0 - 1.0;
-      float py = y * 2.0 - 1.0;
-      float depth = mix(0.6, 1.0, z);
-      gl_Position = vec4(x * depth, py * depth, 0.0, 1.0);
-      gl_PointSize = mix(1.0, 4.0, z);
-      v_alpha = mix(0.2, 0.8, z);
-    }
-  `;
-
-  const fragmentSource = `
-    precision mediump float;
-    varying float v_alpha;
-    void main() {
-      vec2 uv = gl_PointCoord;
-      float body = smoothstep(0.0, 0.25, uv.y) * (1.0 - smoothstep(0.75, 1.0, uv.y));
-      float width = smoothstep(0.5, 0.0, abs(uv.x - 0.5));
-      float alpha = body * width * v_alpha;
-      gl_FragColor = vec4(0.7, 0.85, 1.0, alpha);
-    }
-  `;
-
-  const compileShader = (type: number, source: string) => {
-    const shader = gl.createShader(type);
-    if (!shader) return null;
-    gl.shaderSource(shader, source);
-    gl.compileShader(shader);
-    if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-      gl.deleteShader(shader);
-      return null;
-    }
-    return shader;
-  };
-
-  const vertexShader = compileShader(gl.VERTEX_SHADER, vertexSource);
-  const fragmentShader = compileShader(gl.FRAGMENT_SHADER, fragmentSource);
-  if (!vertexShader || !fragmentShader) return null;
-
-  const program = gl.createProgram();
-  if (!program) return null;
-  gl.attachShader(program, vertexShader);
-  gl.attachShader(program, fragmentShader);
-  gl.linkProgram(program);
-  if (!gl.getProgramParameter(program, gl.LINK_STATUS)) return null;
-
-  const positionLoc = gl.getAttribLocation(program, "a_position");
-  const timeLoc = gl.getUniformLocation(program, "u_time");
-  const speedLoc = gl.getUniformLocation(program, "u_speed");
-
-  const count = 1200;
-  const positions = new Float32Array(count * 3);
-  for (let i = 0; i < count; i++) {
-    positions[i * 3] = Math.random();
-    positions[i * 3 + 1] = Math.random();
-    positions[i * 3 + 2] = Math.random();
-  }
-
-  const buffer = gl.createBuffer();
-  if (!buffer) return null;
-  gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-  gl.bufferData(gl.ARRAY_BUFFER, positions, gl.STATIC_DRAW);
-
-  gl.enable(gl.BLEND);
-  gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-  gl.clearColor(0, 0, 0, 0);
-
-  let running = true;
-  let frame = 0;
-  const start = performance.now();
-
-  const resize = () => {
-    const dpr = window.devicePixelRatio || 1;
-    const w = Math.max(1, Math.floor(canvas.clientWidth * dpr));
-    const h = Math.max(1, Math.floor(canvas.clientHeight * dpr));
-    if (canvas.width !== w || canvas.height !== h) {
-      canvas.width = w;
-      canvas.height = h;
-    }
-    gl.viewport(0, 0, canvas.width, canvas.height);
-  };
-
-  const render = (now: number) => {
-    if (!running) return;
-    const t = (now - start) / 1000;
-    gl.clear(gl.COLOR_BUFFER_BIT);
-    gl.useProgram(program);
-    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-    gl.enableVertexAttribArray(positionLoc);
-    gl.vertexAttribPointer(positionLoc, 3, gl.FLOAT, false, 0, 0);
-    if (timeLoc) gl.uniform1f(timeLoc, t);
-    if (speedLoc) gl.uniform1f(speedLoc, 0.6);
-    gl.drawArrays(gl.POINTS, 0, count);
-    frame = requestAnimationFrame(render);
-  };
-
-  resize();
-  frame = requestAnimationFrame(render);
-
-  const stop = () => {
-    running = false;
-    cancelAnimationFrame(frame);
-  };
-
-  return { stop, resize };
-};
-
-const initRain = async () => {
-  if (!showRainEffect.value || rainRenderer.value) return;
-  await nextTick();
-  const canvas = rainCanvasRef.value;
-  if (!canvas) return;
-  const renderer = createRainRenderer(canvas);
-  if (!renderer) return;
-  rainRenderer.value = renderer;
-  renderer.resize();
-};
-
-const stopRain = () => {
-  rainRenderer.value?.stop();
-  rainRenderer.value = null;
-};
-
-let weatherTimer: ReturnType<typeof setInterval> | null = null;
-
-watch(
-  () => weatherEffectEnabled.value,
-  (enabled) => {
-    if (enabled) {
-      fetchWeatherForEffect();
-      if (weatherTimer) clearInterval(weatherTimer);
-      weatherTimer = setInterval(fetchWeatherForEffect, 2 * 60 * 60 * 1000);
-    } else {
-      if (weatherTimer) clearInterval(weatherTimer);
-      weatherTimer = null;
-      weatherText.value = "";
-      stopRain();
-    }
-  },
-  { immediate: true },
-);
-
-watch(
-  () => [
-    store.appConfig.weatherSource,
-    store.appConfig.weatherApiUrl,
-    store.appConfig.amapKey,
-    store.appConfig.qweatherProjectId,
-    store.appConfig.qweatherKeyId,
-    store.appConfig.qweatherPrivateKey,
-  ],
-  () => {
-    if (weatherEffectEnabled.value) fetchWeatherForEffect();
-  },
-);
-
-watch([showRainEffect, () => rainCanvasRef.value], ([show]) => {
-  if (show) {
-    initRain();
-  } else {
-    stopRain();
-  }
-});
-
-watch([width, height], () => {
-  rainRenderer.value?.resize();
 });
 
 const empireBackgroundUrl = `data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23d4af37' fill-opacity='0.1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E`;
@@ -389,9 +207,84 @@ const empireBackgroundUrl = `data:image/svg+xml,%3Csvg width='60' height='60' vi
 const showEditModal = ref(false);
 const showSettingsModal = ref(false);
 const showGroupSettingsModal = ref(false);
+const showAddWidgetModal = ref(false);
 
 const showLoginModal = ref(false);
 const isEditMode = ref(false);
+const isHomeEditChromeVisible = computed(
+  () => isEditMode.value && !showAddWidgetModal.value,
+);
+const HOME_WIDGET_DRAG_HOLD_MS = 200;
+const HOME_WIDGET_OPEN_SUPPRESS_MS = 350;
+const HOME_WIDGET_DRAG_SAVE_DELAY_MS = 500;
+const homeWidgetDragIgnoreFrom = [
+  "a",
+  "button",
+  "input",
+  "textarea",
+  "select",
+  "[contenteditable=true]",
+  "[data-grid-drag-ignore]",
+  ".widget-resize-grip",
+  ".widget-size-strip",
+  "[data-itab-inner-control]",
+  "[data-context-menu]",
+  "[data-grid-context-menu]",
+  "[data-runtime-context-menu]",
+  ".sd-modal-surface",
+  ".sd-context-menu-surface",
+].join(",");
+const homeWidgetDragOption = {
+  hold: HOME_WIDGET_DRAG_HOLD_MS,
+  delay: HOME_WIDGET_DRAG_HOLD_MS,
+};
+const isHomeWidgetDragging = ref(false);
+const suppressWidgetOpenUntil = ref(0);
+let homeWidgetDragIdleTimer: number | null = null;
+let homeWidgetDragSaveTimer: number | null = null;
+
+const shouldSuppressHomeWidgetOpen = () =>
+  isHomeWidgetDragging.value || Date.now() < suppressWidgetOpenUntil.value;
+
+const clearHomeWidgetDragIdleTimer = () => {
+  if (homeWidgetDragIdleTimer === null) return;
+  window.clearTimeout(homeWidgetDragIdleTimer);
+  homeWidgetDragIdleTimer = null;
+};
+
+const clearHomeWidgetDragSaveTimer = () => {
+  if (homeWidgetDragSaveTimer === null) return;
+  window.clearTimeout(homeWidgetDragSaveTimer);
+  homeWidgetDragSaveTimer = null;
+};
+
+const scheduleHomeWidgetDragSave = () => {
+  if (!store.isLogged) return;
+  clearHomeWidgetDragSaveTimer();
+  homeWidgetDragSaveTimer = window.setTimeout(() => {
+    homeWidgetDragSaveTimer = null;
+    void store.saveData(true);
+  }, HOME_WIDGET_DRAG_SAVE_DELAY_MS);
+};
+
+const finishHomeWidgetDrag = () => {
+  clearHomeWidgetDragIdleTimer();
+  if (!isHomeWidgetDragging.value) return;
+  isHomeWidgetDragging.value = false;
+  suppressWidgetOpenUntil.value = Date.now() + HOME_WIDGET_OPEN_SUPPRESS_MS;
+  scheduleHomeWidgetDragSave();
+};
+
+const beginHomeWidgetDrag = () => {
+  closeContextMenu();
+  closeBlankContextMenu();
+  closeRuntimeContextMenu();
+  isHomeWidgetDragging.value = true;
+  clearHomeWidgetDragIdleTimer();
+  homeWidgetDragIdleTimer = window.setTimeout(() => {
+    finishHomeWidgetDrag();
+  }, HOME_WIDGET_OPEN_SUPPRESS_MS + 500);
+};
 /** 切换编辑模式；进入编辑时设 layoutEditInProgress，退出时 await 保存后再清空，避免外网竞态导致布局被覆盖 */
 const toggleEditMode = async () => {
   if (!store.isLogged) {
@@ -412,7 +305,55 @@ const toggleEditMode = async () => {
     isEditMode.value = true;
   }
 };
-const activeResizeWidgetId = ref<string | null>(null);
+
+const handleHomeActionSave = async () => {
+  try {
+    const result = await store.saveData(true);
+    if (result === "saved") {
+      uiFeedback.notify({
+        title: "已保存",
+        message: "首页布局和配置已保存。",
+        tone: "success",
+      });
+      return;
+    }
+    if (result === "no_change") {
+      uiFeedback.notify({
+        title: "无需保存",
+        message: "当前没有新的修改。",
+        tone: "info",
+      });
+      return;
+    }
+    if (result === "queued") {
+      uiFeedback.notify({
+        title: "已加入离线队列",
+        message: "网络恢复后会继续同步。",
+        tone: "warning",
+      });
+      return;
+    }
+    if (result === "conflict" || result === "unauthorized") {
+      void uiFeedback.alert({
+        title: "保存失败",
+        message:
+          result === "conflict"
+            ? "数据版本发生冲突，请刷新后再试。"
+            : "登录状态已失效，请重新登录。",
+        tone: "danger",
+      });
+    }
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "未知错误";
+    void uiFeedback.alert({
+      title: "保存失败",
+      message,
+      tone: "danger",
+    });
+  }
+};
+
+const selectedWidgetId = ref<string | null>(null);
 const currentEditItem = ref<NavItem | null>(null);
 const currentGroupId = ref<string>("");
 const activePaginationGroupId = computed<string>({
@@ -421,7 +362,9 @@ const activePaginationGroupId = computed<string>({
     store.webPaginationActiveGroupId = val;
   },
 });
-const isWebPaginationMode = computed(() => store.appConfig.webGroupPagination && !isMobile.value);
+const isWebPaginationMode = computed(
+  () => store.appConfig.webGroupPagination && !isMobile.value,
+);
 const mainContainerRef = ref<HTMLElement | null>(null);
 
 const isGridAlive = ref(true);
@@ -463,15 +406,20 @@ watch(showGroupSettingsModal, (val) => {
 const isLanMode = ref(false);
 const latency = ref(0);
 const isChecking = ref(false);
-const networkScope = typeof window !== "undefined" ? window.location.hostname : "default";
-const networkConfig = computed(() => getNetworkConfig(store.appConfig, store.forceNetworkMode));
+const networkScope =
+  typeof window !== "undefined" ? window.location.hostname : "default";
+const networkConfig = computed(() =>
+  getNetworkConfig(store.appConfig, store.forceNetworkMode),
+);
 const forceMode = computed({
   get: () => store.forceNetworkMode,
   set: (val) => {
     store.forceNetworkMode = val;
   },
 });
-const latencyThresholdMs = computed(() => networkConfig.value.latencyThresholdMs);
+const latencyThresholdMs = computed(
+  () => networkConfig.value.latencyThresholdMs,
+);
 const lastKnownClientIp = ref("");
 const lastKnownClientIpSource = ref("");
 
@@ -492,6 +440,16 @@ const effectiveIsLan = computed(() => {
   );
   return result.isLan;
 });
+const forceModeLabel = computed(() => {
+  if (forceMode.value === "lan") return "内网";
+  if (forceMode.value === "wan") return "外网";
+  if (forceMode.value === "latency") return "延迟";
+  return "自动";
+});
+const homeStatusLabel = computed(() => {
+  if (isEditMode.value) return "编辑模式";
+  return "";
+});
 
 watch(
   [isLanMode, latency, effectiveIsLan],
@@ -508,23 +466,30 @@ const isSidebarEnabled = computed(() => {
   const w = store.widgets.find((w) => w.type === "sidebar" && w.enable);
   return checkVisible(w) && !(isMobile.value && w?.hideOnMobile);
 });
+const approvedHomeSidebarContractEnabled = false;
+const shouldRenderHomeSidebar = computed(
+  () => approvedHomeSidebarContractEnabled && isSidebarEnabled.value,
+);
 
 const toggleForceMode = () => {
   if (forceMode.value === "auto") forceMode.value = "lan";
   else if (forceMode.value === "lan") forceMode.value = "wan";
-  else if (forceMode.value === "wan") forceMode.value = "latency";
   else forceMode.value = "auto";
 };
 
 const searchEngineStored = useStorage("start-deck-engine", "google");
-const engines = computed(() => normalizeSearchEngines(store.appConfig.searchEngines));
+const engines = computed(() =>
+  normalizeSearchEngines(store.appConfig.searchEngines),
+);
 const sessionEngine = ref<string | null>(null);
 const effectiveEngine = computed({
   get: () =>
     sessionEngine.value ||
     (store.appConfig.rememberLastEngine
       ? searchEngineStored.value
-      : store.appConfig.defaultSearchEngine || engines.value[0]?.key || "google"),
+      : store.appConfig.defaultSearchEngine ||
+        engines.value[0]?.key ||
+        "google"),
   set: (val: string) => {
     sessionEngine.value = val;
     if (store.appConfig.rememberLastEngine) {
@@ -541,14 +506,19 @@ let searchEngineIconSaveTimer: number | null = null;
 const activeSearchEngine = computed<SearchEngine | undefined>(() => {
   return (
     engines.value.find((engine) => engine.key === effectiveEngine.value) ||
-    engines.value.find((engine) => engine.key === store.appConfig.defaultSearchEngine) ||
+    engines.value.find(
+      (engine) => engine.key === store.appConfig.defaultSearchEngine,
+    ) ||
     engines.value[0]
   );
 });
 
 const searchEngineIconFingerprint = computed(() =>
   engines.value
-    .map((engine) => `${engine.key}:${engine.urlTemplate}:${engine.iconSourceUrl || ""}`)
+    .map(
+      (engine) =>
+        `${engine.key}:${engine.urlTemplate}:${engine.iconSourceUrl || ""}`,
+    )
     .join("|"),
 );
 
@@ -558,7 +528,8 @@ const closeSearchEngineMenu = (event?: MouseEvent) => {
     return;
   }
   const target = event.target;
-  if (target instanceof Node && searchEnginePickerRef.value?.contains(target)) return;
+  if (target instanceof Node && searchEnginePickerRef.value?.contains(target))
+    return;
   isSearchEngineMenuOpen.value = false;
 };
 
@@ -603,17 +574,22 @@ const rgbaFromHex = (hex: string, alpha: number) => {
 };
 
 const searchWidget = computed(() => {
-  const enabled = store.widgets.find((w) => w.type === "search" && w.enable !== false);
+  const enabled = store.widgets.find(
+    (w) => w.type === "search" && w.enable !== false,
+  );
   if (enabled) return enabled as WidgetConfig;
   const any = store.widgets.find((w) => w.type === "search");
   return any as WidgetConfig | undefined;
 });
-const searchTextColor = computed(() => searchWidget.value?.textColor || "#111827");
+const searchTextColor = computed(
+  () => searchWidget.value?.textColor || "#111827",
+);
 const searchBgAlpha = computed(() => {
   const raw = searchWidget.value?.opacity;
   if (typeof raw !== "number") return 0.9;
   return Math.max(0.1, Math.min(1, raw));
 });
+const searchFrameBgAlpha = computed(() => Math.max(0.82, searchBgAlpha.value));
 const searchPlaceholderColor = computed(
   () => rgbaFromHex(searchTextColor.value, 0.55) || "rgba(107, 114, 128, 1)",
 );
@@ -637,7 +613,9 @@ watch(
   (list) => {
     if (!list.some((engine) => engine.key === effectiveEngine.value)) {
       effectiveEngine.value =
-        list.find((engine) => engine.key === store.appConfig.defaultSearchEngine)?.key ||
+        list.find(
+          (engine) => engine.key === store.appConfig.defaultSearchEngine,
+        )?.key ||
         list[0]?.key ||
         "google";
     }
@@ -686,10 +664,14 @@ const isPcBgLoaded = ref(false);
 const isMobileBgLoaded = ref(false);
 
 const pcBgUrl = computed(() =>
-  store.appConfig.background ? store.getAssetUrl(store.appConfig.background) : "",
+  store.appConfig.background
+    ? store.getAssetUrl(store.appConfig.background)
+    : "",
 );
 const mobileBgUrl = computed(() =>
-  store.appConfig.mobileBackground ? store.getAssetUrl(store.appConfig.mobileBackground) : "",
+  store.appConfig.mobileBackground
+    ? store.getAssetUrl(store.appConfig.mobileBackground)
+    : "",
 );
 
 watch(
@@ -741,36 +723,12 @@ watch(
 );
 // ------------------------------
 
-/*
-const draggableWidgets = computed({
-  get: () =>
-    store.widgets.filter(
-      (w) =>
-        checkVisible(w) &&
-        w.type !== "player" &&
-        w.type !== "search" &&
-        w.type !== "quote" &&
-        w.type !== "sidebar",
-    ),
-  set: (newOrder: WidgetConfig[]) => {
-    const hiddenWidgets = store.widgets.filter(
-      (w) =>
-        !checkVisible(w) ||
-        w.type === "player" ||
-        w.type === "search" ||
-        w.type === "quote" ||
-        w.type === "sidebar",
-    );
-    store.widgets = [...newOrder, ...hiddenWidgets];
-    store.markDirty();
-  },
-});
-*/
-
 const layoutData = ref<GridLayoutItem[]>([]);
 let skipNextLayoutSave = false;
 let isInternalUpdate = false;
-const isHandheld = computed(() => deviceKey.value === "mobile" || deviceKey.value === "tablet");
+const isHandheld = computed(
+  () => deviceKey.value === "mobile" || deviceKey.value === "tablet",
+);
 const checkVisible = (obj?: WidgetConfig | NavItem) => {
   if (!obj) return false;
   if ("enable" in obj && !obj.enable) return false;
@@ -778,7 +736,18 @@ const checkVisible = (obj?: WidgetConfig | NavItem) => {
   return canReadResource(obj, store.isLogged);
 };
 const isGridWidget = (widget: WidgetConfig) => gridWidgetTypes.has(widget.type);
-const isTabletPortrait = computed(() => deviceKey.value === "tablet" && height.value > width.value);
+const isMainShellManagedWidget = (widget: WidgetConfig) =>
+  isRuntimeWidget(widget);
+const widgetFrameSize = (widget: WidgetConfig) =>
+  isRuntimeWidget(widget)
+    ? resolveWidgetRuntimeSizeKey(widget) ||
+      resolveWidgetDisplaySize(widget).sizeKey
+    : toCatalogWidgetSizeKey(widget.type, {
+        colSpan: widget.w ?? widget.colSpan ?? 1,
+        rowSpan: widget.h ?? widget.rowSpan ?? 1,
+      }) || resolveWidgetDisplaySize(widget).sizeKey;
+const widgetFrameMetadataSize = (widget: WidgetConfig) =>
+  isMainShellManagedWidget(widget) ? "" : widgetFrameSize(widget);
 const desktopWidgetAreaCols = computed(() => {
   const raw = store.appConfig.widgetAreaCols ?? store.appConfig.widgetAreaSize;
   const n = typeof raw === "number" && Number.isFinite(raw) ? raw : 4;
@@ -789,21 +758,27 @@ const desktopWidgetAreaCols = computed(() => {
 const isWideLayout = computed(
   () => deviceKey.value === "desktop" && desktopWidgetAreaCols.value > 4,
 );
-const mainContentMaxWidth = computed(() => {
-  if (deviceKey.value !== "desktop") return undefined;
+const mainContentMaxWidthPx = computed(() => {
+  if (deviceKey.value !== "desktop") {
+    return Math.max(
+      resolveItabGridContainerWidth(1),
+      Math.round(width.value - 32),
+    );
+  }
   const base = 1280;
   const maxAllowed = Math.round(width.value * 0.89);
-  if (!Number.isFinite(maxAllowed) || maxAllowed <= 0) return `${base}px`;
+  if (!Number.isFinite(maxAllowed) || maxAllowed <= 0) return base;
 
   if (desktopWidgetAreaCols.value <= 4) {
-    return `${Math.min(base, maxAllowed)}px`;
+    return Math.min(base, maxAllowed);
   }
 
   const baseColWidth = base / 4;
   const required = Math.round(baseColWidth * desktopWidgetAreaCols.value);
   const target = Math.min(required, maxAllowed);
-  return `${Math.max(0, target)}px`;
+  return Math.max(0, target);
 });
+const mainContentMaxWidth = computed(() => `${mainContentMaxWidthPx.value}px`);
 const headerTitleText = computed(() => store.appConfig.customTitle || "");
 const headerTitleMaxWidth = computed(() => {
   if (!isHeaderRowLayout.value) {
@@ -825,27 +800,39 @@ const headerTitleMaxWidth = computed(() => {
   return Math.max(144, Math.min(360, Math.floor(sideSlot)));
 });
 const headerTitleFontSize = computed(() => {
-  const configured = Math.max(20, Math.min(80, store.appConfig.titleSize || 48));
+  const configured = Math.max(
+    20,
+    Math.min(80, store.appConfig.titleSize || 48),
+  );
   const maxByLayout = isMobile.value ? 30 : isHeaderRowLayout.value ? 38 : 40;
-  const textLength = Math.max(1, Array.from(headerTitleText.value.trim() || "StartDeck").length);
-  const fitByWidth = Math.floor((headerTitleMaxWidth.value / textLength) * 1.62);
+  const textLength = Math.max(
+    1,
+    Array.from(headerTitleText.value.trim() || "StartDeck").length,
+  );
+  const fitByWidth = Math.floor(
+    (headerTitleMaxWidth.value / textLength) * 1.62,
+  );
   return Math.max(20, Math.min(configured, maxByLayout, fitByWidth));
 });
-const widgetColNum = computed(() => {
-  if (deviceKey.value === "mobile") return 1;
-  if (deviceKey.value === "tablet") return isTabletPortrait.value ? 2 : 4;
-  return desktopWidgetAreaCols.value;
-});
+const widgetColNum = computed(() =>
+  Math.max(
+    4,
+    resolveItabGridColumns(mainContentMaxWidthPx.value, ITAB_GRID_MAX_COLUMNS),
+  ),
+);
+const itabGridLayoutWidth = computed(() =>
+  resolveItabGridContainerWidth(widgetColNum.value),
+);
 const lastDeviceKey = ref(deviceKey.value);
 const lastWidgetColNum = ref(widgetColNum.value);
-const rowHeight = computed(() =>
-  deviceKey.value === "mobile" ? 120 : deviceKey.value === "tablet" ? 130 : 140,
-);
-const gridScale = 2;
-const gridMargin = computed<[number, number]>(() => (isMobile.value ? [12, 12] : [24, 24]));
-const scaledRowHeight = computed(() =>
-  Math.max(1, (rowHeight.value - gridMargin.value[1]) / gridScale),
-);
+const rowHeight = computed(() => ITAB_GRID_CELL);
+const gridScale = 1;
+const gridMargin = computed<[number, number]>(() => [
+  ITAB_GRID_GAP,
+  ITAB_GRID_GAP,
+]);
+const scaledRowHeight = computed(() => rowHeight.value);
+const resizeStepHeight = computed(() => ITAB_GRID_PITCH);
 const scaleGridValue = (value: number) => Math.round(value * gridScale);
 const unscaleGridValue = (value: number) => Math.round(value) / gridScale;
 const scaledLayoutData = computed<GridLayoutItem[]>({
@@ -876,12 +863,18 @@ const scaledLayoutData = computed<GridLayoutItem[]>({
 const compactVertical = (layout: GridLayoutItem[]) => {
   const step = 1 / gridScale;
   const collides = (a: GridLayoutItem, b: GridLayoutItem) =>
-    a.i !== b.i && a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+    a.i !== b.i &&
+    a.x < b.x + b.w &&
+    a.x + a.w > b.x &&
+    a.y < b.y + b.h &&
+    a.y + a.h > b.y;
 
   const canPlace = (item: GridLayoutItem, placed: GridLayoutItem[]) =>
     !placed.some((p) => collides(item, p));
 
-  const sorted = [...layout].sort((a, b) => (a.y || 0) - (b.y || 0) || (a.x || 0) - (b.x || 0));
+  const sorted = [...layout].sort(
+    (a, b) => (a.y || 0) - (b.y || 0) || (a.x || 0) - (b.x || 0),
+  );
   const placed: GridLayoutItem[] = [];
   const compacted: GridLayoutItem[] = [];
 
@@ -891,7 +884,7 @@ const compactVertical = (layout: GridLayoutItem[]) => {
 
     // 1. Try to move UP to fill gaps (vertical compaction)
     let found = false;
-    // 使用 step 步进检查，确保能填充 0.5 高度的空隙
+    // 使用 iTab 单元步进检查，确保布局吸附到固定网格。
     for (let y = 0; y < originalY; y += step) {
       const candidate = { ...next, y };
       if (canPlace(candidate, placed)) {
@@ -924,12 +917,18 @@ const compactVertical = (layout: GridLayoutItem[]) => {
 };
 
 watch(
-  () => [store.mergedWidgets, widgetColNum.value, deviceKey.value, store.isLogged],
+  () => [
+    store.mergedWidgets,
+    widgetColNum.value,
+    deviceKey.value,
+    store.isLogged,
+  ],
   () => {
     const nextDeviceKey = deviceKey.value;
     const nextColNum = widgetColNum.value;
     const shouldRemount =
-      nextDeviceKey !== lastDeviceKey.value || nextColNum !== lastWidgetColNum.value;
+      nextDeviceKey !== lastDeviceKey.value ||
+      nextColNum !== lastWidgetColNum.value;
     lastDeviceKey.value = nextDeviceKey;
     lastWidgetColNum.value = nextColNum;
 
@@ -958,18 +957,8 @@ watch(
 
     const widgetsToLayout = visibleWidgets.map((w) => {
       const newW: WidgetConfig = { ...w };
-      const layouts = newW.layouts;
-      const key = deviceKey.value as "desktop" | "tablet" | "mobile";
-      const spec = layouts ? layouts[key] : undefined;
-      if (spec) {
-        newW.x = spec.x;
-        newW.y = spec.y;
-        newW.w = spec.w;
-        newW.h = spec.h;
-        newW.colSpan = spec.w;
-        newW.rowSpan = spec.h;
-      } else if (deviceKey.value === "mobile") {
-        // If no mobile layout exists, reset position to force auto-layout in reading order
+      if (deviceKey.value === "mobile") {
+        // iTab 网格不读取旧 layouts；移动端重新按当前可见顺序自动排布。
         newW.x = undefined;
         newW.y = undefined;
       }
@@ -978,29 +967,13 @@ watch(
       // This is critical when switching from wider to narrower layouts (e.g. desktop -> tablet)
       if ((newW.w || 1) > colNum) newW.w = colNum;
 
-      if (deviceKey.value === "mobile") {
-        if (
-          [
-            "clockweather",
-            "calendar",
-            "rss",
-            "iframe",
-            "todo",
-            "memo",
-            "bookmarks",
-            "hot",
-          ].includes(newW.type)
-        ) {
-          newW.w = colNum;
-        }
-      }
       return newW;
     });
 
     // 标记为程序化布局更新，避免触发保存循环
     skipNextLayoutSave = true;
     layoutData.value = compactVertical(generateLayout(widgetsToLayout, colNum));
-    
+
     // 如果 deviceKey 发生变化，强制重新挂载 GridLayout 组件
     // 这可以解决从窄屏切换回宽屏时布局错乱的问题，同时避免 :key 导致的死循环
     if (shouldRemount && !isInternalUpdate && !isEditMode.value) {
@@ -1020,24 +993,19 @@ const handleLayoutUpdated = (newLayout: GridLayoutItem[]) => {
     return;
   }
 
-  const key = deviceKey.value as "desktop" | "tablet" | "mobile";
-
   // 如果布局与当前 store.widgets 相同，跳过保存
   let changed = false;
   for (const l of newLayout) {
     const w = store.widgets.find((sw) => sw.id === l.i);
-    const spec = w?.layouts?.[key];
-    const curX = spec?.x ?? w?.x;
-    const curY = spec?.y ?? w?.y;
-    const curW = spec?.w ?? w?.w ?? w?.colSpan ?? 1;
-    const curH = spec?.h ?? w?.h ?? w?.rowSpan ?? 1;
-    
-    // 增强检查：在 desktop 模式下，必须确保顶层属性也一致
-    const isDesktop = key === "desktop";
-    const specMismatch = !w || curX !== l.x || curY !== l.y || curW !== l.w || curH !== l.h;
-    const topLevelMismatch = isDesktop && w && (w.x !== l.x || w.y !== l.y || w.w !== l.w || w.h !== l.h);
+    const curX = w?.x;
+    const curY = w?.y;
+    const curW = w?.w ?? w?.colSpan ?? 1;
+    const curH = w?.h ?? w?.rowSpan ?? 1;
 
-    if (specMismatch || topLevelMismatch) {
+    const specMismatch =
+      !w || curX !== l.x || curY !== l.y || curW !== l.w || curH !== l.h;
+
+    if (specMismatch) {
       changed = true;
       break;
     }
@@ -1049,24 +1017,13 @@ const handleLayoutUpdated = (newLayout: GridLayoutItem[]) => {
   newLayout.forEach((l) => {
     const w = store.widgets.find((sw) => sw.id === l.i);
     if (w) {
-      const layouts = w.layouts || {};
-      const spec: { x: number; y: number; w: number; h: number } = {
-        x: l.x,
-        y: l.y,
-        w: l.w,
-        h: l.h,
-      };
-      layouts[key] = spec;
-      w.layouts = layouts;
-
-      if (key === "desktop") {
-        w.x = l.x;
-        w.y = l.y;
-        w.w = l.w;
-        w.h = l.h;
-        w.colSpan = l.w;
-        w.rowSpan = l.h;
-      }
+      delete w.layouts;
+      w.x = l.x;
+      w.y = l.y;
+      w.w = l.w;
+      w.h = l.h;
+      w.colSpan = l.w;
+      w.rowSpan = l.h;
     }
   });
   store.markDirty();
@@ -1099,6 +1056,23 @@ const displayGroups = computed(() => {
       return g.items.length > 0 || !!g.preset;
     });
 });
+const homeGroupTabs = computed(() =>
+  displayGroups.value.map((group) => ({
+    id: group.id,
+    title: group.title,
+  })),
+);
+const homeActiveGroupId = computed(
+  () => activePaginationGroupId.value || homeGroupTabs.value[0]?.id || "",
+);
+const handleHomeGroupTabSelect = (groupId: string) => {
+  activePaginationGroupId.value = groupId;
+  if (isWebPaginationMode.value) return;
+  void nextTick(() => {
+    const el = document.getElementById(`group-${groupId}`);
+    el?.scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+};
 
 const paginationWheelLockUntil = ref(0);
 const getScrollElement = () => {
@@ -1123,6 +1097,7 @@ const handleWebPaginationWheel = (e: WheelEvent) => {
     showEditModal.value ||
     showSettingsModal.value ||
     showGroupSettingsModal.value ||
+    showAddWidgetModal.value ||
     showLoginModal.value
   )
     return;
@@ -1137,7 +1112,8 @@ const handleWebPaginationWheel = (e: WheelEvent) => {
 
   const canScroll = scrollEl.scrollHeight - scrollEl.clientHeight > 2;
   const atTop = scrollEl.scrollTop <= 0;
-  const atBottom = scrollEl.scrollTop + scrollEl.clientHeight >= scrollEl.scrollHeight - 1;
+  const atBottom =
+    scrollEl.scrollTop + scrollEl.clientHeight >= scrollEl.scrollHeight - 1;
   const shouldPaginate = !canScroll || (e.deltaY < 0 ? atTop : atBottom);
   if (!shouldPaginate) return;
 
@@ -1166,65 +1142,62 @@ const sanitizedFooterHtml = computed(() => {
 });
 
 onMounted(() => {
-  mainContainerRef.value?.addEventListener("wheel", handleWebPaginationWheel, { passive: false });
+  mainContainerRef.value?.addEventListener("wheel", handleWebPaginationWheel, {
+    passive: false,
+  });
 });
 
 onUnmounted(() => {
-  mainContainerRef.value?.removeEventListener("wheel", handleWebPaginationWheel);
+  mainContainerRef.value?.removeEventListener(
+    "wheel",
+    handleWebPaginationWheel,
+  );
+  clearHomeWidgetDragIdleTimer();
+  clearHomeWidgetDragSaveTimer();
 });
 
-const cycleWidgetSize = (widget: WidgetConfig) => {
-  // 统一为所有组件启用 4x4 尺寸选择器
-  activeResizeWidgetId.value = activeResizeWidgetId.value === widget.id ? null : widget.id;
-};
-
-let widgetHandlePointerId: number | null = null;
-let widgetHandleStartX = 0;
-let widgetHandleStartY = 0;
-const suppressNextWidgetHandleClick = ref(false);
-
-const onWidgetHandlePointerDown = (e: PointerEvent) => {
-  if (!isHandheld.value) return;
-  widgetHandlePointerId = e.pointerId;
-  widgetHandleStartX = e.clientX;
-  widgetHandleStartY = e.clientY;
-  suppressNextWidgetHandleClick.value = false;
-};
-
-const onWidgetHandlePointerMove = (e: PointerEvent) => {
-  if (!isHandheld.value) return;
-  if (widgetHandlePointerId === null || e.pointerId !== widgetHandlePointerId) return;
-  const dx = e.clientX - widgetHandleStartX;
-  const dy = e.clientY - widgetHandleStartY;
-  if (dx * dx + dy * dy > 64) suppressNextWidgetHandleClick.value = true;
-};
-
-const onWidgetHandlePointerUp = (e: PointerEvent) => {
-  if (!isHandheld.value) return;
-  if (widgetHandlePointerId === null || e.pointerId !== widgetHandlePointerId) return;
-  widgetHandlePointerId = null;
-};
-
-const onWidgetHandleClick = (widget: WidgetConfig) => {
-  if (isHandheld.value && suppressNextWidgetHandleClick.value) {
-    suppressNextWidgetHandleClick.value = false;
-    return;
-  }
-  cycleWidgetSize(widget);
-};
-
-const handleSizeSelect = (widget: GridLayoutItem, size: { colSpan: number; rowSpan: number }) => {
-  const maxCols = deviceKey.value === "mobile" ? 2 : Math.min(4, widgetColNum.value);
-  const maxRows = 4;
-  const min = 0.5;
-  const normalize = (value: number) => Math.round(value * 2) / 2;
-  const nextW = Math.min(Math.max(normalize(size.colSpan), min), maxCols);
-  const nextH = Math.min(Math.max(normalize(size.rowSpan), min), maxRows);
+const handleSizeSelect = (
+  widget: GridLayoutItem,
+  size: { colSpan: number; rowSpan: number },
+) => {
+  const nextState = resolveWidgetSizeState({
+    widgetType: widget.type,
+    deviceKey: deviceKey.value,
+    runtimeCols: widgetColNum.value,
+    currentSize: {
+      colSpan: widget.w || widget.colSpan || 1,
+      rowSpan: widget.h || widget.rowSpan || 1,
+    },
+    requestedSize: size,
+  });
+  const nextW = nextState.clampedSize.colSpan;
+  const nextH = nextState.clampedSize.rowSpan;
 
   widget.w = nextW;
   widget.h = nextH;
   widget.colSpan = nextW;
   widget.rowSpan = nextH;
+
+  if (isRuntimeWidget(widget)) {
+    const runtimeSizeKey = toRuntimeWidgetSizeKey(widget.type, {
+      colSpan: nextW,
+      rowSpan: nextH,
+    });
+    const storeWidget = store.widgets.find((item) => item.id === widget.id);
+    if (runtimeSizeKey && storeWidget) {
+      applyRuntimeWidgetSize(storeWidget, runtimeSizeKey);
+      widget.data = storeWidget.data;
+    }
+  }
+  const nextSizeKey = toItabWidgetSizeKey({
+    colSpan: nextW,
+    rowSpan: nextH,
+  });
+  const normalizedWidget = withItabGridData(
+    { ...widget } as GridLayoutItem,
+    nextSizeKey,
+  );
+  Object.assign(widget, normalizedWidget);
 
   // Manually trigger layout compaction to resolve collisions
   const newLayout = compactVertical(layoutData.value);
@@ -1232,9 +1205,101 @@ const handleSizeSelect = (widget: GridLayoutItem, size: { colSpan: number; rowSp
 
   // Sync back to store (all widgets, not just the resized one)
   handleLayoutUpdated(newLayout);
-
-  activeResizeWidgetId.value = null;
 };
+
+const gridLayoutRootRef = ref<HTMLElement | null>(null);
+const commitWidgetResize = (widgetId: string, size: WidgetSize) => {
+  const widget = layoutData.value.find(
+    (item) => item.i === widgetId || item.id === widgetId,
+  );
+  if (!widget) return;
+  handleSizeSelect(widget, size);
+};
+const widgetResize = useWidgetResize({
+  deviceKey,
+  runtimeCols: widgetColNum,
+  rowHeight: resizeStepHeight,
+  columnWidth: resizeStepHeight,
+  gridElement: gridLayoutRootRef,
+  onCommit: commitWidgetResize,
+});
+const activeResizeWidgetId = computed(() => widgetResize.activeWidgetId.value);
+const isWidgetResizeDragging = computed(() => widgetResize.isDragging.value);
+const resizeOverlayState = computed(() => widgetResize.overlayState.value);
+const isHomeWidgetDragEnabled = computed(
+  () =>
+    !isWidgetResizeDragging.value &&
+    !showAddWidgetModal.value &&
+    !showSettingsModal.value &&
+    !showGroupSettingsModal.value &&
+    !showLoginModal.value &&
+    !showEditModal.value &&
+    !openedRuntimeWidget.value,
+);
+
+const selectWidgetForEdit = (widgetId: string) => {
+  if (!isHomeEditChromeVisible.value) return;
+  selectedWidgetId.value = widgetId;
+};
+
+const startWidgetResize = (event: PointerEvent, widget: GridLayoutItem) => {
+  if (!isHomeEditChromeVisible.value) return;
+  selectWidgetForEdit(widget.id);
+  const resizeTarget =
+    event.currentTarget instanceof HTMLElement ? event.currentTarget : null;
+  const itemElement = resizeTarget?.closest("[data-widget-grid-item]");
+  widgetResize.beginResize(event, {
+    widgetId: widget.id,
+    widgetType: widget.type,
+    currentSize: {
+      colSpan: widget.w || widget.colSpan || 1,
+      rowSpan: widget.h || widget.rowSpan || 1,
+    },
+    itemElement: itemElement instanceof HTMLElement ? itemElement : null,
+  });
+};
+
+const selectedGridWidget = computed(() => {
+  if (!selectedWidgetId.value) return null;
+  return (
+    layoutData.value.find((widget) => widget.id === selectedWidgetId.value) ||
+    null
+  );
+});
+const selectedWidgetSizeState = computed(() => {
+  const widget = selectedGridWidget.value;
+  if (!widget) return null;
+  return resolveWidgetSizeState({
+    widgetType: widget.type,
+    deviceKey: deviceKey.value,
+    runtimeCols: widgetColNum.value,
+    currentSize: {
+      colSpan: widget.w || widget.colSpan || 1,
+      rowSpan: widget.h || widget.rowSpan || 1,
+    },
+    requestedSize:
+      resizeOverlayState.value?.widgetId === widget.id
+        ? resizeOverlayState.value.targetSize
+        : undefined,
+  });
+});
+const isWidgetSizeStripVisible = computed(
+  () =>
+    isHomeEditChromeVisible.value &&
+    isHandheld.value &&
+    selectedGridWidget.value !== null,
+);
+const handleWidgetSizeStripSelect = (size: WidgetSize) => {
+  const widget = selectedGridWidget.value;
+  if (!widget) return;
+  handleSizeSelect(widget, size);
+};
+
+watch(isEditMode, (val) => {
+  if (val) return;
+  selectedWidgetId.value = null;
+  widgetResize.cancelResize();
+});
 
 const handleScaledLayoutUpdated = (newLayout: GridLayoutItem[]) => {
   const unscaled = newLayout.map((item) => ({
@@ -1245,7 +1310,7 @@ const handleScaledLayoutUpdated = (newLayout: GridLayoutItem[]) => {
     h: unscaleGridValue(item.h),
   }));
 
-  // Enforce custom compaction logic (0.5 unit support)
+  // Enforce custom compaction logic so drag results match persisted iTab units.
   // This ensures the layout is consistent with what will be loaded after refresh
   const compacted = compactVertical(unscaled);
 
@@ -1267,28 +1332,42 @@ const handleScaledLayoutUpdated = (newLayout: GridLayoutItem[]) => {
   if (isChanged) {
     layoutData.value = compacted;
   }
+  const shouldSaveHomeWidgetDrag =
+    isHomeWidgetDragging.value || Date.now() < suppressWidgetOpenUntil.value;
   // Always sync to store so drag result is persisted (setter may have updated layoutData already, so isChanged can be false)
   handleLayoutUpdated(compacted);
+  finishHomeWidgetDrag();
+  if (shouldSaveHomeWidgetDrag) {
+    scheduleHomeWidgetDragSave();
+  }
+};
+
+const onHomeWidgetMove = () => {
+  beginHomeWidgetDrag();
+};
+
+const onHomeWidgetMoved = () => {
+  finishHomeWidgetDrag();
 };
 
 const isEmpireCloudWidget = (type: string) => {
-  return ["bookmarks", "countdown", "rss", "todo", "calendar", "hot"].includes(type);
+  return [
+    "bookmarks",
+    "countdown",
+    "rss",
+    ITAB_TODO_WIDGET_TYPE,
+    "hot",
+  ].includes(type);
 };
 
 const devtoolsClickCount = ref(0);
 const devtoolsClickTimer = ref<number | null>(null);
 
-const closeResizeSelector = () => {
-  activeResizeWidgetId.value = null;
-};
-
 onMounted(() => {
-  document.addEventListener("click", closeResizeSelector);
   document.addEventListener("click", closeSearchEngineMenu);
 });
 
 onUnmounted(() => {
-  document.removeEventListener("click", closeResizeSelector);
   document.removeEventListener("click", closeSearchEngineMenu);
   if (searchEngineIconSaveTimer) {
     window.clearTimeout(searchEngineIconSaveTimer);
@@ -1338,7 +1417,11 @@ const handleNetworkClick = async () => {
   }
 };
 
-const fetchWithTimeout = (input: RequestInfo | URL, init: RequestInit = {}, timeoutMs = 500) => {
+const fetchWithTimeout = (
+  input: RequestInfo | URL,
+  init: RequestInit = {},
+  timeoutMs = 500,
+) => {
   const controller = new AbortController();
   const timer = window.setTimeout(() => controller.abort(), timeoutMs);
   return fetch(input, { ...init, signal: controller.signal }).finally(() => {
@@ -1510,7 +1593,9 @@ const handleSave = async (payload: { item: NavItem; groupId?: string }) => {
     throw new Error("请先登录后再编辑");
   }
   // Check if it's a div-card widget update
-  const widget = store.widgets.find((w) => w.id === payload.item.id && w.type === "div-card");
+  const widget = store.widgets.find(
+    (w) => w.id === payload.item.id && w.type === "div-card",
+  );
   if (widget) {
     // Merge all properties from the edited item back into widget.data
     // This ensures icon, url, background, etc. are saved
@@ -1526,9 +1611,11 @@ const handleSave = async (payload: { item: NavItem; groupId?: string }) => {
       // Check for group move
       const targetGroupId = payload.groupId;
       let moved = false;
-      
+
       if (targetGroupId) {
-        const currentGroup = store.groups.find(g => g.items.some(i => i.id === payload.item.id));
+        const currentGroup = store.groups.find((g) =>
+          g.items.some((i) => i.id === payload.item.id),
+        );
         if (currentGroup && currentGroup.id !== targetGroupId) {
           // Move item: remove from old group, add to new group
           store.deleteItem(payload.item.id);
@@ -1536,27 +1623,36 @@ const handleSave = async (payload: { item: NavItem; groupId?: string }) => {
           moved = true;
         }
       }
-      
+
       if (!moved) {
         store.updateItem(payload.item);
       }
     } else if (payload.groupId) {
-      store.addItem({ ...payload.item, id: Date.now().toString() }, payload.groupId);
+      store.addItem(
+        { ...payload.item, id: Date.now().toString() },
+        payload.groupId,
+      );
     }
   }
 
   const result = await store.saveData(true);
   if (result === "conflict" || result === "unauthorized") {
-    throw new Error(`保存失败：${result === "conflict" ? "发生版本冲突" : "未授权或登录已过期"}`);
+    throw new Error(
+      `保存失败：${result === "conflict" ? "发生版本冲突" : "未授权或登录已过期"}`,
+    );
   }
 };
-const normalizeGridSpan = (value: number) => Math.round(value * 2) / 2;
-const getDivCardDefaultSize = () => {
+function normalizeGridSpan(value: number) {
+  return Math.max(1, Math.round(value));
+}
+
+function getDivCardDefaultSize() {
   const maxCols = widgetColNum.value;
-  const w = Math.max(0.5, Math.min(maxCols, normalizeGridSpan(0.5)));
+  const w = Math.max(1, Math.min(maxCols, normalizeGridSpan(1)));
   return { w, h: 1 };
-};
-const normalizeDivCardWidgets = () => {
+}
+
+function normalizeDivCardWidgets() {
   let changed = false;
   const { w: defaultW, h: defaultH } = getDivCardDefaultSize();
   store.widgets.forEach((widget) => {
@@ -1579,56 +1675,245 @@ const normalizeDivCardWidgets = () => {
     }
   });
   if (changed) store.markDirty();
-};
-const addDivCardWidget = () => {
+}
+const openAddWidgetModal = () => {
   if (!store.isLogged) {
     showLoginModal.value = true;
     return;
   }
-  const newId = `div-card-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-  const { w, h } = getDivCardDefaultSize();
-  const newWidget: WidgetConfig = {
-    id: newId,
-    type: "div-card",
-    enable: true,
-    isPublic: true,
-    w,
-    h,
-    colSpan: w,
-    rowSpan: h,
-    data: {
-      title: "div 卡片",
-      iconSize: 180,
-    },
-  };
-  
-  store.widgets.push(newWidget);
-
-  // Manually update layoutData because the watcher is disabled in edit mode
-  const currentLayout = [...layoutData.value];
-  const newLayoutItem = { 
-    ...newWidget, 
-    i: newWidget.id, 
-    x: 0, // Initial X (will be fixed by layout logic)
-    y: Infinity, // Put at bottom initially
-    w, 
-    h 
-  };
-  
-  // Use generateLayout + compactVertical to find the correct position
-  const updatedLayout = compactVertical(generateLayout([...currentLayout, newLayoutItem], widgetColNum.value));
-  
-  layoutData.value = updatedLayout;
-  
-  // Sync the calculated position back to the widget in store
-  handleLayoutUpdated(updatedLayout);
-  
-  store.markDirty();
+  closeBlankContextMenu();
+  selectedWidgetId.value = null;
+  widgetResize.cancelResize();
+  showAddWidgetModal.value = true;
 };
+
+const syncCatalogWidgetLayout = (widget: WidgetConfig) => {
+  if (!isGridWidget(widget)) return;
+  const maxCols = widgetColNum.value;
+  const width = Math.max(
+    1,
+    Math.min(maxCols, normalizeGridSpan(widget.w ?? widget.colSpan ?? 1)),
+  );
+  const height = Math.max(
+    1,
+    normalizeGridSpan(widget.h ?? widget.rowSpan ?? 1),
+  );
+  widget.w = width;
+  widget.h = height;
+  widget.colSpan = width;
+  widget.rowSpan = height;
+  Object.assign(
+    widget,
+    withItabGridData(
+      { ...widget },
+      toItabWidgetSizeKey({ colSpan: width, rowSpan: height }),
+    ),
+  );
+
+  // The layout watcher ignores external updates during edit mode, so new/enabled widgets
+  // must be placed into layoutData immediately.
+  const currentLayout = layoutData.value.filter((item) => item.i !== widget.id);
+  const newLayoutItem: GridLayoutItem = {
+    ...widget,
+    i: widget.id,
+    x: widget.x ?? 0,
+    y: widget.y ?? Infinity,
+    w: widget.w ?? width,
+    h: widget.h ?? height,
+  };
+  const updatedLayout = compactVertical(
+    generateLayout([...currentLayout, newLayoutItem], widgetColNum.value),
+  );
+  layoutData.value = updatedLayout;
+  handleLayoutUpdated(updatedLayout);
+};
+
+const applyWidgetSizeFromPayload = (
+  widget: WidgetConfig,
+  item: NonNullable<ReturnType<typeof getWidgetCatalogItem>>,
+  sizeKey?: string,
+) => {
+  if (isRuntimeWidget(widget)) {
+    const selected = item.supportedSizes.find((size) => size.key === sizeKey);
+    const current = resolveWidgetRuntimeSizeKey(widget);
+    const target =
+      selected?.key ||
+      current ||
+      item.supportedSizes.find((size) => size.default)?.key ||
+      item.supportedSizes[0]?.key;
+    if (target) {
+      applyRuntimeWidgetSize(widget, target as RuntimeWidgetSizeKey);
+    }
+    return;
+  }
+
+  const selected = item.sizeFamily.supported.find(
+    (size) => size.key === sizeKey,
+  );
+  const current = item.sizeFamily.supported.find(
+    (size) =>
+      size.colSpan === normalizeGridSpan(widget.w ?? widget.colSpan ?? 0) &&
+      size.rowSpan === normalizeGridSpan(widget.h ?? widget.rowSpan ?? 0),
+  );
+  const target =
+    selected ||
+    current ||
+    item.sizeFamily.supported.find((size) => size.default) ||
+    item.sizeFamily.supported[0];
+  if (!target) return;
+  widget.w = target.colSpan;
+  widget.h = target.rowSpan;
+  widget.colSpan = target.colSpan;
+  widget.rowSpan = target.rowSpan;
+  Object.assign(
+    widget,
+    withItabGridData(widget, target.key as RuntimeWidgetSizeKey),
+  );
+};
+
+const addWidgetPayload = (
+  payload: Extract<AddComponentPayload, { kind: "widget" }>,
+): AddComponentResult => {
+  if (!store.isLogged) {
+    showLoginModal.value = true;
+    return { status: "unauthorized", message: "请先登录后再添加组件" };
+  }
+  const item = getWidgetCatalogItem(payload.catalogItemId);
+  if (!item) return { status: "validation-error", message: "组件不存在" };
+
+  const existing = findExistingCatalogWidget(store.widgets, item);
+  if (item.mode === "singleton" && existing) {
+    if (existing.enable !== false) {
+      return {
+        status: "duplicate",
+        id: existing.id,
+        groupId: payload.destinationGroupId,
+        message: "该组件已启用",
+      };
+    }
+    applyWidgetSizeFromPayload(existing, item, payload.sizeKey);
+    existing.enable = true;
+    syncCatalogWidgetLayout(existing);
+    store.markDirty();
+    return {
+      status: "success",
+      id: existing.id,
+      groupId: payload.destinationGroupId,
+      message: "组件已启用",
+    };
+  }
+
+  const newWidget = createWidgetFromCatalog(item);
+  applyWidgetSizeFromPayload(newWidget, item, payload.sizeKey);
+  store.widgets.push(newWidget);
+  syncCatalogWidgetLayout(newWidget);
+  store.markDirty();
+  return {
+    status: "success",
+    id: newWidget.id,
+    groupId: payload.destinationGroupId,
+    message: "组件已添加",
+  };
+};
+
+const cloneGroups = () =>
+  JSON.parse(JSON.stringify(store.groups)) as NavGroup[];
+
+const addNavItemPayload = async (
+  payload: Extract<
+    AddComponentPayload,
+    { kind: "site-shortcut" | "custom-icon" }
+  >,
+): Promise<AddComponentResult> => {
+  if (!store.isLogged) {
+    showLoginModal.value = true;
+    return { status: "unauthorized", message: "请先登录后再添加图标" };
+  }
+  if (!payload.destinationGroupId) {
+    return { status: "validation-error", message: "请选择添加位置" };
+  }
+  const targetGroup = store.groups.find(
+    (group) => group.id === payload.destinationGroupId,
+  );
+  if (!targetGroup) {
+    return { status: "validation-error", message: "目标分组不存在" };
+  }
+  if (
+    isDuplicateSiteShortcut(
+      store.items.map((item) => item.url),
+      payload.navItem.url,
+    )
+  ) {
+    return {
+      status: "duplicate",
+      id: payload.navItem.id || "",
+      groupId: payload.destinationGroupId,
+      message: "该网址已存在",
+    };
+  }
+
+  const beforeGroups = cloneGroups();
+  const createdId = payload.navItem.id || Date.now().toString();
+  const navItem: NavItem = {
+    ...payload.navItem,
+    id: createdId,
+    isPublic: payload.navItem.isPublic ?? true,
+  };
+
+  if (payload.kind === "custom-icon" && navItem.icon) {
+    const cached = await cacheNavItemIconToLocal(navItem.icon);
+    if (cached.path) {
+      navItem.icon = cached.path;
+    } else if (cached.error) {
+      uiFeedback.notify({
+        title: "图标缓存失败",
+        message: "已保留当前图标继续保存。",
+        tone: "warning",
+      });
+    }
+  }
+
+  store.addItem(navItem, payload.destinationGroupId);
+
+  try {
+    const result = await store.saveData(true);
+    if (result === "conflict" || result === "unauthorized") {
+      store.groups = beforeGroups;
+      if (result === "unauthorized") {
+        return { status: "unauthorized", message: "登录已失效，已回滚添加。" };
+      }
+      return {
+        status: "save-error",
+        message: "保存冲突，已回滚添加。",
+        rolledBack: true,
+      };
+    }
+    return {
+      status: "success",
+      id: createdId,
+      groupId: payload.destinationGroupId,
+      message:
+        payload.saveMode === "save-and-continue"
+          ? "已保存，可继续添加"
+          : "已保存",
+    };
+  } catch (error) {
+    store.groups = beforeGroups;
+    const message = error instanceof Error ? error.message : "保存失败";
+    return { status: "save-error", message, rolledBack: true };
+  }
+};
+
+const addComponent = async (
+  payload: AddComponentPayload,
+): Promise<AddComponentResult> => {
+  if (payload.kind === "widget") return addWidgetPayload(payload);
+  return addNavItemPayload(payload);
+};
+
 const handleDivCardClick = (widget: WidgetConfig) => {
-  if (isEditMode.value) {
-    // Edit mode: Disable click to avoid conflict with drag
-    // User can use right-click context menu to edit/add
+  if (isEditMode.value || shouldSuppressHomeWidgetOpen()) {
+    // Disable click while editing or just after a drag to avoid opening on drag release.
     return;
   }
 
@@ -1647,7 +1932,8 @@ const deleteDivCardWidget = (id: string) => {
   if (!store.isLogged) return;
   store.widgets = store.widgets.filter((w) => w.id !== id);
   layoutData.value = layoutData.value.filter((w) => w.i !== id && w.id !== id);
-  if (activeResizeWidgetId.value === id) activeResizeWidgetId.value = null;
+  if (selectedWidgetId.value === id) selectedWidgetId.value = null;
+  if (activeResizeWidgetId.value === id) widgetResize.cancelResize();
   const newLayout = compactVertical(layoutData.value);
   layoutData.value = newLayout;
   handleLayoutUpdated(newLayout);
@@ -1659,7 +1945,8 @@ const disableWidgetFromGrid = (id: string) => {
   if (!widget) return;
   widget.enable = false;
   layoutData.value = layoutData.value.filter((w) => w.i !== id && w.id !== id);
-  if (activeResizeWidgetId.value === id) activeResizeWidgetId.value = null;
+  if (selectedWidgetId.value === id) selectedWidgetId.value = null;
+  if (activeResizeWidgetId.value === id) widgetResize.cancelResize();
   const newLayout = compactVertical(layoutData.value);
   layoutData.value = newLayout;
   handleLayoutUpdated(newLayout);
@@ -1683,6 +1970,7 @@ const { pause: pausePolling, resume: resumePolling } = useIntervalFn(
       !isEditMode.value &&
       !showSettingsModal.value &&
       !showGroupSettingsModal.value &&
+      !showAddWidgetModal.value &&
       !showEditModal.value &&
       !showLoginModal.value
     ) {
@@ -1698,6 +1986,7 @@ const shouldPausePolling = computed(
     isEditMode.value ||
     showSettingsModal.value ||
     showGroupSettingsModal.value ||
+    showAddWidgetModal.value ||
     showEditModal.value ||
     showLoginModal.value,
 );
@@ -1780,7 +2069,10 @@ const handleDockerAction = async (item: NavItem, action: string) => {
   let containerId = item.containerId;
 
   // Resolve ID from name if needed
-  if ((!containerId || !containerStatuses.value[containerId]) && item.containerName) {
+  if (
+    (!containerId || !containerStatuses.value[containerId]) &&
+    item.containerName
+  ) {
     const resolvedId = liveContainerNamesMap.value[item.containerName];
     if (resolvedId) {
       containerId = resolvedId;
@@ -1855,7 +2147,9 @@ const formatBytes = (bytes: number, decimals = 1) => {
   const sizes = ["B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
   const index = Math.min(i, sizes.length - 1);
-  return parseFloat((bytes / Math.pow(k, index)).toFixed(dm)) + (sizes[index] || "B");
+  return (
+    parseFloat((bytes / Math.pow(k, index)).toFixed(dm)) + (sizes[index] || "B")
+  );
 };
 
 interface ContainerStatus {
@@ -1918,7 +2212,10 @@ const getContainerStatus = (item: NavItem) => {
 };
 
 const fetchContainerStatuses = async () => {
-  if (typeof document !== "undefined" && document.visibilityState === "hidden") {
+  if (
+    typeof document !== "undefined" &&
+    document.visibilityState === "hidden"
+  ) {
     return;
   }
 
@@ -1928,7 +2225,8 @@ const fetchContainerStatuses = async () => {
     g.items.some((item) => !!item.containerId || !!item.containerName),
   );
   if (!hasAnyContainerItems) {
-    if (Object.keys(containerStatuses.value).length) containerStatuses.value = {};
+    if (Object.keys(containerStatuses.value).length)
+      containerStatuses.value = {};
     if (Object.keys(previousStatsMap.value).length) previousStatsMap.value = {};
     return;
   }
@@ -1960,11 +2258,17 @@ const fetchContainerStatuses = async () => {
         // Simulate fluctuating stats
         const cpuPercent = Math.min(
           100,
-          Math.max(0, (existing?.stats?.cpuPercent || 30) + (Math.random() - 0.5) * 20),
+          Math.max(
+            0,
+            (existing?.stats?.cpuPercent || 30) + (Math.random() - 0.5) * 20,
+          ),
         );
         const memPercent = Math.min(
           100,
-          Math.max(0, (existing?.stats?.memPercent || 40) + (Math.random() - 0.5) * 10),
+          Math.max(
+            0,
+            (existing?.stats?.memPercent || 40) + (Math.random() - 0.5) * 10,
+          ),
         );
         const memUsage = (memPercent / 100) * 1024 * 1024 * 1024; // Mock 1GB limit
 
@@ -1976,7 +2280,10 @@ const fetchContainerStatuses = async () => {
 
         statusMap[item.containerId] = {
           state: existing?.state || "running",
-          hasUpdate: existing?.hasUpdate !== undefined ? existing.hasUpdate : Math.random() > 0.7, // Demo: 30% chance of update
+          hasUpdate:
+            existing?.hasUpdate !== undefined
+              ? existing.hasUpdate
+              : Math.random() > 0.7, // Demo: 30% chance of update
           stats: {
             cpuPercent,
             memPercent,
@@ -1989,13 +2296,19 @@ const fetchContainerStatuses = async () => {
     });
   });
 
-  const dockerWidget = store.widgets.find((w) => w.type === "docker" || w.id === "docker");
-  const dockerMockEnabled = Boolean(dockerWidget?.data && dockerWidget.data.useMock);
+  const dockerWidget = store.widgets.find(
+    (w) => w.type === "docker" || w.id === "docker",
+  );
+  const dockerMockEnabled = Boolean(
+    dockerWidget?.data && dockerWidget.data.useMock,
+  );
 
   if (!dockerSystemEnabled && !dockerMockEnabled) {
-    if (Object.keys(containerStatuses.value).length) containerStatuses.value = {};
+    if (Object.keys(containerStatuses.value).length)
+      containerStatuses.value = {};
     if (Object.keys(previousStatsMap.value).length) previousStatsMap.value = {};
-    if (Object.keys(liveContainerNamesMap.value).length) liveContainerNamesMap.value = {};
+    if (Object.keys(liveContainerNamesMap.value).length)
+      liveContainerNamesMap.value = {};
     return;
   }
 
@@ -2006,11 +2319,17 @@ const fetchContainerStatuses = async () => {
         const existing = containerStatuses.value[item.containerId];
         const cpuPercent = Math.min(
           100,
-          Math.max(0, (existing?.stats?.cpuPercent || 30) + (Math.random() - 0.5) * 20),
+          Math.max(
+            0,
+            (existing?.stats?.cpuPercent || 30) + (Math.random() - 0.5) * 20,
+          ),
         );
         const memPercent = Math.min(
           100,
-          Math.max(0, (existing?.stats?.memPercent || 40) + (Math.random() - 0.5) * 10),
+          Math.max(
+            0,
+            (existing?.stats?.memPercent || 40) + (Math.random() - 0.5) * 10,
+          ),
         );
         const memUsage = (memPercent / 100) * 1024 * 1024 * 1024;
         const rx = Math.random() * 1024 * 1024;
@@ -2019,7 +2338,10 @@ const fetchContainerStatuses = async () => {
         const write = Math.random() * 1024 * 1024;
         statusMap[item.containerId] = {
           state: existing?.state || "running",
-          hasUpdate: existing?.hasUpdate !== undefined ? existing.hasUpdate : Math.random() > 0.7,
+          hasUpdate:
+            existing?.hasUpdate !== undefined
+              ? existing.hasUpdate
+              : Math.random() > 0.7,
           stats: {
             cpuPercent,
             memPercent,
@@ -2036,7 +2358,9 @@ const fetchContainerStatuses = async () => {
   // Only fetch if there are container items to update
   const hasRealDockerItems = store.groups.some((g) =>
     g.items.some(
-      (item) => (item.containerId && !item.containerId.startsWith("mock-")) || item.containerName,
+      (item) =>
+        (item.containerId && !item.containerId.startsWith("mock-")) ||
+        item.containerName,
     ),
   );
 
@@ -2046,7 +2370,10 @@ const fetchContainerStatuses = async () => {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 20000);
 
-      const res = await fetch("/api/docker/containers", { headers, signal: controller.signal });
+      const res = await fetch("/api/docker/containers", {
+        headers,
+        signal: controller.signal,
+      });
       clearTimeout(timeoutId);
       const data = await res.json();
       if (data.success) {
@@ -2069,7 +2396,9 @@ const fetchContainerStatuses = async () => {
           g.items.forEach((item) => {
             // Case 1: Has ID. Check if valid, or fix if invalid.
             if (item.containerId && !item.containerId.startsWith("mock-")) {
-              const foundById = liveContainers.find((c) => c.Id === item.containerId);
+              const foundById = liveContainers.find(
+                (c) => c.Id === item.containerId,
+              );
               if (!foundById) {
                 // Try to find by name (handle ID change after container recreation)
                 let foundByName: DockerContainer | undefined;
@@ -2077,14 +2406,18 @@ const fetchContainerStatuses = async () => {
                 // 1. Try strict match by containerName (if set)
                 if (item.containerName) {
                   foundByName = liveContainers.find((c) =>
-                    (c.Names || []).some((n) => n.replace(/^\//, "") === item.containerName),
+                    (c.Names || []).some(
+                      (n) => n.replace(/^\//, "") === item.containerName,
+                    ),
                   );
                 }
 
                 // 2. Fallback to match by item.title (legacy support or if name matches title)
                 if (!foundByName && item.title) {
                   foundByName = liveContainers.find((c) =>
-                    (c.Names || []).some((n) => n.replace(/^\//, "") === item.title),
+                    (c.Names || []).some(
+                      (n) => n.replace(/^\//, "") === item.title,
+                    ),
                   );
                 }
 
@@ -2096,7 +2429,10 @@ const fetchContainerStatuses = async () => {
 
                   // Ensure containerName is synced to the real container name
                   // This ensures future updates work even if user renames the card title
-                  const realName = (foundByName.Names?.[0] || "").replace(/^\//, "");
+                  const realName = (foundByName.Names?.[0] || "").replace(
+                    /^\//,
+                    "",
+                  );
                   if (realName && item.containerName !== realName) {
                     item.containerName = realName;
                   }
@@ -2111,7 +2447,9 @@ const fetchContainerStatuses = async () => {
               item.containerName
             ) {
               const foundByName = liveContainers.find((c) =>
-                (c.Names || []).some((n) => n.replace(/^\//, "") === item.containerName),
+                (c.Names || []).some(
+                  (n) => n.replace(/^\//, "") === item.containerName,
+                ),
               );
 
               if (foundByName) {
@@ -2147,10 +2485,22 @@ const fetchContainerStatuses = async () => {
             if (prev) {
               const dt = (now - prev.time) / 1000;
               if (dt > 0) {
-                rxRate = Math.max(0, (currentNetRx - (prev.netIO?.rx || 0)) / dt);
-                txRate = Math.max(0, (currentNetTx - (prev.netIO?.tx || 0)) / dt);
-                readRate = Math.max(0, (currentBlockRead - (prev.blockIO?.read || 0)) / dt);
-                writeRate = Math.max(0, (currentBlockWrite - (prev.blockIO?.write || 0)) / dt);
+                rxRate = Math.max(
+                  0,
+                  (currentNetRx - (prev.netIO?.rx || 0)) / dt,
+                );
+                txRate = Math.max(
+                  0,
+                  (currentNetTx - (prev.netIO?.tx || 0)) / dt,
+                );
+                readRate = Math.max(
+                  0,
+                  (currentBlockRead - (prev.blockIO?.read || 0)) / dt,
+                );
+                writeRate = Math.max(
+                  0,
+                  (currentBlockWrite - (prev.blockIO?.write || 0)) / dt,
+                );
               }
             }
 
@@ -2198,13 +2548,19 @@ onMounted(() => {
   isMounted.value = true;
   store.registerDashboardPulse(fetchContainerStatuses);
   fetchContainerStatuses();
-  document.addEventListener("visibilitychange", handleContainerVisibilityChange);
+  document.addEventListener(
+    "visibilitychange",
+    handleContainerVisibilityChange,
+  );
 });
 
 onUnmounted(() => {
   isMounted.value = false;
   store.unregisterDashboardPulse(fetchContainerStatuses);
-  document.removeEventListener("visibilitychange", handleContainerVisibilityChange);
+  document.removeEventListener(
+    "visibilitychange",
+    handleContainerVisibilityChange,
+  );
 });
 
 // 监听 store.groups 变化，一旦出现容器组件，立即拉一次状态（之后由脉冲每 15s 驱动）
@@ -2221,21 +2577,8 @@ watch(
   { deep: true },
 );
 
-const handleAuthAction = async () => {
-  if (store.isLogged) {
-    const wasEditing = isEditMode.value;
-    isEditMode.value = false;
-    if (wasEditing) {
-      try {
-        await store.saveData(true);
-      } finally {
-        store.layoutEditInProgress = false;
-      }
-    }
-    store.logout();
-  } else {
-    showLoginModal.value = true;
-  }
+const openLogin = () => {
+  showLoginModal.value = true;
 };
 const openSettings = () => {
   if (!store.isLogged) {
@@ -2243,6 +2586,9 @@ const openSettings = () => {
   } else {
     showSettingsModal.value = true;
   }
+};
+const logoutFromHome = () => {
+  void store.logout();
 };
 const openEditOrLogin = () => {
   if (!store.isLogged) {
@@ -2275,9 +2621,24 @@ const showContextMenu = ref(false);
 const contextMenuPosition = ref({ x: 0, y: 0 });
 const contextMenuItem = ref<NavItem | null>(null);
 const contextMenuGroupId = ref<string | undefined>(undefined);
+const showBlankContextMenu = ref(false);
+const blankContextMenuPosition = ref({ x: 0, y: 0 });
+const blankContextActiveIndex = ref(0);
+const runtimeContextMenu = ref<{
+  widgetId: string;
+  x: number;
+  y: number;
+} | null>(null);
+const openedRuntimeWidgetId = ref("");
+const runtimeRefreshTokens = ref<Record<string, number>>({});
 let ignoreNextNativeContextMenu = false;
 
-const openContextMenuAt = (x: number, y: number, item: NavItem, groupId?: string) => {
+const openContextMenuAt = (
+  x: number,
+  y: number,
+  item: NavItem,
+  groupId?: string,
+) => {
   if (!store.isLogged) return;
   contextMenuItem.value = item;
   contextMenuGroupId.value = groupId;
@@ -2292,6 +2653,8 @@ const openContextMenuAt = (x: number, y: number, item: NavItem, groupId?: string
   if (finalY + menuHeight > window.innerHeight) finalY -= menuHeight;
 
   contextMenuPosition.value = { x: finalX, y: finalY };
+  showBlankContextMenu.value = false;
+  runtimeContextMenu.value = null;
   showContextMenu.value = true;
 };
 
@@ -2366,7 +2729,11 @@ const onCardTouchEnd = () => {
   clearCardLongPress();
 };
 
-const onCardPointerDown = (e: PointerEvent, item: NavItem, groupId?: string) => {
+const onCardPointerDown = (
+  e: PointerEvent,
+  item: NavItem,
+  groupId?: string,
+) => {
   if (!store.isLogged) return;
   if (!enableLongPressContextMenu.value) return;
   if (showContextMenu.value) return;
@@ -2420,7 +2787,10 @@ const handleDivCardContextMenu = (e: MouseEvent, widget: WidgetConfig) => {
   openContextMenu(e, proxyItem, undefined);
 };
 
-const handleDivCardContextMenuPointerDown = (e: MouseEvent, widget: WidgetConfig) => {
+const handleDivCardContextMenuPointerDown = (
+  e: MouseEvent,
+  widget: WidgetConfig,
+) => {
   if (!store.isLogged) return;
   ignoreNextNativeContextMenu = true;
   handleDivCardContextMenu(e, widget);
@@ -2436,7 +2806,11 @@ const handleContextMenu = (e: MouseEvent, item: NavItem, groupId?: string) => {
   openContextMenu(e, item, groupId);
 };
 
-const handleContextMenuPointerDown = (e: MouseEvent, item: NavItem, groupId?: string) => {
+const handleContextMenuPointerDown = (
+  e: MouseEvent,
+  item: NavItem,
+  groupId?: string,
+) => {
   if (!store.isLogged) return;
   ignoreNextNativeContextMenu = true;
   openContextMenu(e, item, groupId);
@@ -2446,13 +2820,319 @@ const closeContextMenu = () => {
   showContextMenu.value = false;
 };
 
+const closeBlankContextMenu = () => {
+  showBlankContextMenu.value = false;
+};
+
+const runtimeMenuWidget = computed(() => {
+  const widgetId = runtimeContextMenu.value?.widgetId;
+  if (!widgetId) return null;
+  return store.widgets.find((widget) => widget.id === widgetId) || null;
+});
+
+const openedRuntimeWidget = computed(() => {
+  if (!openedRuntimeWidgetId.value) return null;
+  const widget =
+    store.widgets.find((item) => item.id === openedRuntimeWidgetId.value) ||
+    null;
+  return widget && isRuntimeWidget(widget) ? widget : null;
+});
+const runtimeMemoWidget = computed(
+  () =>
+    store.widgets.find(
+      (widget) =>
+        widget.id === ITAB_MEMO_CATALOG_ID &&
+        widget.type === ITAB_MEMO_WIDGET_TYPE &&
+        widget.enable !== false,
+    ) || null,
+);
+
+const closeRuntimeContextMenu = () => {
+  runtimeContextMenu.value = null;
+};
+
+const openRuntimeContextMenu = (widget: WidgetConfig, event: MouseEvent) => {
+  if (!store.isLogged || !isRuntimeWidget(widget)) return;
+  event.preventDefault();
+  event.stopPropagation();
+  const menuWidth = 140;
+  const menuHeight = 198;
+  let finalX = event.clientX;
+  let finalY = event.clientY;
+  if (finalX + menuWidth > window.innerWidth) {
+    finalX = Math.max(8, window.innerWidth - menuWidth - 8);
+  }
+  if (finalY + menuHeight > window.innerHeight) {
+    finalY = Math.max(8, window.innerHeight - menuHeight - 8);
+  }
+  closeContextMenu();
+  closeBlankContextMenu();
+  runtimeContextMenu.value = {
+    widgetId: widget.id,
+    x: finalX,
+    y: finalY,
+  };
+};
+
+const openRuntimeWidget = (widget: WidgetConfig) => {
+  if (
+    !isRuntimeWidget(widget) ||
+    isHomeEditChromeVisible.value ||
+    shouldSuppressHomeWidgetOpen()
+  )
+    return;
+  closeRuntimeContextMenu();
+  openedRuntimeWidgetId.value = widget.id;
+};
+
+const closeRuntimeWidget = () => {
+  openedRuntimeWidgetId.value = "";
+};
+
+const editRuntimeWidgetIcon = (widget: WidgetConfig) => {
+  if (!store.isLogged) {
+    showLoginModal.value = true;
+    return;
+  }
+  closeRuntimeContextMenu();
+  store.layoutEditInProgress = true;
+  isEditMode.value = true;
+  selectedWidgetId.value = widget.id;
+};
+
+const editRuntimeWidgetHome = () => {
+  if (!store.isLogged) {
+    showLoginModal.value = true;
+    return;
+  }
+  closeRuntimeContextMenu();
+  store.layoutEditInProgress = true;
+  isEditMode.value = true;
+};
+
+const deleteRuntimeWidget = (widget: WidgetConfig) => {
+  if (!store.isLogged) {
+    showLoginModal.value = true;
+    return;
+  }
+  closeRuntimeContextMenu();
+  openDeleteConfirm(widget.id);
+};
+
+const updateRuntimeWidgetData = (
+  widget: WidgetConfig,
+  data: WidgetRuntimeData,
+) => {
+  const storeWidget = store.widgets.find((item) => item.id === widget.id);
+  const currentSizeKey =
+    (storeWidget && resolveWidgetRuntimeSizeKey(storeWidget)) ||
+    resolveWidgetRuntimeSizeKey(widget);
+  const normalizedBase = normalizeWidgetRuntimeData(widget.type, data);
+  if (!normalizedBase) return;
+  const normalized = {
+    ...normalizedBase,
+    ...(currentSizeKey ? { sizeKey: currentSizeKey } : {}),
+  };
+  if (storeWidget) {
+    storeWidget.data = normalized;
+  }
+  const layoutWidget = layoutData.value.find(
+    (item) => item.id === widget.id || item.i === widget.id,
+  );
+  if (layoutWidget) {
+    layoutWidget.data = normalized;
+  }
+  store.markDirty();
+  if (store.isLogged && storeWidget) {
+    void store.saveData(
+      widget.type !== ITAB_TODO_WIDGET_TYPE &&
+        widget.type !== ITAB_MEMO_WIDGET_TYPE &&
+        widget.type !== ITAB_POMODORO_WIDGET_TYPE,
+    );
+  }
+};
+
+const createRuntimeWidgetInstanceId = (prefix: string) =>
+  `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+
+const addRuntimeWidgetData = (
+  widget: WidgetConfig,
+  data: WidgetRuntimeData,
+) => {
+  if (widget.type !== ITAB_ANNIVERSARY_WIDGET_TYPE) return;
+  const normalized = normalizeWidgetRuntimeData(widget.type, data);
+  if (!normalized) return;
+  const newWidget = createDefaultItabAnniversaryWidget();
+  newWidget.id = createRuntimeWidgetInstanceId(ITAB_ANNIVERSARY_CATALOG_ID);
+  newWidget.data = normalized;
+  applyRuntimeWidgetSize(newWidget, normalized.sizeKey);
+  store.widgets.push(newWidget);
+  syncCatalogWidgetLayout(newWidget);
+  closeRuntimeWidget();
+  store.markDirty();
+  if (store.isLogged) {
+    void store.saveData(true);
+  }
+};
+
+const selectRuntimeWidgetSize = (
+  widget: WidgetConfig,
+  sizeKey: RuntimeWidgetSizeKey,
+) => {
+  if (!isRuntimeWidget(widget)) return;
+  const storeWidget = store.widgets.find((item) => item.id === widget.id);
+  if (!storeWidget) return;
+  applyRuntimeWidgetSize(storeWidget, sizeKey);
+  const layoutWidget = layoutData.value.find(
+    (item) => item.id === widget.id || item.i === widget.id,
+  );
+  if (layoutWidget) {
+    layoutWidget.w = storeWidget.w;
+    layoutWidget.h = storeWidget.h;
+    layoutWidget.colSpan = storeWidget.colSpan;
+    layoutWidget.rowSpan = storeWidget.rowSpan;
+    layoutWidget.data = storeWidget.data;
+    const newLayout = compactVertical(layoutData.value);
+    layoutData.value = newLayout;
+    handleLayoutUpdated(newLayout);
+  }
+  store.markDirty();
+  void store.saveData(true);
+};
+
+const blankContextMenuExclusionSelector = [
+  "[data-widget-grid-item]",
+  "[data-card-item]",
+  ".vue-grid-item",
+  ".widget-move-handle",
+  ".widget-resize-grip",
+  ".widget-size-strip",
+  "a",
+  "button",
+  "input",
+  "textarea",
+  "select",
+  "[contenteditable=true]",
+  "[role=dialog]",
+  ".sd-modal-surface",
+  ".sd-context-menu-surface",
+  "[data-grid-context-menu]",
+].join(",");
+
+const shouldOpenBlankContextMenu = (target: EventTarget | null) => {
+  if (!(target instanceof HTMLElement)) return false;
+  return !target.closest(blankContextMenuExclusionSelector);
+};
+
+const openBlankContextMenuAt = (x: number, y: number) => {
+  if (!store.isLogged) return;
+  const menuWidth = 140;
+  const menuHeight = 184;
+  let finalX = x;
+  let finalY = y;
+  if (finalX + menuWidth > window.innerWidth) {
+    finalX = Math.max(0, window.innerWidth - menuWidth);
+  }
+  if (finalY + menuHeight > window.innerHeight) {
+    finalY = Math.max(0, window.innerHeight - menuHeight);
+  }
+  blankContextMenuPosition.value = { x: finalX, y: finalY };
+  blankContextActiveIndex.value = 0;
+  showContextMenu.value = false;
+  runtimeContextMenu.value = null;
+  showBlankContextMenu.value = true;
+};
+
+const handleBlankContextMenu = (e: MouseEvent) => {
+  if (!store.isLogged) return;
+  if (!shouldOpenBlankContextMenu(e.target)) return;
+  e.preventDefault();
+  openBlankContextMenuAt(e.clientX, e.clientY);
+};
+
+type BlankContextAction =
+  | "add"
+  | "wallpaper"
+  | "search"
+  | "backup"
+  | "settings";
+
+const blankContextRows: {
+  action: BlankContextAction;
+  label: string;
+  shortcut?: string;
+  disabled?: () => boolean;
+  testId?: string;
+}[] = [
+  { action: "add", label: "添加图标", testId: "itab-add-context-row-add" },
+  { action: "wallpaper", label: "换壁纸" },
+  { action: "search", label: "本地搜索", shortcut: "Ctrl+F" },
+  { action: "backup", label: "立即备份" },
+  { action: "settings", label: "设置" },
+];
+
+const handleBlankContextAction = async (action: BlankContextAction) => {
+  closeBlankContextMenu();
+  if (action === "add") {
+    openAddWidgetModal();
+    return;
+  }
+  if (action === "wallpaper" || action === "settings") {
+    openSettings();
+    return;
+  }
+  if (action === "search") {
+    searchInputRef.value?.focus();
+    return;
+  }
+  if (action === "backup") {
+    await handleHomeActionSave();
+  }
+};
+
+const onBlankContextMenuKeydown = (event: KeyboardEvent) => {
+  if (!showBlankContextMenu.value) return;
+  if (event.key === "Escape") {
+    event.preventDefault();
+    closeBlankContextMenu();
+    return;
+  }
+  if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+    event.preventDefault();
+    const direction = event.key === "ArrowDown" ? 1 : -1;
+    blankContextActiveIndex.value =
+      (blankContextActiveIndex.value + direction + blankContextRows.length) %
+      blankContextRows.length;
+    return;
+  }
+  if (event.key === "Enter" || event.key === " ") {
+    event.preventDefault();
+    const row = blankContextRows[blankContextActiveIndex.value];
+    if (row) void handleBlankContextAction(row.action);
+  }
+};
+
 const onDocPointerDownCapture = (e: PointerEvent) => {
-  if (!showContextMenu.value) return;
+  if (
+    !showContextMenu.value &&
+    !showBlankContextMenu.value &&
+    !runtimeContextMenu.value
+  )
+    return;
   if (e.button !== 0) return;
   const target = e.target as HTMLElement | null;
   if (target?.closest?.("[data-grid-context-menu]")) return;
+  if (target?.closest?.("[data-runtime-context-menu]")) return;
+  if (target?.closest?.("[data-testid='itab-add-context-menu']")) return;
   closeContextMenu();
+  closeBlankContextMenu();
+  closeRuntimeContextMenu();
 };
+
+defineExpose({
+  addComponent,
+  shouldOpenBlankContextMenu,
+});
 
 const handleMenuLanOpen = () => {
   const item = contextMenuItem.value;
@@ -2514,6 +3194,12 @@ const deleteType = ref<"item" | "group">("item");
 const itemToDelete = ref<string | null>(null);
 const groupToDelete = ref<string | null>(null);
 
+const cancelDelete = () => {
+  showDeleteConfirm.value = false;
+  itemToDelete.value = null;
+  groupToDelete.value = null;
+};
+
 const openDeleteConfirm = (id: string) => {
   if (!store.isLogged) {
     showLoginModal.value = true;
@@ -2537,29 +3223,36 @@ const openGroupDeleteConfirm = (id: string) => {
 const confirmDelete = async () => {
   if (!store.isLogged) {
     showLoginModal.value = true;
-    showDeleteConfirm.value = false;
+    cancelDelete();
     return;
   }
   if (deleteType.value === "item" && itemToDelete.value) {
-    const isDivCard = store.widgets.some((w) => w.id === itemToDelete.value && w.type === "div-card");
-    if (isDivCard) {
-      deleteDivCardWidget(itemToDelete.value);
+    const widget = store.widgets.find((w) => w.id === itemToDelete.value);
+    if (widget) {
+      closeWidgetFromGrid(widget);
     } else {
       store.deleteItem(itemToDelete.value);
     }
   } else if (deleteType.value === "group" && groupToDelete.value) {
     store.deleteGroup(groupToDelete.value, true);
   }
-  showDeleteConfirm.value = false;
-  itemToDelete.value = null;
-  groupToDelete.value = null;
+  cancelDelete();
   try {
     const result = await store.saveData(true);
     if (result === "conflict" || result === "unauthorized") {
-      alert(`删除已执行，但保存失败：${result === "conflict" ? "发生版本冲突" : "未授权或登录已过期"}`);
+      void uiFeedback.alert({
+        title: "删除已执行，但保存失败",
+        message:
+          result === "conflict" ? "发生版本冲突。" : "未授权或登录已过期。",
+        tone: "warning",
+      });
     }
   } catch {
-    alert("删除已执行，但保存失败，请重试");
+    void uiFeedback.alert({
+      title: "删除已执行，但保存失败",
+      message: "请重试。",
+      tone: "warning",
+    });
   }
 };
 
@@ -2578,11 +3271,14 @@ watch(
 onMounted(() => {
   document.addEventListener("pointerdown", onDocPointerDownCapture, true);
   document.addEventListener("scroll", closeContextMenu, true);
+  document.addEventListener("scroll", closeRuntimeContextMenu, true);
 });
 
 onUnmounted(() => {
   document.removeEventListener("pointerdown", onDocPointerDownCapture, true);
   document.removeEventListener("scroll", closeContextMenu, true);
+  document.removeEventListener("scroll", closeRuntimeContextMenu, true);
+  clearHomeWidgetDragIdleTimer();
   if (ipInterval) {
     clearInterval(ipInterval);
     ipInterval = null;
@@ -2635,7 +3331,10 @@ const getLayoutConfig = (group: NavGroup) => {
     } else {
       v_icon = customIconSize * modeScale;
     }
-    h_icon = Math.min(customIconSize * (40 / 48) * modeScale, horizontalIconMax);
+    h_icon = Math.min(
+      customIconSize * (40 / 48) * modeScale,
+      horizontalIconMax,
+    );
   } else {
     // Legacy behavior: scale with card size
     v_icon = 48 * finalScale;
@@ -2668,16 +3367,6 @@ const getLayoutConfig = (group: NavGroup) => {
 // Actually, a global click listener or backdrop is safer.
 // For now, let's use a simple window click listener or just rely on the toggle.
 // Better: Use a transparent fixed inset div when menu is open to catch clicks.
-
-const hitokoto = ref({ hitokoto: "加载中...", from: "" });
-const fetchHitokoto = async () => {
-  try {
-    const res = await fetch("https://v1.hitokoto.cn/?c=i&c=d&c=k");
-    hitokoto.value = await res.json();
-  } catch {
-    hitokoto.value = { hitokoto: "生活原本沉闷，但跑起来就有风。", from: "网络" };
-  }
-};
 
 // --- IP 组件 ---
 let ipInterval: number | null = null;
@@ -2766,7 +3455,11 @@ const formattedLocation = computed(() => {
 
   if (parts.length >= 2) {
     const lastPart = parts[parts.length - 1];
-    const isIsp = /[a-zA-Z]/.test(lastPart) || /电信|联通|移动|铁通|网通|教育|科技|信息|网络|数据|通信|广播|电视|有线|公司/.test(lastPart);
+    const isIsp =
+      /[a-zA-Z]/.test(lastPart) ||
+      /电信|联通|移动|铁通|网通|教育|科技|信息|网络|数据|通信|广播|电视|有线|公司/.test(
+        lastPart,
+      );
     if (isIsp) {
       isp = lastPart;
       area = parts[parts.length - 2] || "";
@@ -2929,7 +3622,8 @@ let onlineStartTime = 0;
 let onlineElapsedMs = 0;
 
 const updateOnlineDuration = () => {
-  const elapsed = onlineElapsedMs + (onlineStartTime ? Date.now() - onlineStartTime : 0);
+  const elapsed =
+    onlineElapsedMs + (onlineStartTime ? Date.now() - onlineStartTime : 0);
   const diff = Math.floor(elapsed / 1000);
   const h = Math.floor(diff / 3600);
   const m = Math.floor((diff % 3600) / 60);
@@ -2980,18 +3674,23 @@ watch(
     if (val) {
       onlineElapsedMs = 0;
       startOnlineTimer();
-      document.addEventListener("visibilitychange", handleFooterVisibilityChange);
+      document.addEventListener(
+        "visibilitychange",
+        handleFooterVisibilityChange,
+      );
       recordVisit();
     } else {
       stopOnlineTimer();
-      document.removeEventListener("visibilitychange", handleFooterVisibilityChange);
+      document.removeEventListener(
+        "visibilitychange",
+        handleFooterVisibilityChange,
+      );
     }
   },
   { immediate: true },
 );
 
 onMounted(() => {
-  fetchHitokoto();
   updateHour();
   if (daylightTimer) clearInterval(daylightTimer);
   daylightTimer = setInterval(updateHour, 60 * 1000);
@@ -2999,13 +3698,14 @@ onMounted(() => {
 
 onUnmounted(() => {
   if (daylightTimer) clearInterval(daylightTimer);
-  if (weatherTimer) clearInterval(weatherTimer);
-  stopRain();
 });
 </script>
 
 <template>
-  <div class="startdeck-handshake-signal" style="display: none !important"></div>
+  <div
+    class="startdeck-handshake-signal"
+    style="display: none !important"
+  ></div>
   <div
     class="min-h-dvh relative overflow-hidden flex flex-col pt-[env(safe-area-inset-top)]"
     :class="{ 'empire-theme': store.appConfig.empireMode }"
@@ -3014,14 +3714,18 @@ onUnmounted(() => {
     <div class="fixed inset-0 z-0 pointer-events-none select-none">
       <!-- Default Background (Gradient Clouds) -->
       <div
-        v-if="!store.appConfig.empireMode && store.appConfig.solidBackgroundColor"
+        v-if="
+          !store.appConfig.empireMode && store.appConfig.solidBackgroundColor
+        "
         class="absolute inset-0 transition-all duration-500"
         :style="{ backgroundColor: store.appConfig.solidBackgroundColor }"
       ></div>
       <div
         v-else-if="!store.appConfig.empireMode"
         class="absolute inset-0 transition-all duration-500"
-        style="background-image: linear-gradient(to top, #a18cd1 0%, #fbc2eb 100%)"
+        style="
+          background-image: linear-gradient(to top, #a18cd1 0%, #fbc2eb 100%);
+        "
       ></div>
 
       <!-- Empire Mode Background -->
@@ -3032,14 +3736,20 @@ onUnmounted(() => {
       >
         <div
           class="absolute inset-0 opacity-30"
-          :style="{ backgroundImage: `url('${store.getAssetUrl(empireBackgroundUrl)}')` }"
+          :style="{
+            backgroundImage: `url('${store.getAssetUrl(empireBackgroundUrl)}')`,
+          }"
         ></div>
       </div>
 
       <!-- Desktop Image Layer -->
       <div
         class="absolute inset-[-20px] bg-cover bg-center bg-no-repeat"
-        :class="(store.appConfig.enableMobileWallpaper ?? true) ? 'hidden md:block' : 'block'"
+        :class="
+          (store.appConfig.enableMobileWallpaper ?? true)
+            ? 'hidden md:block'
+            : 'block'
+        "
         v-if="store.appConfig.background"
         :style="{
           backgroundImage: `url('${store.getAssetUrl(store.appConfig.background)}')`,
@@ -3052,7 +3762,10 @@ onUnmounted(() => {
       <!-- Mobile Image Layer -->
       <div
         class="absolute inset-[-20px] bg-cover bg-center bg-no-repeat md:hidden"
-        v-if="(store.appConfig.enableMobileWallpaper ?? true) && store.appConfig.mobileBackground"
+        v-if="
+          (store.appConfig.enableMobileWallpaper ?? true) &&
+          store.appConfig.mobileBackground
+        "
         :style="{
           backgroundImage: `url('${store.getAssetUrl(store.appConfig.mobileBackground)}')`,
           filter: `blur(${store.appConfig.mobileBackgroundBlur ?? 0}px)`,
@@ -3061,29 +3774,14 @@ onUnmounted(() => {
         }"
       ></div>
 
-      <!-- 纹理平移图层 -->
-      <div
-        v-if="showRainEffect"
-        class="absolute inset-[-20px] bg-cover bg-center bg-no-repeat animate-texture-pan pointer-events-none"
-        :style="{ backgroundImage: `url('${store.getAssetUrl('/rain-texture.png')}')`, opacity: 0.15 }"
-      ></div>
-
-      <!-- 深度雾层 -->
-      <div
-        v-if="showFogEffect"
-        class="absolute inset-0 bg-gradient-to-b from-black/30 to-black/60 animate-fog-fade pointer-events-none"
-      ></div>
-
-      <canvas
-        ref="rainCanvasRef"
-        class="absolute inset-0 pointer-events-none transition-opacity"
-        :class="showRainEffect ? 'opacity-70' : 'opacity-0'"
-      ></canvas>
-
       <!-- Desktop Mask Layer -->
       <div
         class="absolute inset-0 transition-all duration-300"
-        :class="(store.appConfig.enableMobileWallpaper ?? true) ? 'hidden md:block' : 'block'"
+        :class="
+          (store.appConfig.enableMobileWallpaper ?? true)
+            ? 'hidden md:block'
+            : 'block'
+        "
         :style="{
           backgroundColor: `rgba(0,0,0,${effectiveBackgroundMask})`,
         }"
@@ -3100,7 +3798,7 @@ onUnmounted(() => {
     </div>
 
     <AppSidebar
-      v-if="isSidebarEnabled"
+      v-if="shouldRenderHomeSidebar"
       v-model:collapsed="sidebarCollapsed"
       class="fixed left-0 top-0 z-40 pt-[env(safe-area-inset-top)] pl-[env(safe-area-inset-left)]"
       :class="isMobile && sidebarCollapsed ? 'h-auto' : 'h-full'"
@@ -3111,6 +3809,7 @@ onUnmounted(() => {
     <div
       class="flex-1 w-full p-4 md:p-8 transition-all pb-[calc(2rem+env(safe-area-inset-bottom))] md:pb-[calc(2.5rem+env(safe-area-inset-bottom))] relative z-10"
       ref="mainContainerRef"
+      @contextmenu="handleBlankContextMenu"
       :style="{
         backgroundColor:
           store.appConfig.background || store.appConfig.solidBackgroundColor
@@ -3120,134 +3819,71 @@ onUnmounted(() => {
         '--card-bg-color': store.appConfig.cardBgColor || 'transparent',
         '--card-border-color': store.appConfig.cardBorderColor || 'transparent',
         '--card-border-hover-color':
-          store.appConfig.cardBorderColor && store.appConfig.cardBorderColor !== 'transparent'
+          store.appConfig.cardBorderColor &&
+          store.appConfig.cardBorderColor !== 'transparent'
             ? store.appConfig.cardBorderColor
             : store.appConfig.background || store.appConfig.solidBackgroundColor
               ? 'rgba(255, 255, 255, 0.35)'
               : 'rgba(15, 23, 42, 0.12)',
         paddingLeft:
-          isSidebarEnabled && !isMobile ? (sidebarCollapsed ? '100px' : '288px') : undefined,
+          shouldRenderHomeSidebar && !isMobile
+            ? sidebarCollapsed
+              ? '100px'
+              : '288px'
+            : undefined,
       }"
     >
-      <div class="mx-auto transition-all duration-300" :style="{ maxWidth: mainContentMaxWidth }">
+      <div
+        class="mx-auto transition-all duration-300"
+        :style="{ maxWidth: mainContentMaxWidth }"
+      >
         <div
-          class="flex flex-col xl:flex-row xl:justify-between items-center gap-6 relative startdeck-header-container"
-          :class="isWebPaginationMode ? 'mb-4' : 'mb-4'"
+          class="startdeck-header-container sd-home-header-frame"
+          :class="{ 'is-editing': isHomeEditChromeVisible }"
         >
           <div
-            class="flex flex-col sm:flex-row items-center gap-2 sm:gap-4 flex-shrink-0 relative z-[60] transition-all duration-500"
-            :style="{ order: isHeaderRowLayout && store.appConfig.titleAlign === 'right' ? 2 : 0 }"
+            class="sd-home-brandline"
+            :style="{
+              order:
+                isHeaderRowLayout && store.appConfig.titleAlign === 'right'
+                  ? 2
+                  : 0,
+            }"
           >
             <h1
-              class="font-bold transition-all duration-300 whitespace-nowrap overflow-hidden text-ellipsis max-w-full"
+              class="sd-home-brand-title transition-all duration-300 whitespace-nowrap overflow-hidden text-ellipsis max-w-full"
               :style="{
                 fontSize: headerTitleFontSize + 'px',
                 lineHeight: '1.05',
                 maxWidth: headerTitleMaxWidth + 'px',
                 color: store.appConfig.titleColor,
-                textShadow: store.appConfig.background ? '0 2px 8px rgba(0,0,0,0.5)' : 'none',
+                textShadow: store.appConfig.background
+                  ? '0 2px 8px rgba(0,0,0,0.5)'
+                  : 'none',
               }"
             >
               {{ store.appConfig.customTitle }}
             </h1>
-            <div
-              class="items-center bg-white/90 backdrop-blur border border-gray-200 shadow-sm rounded-full p-1 gap-1 h-8"
-              :class="store.appConfig.hideHeaderOnMobile ? 'hidden xl:flex' : 'flex'"
+            <span
+              class="sd-home-brand-meta"
+              :class="{ 'is-empty': !homeStatusLabel }"
+              :aria-hidden="homeStatusLabel ? undefined : 'true'"
+              :style="{
+                color: store.appConfig.titleColor,
+                textShadow: store.appConfig.background
+                  ? '0 2px 8px rgba(0,0,0,0.5)'
+                  : 'none',
+              }"
             >
-              <button
-                @click="openSettings"
-                class="xl:hidden w-6 h-6 rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 flex items-center justify-center transition-all"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  fill="currentColor"
-                  class="w-4 h-4"
-                >
-                  <path
-                    fill-rule="evenodd"
-                    d="M11.078 2.25c-.917 0-1.699.663-1.85 1.567l-.091.549a.798.798 0 01-.517.608 7.45 7.45 0 00-.478.198.798.798 0 01-.796-.064l-.453-.324a1.875 1.875 0 00-2.416.2l-.043.044a1.875 1.875 0 00-.204 2.416l.325.454a.798.798 0 01.064.796 7.448 7.448 0 00-.198.478.798.798 0 01-.608.517l-.55.092a1.875 1.875 0 00-1.566 1.849v.044c0 .917.663 1.699 1.567 1.85l.549.091c.281.047.508.25.608.517.06.162.127.321.198.478a.798.798 0 01-.064.796l-.324.453a1.875 1.875 0 00.2 2.416l.044.043a1.875 1.875 0 002.416.204l.454-.325a.798.798 0 01.796-.064c.157.071.316.137.478.198.267.1.47.327.517.608l.092.55c.15.903.932 1.566 1.849 1.566h.044c.917 0 1.699-.663 1.85-1.567l.091-.549a.798.798 0 01.517-.608 7.52 7.52 0 00.478-.198.798.798 0 01.796.064l.453.324a1.875 1.875 0 002.416-.2l.043-.044a1.875 1.875 0 00.204-2.416l-.325-.454a.798.798 0 01-.064-.796c.071-.157.137-.316.198-.478.1-.267.327-.47.608-.517l.55-.092a1.875 1.875 0 001.566-1.849v-.044c0-.917-.663-1.699-1.567-1.85l-.549-.091a.798.798 0 01-.608-.517 7.507 7.507 0 00-.198-.478.798.798 0 01.064-.796l.324-.453a1.875 1.875 0 00-.2-2.416l-.044-.043a1.875 1.875 0 00-2.416-.204l-.454.325a.798.798 0 01-.796.064 7.462 7.462 0 00-.478-.198.798.798 0 01-.517-.608l-.092-.55a1.875 1.875 0 00-1.849-1.566h-.044zM12 15.75a3.75 3.75 0 100-7.5 3.75 3.75 0 000 7.5z"
-                    clip-rule="evenodd"
-                  />
-                </svg>
-              </button>
-              <button
-                v-if="store.isLogged"
-                @click="toggleEditMode"
-                class="xl:hidden px-3 h-6 rounded-full text-[10px] font-bold transition-all"
-                :class="
-                  isEditMode
-                    ? 'bg-red-500 text-white'
-                    : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
-                "
-              >
-                {{ isEditMode ? "完成" : "编辑" }}
-              </button>
-              <button
-                @click="toggleForceMode"
-                class="px-3 h-6 rounded-full text-[10px] font-bold transition-all"
-                :class="{
-                  'bg-gray-100 text-gray-400 hover:bg-gray-200': forceMode === 'auto',
-                  'bg-green-100 text-green-600 hover:bg-green-200': forceMode === 'lan',
-                  'bg-blue-100 text-blue-600 hover:bg-blue-200': forceMode === 'wan',
-                  'bg-yellow-100 text-yellow-700 hover:bg-yellow-200': forceMode === 'latency',
-                }"
-              >
-                {{
-                  forceMode === "auto"
-                    ? "自动"
-                    : forceMode === "lan"
-                      ? "强制内网"
-                      : forceMode === "wan"
-                        ? "强制外网"
-                        : "延迟判定"
-                }}
-              </button>
-              <div
-                class="flex items-center gap-2 px-3 h-full rounded-full text-[10px] font-medium cursor-pointer hover:bg-gray-100 transition-all select-none"
-                @click="handleNetworkClick"
-              >
-                <template v-if="isChecking"
-                  ><div
-                    class="w-2 h-2 border-2 border-gray-300 border-t-blue-500 rounded-full animate-spin"
-                  ></div
-                ></template>
-                <template v-else
-                  ><div
-                    class="w-1.5 h-1.5 rounded-full"
-                    :class="effectiveIsLan ? 'bg-green-500' : 'bg-blue-500'"
-                  ></div>
-                  <span :class="effectiveIsLan ? 'text-green-700' : 'text-blue-700'">{{
-                    effectiveIsLan ? "内网" : "外网"
-                  }}</span
-                  ><span class="text-gray-400 border-l pl-2 ml-1">{{ latency }}ms</span></template
-                >
-              </div>
-              <button
-                @click="handleAuthAction"
-                class="px-3 h-6 rounded-full text-[10px] font-bold transition-all"
-                :class="[
-                  store.isLogged
-                    ? 'bg-red-500 text-white hover:bg-red-600'
-                    : 'bg-gray-100 text-gray-500 hover:bg-blue-500 hover:text-white',
-                ]"
-              >
-                {{ store.isLogged ? "退出" : "登录" }}
-              </button>
-            </div>
+              {{ homeStatusLabel }}
+            </span>
           </div>
 
-          <div
-            v-if="checkVisible(store.widgets.find((w) => w.id === 'w5'))"
-            class="w-full xl:absolute xl:left-1/2 xl:-translate-x-1/2 z-50 transition-all duration-300"
-            :class="isWideLayout ? 'xl:w-[36rem]' : 'xl:w-[28rem]'"
-          >
+          <div v-if="checkVisible(searchWidget)" class="sd-home-search-zone">
             <form
-              class="relative mx-auto shadow-lg hover:shadow-xl transition-shadow rounded-full bg-white/90 backdrop-blur-md border border-white/40 flex items-center p-1 startdeck-search-form"
+              class="sd-home-search-form startdeck-search-form"
               :style="{
-                width: '100%',
-                height: '41px',
-                backgroundColor: `rgba(255, 255, 255, ${searchBgAlpha})`,
+                backgroundColor: `rgba(255, 255, 255, ${searchFrameBgAlpha})`,
                 '--startdeck-search-text-color': searchTextColor,
                 '--startdeck-search-placeholder-color': searchPlaceholderColor,
               }"
@@ -3268,6 +3904,9 @@ onUnmounted(() => {
                   @click.stop="toggleSearchEngineMenu"
                 >
                   <SearchEngineIcon :engine="activeSearchEngine" :size="20" />
+                  <span class="startdeck-search-engine-label">{{
+                    activeSearchEngine?.label || "搜索"
+                  }}</span>
                   <svg
                     viewBox="0 0 20 20"
                     fill="currentColor"
@@ -3294,7 +3933,9 @@ onUnmounted(() => {
                     :key="engine.key"
                     type="button"
                     class="startdeck-search-engine-option"
-                    :class="{ 'is-active': engine.key === activeSearchEngine?.key }"
+                    :class="{
+                      'is-active': engine.key === activeSearchEngine?.key,
+                    }"
                     :title="engine.label"
                     :aria-label="`使用 ${engine.label} 搜索`"
                     role="menuitemradio"
@@ -3325,350 +3966,381 @@ onUnmounted(() => {
           </div>
 
           <div
-            class="flex gap-1 xl:gap-3 flex-shrink-0 z-10 items-center transition-all duration-500 startdeck-handshake-signal absolute left-0 top-0 w-full xl:w-auto xl:static opacity-80 hover:opacity-100 xl:opacity-100 pointer-events-none xl:pointer-events-auto"
-            :style="{ order: isHeaderRowLayout && store.appConfig.titleAlign === 'right' ? 0 : 2 }"
+            class="startdeck-handshake-signal sd-home-top-slot"
+            :class="{ 'is-editing': isHomeEditChromeVisible }"
           >
-            <MiniPlayer
-              v-if="checkVisible(store.widgets.find((w) => w.type === 'player'))"
-              key="mini-player-static"
-              class="mr-auto xl:mr-0 pointer-events-auto"
+            <HomeActionBar
+              v-if="store.isLogged && isHomeEditChromeVisible"
+              class="pointer-events-auto"
+              :is-saving="store.isSaving"
+              :has-unsaved-changes="store.hasUnsavedChanges"
+              @complete="toggleEditMode"
+              @save="handleHomeActionSave"
+              @add-widget="openAddWidgetModal"
+              @add-group="store.addGroup"
             />
-            <button
-              @click="openSettings"
-              class="hidden xl:flex pointer-events-auto rounded-full text-white items-center justify-center backdrop-blur transition-all w-8 h-8 xl:w-10 xl:h-10 bg-transparent xl:bg-white/20 xl:hover:bg-white/40 border-0 xl:border xl:border-white/20 shadow-none xl:shadow-sm"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="currentColor"
-                class="w-6 h-6"
-              >
-                <path
-                  fill-rule="evenodd"
-                  d="M11.078 2.25c-.917 0-1.699.663-1.85 1.567l-.091.549a.798.798 0 01-.517.608 7.45 7.45 0 00-.478.198.798.798 0 01-.796-.064l-.453-.324a1.875 1.875 0 00-2.416.2l-.043.044a1.875 1.875 0 00-.204 2.416l.325.454a.798.798 0 01.064.796 7.448 7.448 0 00-.198.478.798.798 0 01-.608.517l-.55.092a1.875 1.875 0 00-1.566 1.849v.044c0 .917.663 1.699 1.567 1.85l.549.091c.281.047.508.25.608.517.06.162.127.321.198.478a.798.798 0 01-.064.796l-.324.453a1.875 1.875 0 00.2 2.416l.044.043a1.875 1.875 0 002.416.204l.454-.325a.798.798 0 01.796-.064c.157.071.316.137.478.198.267.1.47.327.517.608l.092.55c.15.903.932 1.566 1.849 1.566h.044c.917 0 1.699-.663 1.85-1.567l.091-.549a.798.798 0 01.517-.608 7.52 7.52 0 00.478-.198.798.798 0 01.796.064l.453.324a1.875 1.875 0 002.416-.2l.043-.044a1.875 1.875 0 00.204-2.416l-.325-.454a.798.798 0 01-.064-.796c.071-.157.137-.316.198-.478.1-.267.327-.47.608-.517l.55-.092a1.875 1.875 0 001.566-1.849v-.044c0-.917-.663-1.699-1.567-1.85l-.549-.091a.798.798 0 01-.608-.517 7.507 7.507 0 00-.198-.478.798.798 0 01.064-.796l.324-.453a1.875 1.875 0 00-.2-2.416l-.044-.043a1.875 1.875 0 00-2.416-.204l-.454.325a.798.798 0 01-.796.064 7.462 7.462 0 00-.478-.198.798.798 0 01-.517-.608l-.092-.55a1.875 1.875 0 00-1.849-1.566h-.044zM12 15.75a3.75 3.75 0 100-7.5 3.75 3.75 0 000 7.5z"
-                  clip-rule="evenodd"
-                />
-              </svg>
-            </button>
-            <button
-              v-if="store.isLogged"
-              @click="toggleEditMode"
-              class="hidden xl:block pointer-events-auto rounded-lg text-sm font-medium transition-all"
-              :class="
-                isEditMode
-                  ? 'bg-red-500 text-white px-4 py-2 shadow-sm'
-                  : 'bg-transparent text-white/70 hover:text-white xl:bg-white xl:text-gray-700 xl:hover:bg-gray-50 px-2 py-1 xl:px-4 xl:py-2 xl:shadow-sm shadow-none'
-              "
-            >
-              {{ isEditMode ? "完成" : "编辑" }}
-            </button>
-            <button
-              v-if="store.isLogged && isEditMode"
-              @click="store.saveData(true)"
-              :disabled="store.isSaving"
-              class="hidden xl:flex pointer-events-auto rounded-lg text-sm font-medium transition-all items-center gap-1.5 px-4 py-2"
-              :class="
-                store.hasUnsavedChanges
-                  ? 'bg-amber-500 text-white shadow-sm hover:bg-amber-600'
-                  : 'bg-white/20 text-white/70 hover:bg-white/30'
-              "
-              title="保存配置到服务端"
-            >
-              <span v-if="store.isSaving" class="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              {{ store.isSaving ? "保存中…" : "保存" }}
-            </button>
-            <button
-              v-if="store.isLogged && isEditMode"
-              @click="addDivCardWidget"
-              class="hidden xl:flex pointer-events-auto rounded-lg text-sm font-medium transition-all bg-blue-500 text-white px-4 py-2 shadow-sm hover:bg-blue-600"
-            >
-              新建卡片
-            </button>
+            <HomeTopActions
+              v-else-if="!showAddWidgetModal"
+              :force-mode="forceMode"
+              :is-lan="effectiveIsLan"
+              :latency="latency"
+              :is-checking="isChecking"
+              :is-logged="store.isLogged"
+              @toggle-force-mode="toggleForceMode"
+              @settings="openSettings"
+              @edit="toggleEditMode"
+              @login="openLogin"
+              @logout="logoutFromHome"
+            />
           </div>
         </div>
 
-        <VueDraggable
-          v-if="isWebPaginationMode"
-          v-model="store.groups"
-          class="mb-3 flex items-center gap-2 overflow-x-auto scrollbar-hide py-1"
-          :group="{ name: 'pagination-groups', pull: false, put: false }"
-          :sort="isEditMode && !searchText"
-          :disabled="!isEditMode || !!searchText"
-          @end="() => store.markDirty()"
-        >
-          <button
-            v-for="group in displayGroups"
-            :key="group.id"
-            type="button"
-            @click="activePaginationGroupId = group.id"
-            class="shrink-0 h-9 px-3.5 rounded-xl text-sm font-medium backdrop-blur-md transition-colors border shadow-sm bg-white/10 text-white/75 hover:bg-white/15 hover:text-white/90 active:bg-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/35 focus-visible:ring-offset-2 focus-visible:ring-offset-black/30"
-            :class="
-              activePaginationGroupId === group.id
-                ? 'bg-white/22 border-white/35 text-white shadow-[0_6px_18px_rgba(0,0,0,0.18)] ring-1 ring-white/35'
-                : 'border-white/12'
-            "
-          >
-            {{ group.title }}
-          </button>
-        </VueDraggable>
+        <HomeGroupTabs
+          v-if="!isEditMode && isWebPaginationMode && !showAddWidgetModal"
+          :groups="homeGroupTabs"
+          :active-id="homeActiveGroupId"
+          @select="handleHomeGroupTabSelect"
+        />
 
         <div
           v-if="layoutData.length > 0"
+          ref="gridLayoutRootRef"
           class="group-container transition-all"
-          :style="{ marginBottom: (store.appConfig.groupGap ?? 30) + 'px' }"
+          :style="{
+            width: itabGridLayoutWidth + 'px',
+            maxWidth: 'none',
+            marginLeft: 'auto',
+            marginRight: 'auto',
+            marginBottom: (store.appConfig.groupGap ?? 30) + 'px',
+          }"
         >
           <GridLayout
             v-if="isGridAlive"
             v-model:layout="scaledLayoutData"
             :col-num="widgetColNum * gridScale"
             :row-height="scaledRowHeight"
-            :is-draggable="isEditMode && !activeResizeWidgetId"
+            :is-draggable="isHomeWidgetDragEnabled"
             :is-resizable="false"
             :vertical-compact="true"
             :use-css-transforms="true"
             :margin="gridMargin"
+            :style="{ width: itabGridLayoutWidth + 'px', maxWidth: 'none' }"
             @layout-updated="handleScaledLayoutUpdated"
             :class="[
               'text-white select-none transition-all duration-300',
               activeResizeWidgetId ? 'smooth-size' : '',
             ]"
           >
-          <GridItem
-            v-for="widget in layoutData"
-            :key="widget.i"
-            :x="scaleGridValue(widget.x)"
-            :y="scaleGridValue(widget.y)"
-            :w="scaleGridValue(widget.w)"
-            :h="scaleGridValue(widget.h)"
-            :i="widget.i"
-            :drag-allow-from="isHandheld && isEditMode ? '.widget-drag-handle' : undefined"
-            :drag-ignore-from="
-              isEditMode
-                ? isHandheld
-                  ? 'a'
-                  : undefined
-                : undefined
-            "
-            class="transition-all duration-300 relative"
-            :class="[
-              isEditMode
-                ? 'ring-2 ring-blue-400/50 rounded-2xl cursor-move hover:ring-blue-500'
-                : '',
-              widget.hideOnMobile ? 'hidden md:block' : '',
-              activeResizeWidgetId === widget.id ? '!z-[1000]' : '',
-              store.appConfig.empireMode && isEmpireCloudWidget(widget.type)
-                ? 'empire-cloud-widget'
-                : '',
-            ]"
-          >
-            <button
-              v-if="isEditMode"
-              @click.stop="closeWidgetFromGrid(widget)"
-              class="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center shadow-lg z-50 hover:bg-red-600 hover:scale-110 transition-all"
-              :title="widget.type === 'div-card' ? '删除卡片' : '禁用组件'"
-              :aria-label="widget.type === 'div-card' ? '删除卡片' : '禁用组件'"
-            >
-              ✕
-            </button>
-            <button
-              v-if="isEditMode"
-              @click.stop="onWidgetHandleClick(widget)"
-              @pointerdown="onWidgetHandlePointerDown"
-              @pointermove="onWidgetHandlePointerMove"
-              @pointerup="onWidgetHandlePointerUp"
-              @pointercancel="onWidgetHandlePointerUp"
-              class="widget-drag-handle absolute bottom-2 right-2 w-8 h-8 bg-blue-500 text-white rounded-full flex items-center justify-center shadow-lg z-50 hover:bg-blue-600 hover:scale-110 transition-all touch-none"
-            >
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"
-                ></path>
-              </svg>
-            </button>
-
-            <SizeSelector
-              v-if="isEditMode && activeResizeWidgetId === widget.id"
-              :current-col="widget.w || widget.colSpan || 1"
-              :current-row="widget.h || widget.rowSpan || (widget.type === 'bookmarks' ? 2 : 1)"
-              @select="(size: { colSpan: number; rowSpan: number }) => handleSizeSelect(widget, size)"
-            />
-            <ClockWidget v-if="widget.type === 'clock'" :widget="widget" />
-            <SimpleWeatherWidget v-else-if="widget.type === 'weather'" :widget="widget" />
-            <CalendarWidget v-else-if="widget.type === 'calendar'" :widget="widget" />
-            <MemoWidget v-else-if="widget.type === 'memo'" :widget="widget" />
-            <TodoWidget v-else-if="widget.type === 'todo'" :widget="widget" />
-            <MusicWidget v-else-if="widget.type === 'music'" :widget="widget" />
-            <CalculatorWidget v-else-if="widget.type === 'calculator'" />
-            <div
-              v-else-if="widget.type === 'div-card'"
-              @click.stop="handleDivCardClick(widget)"
-              @mousedown.right.prevent.stop="handleDivCardContextMenuPointerDown($event, widget)"
-              @contextmenu.prevent.stop="handleDivCardContextMenu($event, widget)"
-              class="div-card-click-target w-full h-full p-3 rounded-2xl border text-white flex flex-col justify-center items-center text-center relative overflow-hidden group transition-all duration-300"
+            <GridItem
+              v-for="widget in layoutData"
+              :key="widget.i"
+              :x="scaleGridValue(widget.x)"
+              :y="scaleGridValue(widget.y)"
+              :w="scaleGridValue(widget.w)"
+              :h="scaleGridValue(widget.h)"
+              :i="widget.i"
+              :data-widget-grid-item="widget.id"
+              :drag-ignore-from="homeWidgetDragIgnoreFrom"
+              :drag-option="homeWidgetDragOption"
+              @move="onHomeWidgetMove"
+              @moved="onHomeWidgetMoved"
+              class="transition-all duration-300 relative"
               :class="[
-                widget.data?.backgroundImage
-                  ? 'border-white/20 bg-white/10 backdrop-blur'
-                  : 'border-transparent bg-transparent',
-                store.appConfig.mouseHoverEffect === 'lift'
-                  ? 'hover:-translate-y-1 hover:shadow-lg'
-                  : store.appConfig.mouseHoverEffect === 'glow'
-                    ? 'hover:shadow-[0_0_15px_rgba(168,85,247,0.5)]'
-                    : ''
+                isHomeEditChromeVisible ? 'rounded-2xl overflow-visible' : '',
+                widget.hideOnMobile ? 'hidden md:block' : '',
+                activeResizeWidgetId === widget.id ? '!z-[1000]' : '',
+                store.appConfig.empireMode && isEmpireCloudWidget(widget.type)
+                  ? 'empire-cloud-widget'
+                  : '',
               ]"
             >
-              <!-- ✨ 背景图层 (高斯模糊 + 遮罩) -->
-              <div
-                v-if="widget.data?.backgroundImage"
-                class="absolute inset-0 z-0 pointer-events-none overflow-hidden rounded-[inherit]"
+              <WidgetEditFrame
+                :editing="isHomeEditChromeVisible"
+                :selected="
+                  isHomeEditChromeVisible &&
+                  (selectedWidgetId === widget.id ||
+                    activeResizeWidgetId === widget.id)
+                "
+                :resize-active="
+                  isHomeEditChromeVisible && activeResizeWidgetId === widget.id
+                "
+                :widget-type="widget.type"
+                :widget-size="widgetFrameMetadataSize(widget)"
+                :delete-label="
+                  widget.type === 'div-card' ? '删除卡片' : '禁用组件'
+                "
+                @select="selectWidgetForEdit(widget.id)"
+                @delete="closeWidgetFromGrid(widget)"
+                @resize-start="(event) => startWidgetResize(event, widget)"
               >
-                <div
-                  class="absolute inset-0 bg-cover bg-center transition-all duration-300"
-                  :style="{
-                    backgroundImage: `url('${store.getAssetUrl(widget.data.backgroundImage)}')`,
-                    filter: `blur(${widget.data.backgroundBlur ?? 6}px)`,
-                    transform: 'scale(1.1)',
-                  }"
-                ></div>
-                <div
-                  class="absolute inset-0"
-                  :style="{
-                    backgroundColor: `rgba(0,0,0,${widget.data.backgroundMask ?? 0.3})`,
-                  }"
-                ></div>
-              </div>
-
-              <!-- Icon -->
-              <div
-                v-if="widget.data?.icon"
-                class="relative flex items-center justify-center flex-shrink-0 transition-all duration-300 z-10 mb-2"
-                :style="{
-                  width: ((store.appConfig.iconSize || 48) * ((widget.data.iconSize || 100) / 100)) + 'px',
-                  height: ((store.appConfig.iconSize || 48) * ((widget.data.iconSize || 100) / 100)) + 'px',
-                }"
-              >
-                <IconShape
-                  :shape="store.appConfig.iconShape || 'circle'"
-                  :size="((store.appConfig.iconSize || 48) * ((widget.data.iconSize || 100) / 100))"
-                  :imgScale="100"
-                  :bgClass="getIconBackground(widget.data, store.appConfig.iconShape || 'circle')"
-                  :icon="processIcon(widget.data.icon)"
-                  class="w-full h-full"
-                  :class="widget.data.backgroundImage ? 'drop-shadow-lg' : ''"
+                <template #overlay>
+                  <WidgetResizeOverlay
+                    v-if="
+                      isHomeEditChromeVisible &&
+                      resizeOverlayState?.widgetId === widget.id
+                    "
+                    :current-size="resizeOverlayState.currentSize"
+                    :target-size="resizeOverlayState.targetSize"
+                    :max-size="resizeOverlayState.maxSize"
+                    :limited="resizeOverlayState.limited"
+                    :limit-label="resizeOverlayState.limitLabel"
+                  />
+                </template>
+                <WidgetRuntimeFrame
+                  v-if="isRuntimeWidget(widget)"
+                  :widget="widget"
+                  :editing="isHomeEditChromeVisible"
+                  :is-dragging="isHomeWidgetDragging"
+                  :refresh-token="runtimeRefreshTokens[widget.id] || 0"
+                  @open="openRuntimeWidget"
+                  @contextmenu="openRuntimeContextMenu"
+                  @update-data="updateRuntimeWidgetData"
                 />
-              </div>
-
-              <div
-                class="text-sm font-semibold tracking-wide relative z-10 truncate w-full px-2"
-                :style="{
-                  color: widget.data?.titleColor || '#ffffff',
-                  textShadow: widget.data?.backgroundImage ? '0 2px 4px rgba(0,0,0,0.8)' : 'none',
-                }"
-              >
-                {{ widget.data?.title || "div 卡片" }}
-              </div>
-
-              <div
-                v-if="!widget.data?.url && !widget.data?.lanUrl && !widget.data?.icon"
-                class="text-[10px] opacity-70 mt-1 relative z-10"
-              >
-                请在编辑模式下右键添加项目
-              </div>
-            </div>
-            <div
-              v-else-if="widget.type === 'ip'"
-              class="w-full h-full p-3 rounded-2xl backdrop-blur border border-white/10 flex flex-col items-center transition-colors text-center text-white"
-              :style="{
-                backgroundColor: `rgba(0,0,0,${Math.min(0.85, Math.max(0.15, widget.opacity ?? 0.35))})`,
-                color: '#fff',
-              }"
-            >
-              <div
-                v-if="ipInfo.location && ipInfo.location !== '未知位置'"
-                class="text-[19px] font-medium sm:font-bold w-full truncate flex-1 flex items-center justify-center -mt-px"
-                :title="ipInfo.location"
-              >
-                {{ formattedLocation }}
-              </div>
-              <div v-if="hasWanIp" class="flex items-center justify-center gap-2 w-full flex-1">
-                <span class="text-[12px] opacity-70 uppercase">外网</span>
-                <button
-                  class="max-w-full font-mono font-medium sm:font-bold leading-tight text-center select-text break-all hover:opacity-90 transition-opacity text-xl"
-                  type="button"
-                  title="点击复制外网 IP"
-                  @click.stop="copyToClipboard(ipInfo.wanIp)"
-                >
-                  {{ ipInfo.wanIp }}
-                </button>
-              </div>
-              <div v-if="hasLanIp" class="flex items-center justify-center gap-2 w-full flex-1">
-                <span class="text-[10px] opacity-50 uppercase">内网</span>
-                <button
-                  class="max-w-full font-mono font-medium leading-tight text-center select-text break-all opacity-70 hover:opacity-90 transition-opacity text-sm"
-                  type="button"
-                  title="点击复制内网 IP"
-                  @click.stop="copyToClipboard(ipInfo.lanIp)"
-                >
-                  {{ ipInfo.lanIp }}
-                </button>
-              </div>
-              <div v-if="!hasWanIp && !hasLanIp" class="flex items-center justify-center gap-2 w-full flex-1">
-                <span class="text-2xl font-mono opacity-60">{{ displayIp }}</span>
-              </div>
-
-              <div class="flex items-center justify-center gap-2 w-full flex-1">
-                <span class="text-[12px] opacity-70 uppercase">PING测试</span>
+                <CalculatorWidget
+                  v-else-if="widget.type === 'calculator'"
+                  :widget="widget"
+                />
                 <div
-                  class="text-base font-mono font-medium text-white/90 bg-white/20 backdrop-blur-sm border border-white/20 px-2 py-0.5 rounded"
+                  v-else-if="widget.type === 'div-card'"
+                  @click.stop="handleDivCardClick(widget)"
+                  @mousedown.right.prevent.stop="
+                    handleDivCardContextMenuPointerDown($event, widget)
+                  "
+                  @contextmenu.prevent.stop="
+                    handleDivCardContextMenu($event, widget)
+                  "
+                  class="div-card-click-target w-full h-full p-3 rounded-2xl border text-white flex flex-col justify-center items-center text-center relative overflow-hidden group transition-all duration-300"
+                  :class="[
+                    widget.data?.backgroundImage
+                      ? 'border-white/20 bg-white/10 backdrop-blur'
+                      : 'border-transparent bg-transparent',
+                    store.appConfig.mouseHoverEffect === 'lift'
+                      ? 'hover:-translate-y-1 hover:shadow-lg'
+                      : store.appConfig.mouseHoverEffect === 'glow'
+                        ? 'hover:shadow-[0_0_15px_rgba(168,85,247,0.5)]'
+                        : '',
+                  ]"
                 >
-                  {{ ipInfo.baiduLatency }}
-                </div>
-                <button
-                  @click="fetchIp(true)"
-                  class="text-[12px] text-white/80 bg-white/20 px-2.5 py-0.5 rounded hover:bg-white/30 transition-colors"
-                >
-                  刷新
-                </button>
-              </div>
+                  <!-- ✨ 背景图层 (高斯模糊 + 遮罩) -->
+                  <div
+                    v-if="widget.data?.backgroundImage"
+                    class="absolute inset-0 z-0 pointer-events-none overflow-hidden rounded-[inherit]"
+                  >
+                    <div
+                      class="absolute inset-0 bg-cover bg-center transition-all duration-300"
+                      :style="{
+                        backgroundImage: `url('${store.getAssetUrl(widget.data.backgroundImage)}')`,
+                        filter: `blur(${widget.data.backgroundBlur ?? 6}px)`,
+                        transform: 'scale(1.1)',
+                      }"
+                    ></div>
+                    <div
+                      class="absolute inset-0"
+                      :style="{
+                        backgroundColor: `rgba(0,0,0,${widget.data.backgroundMask ?? 0.3})`,
+                      }"
+                    ></div>
+                  </div>
 
-              <div v-if="copiedToast" class="text-[11px] opacity-80 -mt-1">
-                {{ copiedToast }}
-              </div>
-            </div>
-            <CountdownWidget v-else-if="widget.type === 'countdown'" :widget="widget" />
-            <CountUpWidget v-else-if="widget.type === 'countup'" :widget="widget" />
-            <IframeWidget
-              v-else-if="widget.type === 'iframe'"
-              :widget="widget"
-              :is-lan-mode="effectiveIsLan"
-              :is-edit-mode="isEditMode"
-            />
-            <BookmarkWidget v-else-if="widget.type === 'bookmarks'" :widget="widget" />
-            <HotWidget v-else-if="widget.type === 'hot'" :widget="widget" :is-edit-mode="isEditMode" />
-            <ClockWeatherWidget v-else-if="widget.type === 'clockweather'" :widget="widget" />
-            <AmapWeatherWidget v-else-if="widget.type === 'amap-weather'" :widget="widget" />
-            <RssWidget v-else-if="widget.type === 'rss'" :widget="widget" />
-            <DockerWidget v-else-if="widget.type === 'docker'" :widget="widget" />
-            <SystemStatusWidget v-else-if="widget.type === 'system-status'" :widget="widget" />
-            <CustomCssWidget v-else-if="widget.type === 'custom-css'" :widget="widget" />
-            <FileTransferWidget v-else-if="widget.type === 'file-transfer'" :widget="widget" />
-          </GridItem>
-        </GridLayout>
+                  <!-- Icon -->
+                  <div
+                    v-if="widget.data?.icon"
+                    class="relative flex items-center justify-center flex-shrink-0 transition-all duration-300 z-10 mb-2"
+                    :style="{
+                      width:
+                        (store.appConfig.iconSize || 48) *
+                          ((widget.data.iconSize || 100) / 100) +
+                        'px',
+                      height:
+                        (store.appConfig.iconSize || 48) *
+                          ((widget.data.iconSize || 100) / 100) +
+                        'px',
+                    }"
+                  >
+                    <IconShape
+                      :shape="store.appConfig.iconShape || 'circle'"
+                      :size="
+                        (store.appConfig.iconSize || 48) *
+                        ((widget.data.iconSize || 100) / 100)
+                      "
+                      :imgScale="100"
+                      :bgClass="
+                        getIconBackground(
+                          widget.data,
+                          store.appConfig.iconShape || 'circle',
+                        )
+                      "
+                      :icon="processIcon(widget.data.icon)"
+                      class="w-full h-full"
+                      :class="
+                        widget.data.backgroundImage ? 'drop-shadow-lg' : ''
+                      "
+                    />
+                  </div>
+
+                  <div
+                    class="text-sm font-semibold tracking-wide relative z-10 truncate w-full px-2"
+                    :style="{
+                      color: widget.data?.titleColor || '#ffffff',
+                      textShadow: widget.data?.backgroundImage
+                        ? '0 2px 4px rgba(0,0,0,0.8)'
+                        : 'none',
+                    }"
+                  >
+                    {{ widget.data?.title || "div 卡片" }}
+                  </div>
+
+                  <div
+                    v-if="
+                      !widget.data?.url &&
+                      !widget.data?.lanUrl &&
+                      !widget.data?.icon
+                    "
+                    class="text-[10px] opacity-70 mt-1 relative z-10"
+                  >
+                    请在编辑模式下右键添加项目
+                  </div>
+                </div>
+                <div
+                  v-else-if="widget.type === 'ip'"
+                  class="w-full h-full p-3 rounded-2xl backdrop-blur border border-white/10 flex flex-col items-center transition-colors text-center text-white"
+                  :style="{
+                    backgroundColor: `rgba(0,0,0,${Math.min(0.85, Math.max(0.15, widget.opacity ?? 0.35))})`,
+                    color: '#fff',
+                  }"
+                >
+                  <div
+                    v-if="ipInfo.location && ipInfo.location !== '未知位置'"
+                    class="text-[19px] font-medium sm:font-bold w-full truncate flex-1 flex items-center justify-center -mt-px"
+                    :title="ipInfo.location"
+                  >
+                    {{ formattedLocation }}
+                  </div>
+                  <div
+                    v-if="hasWanIp"
+                    class="flex items-center justify-center gap-2 w-full flex-1"
+                  >
+                    <span class="text-[12px] opacity-70 uppercase">外网</span>
+                    <button
+                      class="max-w-full font-mono font-medium sm:font-bold leading-tight text-center select-text break-all hover:opacity-90 transition-opacity text-xl"
+                      type="button"
+                      title="点击复制外网 IP"
+                      @click.stop="copyToClipboard(ipInfo.wanIp)"
+                    >
+                      {{ ipInfo.wanIp }}
+                    </button>
+                  </div>
+                  <div
+                    v-if="hasLanIp"
+                    class="flex items-center justify-center gap-2 w-full flex-1"
+                  >
+                    <span class="text-[10px] opacity-50 uppercase">内网</span>
+                    <button
+                      class="max-w-full font-mono font-medium leading-tight text-center select-text break-all opacity-70 hover:opacity-90 transition-opacity text-sm"
+                      type="button"
+                      title="点击复制内网 IP"
+                      @click.stop="copyToClipboard(ipInfo.lanIp)"
+                    >
+                      {{ ipInfo.lanIp }}
+                    </button>
+                  </div>
+                  <div
+                    v-if="!hasWanIp && !hasLanIp"
+                    class="flex items-center justify-center gap-2 w-full flex-1"
+                  >
+                    <span class="text-2xl font-mono opacity-60">{{
+                      displayIp
+                    }}</span>
+                  </div>
+
+                  <div
+                    class="flex items-center justify-center gap-2 w-full flex-1"
+                  >
+                    <span class="text-[12px] opacity-70 uppercase"
+                      >PING测试</span
+                    >
+                    <div
+                      class="text-base font-mono font-medium text-white/90 bg-white/20 backdrop-blur-sm border border-white/20 px-2 py-0.5 rounded"
+                    >
+                      {{ ipInfo.baiduLatency }}
+                    </div>
+                    <button
+                      @click="fetchIp(true)"
+                      class="text-[12px] text-white/80 bg-white/20 px-2.5 py-0.5 rounded hover:bg-white/30 transition-colors"
+                    >
+                      刷新
+                    </button>
+                  </div>
+
+                  <div v-if="copiedToast" class="text-[11px] opacity-80 -mt-1">
+                    {{ copiedToast }}
+                  </div>
+                </div>
+                <CountdownWidget
+                  v-else-if="widget.type === 'countdown'"
+                  :widget="widget"
+                />
+                <CountUpWidget
+                  v-else-if="widget.type === 'countup'"
+                  :widget="widget"
+                />
+                <IframeWidget
+                  v-else-if="widget.type === 'iframe'"
+                  :widget="widget"
+                  :is-lan-mode="effectiveIsLan"
+                  :is-edit-mode="isHomeEditChromeVisible"
+                />
+                <BookmarkWidget
+                  v-else-if="widget.type === 'bookmarks'"
+                  :widget="widget"
+                />
+                <HotWidget
+                  v-else-if="widget.type === 'hot'"
+                  :widget="widget"
+                  :is-edit-mode="isHomeEditChromeVisible"
+                />
+                <RssWidget v-else-if="widget.type === 'rss'" :widget="widget" />
+                <DockerWidget
+                  v-else-if="widget.type === 'docker'"
+                  :widget="widget"
+                />
+                <SystemStatusWidget
+                  v-else-if="widget.type === 'system-status'"
+                  :widget="widget"
+                />
+                <CustomCssWidget
+                  v-else-if="widget.type === 'custom-css'"
+                  :widget="widget"
+                />
+                <FileTransferWidget
+                  v-else-if="widget.type === 'file-transfer'"
+                  :widget="widget"
+                />
+              </WidgetEditFrame>
+            </GridItem>
+          </GridLayout>
         </div>
 
-        <Transition name="fade">
-          <div v-if="store.isLogged && isEditMode" class="flex justify-center mb-4 gap-4">
-            <button
-              data-testid="add-group-btn"
-              @click="store.addGroup"
-              class="bg-white/10 hover:bg-white/20 text-white backdrop-blur border border-white/20 px-6 py-2 rounded-full font-bold transition-all flex items-center gap-2 shadow-lg"
-            >
-              <span>➕</span> 新建分组
-            </button>
-          </div>
-        </Transition>
+        <WidgetSizeStrip
+          v-if="
+            isWidgetSizeStripVisible &&
+            selectedGridWidget &&
+            selectedWidgetSizeState
+          "
+          :options="selectedWidgetSizeState.options"
+          :current-size="{
+            colSpan: selectedGridWidget.w || selectedGridWidget.colSpan || 1,
+            rowSpan: selectedGridWidget.h || selectedGridWidget.rowSpan || 1,
+          }"
+          :target-size="
+            resizeOverlayState?.widgetId === selectedGridWidget.id
+              ? resizeOverlayState.targetSize
+              : null
+          "
+          :max-size="selectedWidgetSizeState.maxSize"
+          :runtime-cols="widgetColNum"
+          @select="handleWidgetSizeStripSelect"
+        />
 
         <VueDraggable
           v-model="store.groups"
@@ -3676,7 +4348,7 @@ onUnmounted(() => {
           :move="checkMove"
           :animation="300"
           :forceFallback="true"
-          :disabled="!isEditMode || isWebPaginationMode"
+          :disabled="!isHomeEditChromeVisible || isWebPaginationMode"
           @end="() => store.markDirty()"
           class="pb-20 flex flex-col transition-all"
           :style="{ gap: (store.appConfig.groupGap ?? 30) + 'px' }"
@@ -3686,14 +4358,16 @@ onUnmounted(() => {
             :key="group.id"
             class="group-container"
             :id="'group-' + group.id"
-            v-show="!isWebPaginationMode || group.id === activePaginationGroupId"
+            v-show="
+              !isWebPaginationMode || group.id === activePaginationGroupId
+            "
           >
             <div
               class="flex items-center gap-3 mb-2 group-header relative transition-opacity duration-200"
               :class="{ 'opacity-0 hover:opacity-100': group.autoHideTitle }"
             >
               <div
-                v-if="isEditMode"
+                v-if="isHomeEditChromeVisible"
                 class="group-handle cursor-move text-white/50 hover:text-white p-1 select-none text-xl"
               >
                 ⋮⋮
@@ -3712,7 +4386,7 @@ onUnmounted(() => {
 
               <div class="flex items-center gap-2">
                 <button
-                  v-if="store.isLogged"
+                  v-if="store.isLogged && !showAddWidgetModal"
                   @click="openAddModal(group.id)"
                   class="w-7 h-7 rounded-full bg-white/10 hover:bg-white/30 text-white flex items-center justify-center transition-all shadow-sm border border-white/10"
                   title="添加卡片"
@@ -3734,7 +4408,7 @@ onUnmounted(() => {
                 </button>
 
                 <button
-                  v-if="store.isLogged"
+                  v-if="store.isLogged && !showAddWidgetModal"
                   @click.stop="toggleGroupSettings(group.id)"
                   class="w-7 h-7 rounded-full bg-white/10 hover:bg-white/30 text-white flex items-center justify-center transition-all shadow-sm border border-white/10"
                   title="分组设置"
@@ -3762,7 +4436,7 @@ onUnmounted(() => {
                 </button>
 
                 <button
-                  v-if="store.isLogged && isEditMode"
+                  v-if="store.isLogged && isHomeEditChromeVisible"
                   @click="openGroupDeleteConfirm(group.id)"
                   class="w-7 h-7 rounded-full bg-white/10 hover:bg-red-500 hover:text-white text-white/50 flex items-center justify-center transition-all shadow-sm border border-white/10"
                   title="删除分组"
@@ -3792,15 +4466,19 @@ onUnmounted(() => {
 
             <VueDraggable
               :model-value="group.items"
-              @update:model-value="(newItems: NavItem[]) => onGroupItemsChange(group.id, newItems)"
+              @update:model-value="
+                (newItems: NavItem[]) => onGroupItemsChange(group.id, newItems)
+              "
               @end="() => store.markDirty()"
               group="apps"
               :animation="200"
               :forceFallback="true"
-              :disabled="!isEditMode || !!searchText"
+              :disabled="!isHomeEditChromeVisible || !!searchText"
               class="grid transition-all duration-300 min-h-[100px] rounded-xl"
               :class="
-                isEditMode ? 'bg-white/5 border-2 border-dashed border-white/20 p-2 md:p-4' : ''
+                isHomeEditChromeVisible
+                  ? 'bg-white/5 border-2 border-dashed border-white/20 p-2 md:p-4'
+                  : ''
               "
               :style="{
                 gap: getLayoutConfig(group).gap + 'px',
@@ -3812,8 +4490,12 @@ onUnmounted(() => {
                 v-for="item in group.items"
                 :key="item.id"
                 @click="handleCardClick(item)"
-                @mousedown.right.prevent.stop="handleContextMenuPointerDown($event, item, group.id)"
-                @contextmenu.prevent.stop="handleContextMenu($event, item, group.id)"
+                @mousedown.right.prevent.stop="
+                  handleContextMenuPointerDown($event, item, group.id)
+                "
+                @contextmenu.prevent.stop="
+                  handleContextMenu($event, item, group.id)
+                "
                 @pointerdown="(e) => onCardPointerDown(e, item, group.id)"
                 @pointermove="onCardPointerMove"
                 @pointerup="onCardPointerUp"
@@ -3822,23 +4504,30 @@ onUnmounted(() => {
                 @touchmove="onCardTouchMove"
                 @touchend="onCardTouchEnd"
                 @touchcancel="onCardTouchEnd"
+                :data-card-item="item.id"
                 class="card-item flex items-center cursor-pointer transition-all select-none relative group hover:z-[999] overflow-hidden"
                 :class="[
                   item.containerId && isUpdating.has(item.containerId)
                     ? 'opacity-50 pointer-events-none !cursor-not-allowed animate-pulse ring-2 ring-yellow-400'
                     : '',
-                  isEditMode ? 'animate-pulse cursor-move ring-2 ring-blue-400' : '',
-                  (group.cardLayout || store.appConfig.cardLayout) === 'horizontal'
+                  isHomeEditChromeVisible
+                    ? 'animate-pulse cursor-move ring-2 ring-blue-400'
+                    : '',
+                  (group.cardLayout || store.appConfig.cardLayout) ===
+                  'horizontal'
                     ? 'flex-row px-4 py-2 gap-3 justify-start'
                     : 'flex-col gap-1.5 justify-start',
                   (group.iconShape || store.appConfig.iconShape) === 'circle'
                     ? 'rounded-2xl'
-                    : (group.iconShape || store.appConfig.iconShape) === 'rounded'
+                    : (group.iconShape || store.appConfig.iconShape) ===
+                        'rounded'
                       ? 'rounded-2xl'
-                      : (group.iconShape || store.appConfig.iconShape) === 'leaf'
+                      : (group.iconShape || store.appConfig.iconShape) ===
+                          'leaf'
                         ? 'rounded-tl-3xl rounded-br-3xl rounded-tr-md rounded-bl-md'
                         : 'rounded-lg',
-                  (group.showCardBackground ?? store.appConfig.showCardBackground) === false
+                  (group.showCardBackground ??
+                    store.appConfig.showCardBackground) === false
                     ? ''
                     : 'border backdrop-blur-sm',
                   store.appConfig.mouseHoverEffect === 'lift'
@@ -3852,11 +4541,15 @@ onUnmounted(() => {
                 :style="{
                   height: getLayoutConfig(group).height + 'px',
                   backgroundColor:
-                    (group.showCardBackground ?? store.appConfig.showCardBackground) === false
+                    (group.showCardBackground ??
+                      store.appConfig.showCardBackground) === false
                       ? 'transparent'
-                      : group.cardBgColor || store.appConfig.cardBgColor || 'var(--card-bg-color)',
+                      : group.cardBgColor ||
+                        store.appConfig.cardBgColor ||
+                        'var(--card-bg-color)',
                   borderColor:
-                    (group.showCardBackground ?? store.appConfig.showCardBackground) === false
+                    (group.showCardBackground ??
+                      store.appConfig.showCardBackground) === false
                       ? 'transparent'
                       : 'var(--card-border-color)',
                 }"
@@ -3908,20 +4601,27 @@ onUnmounted(() => {
                   </div>
 
                   <!-- CPU Bar (Top, Right to Left) -->
-                  <div class="absolute top-0 right-0 w-full h-1/2 bg-transparent opacity-20">
+                  <div
+                    class="absolute top-0 right-0 w-full h-1/2 bg-transparent opacity-20"
+                  >
                     <div
                       class="absolute top-0 right-0 h-full bg-blue-500 transition-all duration-1000 ease-out"
                       :style="{
                         width:
                           Math.min(
                             100,
-                            Math.max(0, getContainerStatus(item)?.stats?.cpuPercent || 0),
+                            Math.max(
+                              0,
+                              getContainerStatus(item)?.stats?.cpuPercent || 0,
+                            ),
                           ) + '%',
                       }"
                     ></div>
                   </div>
                   <!-- CPU Label -->
-                  <div class="absolute top-1 right-4 opacity-40 select-none z-10">
+                  <div
+                    class="absolute top-1 right-4 opacity-40 select-none z-10"
+                  >
                     <svg
                       class="w-8 h-8"
                       viewBox="0 0 1024 1024"
@@ -3938,14 +4638,19 @@ onUnmounted(() => {
                   </div>
 
                   <!-- Memory Bar (Bottom, Left to Right) -->
-                  <div class="absolute bottom-0 left-0 w-full h-1/2 bg-transparent opacity-20">
+                  <div
+                    class="absolute bottom-0 left-0 w-full h-1/2 bg-transparent opacity-20"
+                  >
                     <div
                       class="absolute top-0 left-0 h-full bg-green-500 transition-all duration-1000 ease-out"
                       :style="{
                         width:
                           Math.min(
                             100,
-                            Math.max(0, getContainerStatus(item)?.stats?.memPercent || 0),
+                            Math.max(
+                              0,
+                              getContainerStatus(item)?.stats?.memPercent || 0,
+                            ),
                           ) + '%',
                       }"
                     ></div>
@@ -3971,7 +4676,7 @@ onUnmounted(() => {
                 </div>
 
                 <div
-                  v-if="isEditMode && item.isPublic"
+                  v-if="isHomeEditChromeVisible && item.isPublic"
                   class="absolute bottom-1 right-1 text-[10px] bg-green-100 text-green-700 px-1.5 py-0.5 rounded border border-green-200 z-20"
                 >
                   公开
@@ -3979,7 +4684,9 @@ onUnmounted(() => {
 
                 <div
                   class="relative flex items-center justify-center flex-shrink-0 transition-all duration-300 relative z-10"
-                  v-if="(group.iconShape || store.appConfig.iconShape) !== 'hidden'"
+                  v-if="
+                    (group.iconShape || store.appConfig.iconShape) !== 'hidden'
+                  "
                   :style="{
                     width: getLayoutConfig(group).iconSize + 'px',
                     height: getLayoutConfig(group).iconSize + 'px',
@@ -3992,10 +4699,19 @@ onUnmounted(() => {
                       :shape="group.iconShape || store.appConfig.iconShape"
                       :size="getLayoutConfig(group).iconSize"
                       :imgScale="item.iconSize"
-                      :bgClass="getIconBackground(item, group.iconShape || store.appConfig.iconShape)"
+                      :bgClass="
+                        getIconBackground(
+                          item,
+                          group.iconShape || store.appConfig.iconShape,
+                        )
+                      "
                       :icon="processIcon(item.icon || '')"
                       class="transition-all duration-300 relative z-10 w-full h-full"
-                      :class="item.backgroundImage || group.backgroundImage ? 'drop-shadow-lg' : ''"
+                      :class="
+                        item.backgroundImage || group.backgroundImage
+                          ? 'drop-shadow-lg'
+                          : ''
+                      "
                     />
                   </div>
 
@@ -4004,7 +4720,9 @@ onUnmounted(() => {
                     v-if="getContainerStatus(item)"
                     class="absolute -bottom-1 -right-1 w-3 h-3 rounded-full border-2 border-white z-20"
                     :class="
-                      getContainerStatus(item)?.state === 'running' ? 'bg-green-500' : 'bg-gray-400'
+                      getContainerStatus(item)?.state === 'running'
+                        ? 'bg-green-500'
+                        : 'bg-gray-400'
                     "
                     :title="getContainerStatus(item)?.state"
                   ></div>
@@ -4021,13 +4739,21 @@ onUnmounted(() => {
                       @click.stop="openBackupUrl(url)"
                       class="flex items-center justify-center rounded-full bg-blue-600 text-white font-sans font-bold cursor-pointer hover:scale-110 hover:bg-blue-500 transition-all shadow-sm border border-white/50"
                       :style="{
-                        width: Math.max(16, getLayoutConfig(group).iconSize * 0.22) + 'px',
-                        height: Math.max(16, getLayoutConfig(group).iconSize * 0.22) + 'px',
-                        fontSize: Math.max(10, getLayoutConfig(group).iconSize * 0.14) + 'px',
+                        width:
+                          Math.max(16, getLayoutConfig(group).iconSize * 0.22) +
+                          'px',
+                        height:
+                          Math.max(16, getLayoutConfig(group).iconSize * 0.22) +
+                          'px',
+                        fontSize:
+                          Math.max(10, getLayoutConfig(group).iconSize * 0.14) +
+                          'px',
                         lineHeight: 1,
                       }"
                       :title="
-                        typeof url === 'string' ? '外网: ' + url : url.name || '外网: ' + url.url
+                        typeof url === 'string'
+                          ? '外网: ' + url
+                          : url.name || '外网: ' + url.url
                       "
                     >
                       {{ idx + 1 }}
@@ -4045,13 +4771,21 @@ onUnmounted(() => {
                       @click.stop="openBackupUrl(url)"
                       class="flex items-center justify-center rounded-full bg-green-600 text-white font-sans font-bold cursor-pointer hover:scale-110 hover:bg-green-500 transition-all shadow-sm border border-white/50"
                       :style="{
-                        width: Math.max(16, getLayoutConfig(group).iconSize * 0.22) + 'px',
-                        height: Math.max(16, getLayoutConfig(group).iconSize * 0.22) + 'px',
-                        fontSize: Math.max(10, getLayoutConfig(group).iconSize * 0.14) + 'px',
+                        width:
+                          Math.max(16, getLayoutConfig(group).iconSize * 0.22) +
+                          'px',
+                        height:
+                          Math.max(16, getLayoutConfig(group).iconSize * 0.22) +
+                          'px',
+                        fontSize:
+                          Math.max(10, getLayoutConfig(group).iconSize * 0.14) +
+                          'px',
                         lineHeight: 1,
                       }"
                       :title="
-                        typeof url === 'string' ? '内网: ' + url : url.name || '内网: ' + url.url
+                        typeof url === 'string'
+                          ? '内网: ' + url
+                          : url.name || '内网: ' + url.url
                       "
                     >
                       {{ idx + 1 }}
@@ -4061,13 +4795,18 @@ onUnmounted(() => {
 
                 <!-- Horizontal Mode: 3-Line Custom Text -->
                 <div
-                  v-if="(group.cardLayout || store.appConfig.cardLayout) === 'horizontal'"
+                  v-if="
+                    (group.cardLayout || store.appConfig.cardLayout) ===
+                    'horizontal'
+                  "
                   class="flex-1 flex flex-col h-full justify-center gap-0.5 overflow-hidden relative z-10"
                 >
                   <!-- Line 1 (Top) -->
                   <div
                     :class="[
-                      !item.description1 && !item.description2 && !item.description3
+                      !item.description1 &&
+                      !item.description2 &&
+                      !item.description3
                         ? 'text-left'
                         : 'text-xs',
                       'truncate font-medium leading-tight flex justify-between items-center',
@@ -4077,17 +4816,26 @@ onUnmounted(() => {
                         item.titleColor ||
                         (item.backgroundImage || group.backgroundImage
                           ? '#ffffff'
-                          : group.cardTitleColor || store.appConfig.cardTitleColor || '#111827'),
-                      fontSize: group.cardTitleSize ? group.cardTitleSize + 'px' : undefined,
+                          : group.cardTitleColor ||
+                            store.appConfig.cardTitleColor ||
+                            '#111827'),
+                      fontSize: group.cardTitleSize
+                        ? group.cardTitleSize + 'px'
+                        : undefined,
                       textShadow:
                         item.backgroundImage || group.backgroundImage
                           ? '0 1px 2px rgba(0,0,0,0.8)'
                           : 'none',
                       opacity:
-                        item.description1 || (!item.description2 && !item.description3) ? 1 : 0.5,
+                        item.description1 ||
+                        (!item.description2 && !item.description3)
+                          ? 1
+                          : 0.5,
                     }"
                   >
-                    <span class="truncate flex-1">{{ item.description1 || item.title }}</span>
+                    <span class="truncate flex-1">{{
+                      item.description1 || item.title
+                    }}</span>
                   </div>
 
                   <!-- Docker Stats Info -->
@@ -4099,28 +4847,45 @@ onUnmounted(() => {
                         item.titleColor ||
                         (item.backgroundImage || group.backgroundImage
                           ? '#ffffff'
-                          : group.cardTitleColor || store.appConfig.cardTitleColor || '#374151'),
+                          : group.cardTitleColor ||
+                            store.appConfig.cardTitleColor ||
+                            '#374151'),
                       textShadow:
                         item.backgroundImage || group.backgroundImage
                           ? '0 1px 2px rgba(0,0,0,0.8)'
                           : 'none',
                     }"
                   >
-                    <div class="flex justify-between items-center" title="Network I/O (RX/TX)">
+                    <div
+                      class="flex justify-between items-center"
+                      title="Network I/O (RX/TX)"
+                    >
                       <span class="font-bold opacity-70">NET</span>
                       <span class="font-mono truncate ml-1">
                         <template v-if="getContainerStatus(item)?.stats">
-                          ↓{{ formatBytes(getContainerStatus(item)?.stats?.netIO?.rx || 0, 0) }}/s
+                          ↓{{
+                            formatBytes(
+                              getContainerStatus(item)?.stats?.netIO?.rx || 0,
+                              0,
+                            )
+                          }}/s
                         </template>
                         <template v-else>--</template>
                       </span>
                     </div>
-                    <div class="flex justify-between items-center" title="Block I/O (Read/Write)">
+                    <div
+                      class="flex justify-between items-center"
+                      title="Block I/O (Read/Write)"
+                    >
                       <span class="font-bold opacity-70">IO</span>
                       <span class="font-mono truncate ml-1">
                         <template v-if="getContainerStatus(item)?.stats">
                           R{{
-                            formatBytes(getContainerStatus(item)?.stats?.blockIO?.read || 0, 0)
+                            formatBytes(
+                              getContainerStatus(item)?.stats?.blockIO?.read ||
+                                0,
+                              0,
+                            )
                           }}/s
                         </template>
                         <template v-else>--</template>
@@ -4135,7 +4900,9 @@ onUnmounted(() => {
                       color:
                         item.backgroundImage || group.backgroundImage
                           ? '#e5e7eb'
-                          : group.cardTitleColor || store.appConfig.cardTitleColor || '#4b5563',
+                          : group.cardTitleColor ||
+                            store.appConfig.cardTitleColor ||
+                            '#4b5563',
                       textShadow:
                         item.backgroundImage || group.backgroundImage
                           ? '0 1px 2px rgba(0,0,0,0.8)'
@@ -4152,7 +4919,9 @@ onUnmounted(() => {
                       color:
                         item.backgroundImage || group.backgroundImage
                           ? '#d1d5db'
-                          : group.cardTitleColor || store.appConfig.cardTitleColor || '#6b7280',
+                          : group.cardTitleColor ||
+                            store.appConfig.cardTitleColor ||
+                            '#6b7280',
                       textShadow:
                         item.backgroundImage || group.backgroundImage
                           ? '0 1px 2px rgba(0,0,0,0.8)'
@@ -4173,7 +4942,9 @@ onUnmounted(() => {
                       item.titleColor ||
                       (item.backgroundImage || group.backgroundImage
                         ? '#ffffff'
-                        : group.cardTitleColor || store.appConfig.cardTitleColor || '#111827'),
+                        : group.cardTitleColor ||
+                          store.appConfig.cardTitleColor ||
+                          '#111827'),
                     fontSize: (group.cardTitleSize ?? 13) + 'px',
                     textShadow:
                       item.backgroundImage || group.backgroundImage
@@ -4202,7 +4973,9 @@ onUnmounted(() => {
             : '',
       ]"
       :style="{
-        height: store.appConfig.footerHeight ? store.appConfig.footerHeight + 'px' : 'auto',
+        height: store.appConfig.footerHeight
+          ? store.appConfig.footerHeight + 'px'
+          : 'auto',
         marginBottom: (store.appConfig.footerMarginBottom || 0) + 'px',
       }"
     >
@@ -4235,7 +5008,11 @@ onUnmounted(() => {
             ></div>
             <span
               class="text-xs font-mono font-bold"
-              :class="store.appConfig.background ? 'text-white shadow-text' : 'text-gray-500'"
+              :class="
+                store.appConfig.background
+                  ? 'text-white shadow-text'
+                  : 'text-gray-500'
+              "
               >{{ store.isConnected ? "LIVE" : "OFFLINE" }}</span
             >
           </div>
@@ -4243,7 +5020,11 @@ onUnmounted(() => {
           <div
             v-if="store.appConfig.showFooterStats"
             class="flex gap-4 opacity-60 select-none"
-            :class="store.appConfig.background ? 'text-white shadow-text' : 'text-gray-500'"
+            :class="
+              store.appConfig.background
+                ? 'text-white shadow-text'
+                : 'text-gray-500'
+            "
           >
             <div class="flex flex-col gap-1">
               <span>访客记录</span>
@@ -4268,33 +5049,12 @@ onUnmounted(() => {
             v-if="store.appConfig.footerHtml"
             v-html="sanitizedFooterHtml"
             class="text-center opacity-60"
-            :class="store.appConfig.background ? 'text-white shadow-text' : 'text-gray-500'"
+            :class="
+              store.appConfig.background
+                ? 'text-white shadow-text'
+                : 'text-gray-500'
+            "
           ></div>
-        </div>
-
-        <!-- Right: Quote -->
-        <div class="flex-1 flex justify-end" :class="{ '!justify-center order-first': isMobile }">
-          <div
-            v-if="checkVisible(store.widgets.find((w) => w.id === 'w7'))"
-            class="text-right max-w-md cursor-pointer hover:opacity-80 transition-opacity select-none"
-            :class="{ '!text-center': isMobile }"
-            @click="fetchHitokoto"
-            title="点击刷新"
-          >
-            <p
-              class="font-serif italic mb-1 opacity-70"
-              :class="store.appConfig.background ? 'text-white shadow-text' : 'text-gray-600'"
-              style="font-size: 1.25em"
-            >
-              “ {{ hitokoto.hitokoto }} ”
-            </p>
-            <p
-              class="opacity-70"
-              :class="store.appConfig.background ? 'text-white/80 shadow-text' : 'text-gray-400'"
-            >
-              —— {{ hitokoto.from }}
-            </p>
-          </div>
         </div>
       </div>
     </footer>
@@ -4314,197 +5074,396 @@ onUnmounted(() => {
       :onSave="handleSave"
     />
     <SettingsModal v-if="showSettingsModal" v-model:show="showSettingsModal" />
+    <AddWidgetModal
+      v-if="showAddWidgetModal"
+      v-model:show="showAddWidgetModal"
+      :widgets="store.widgets"
+      :groups="store.groups"
+      :active-group-id="activeGroupId"
+      :on-add-component="addComponent"
+    />
     <LoginModal v-if="showLoginModal" v-model:show="showLoginModal" />
 
+    <WidgetRuntimeMenu
+      :show="!!runtimeContextMenu"
+      :x="runtimeContextMenu?.x || 0"
+      :y="runtimeContextMenu?.y || 0"
+      :widget="runtimeMenuWidget"
+      @close="closeRuntimeContextMenu"
+      @edit-icon="editRuntimeWidgetIcon"
+      @edit-home="editRuntimeWidgetHome"
+      @delete="deleteRuntimeWidget"
+      @select-size="selectRuntimeWidgetSize"
+    />
+
+    <WidgetOpenedPanelHost
+      :widget="openedRuntimeWidget"
+      @add-data="addRuntimeWidgetData"
+      @close="closeRuntimeWidget"
+      @update-data="updateRuntimeWidgetData"
+    />
+
+    <ItabMemoFixedLayer
+      :widget="runtimeMemoWidget"
+      @update-data="updateRuntimeWidgetData"
+    />
+
+    <ContextMenuSurface
+      :show="showBlankContextMenu"
+      :z-index="50"
+      panel-class="fixed"
+      surface-class="itab-add-blank-context-surface"
+      :panel-style="{
+        top: blankContextMenuPosition.y + 'px',
+        left: blankContextMenuPosition.x + 'px',
+      }"
+      @close="closeBlankContextMenu"
+      @update:show="showBlankContextMenu = $event"
+    >
+      <div
+        data-testid="itab-add-context-menu"
+        data-grid-context-menu
+        role="menu"
+        class="itab-add-blank-context-list"
+        tabindex="-1"
+        @keydown="onBlankContextMenuKeydown"
+      >
+        <button
+          v-for="(row, index) in blankContextRows"
+          :key="row.action"
+          type="button"
+          class="itab-add-blank-context-row"
+          :class="{ 'is-active': blankContextActiveIndex === index }"
+          role="menuitem"
+          :tabindex="blankContextActiveIndex === index ? 0 : -1"
+          :data-testid="row.testId"
+          @mouseenter="blankContextActiveIndex = index"
+          @click="handleBlankContextAction(row.action)"
+        >
+          <span>{{ row.label }}</span>
+          <span v-if="row.shortcut" class="itab-add-blank-context-shortcut">
+            {{ row.shortcut }}
+          </span>
+        </button>
+      </div>
+    </ContextMenuSurface>
+
     <!-- Context Menu -->
-    <OverlayMotion
+    <ContextMenuSurface
       :show="showContextMenu"
       :z-index="50"
-      variant="context-menu"
-      panel-class="fixed bg-white rounded-lg shadow-xl border border-gray-200 py-1 min-w-[160px] overflow-hidden"
-      :panel-style="{ top: contextMenuPosition.y + 'px', left: contextMenuPosition.x + 'px' }"
+      panel-class="fixed"
+      surface-class="min-w-[160px]"
+      :panel-style="{
+        top: contextMenuPosition.y + 'px',
+        left: contextMenuPosition.x + 'px',
+      }"
+      @close="closeContextMenu"
+      @update:show="showContextMenu = $event"
     >
-    <div
-      ref="contextMenuRef"
-      data-grid-context-menu
-      role="menu"
-    >
       <div
-        v-if="contextMenuItem?.lanUrl"
-        @click="handleMenuLanOpen"
-        class="px-4 py-2 hover:bg-green-50 text-green-700 cursor-pointer flex items-center gap-3 text-sm transition-colors border-b border-gray-100 truncate"
-        role="menuitem"
-        :aria-label="'内网访问 ' + (contextMenuItem.title || '')"
+        ref="contextMenuRef"
+        data-grid-context-menu
+        role="menu"
+        class="sd-context-menu-list"
       >
-        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
-        </svg>
-        <span class="text-[14px] truncate">内网访问</span>
-      </div>
-      <!-- Backup LAN URLs -->
-      <template v-if="contextMenuItem?.backupLanUrls && contextMenuItem.backupLanUrls.length > 0">
         <div
-          v-for="(url, index) in contextMenuItem.backupLanUrls"
-          :key="'backup-lan-' + index"
-          @click="handleMenuOpen(url)"
-          class="px-4 py-2 hover:bg-green-50 text-green-600 cursor-pointer flex items-center gap-3 text-sm transition-colors border-b border-gray-100 truncate"
+          v-if="contextMenuItem?.lanUrl"
+          @click="handleMenuLanOpen"
+          class="sd-context-menu-item is-success cursor-pointer truncate"
           role="menuitem"
+          :aria-label="'内网访问 ' + (contextMenuItem.title || '')"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
-          </svg>
-          <span class="text-[14px] truncate">{{ typeof url === "string" ? "备用内网 " + (index + 1) : url.name || "备用内网 " + (index + 1) }}</span>
-        </div>
-      </template>
-
-      <div
-        v-if="contextMenuItem?.url"
-        @click="handleMenuWanOpen"
-        class="px-4 py-2 hover:bg-blue-50 text-blue-700 cursor-pointer flex items-center gap-3 text-sm transition-colors border-b border-gray-100 truncate"
-        role="menuitem"
-        :aria-label="'外网访问 ' + (contextMenuItem.title || '')"
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-        </svg>
-        <span class="text-[14px] truncate">外网访问</span>
-      </div>
-      <!-- Backup WAN URLs -->
-      <template v-if="contextMenuItem?.backupUrls && contextMenuItem.backupUrls.length > 0">
-        <div
-          v-for="(url, index) in contextMenuItem.backupUrls"
-          :key="'backup-wan-' + index"
-          @click="handleMenuOpen(url)"
-          class="px-4 py-2 hover:bg-blue-50 text-blue-600 cursor-pointer flex items-center gap-3 text-sm transition-colors border-b border-gray-100 truncate"
-          role="menuitem"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-          </svg>
-          <span class="text-[14px] truncate">{{ typeof url === "string" ? "备用外网 " + (index + 1) : url.name || "备用外网 " + (index + 1) }}</span>
-        </div>
-      </template>
-
-      <!-- Docker Actions -->
-      <template v-if="contextMenuItem?.containerId || contextMenuItem?.containerName">
-        <div
-          v-if="getContainerStatus(contextMenuItem)?.hasUpdate && !isItemUpdating(contextMenuItem)"
-          @click="
-            handleDockerAction(contextMenuItem, 'update');
-            closeContextMenu();
-          "
-          class="px-4 py-2 hover:bg-yellow-50 text-yellow-600 cursor-pointer flex items-center gap-3 text-sm transition-colors border-b border-gray-100 truncate"
-          role="menuitem"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-          </svg>
-          <span class="text-[14px] truncate">升级镜像</span>
-        </div>
-
-        <div
-          v-if="getContainerStatus(contextMenuItem)?.state === 'running'"
-          @click="
-            handleDockerAction(contextMenuItem, 'stop');
-            closeContextMenu();
-          "
-          class="px-4 py-2 hover:bg-red-50 text-red-600 cursor-pointer flex items-center gap-3 text-sm transition-colors border-b border-gray-100 truncate"
-          role="menuitem"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z" />
-          </svg>
-          <span class="text-[14px] truncate">停止容器</span>
-        </div>
-        <div
-          v-else
-          @click="
-            handleDockerAction(contextMenuItem, 'start');
-            closeContextMenu();
-          "
-          class="px-4 py-2 hover:bg-green-50 text-green-600 cursor-pointer flex items-center gap-3 text-sm transition-colors border-b border-gray-100 truncate"
-          role="menuitem"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          <span class="text-[14px] truncate">启动容器</span>
-        </div>
-
-        <div
-          @click="
-            handleDockerAction(contextMenuItem, 'restart');
-            closeContextMenu();
-          "
-          class="px-4 py-2 hover:bg-blue-50 text-blue-600 cursor-pointer flex items-center gap-3 text-sm transition-colors border-b border-gray-100 truncate"
-          role="menuitem"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-          </svg>
-          <span class="text-[14px] truncate">重启容器</span>
-        </div>
-      </template>
-
-      <div
-        @click="handleMenuEdit"
-        class="px-4 py-2 hover:bg-blue-50 text-gray-700 cursor-pointer flex items-center gap-3 text-sm transition-colors"
-        role="menuitem"
-        aria-label="编辑卡片"
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-        </svg>
-        <span class="text-[14px] truncate">编辑卡片</span>
-      </div>
-      <div
-        @click="handleMenuDelete"
-        class="px-4 py-2 hover:bg-red-50 text-red-600 cursor-pointer flex items-center gap-3 text-sm transition-colors border-t border-gray-100"
-        role="menuitem"
-        aria-label="删除卡片"
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-        </svg>
-        <span class="text-[14px] truncate">删除卡片</span>
-      </div>
-    </div>
-    </OverlayMotion>
-
-    <!-- Delete Confirm Modal -->
-    <OverlayMotion
-      :show="showDeleteConfirm"
-      :z-index="60"
-      close-on-overlay
-      overlay-class="sd-overlay-strong"
-      panel-class="max-w-sm"
-      @close="showDeleteConfirm = false"
-    >
-      <div class="sd-modal-surface">
-        <div class="sd-modal-body">
-        <h3 class="text-lg font-bold text-gray-900 mb-2">删除确认</h3>
-        <p class="text-gray-600 mb-6">
-          确定要删除这个{{ deleteType === "group" ? "分组" : "卡片" }}吗？此操作无法撤销。
-        </p>
-        <div class="flex justify-end gap-3">
-          <button
-            @click="showDeleteConfirm = false"
-            class="sd-btn sd-btn-secondary"
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="w-4 h-4 shrink-0"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
           >
-            取消
-          </button>
-          <button
-            @click="confirmDelete"
-            class="sd-btn sd-btn-danger"
-          >
-            删除
-          </button>
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"
+            />
+          </svg>
+          <span class="text-[14px] truncate">内网访问</span>
         </div>
+        <!-- Backup LAN URLs -->
+        <template
+          v-if="
+            contextMenuItem?.backupLanUrls &&
+            contextMenuItem.backupLanUrls.length > 0
+          "
+        >
+          <div
+            v-for="(url, index) in contextMenuItem.backupLanUrls"
+            :key="'backup-lan-' + index"
+            @click="handleMenuOpen(url)"
+            class="sd-context-menu-item is-success cursor-pointer truncate"
+            role="menuitem"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="w-4 h-4 shrink-0"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"
+              />
+            </svg>
+            <span class="text-[14px] truncate">{{
+              typeof url === "string"
+                ? "备用内网 " + (index + 1)
+                : url.name || "备用内网 " + (index + 1)
+            }}</span>
+          </div>
+        </template>
+
+        <div
+          v-if="contextMenuItem?.url"
+          @click="handleMenuWanOpen"
+          class="sd-context-menu-item is-accent cursor-pointer truncate"
+          role="menuitem"
+          :aria-label="'外网访问 ' + (contextMenuItem.title || '')"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="w-4 h-4 shrink-0"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"
+            />
+          </svg>
+          <span class="text-[14px] truncate">外网访问</span>
+        </div>
+        <!-- Backup WAN URLs -->
+        <template
+          v-if="
+            contextMenuItem?.backupUrls && contextMenuItem.backupUrls.length > 0
+          "
+        >
+          <div
+            v-for="(url, index) in contextMenuItem.backupUrls"
+            :key="'backup-wan-' + index"
+            @click="handleMenuOpen(url)"
+            class="sd-context-menu-item is-accent cursor-pointer truncate"
+            role="menuitem"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="w-4 h-4 shrink-0"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"
+              />
+            </svg>
+            <span class="text-[14px] truncate">{{
+              typeof url === "string"
+                ? "备用外网 " + (index + 1)
+                : url.name || "备用外网 " + (index + 1)
+            }}</span>
+          </div>
+        </template>
+
+        <!-- Docker Actions -->
+        <template
+          v-if="contextMenuItem?.containerId || contextMenuItem?.containerName"
+        >
+          <div
+            v-if="
+              getContainerStatus(contextMenuItem)?.hasUpdate &&
+              !isItemUpdating(contextMenuItem)
+            "
+            @click="
+              handleDockerAction(contextMenuItem, 'update');
+              closeContextMenu();
+            "
+            class="sd-context-menu-item is-warning cursor-pointer truncate"
+            role="menuitem"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="w-4 h-4 shrink-0"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+              />
+            </svg>
+            <span class="text-[14px] truncate">升级镜像</span>
+          </div>
+
+          <div
+            v-if="getContainerStatus(contextMenuItem)?.state === 'running'"
+            @click="
+              handleDockerAction(contextMenuItem, 'stop');
+              closeContextMenu();
+            "
+            class="sd-context-menu-item is-danger cursor-pointer truncate"
+            role="menuitem"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="w-4 h-4 shrink-0"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z"
+              />
+            </svg>
+            <span class="text-[14px] truncate">停止容器</span>
+          </div>
+          <div
+            v-else
+            @click="
+              handleDockerAction(contextMenuItem, 'start');
+              closeContextMenu();
+            "
+            class="sd-context-menu-item is-success cursor-pointer truncate"
+            role="menuitem"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="w-4 h-4 shrink-0"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"
+              />
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+            <span class="text-[14px] truncate">启动容器</span>
+          </div>
+
+          <div
+            @click="
+              handleDockerAction(contextMenuItem, 'restart');
+              closeContextMenu();
+            "
+            class="sd-context-menu-item is-accent cursor-pointer truncate"
+            role="menuitem"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="w-4 h-4 shrink-0"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+              />
+            </svg>
+            <span class="text-[14px] truncate">重启容器</span>
+          </div>
+        </template>
+
+        <div
+          @click="handleMenuEdit"
+          class="sd-context-menu-item cursor-pointer"
+          role="menuitem"
+          aria-label="编辑卡片"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="w-4 h-4 shrink-0"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+            />
+          </svg>
+          <span class="text-[14px] truncate">编辑卡片</span>
+        </div>
+        <div
+          @click="handleMenuDelete"
+          class="sd-context-menu-item is-danger cursor-pointer"
+          role="menuitem"
+          aria-label="删除卡片"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="w-4 h-4 shrink-0"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+            />
+          </svg>
+          <span class="text-[14px] truncate">删除卡片</span>
         </div>
       </div>
-    </OverlayMotion>
+    </ContextMenuSurface>
+
+    <ConfirmDialog
+      v-model:show="showDeleteConfirm"
+      title="删除确认"
+      :message="`确定要删除这个${deleteType === 'group' ? '分组' : '卡片'}吗？此操作无法撤销。`"
+      confirm-label="删除"
+      cancel-label="取消"
+      tone="danger"
+      :z-index="90"
+      @cancel="cancelDelete"
+      @confirm="confirmDelete"
+    />
   </div>
 </template>
 
@@ -4526,13 +5485,16 @@ onUnmounted(() => {
 }
 .startdeck-search-engine-button {
   display: inline-flex;
-  width: 3.25rem;
-  height: 2.125rem;
+  width: auto;
+  min-width: 5.25rem;
+  max-width: 9rem;
+  height: 2.75rem;
   align-items: center;
   justify-content: center;
   gap: 0.25rem;
   border: 1px solid rgba(203, 213, 225, 0.8);
   border-radius: 9999px;
+  padding: 0 0.625rem;
   color: var(--startdeck-search-text-color, #334155);
   background: rgba(255, 255, 255, 0.56);
   transition:
@@ -4551,6 +5513,65 @@ onUnmounted(() => {
 }
 .startdeck-search-engine-button:active {
   transform: scale(0.98);
+}
+.itab-add-blank-context-list {
+  display: grid;
+  width: 140px;
+  min-height: 184px;
+  gap: 4px;
+  padding: 9px 5px;
+  border-radius: 12px;
+  background: rgba(11, 11, 11, 0.7);
+  color: #fff;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(10px);
+}
+
+:global(.itab-add-blank-context-surface) {
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  box-shadow: none;
+}
+
+.itab-add-blank-context-row {
+  display: flex;
+  width: 130px;
+  height: 30px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+  font-size: 12px;
+  line-height: 30px;
+  padding: 0 4px;
+  text-align: left;
+}
+
+.itab-add-blank-context-row:hover,
+.itab-add-blank-context-row:focus-visible,
+.itab-add-blank-context-row.is-active {
+  background: rgba(255, 255, 255, 0.14);
+  outline: none;
+}
+
+.itab-add-blank-context-shortcut {
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 11px;
+}
+.startdeck-search-engine-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #0071e3;
+  font-size: 0.9375rem;
+  font-weight: 800;
 }
 .startdeck-search-engine-menu {
   position: absolute;
@@ -4603,6 +5624,23 @@ onUnmounted(() => {
   outline: none;
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.18);
 }
+
+@media (max-width: 767px) {
+  .startdeck-search-input {
+    padding-right: 0.5rem;
+  }
+
+  .startdeck-search-engine-button {
+    min-width: 4.25rem;
+    max-width: 6.5rem;
+    height: 2.25rem;
+    padding-inline: 0.5rem;
+  }
+
+  .startdeck-search-engine-label {
+    font-size: 0.8125rem;
+  }
+}
 .card-item {
   border-color: var(--card-border-color);
   transition:
@@ -4626,41 +5664,6 @@ onUnmounted(() => {
 .fade-leave-to {
   opacity: 0;
   transform: translateY(6px);
-}
-
-.weather-texture-layer {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240' viewBox='0 0 240 240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' seed='2'/%3E%3C/filter%3E%3Crect width='240' height='240' filter='url(%23n)' opacity='0.25'/%3E%3C/svg%3E");
-  background-size: 240px 240px;
-  mix-blend-mode: screen;
-  animation: weather-texture-pan 18s linear infinite;
-}
-
-.weather-fog-layer {
-  background-image:
-    radial-gradient(circle at 20% 30%, rgba(200, 220, 255, 0.35), transparent 55%),
-    radial-gradient(circle at 70% 60%, rgba(180, 210, 255, 0.4), transparent 60%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.2), rgba(120, 140, 170, 0.35));
-  filter: blur(12px);
-  animation: weather-fog-drift 22s ease-in-out infinite;
-}
-
-@keyframes weather-texture-pan {
-  0% {
-    background-position: 0 0;
-  }
-  100% {
-    background-position: 240px 240px;
-  }
-}
-
-@keyframes weather-fog-drift {
-  0%,
-  100% {
-    transform: translate3d(0, 0, 0);
-  }
-  50% {
-    transform: translate3d(-3%, 2%, 0);
-  }
 }
 
 :deep(path[class*="fill-sky-100"]),
@@ -4808,20 +5811,5 @@ onUnmounted(() => {
 /* Docker Status Bars */
 .empire-theme :deep(.bg-gray-200) {
   background-color: rgba(255, 255, 255, 0.1) !important;
-}
-/* Weather Animations */
-.animate-texture-pan {
-  animation: texturePan 15s linear infinite;
-}
-.animate-fog-fade {
-  animation: fogFade 8s ease-in-out infinite alternate;
-}
-@keyframes texturePan {
-  0% { background-position: 0 0; }
-  100% { background-position: 100% 100%; }
-}
-@keyframes fogFade {
-  0% { opacity: 0.3; }
-  100% { opacity: 0.7; }
 }
 </style>

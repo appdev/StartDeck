@@ -2,18 +2,21 @@ package handlers
 
 import (
 	"encoding/json"
-	"startdeck-backend/config"
 	"log"
-	"os"
 	"path/filepath"
+	"startdeck-backend/config"
+	"startdeck-backend/utils"
 	"sync"
 	"time"
 )
 
 const (
-	widgetCacheKindRSS     = "rss"
-	widgetCacheKindHot     = "hot"
-	widgetCacheKindWeather = "weather"
+	widgetCacheKindRSS               = "rss"
+	widgetCacheKindHot               = "hot"
+	widgetCacheKindItabMovieCalendar = "itab_movie_calendar"
+	widgetCacheKindItabWeather       = "itab_weather"
+	widgetCacheKindItabPoem          = "itab_poem"
+	widgetCacheKindItabDailyEnglish  = "itab_daily_english"
 )
 
 type WidgetCacheItem struct {
@@ -27,6 +30,7 @@ type WidgetCacheItem struct {
 type WidgetCache struct {
 	mu          sync.RWMutex
 	filePath    string
+	syncSave    bool
 	refreshLock sync.Mutex
 	refreshing  map[string]bool
 	// Structure: kind -> key -> item
@@ -47,22 +51,16 @@ func (c *WidgetCache) load() {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	if _, err := os.Stat(c.filePath); os.IsNotExist(err) {
-		return
-	}
-
-	data, err := os.ReadFile(c.filePath)
-	if err != nil {
+	if err := utils.ReadJSON(c.filePath, &c.cache); err != nil {
 		log.Printf("Failed to read widget cache: %v", err)
 		return
-	}
-
-	if err := json.Unmarshal(data, &c.cache); err != nil {
-		log.Printf("Failed to unmarshal widget cache: %v", err)
 	}
 }
 
 func (c *WidgetCache) saveAsync() {
+	if c.filePath == "" {
+		return
+	}
 	c.mu.RLock()
 	data, err := json.Marshal(c.cache)
 	c.mu.RUnlock()
@@ -72,9 +70,22 @@ func (c *WidgetCache) saveAsync() {
 		return
 	}
 
-	if err := os.WriteFile(c.filePath, data, 0644); err != nil {
+	var next map[string]map[string]*WidgetCacheItem
+	if err := json.Unmarshal(data, &next); err != nil {
+		log.Printf("Failed to prepare widget cache: %v", err)
+		return
+	}
+	if err := utils.WriteJSON(c.filePath, next); err != nil {
 		log.Printf("Failed to write widget cache: %v", err)
 	}
+}
+
+func (c *WidgetCache) persist() {
+	if c.syncSave {
+		c.saveAsync()
+		return
+	}
+	go c.saveAsync()
 }
 
 func (c *WidgetCache) Get(kind, key string, out interface{}) (bool, bool, *WidgetCacheItem, error) {
@@ -118,7 +129,7 @@ func (c *WidgetCache) Set(kind, key string, data interface{}, ttl time.Duration,
 	}
 	c.mu.Unlock()
 
-	go c.saveAsync()
+	c.persist()
 	return nil
 }
 
@@ -131,7 +142,7 @@ func (c *WidgetCache) MarkStatus(kind, key, status string) error {
 	c.cache[kind][key].SourceStatus = status
 	c.mu.Unlock()
 
-	go c.saveAsync()
+	c.persist()
 	return nil
 }
 

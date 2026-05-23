@@ -38,17 +38,17 @@ export interface NavGroup {
   preset?: boolean;
   cardLayout?: "vertical" | "horizontal" | string;
   iconShape?:
-  | "circle"
-  | "rounded"
-  | "leaf"
-  | "square"
-  | "diamond"
-  | "pentagon"
-  | "hexagon"
-  | "octagon"
-  | "none"
-  | "hidden"
-  | string;
+    | "circle"
+    | "rounded"
+    | "leaf"
+    | "square"
+    | "diamond"
+    | "pentagon"
+    | "hexagon"
+    | "octagon"
+    | "none"
+    | "hidden"
+    | string;
   cardBgColor?: string;
   cardTitleColor?: string;
   cardTitleSize?: number;
@@ -119,7 +119,6 @@ export interface AppConfig {
   mobileBackgroundMask?: number;
   daylightModeEnabled?: boolean;
   daylightMask?: number;
-  weatherEffectEnabled?: boolean;
   internalDomains?: string;
   networkRules?: string;
   networkPresets?: {
@@ -144,23 +143,22 @@ export interface AppConfig {
   cardBorderColor: string;
   showCardBackground: boolean;
   iconShape:
-  | "circle"
-  | "rounded"
-  | "leaf"
-  | "square"
-  | "diamond"
-  | "pentagon"
-  | "hexagon"
-  | "octagon"
-  | "none"
-  | "hidden"
-  | string;
+    | "circle"
+    | "rounded"
+    | "leaf"
+    | "square"
+    | "diamond"
+    | "pentagon"
+    | "hexagon"
+    | "octagon"
+    | "none"
+    | "hidden"
+    | string;
   searchEngines: SearchEngine[];
   defaultSearchEngine: string;
   rememberLastEngine: boolean;
   groupTitleColor: string;
   groupGap?: number;
-  autoPlayMusic?: boolean;
   iconSize?: number;
   showFooterStats?: boolean;
   footerHtml?: string;
@@ -168,13 +166,6 @@ export interface AppConfig {
   footerWidth?: number;
   footerMarginBottom?: number;
   footerFontSize?: number;
-  weatherApiUrl?: string; // Custom API URL
-  weatherSource?: "wttr" | "amap" | "qweather" | "uapi"; // Weather source
-  amapKey?: string; // AMap API Key
-  hefengJwt?: string; // QWeather Legacy API Key / Token
-  qweatherProjectId?: string; // QWeather Project ID
-  qweatherKeyId?: string; // QWeather Key ID
-  qweatherPrivateKey?: string; // QWeather Private Key
   // Wallpaper API management
   wallpaperApiPcList?: string;
   wallpaperApiPcUpload?: string;
@@ -204,7 +195,14 @@ export interface MarketplaceItem {
   id: string;
   name: string;
   description?: string;
-  type: "css" | "js" | "component" | "css+js" | "js+component" | "css+component" | "css+js+component";
+  type:
+    | "css"
+    | "js"
+    | "component"
+    | "css+js"
+    | "js+component"
+    | "css+component"
+    | "css+js+component";
   css?: string;
   js?: string;
   component?: { title: string; html: string; css: string };

@@ -1,19 +1,42 @@
 <script setup lang="ts">
 import { onMounted, watch, computed, ref } from "vue";
 import GridPanel from "./components/GridPanel.vue";
+import ItabLiveReplica from "@/features/itab-live/ItabLiveReplica.vue";
+import ItabWidgetQaView from "@/features/itab-widgets/ItabWidgetQaView.vue";
 import StatusMonitor from "./components/StatusMonitor.vue";
 import NetworkIndicator from "./components/NetworkIndicator.vue";
+import AppButton from "@/components/base/AppButton.vue";
+import AppModalShell from "@/components/base/AppModalShell.vue";
+import ConfirmDialog from "@/components/base/ConfirmDialog.vue";
+import StatusBanner from "@/components/base/StatusBanner.vue";
+import ToastHost from "@/components/base/ToastHost.vue";
 import { useMainStore } from "./stores/main";
+import { useUiFeedbackStore } from "./stores/uiFeedback";
 import type { CustomScript, MarketplaceItem } from "@/types";
 import { useWindowScroll, useWindowSize } from "@vueuse/core";
 
 const store = useMainStore();
+const uiFeedback = useUiFeedbackStore();
 const { y } = useWindowScroll();
 const { width: windowWidth, height: windowHeight } = useWindowSize();
 
 const showBackToTop = computed(() => y.value > windowHeight.value);
-const statusMonitorWidget = computed(() => store.widgets.find((w) => w.type === "status-monitor"));
+const statusMonitorWidget = computed(() =>
+  store.widgets.find((w) => w.type === "status-monitor"),
+);
 const saveErrorMessage = ref("");
+const isItabQaRoute = computed(
+  () =>
+    typeof window !== "undefined" &&
+    window.location.pathname === "/qa/itab-widgets",
+);
+const isItabLiveRoute = computed(
+  () =>
+    typeof window !== "undefined" && window.location.pathname === "/itab-live",
+);
+const isStandaloneRoute = computed(
+  () => isItabQaRoute.value || isItabLiveRoute.value,
+);
 let saveErrorTimer: number | null = null;
 
 const pushSaveError = (message: string) => {
@@ -67,7 +90,8 @@ watch(
     const raw = String(newCss || "");
     const build = (input: string) => {
       const src = String(input || "");
-      const re = /\/\*\s*@(?<tag>[a-zA-Z_-]+)\s*\*\/([\s\S]*?)\/\*\s*@end\s*\*\//g;
+      const re =
+        /\/\*\s*@(?<tag>[a-zA-Z_-]+)\s*\*\/([\s\S]*?)\/\*\s*@end\s*\*\//g;
       const blocks: Array<{ tag: string; body: string }> = [];
       const base = src.replace(re, (...args) => {
         const groups = args[args.length - 1] as { tag?: string } | undefined;
@@ -81,10 +105,14 @@ watch(
         .map((b) => {
           const body = String(b.body || "").trim();
           if (!body) return "";
-          if (b.tag === "mobile") return `@media (max-width: 768px) {\n${body}\n}`;
-          if (b.tag === "desktop") return `@media (min-width: 769px) {\n${body}\n}`;
-          if (b.tag === "dark") return `@media (prefers-color-scheme: dark) {\n${body}\n}`;
-          if (b.tag === "light") return `@media (prefers-color-scheme: light) {\n${body}\n}`;
+          if (b.tag === "mobile")
+            return `@media (max-width: 768px) {\n${body}\n}`;
+          if (b.tag === "desktop")
+            return `@media (min-width: 769px) {\n${body}\n}`;
+          if (b.tag === "dark")
+            return `@media (prefers-color-scheme: dark) {\n${body}\n}`;
+          if (b.tag === "light")
+            return `@media (prefers-color-scheme: light) {\n${body}\n}`;
           return body;
         })
         .filter(Boolean)
@@ -94,7 +122,9 @@ watch(
     };
 
     const css = build(raw);
-    let style = document.getElementById("custom-css") as HTMLStyleElement | null;
+    let style = document.getElementById(
+      "custom-css",
+    ) as HTMLStyleElement | null;
     if (!style) {
       style = document.createElement("style");
       style.id = "custom-css";
@@ -145,7 +175,8 @@ const customJsRuntime = (() => {
   let pendingRegister: CustomHooks | null = null;
   let currentNonce = 0;
 
-  const getRoot = () => (document.getElementById("app") as HTMLElement | null) || null;
+  const getRoot = () =>
+    (document.getElementById("app") as HTMLElement | null) || null;
   const clearUpdateTimer = () => {
     if (updateTimer) window.clearTimeout(updateTimer);
     updateTimer = null;
@@ -153,30 +184,55 @@ const customJsRuntime = (() => {
 
   // Read-only store proxy: exposes data but hides all action methods.
   const readonlyStore: ReadonlyCtxStore = {
-    get widgets() { return store.widgets; },
-    get groups() { return store.groups; },
-    get appConfig() { return store.appConfig; },
-    get isLogged() { return store.isLogged; },
-    get currentVersion() { return store.currentVersion; },
+    get widgets() {
+      return store.widgets;
+    },
+    get groups() {
+      return store.groups;
+    },
+    get appConfig() {
+      return store.appConfig;
+    },
+    get isLogged() {
+      return store.isLogged;
+    },
+    get currentVersion() {
+      return store.currentVersion;
+    },
   };
 
   // ctx.fetch: auto-proxies cross-origin requests through /proxy?url=
-  const ctxFetch = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+  const ctxFetch = async (
+    input: RequestInfo | URL,
+    init?: RequestInit,
+  ): Promise<Response> => {
     try {
-      const urlStr = typeof input === "string" ? input : (input instanceof URL ? input.href : (input as Request).url);
+      const urlStr =
+        typeof input === "string"
+          ? input
+          : input instanceof URL
+            ? input.href
+            : (input as Request).url;
       if (urlStr.startsWith("http")) {
         const parsed = new URL(urlStr);
         if (parsed.hostname !== window.location.hostname) {
-          return await window.fetch("/proxy?url=" + encodeURIComponent(urlStr), init);
+          return await window.fetch(
+            "/proxy?url=" + encodeURIComponent(urlStr),
+            init,
+          );
         }
       }
-    } catch { /* fall through to normal fetch */ }
+    } catch {
+      /* fall through to normal fetch */
+    }
     return window.fetch(input, init);
   };
 
   const ctx: CustomCtx = {
     store: readonlyStore,
-    get root() { return getRoot(); },
+    get root() {
+      return getRoot();
+    },
     query(selector: string) {
       return getRoot()?.querySelector(selector) || null;
     },
@@ -219,7 +275,11 @@ const customJsRuntime = (() => {
     hooks = null;
     while (cleanupFns.length) {
       const fn = cleanupFns.pop();
-      try { fn?.(); } catch { /* ignore cleanup errors */ }
+      try {
+        fn?.();
+      } catch {
+        /* ignore cleanup errors */
+      }
     }
     removeScripts();
   };
@@ -243,7 +303,10 @@ const customJsRuntime = (() => {
       scheduleUpdate();
     });
     // Observe only childList + subtree to reduce noise; attribute changes excluded.
-    observer.observe(getRoot() || document.body, { subtree: true, childList: true });
+    observer.observe(getRoot() || document.body, {
+      subtree: true,
+      childList: true,
+    });
     cleanupFns.push(() => observer?.disconnect());
   };
 
@@ -285,7 +348,13 @@ const customJsRuntime = (() => {
       scripts = input.filter((s) => s.enable && s.content.trim());
     } else {
       const s = String(input || "").trim();
-      if (s) scripts.push({ id: "legacy", name: "Legacy Script", content: s, enable: true });
+      if (s)
+        scripts.push({
+          id: "legacy",
+          name: "Legacy Script",
+          content: s,
+          enable: true,
+        });
     }
 
     if (scripts.length === 0) return;
@@ -319,7 +388,8 @@ const customJsRuntime = (() => {
       script.className = scriptClass;
 
       // Suffix lets module scripts self-register via StartDeckCustomRegister(StartDeckCustom).
-      const suffix = "\n;globalThis.StartDeckCustomRegister?.(globalThis.StartDeckCustom);";
+      const suffix =
+        "\n;globalThis.StartDeckCustomRegister?.(globalThis.StartDeckCustom);";
 
       if (looksModule) {
         script.type = "module";
@@ -351,7 +421,8 @@ const fetch = async (input, init) => {
         nonModuleScriptAppended = true;
       }
 
-      script.onerror = (e) => console.error(`[StartDeck Custom JS: ${item.name}] load error:`, e);
+      script.onerror = (e) =>
+        console.error(`[StartDeck Custom JS: ${item.name}] load error:`, e);
       document.body.appendChild(script);
     });
 
@@ -384,6 +455,10 @@ watch(
 );
 
 onMounted(() => {
+  if (isStandaloneRoute.value) {
+    return;
+  }
+
   // Listen for marketplace install events from new windows/tabs (Component Store)
   window.addEventListener("message", async (event: MessageEvent) => {
     // Validate message structure
@@ -394,29 +469,47 @@ onMounted(() => {
     // If strict security is needed, we should check against store.appConfig.marketplaceListUrl
 
     const item = payload as MarketplaceItem;
-    
+
     // JS Disclaimer
     if (item.js && !store.appConfig.customJsDisclaimerAgreed) {
-      const ok = confirm(
-        `安全提示\n\n组件 "${item.name}" 包含自定义 JavaScript 脚本。\n自定义脚本具有较高权限，可能存在安全风险。\n\n请确认您信任该组件来源，是否继续安装？`
-      );
+      const ok = await uiFeedback.confirm({
+        title: "安全提示",
+        message:
+          `组件 "${item.name}" 包含自定义 JavaScript 脚本。\n` +
+          "自定义脚本具有较高权限，可能存在安全风险。\n\n" +
+          "请确认您信任该组件来源，是否继续安装？",
+        confirmLabel: "继续安装",
+        cancelLabel: "取消",
+        tone: "danger",
+      });
       if (!ok) return;
       store.appConfig.customJsDisclaimerAgreed = true;
     }
 
     try {
       store.applyMarketplaceItem(item);
-      
+
       // Notify source window
       if (event.source) {
-        (event.source as Window).postMessage({ type: "INSTALL_SUCCESS", id: item.id }, event.origin);
+        (event.source as Window).postMessage(
+          { type: "INSTALL_SUCCESS", id: item.id },
+          event.origin,
+        );
       }
-      
+
       // Notify user in main window
-      alert(`组件 "${item.name}" 安装成功！`);
+      uiFeedback.notify({
+        title: "组件已安装",
+        message: `组件 "${item.name}" 已加入当前面板。`,
+        tone: "success",
+      });
     } catch (e) {
       console.error(e);
-      alert(`组件 "${item.name}" 安装失败: ${e instanceof Error ? e.message : String(e)}`);
+      uiFeedback.alert({
+        title: "组件安装失败",
+        message: `组件 "${item.name}" 安装失败：${e instanceof Error ? e.message : String(e)}`,
+        tone: "danger",
+      });
     }
   });
 
@@ -425,7 +518,10 @@ onMounted(() => {
   if (!win.__startdeckSaveFetchWrapped) {
     const originalFetch = window.fetch.bind(window);
     win.__startdeckSaveFetchWrapped = true;
-    window.fetch = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+    window.fetch = async (
+      input: RequestInfo | URL,
+      init?: RequestInit,
+    ): Promise<Response> => {
       const resolveUrl = () => {
         if (typeof input === "string") return input;
         if (input instanceof URL) return input.href;
@@ -443,7 +539,12 @@ onMounted(() => {
       }
       try {
         const res = await originalFetch(input, init);
-        if (isSaveRequest && !res.ok && res.status !== 401 && res.status !== 409) {
+        if (
+          isSaveRequest &&
+          !res.ok &&
+          res.status !== 401 &&
+          res.status !== 409
+        ) {
           if (res.status === 413) {
             pushSaveError("实时保存失败：请求体过大，当前修改未成功写入。");
           } else {
@@ -480,139 +581,126 @@ onMounted(() => {
     18 * 60 * 60 * 1000,
   );
 });
-
 </script>
 
 <template>
-  <div class="startdeck-handshake-signal" style="display: none !important"></div>
-  
-  <!-- Network Status Indicator -->
-  <NetworkIndicator class="network-indicator-wrapper" />
+  <div
+    class="startdeck-handshake-signal"
+    style="display: none !important"
+  ></div>
 
-  <GridPanel />
+  <!-- Network Status Indicator -->
+  <NetworkIndicator
+    v-if="!isStandaloneRoute"
+    class="network-indicator-wrapper"
+  />
+
+  <ItabLiveReplica v-if="isItabLiveRoute" />
+  <ItabWidgetQaView v-else-if="isItabQaRoute" />
+  <GridPanel v-else />
 
   <!-- 冲突提示：居中模态框 -->
   <Transition name="fade">
-    <div
-      v-if="store.conflictState.show"
-      class="fixed inset-0 z-[130] flex items-center justify-center p-4"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="conflict-title"
+    <AppModalShell
+      v-if="!isStandaloneRoute && store.conflictState.show"
+      title="版本冲突"
+      subtitle="其他设备或标签页已更新配置，请选择解决方式。"
+      :show="store.conflictState.show"
+      :z-index="130"
+      blocking
+      :show-close="false"
+      overlay-class="sd-overlay-strong"
+      panel-class="w-full max-w-md"
+      surface-class="max-w-md"
     >
-      <div class="absolute inset-0 bg-black/40" @click.stop />
-      <div
-        class="relative w-full max-w-md rounded-2xl bg-white dark:bg-neutral-800 shadow-xl border border-neutral-200 dark:border-neutral-700 overflow-hidden"
-      >
-        <div class="p-5 sm:p-6">
-          <div class="flex items-start gap-3">
-            <div class="p-2 rounded-full bg-red-100 dark:bg-red-900/40 shrink-0">
-              <svg class="w-5 h-5 text-red-600 dark:text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-              </svg>
-            </div>
-            <div class="min-w-0 flex-1">
-              <h2 id="conflict-title" class="font-bold text-base text-neutral-900 dark:text-white">
-                版本冲突 (Version Conflict)
-              </h2>
-              <p class="mt-1.5 text-sm text-neutral-600 dark:text-neutral-400">
-                其他设备或标签页已更新配置，请选择解决方式。
-              </p>
-              <p class="mt-2 flex flex-wrap items-center gap-2 text-xs">
-                <span class="inline-flex items-center gap-1 rounded-md bg-neutral-100 dark:bg-neutral-700 px-2 py-1 font-mono text-neutral-700 dark:text-neutral-300">
-                  服务端 V{{ store.conflictState.serverVersion }}
-                </span>
-                <span class="text-neutral-400 dark:text-neutral-500">/</span>
-                <span class="inline-flex items-center gap-1 rounded-md bg-neutral-100 dark:bg-neutral-700 px-2 py-1 font-mono text-neutral-700 dark:text-neutral-300">
-                  本地 V{{ store.conflictState.clientVersion }}
-                </span>
-              </p>
-            </div>
-          </div>
-          <div class="mt-5 flex flex-col-reverse sm:flex-row gap-3 sm:justify-end">
-            <button
-              type="button"
-              @click.stop.prevent="store.resolveConflict('remote')"
-              class="min-h-[48px] px-5 rounded-xl text-sm font-medium text-neutral-700 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-700 hover:bg-neutral-200 dark:hover:bg-neutral-600 transition-colors"
-            >
-              采用服务端 (放弃本地)
-            </button>
-            <button
-              type="button"
-              @click.stop.prevent="store.resolveConflict('local')"
-              class="min-h-[48px] px-5 rounded-xl text-sm font-medium text-white bg-red-600 hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600 transition-colors shadow-sm"
-            >
-              强制本端 (覆盖服务端)
-            </button>
-          </div>
-        </div>
+      <div class="flex flex-wrap items-center gap-2 text-xs">
+        <span class="sd-value-badge"
+          >服务端 V{{ store.conflictState.serverVersion }}</span
+        >
+        <span class="text-[var(--sd-color-text-tertiary)]">/</span>
+        <span class="sd-value-badge"
+          >本地 V{{ store.conflictState.clientVersion }}</span
+        >
       </div>
-    </div>
+
+      <template #footer>
+        <AppButton
+          variant="secondary"
+          @click.stop.prevent="store.resolveConflict('remote')"
+        >
+          采用服务端
+        </AppButton>
+        <AppButton
+          variant="danger"
+          @click.stop.prevent="store.resolveConflict('local')"
+        >
+          强制本端
+        </AppButton>
+      </template>
+    </AppModalShell>
   </Transition>
   <!-- 心跳断过后再次激活且服务端版本不同时，确认是否同步 -->
   <Transition name="fade">
-    <div
-      v-if="store.syncConfirmModal.show"
-      class="fixed inset-0 z-[130] flex items-center justify-center p-4"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="sync-confirm-title"
+    <AppModalShell
+      v-if="!isStandaloneRoute && store.syncConfirmModal.show"
+      title="服务端配置已更新"
+      :subtitle="`检测到服务端配置版本 (V${store.syncConfirmModal.serverVersion}) 与当前不同，是否同步为服务端配置？`"
+      :show="store.syncConfirmModal.show"
+      :z-index="130"
+      blocking
+      :show-close="false"
+      overlay-class="sd-overlay-strong"
+      panel-class="w-full max-w-md"
+      surface-class="max-w-md"
     >
-      <div class="absolute inset-0 bg-black/40" @click.stop />
-      <div
-        class="relative w-full max-w-md rounded-2xl bg-white dark:bg-neutral-800 shadow-xl border border-neutral-200 dark:border-neutral-700 overflow-hidden"
-      >
-        <div class="p-5 sm:p-6">
-          <h2 id="sync-confirm-title" class="font-bold text-base text-neutral-900 dark:text-white">
-            服务端配置已更新
-          </h2>
-          <p class="mt-1.5 text-sm text-neutral-600 dark:text-neutral-400">
-            检测到服务端配置版本 (V{{ store.syncConfirmModal.serverVersion }}) 与当前不同，是否同步为服务端配置？
-          </p>
-          <div class="mt-5 flex flex-col-reverse sm:flex-row gap-3 sm:justify-end">
-            <button
-              type="button"
-              @click.stop.prevent="store.dismissSyncConfirm()"
-              class="min-h-[48px] px-5 rounded-xl text-sm font-medium text-neutral-700 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-700 hover:bg-neutral-200 dark:hover:bg-neutral-600 transition-colors"
-            >
-              保留本地
-            </button>
-            <button
-              type="button"
-              @click.stop.prevent="store.confirmSyncFromServer()"
-              class="min-h-[48px] px-5 rounded-xl text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 transition-colors shadow-sm"
-            >
-              同步
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
+      <template #footer>
+        <AppButton
+          variant="secondary"
+          @click.stop.prevent="store.dismissSyncConfirm()"
+        >
+          保留本地
+        </AppButton>
+        <AppButton
+          variant="primary"
+          @click.stop.prevent="store.confirmSyncFromServer()"
+        >
+          同步
+        </AppButton>
+      </template>
+    </AppModalShell>
   </Transition>
   <Transition name="slide-down">
     <div
-      v-if="saveErrorMessage && !store.conflictState.show"
-      class="fixed top-0 inset-x-0 z-[111] bg-amber-500/95 text-white shadow-xl backdrop-blur-md border-b border-amber-400/50 pt-[env(safe-area-inset-top)]"
+      v-if="!isStandaloneRoute && saveErrorMessage && !store.conflictState.show"
+      class="fixed top-0 inset-x-0 z-[111] px-4 pt-[env(safe-area-inset-top)]"
     >
-      <div class="max-w-7xl mx-auto px-4 py-2 text-sm font-medium">
-        {{ saveErrorMessage }}
+      <div class="mx-auto max-w-5xl py-2">
+        <StatusBanner
+          title="实时保存异常"
+          :message="saveErrorMessage"
+          tone="warning"
+        />
       </div>
     </div>
   </Transition>
 
   <div
-    v-if="!store.isClientReady"
+    v-if="!isStandaloneRoute && !store.isClientReady"
     class="fixed inset-0 z-[120] bg-black/30 flex items-center justify-center text-white"
   >
-    <div class="flex flex-col items-center gap-3 px-6 py-4 bg-black/60 rounded-2xl border border-white/10">
-      <div class="w-8 h-8 border-4 border-white/20 border-t-white rounded-full animate-spin"></div>
+    <div
+      class="flex flex-col items-center gap-3 px-6 py-4 bg-black/60 rounded-2xl border border-white/10"
+    >
+      <div
+        class="w-8 h-8 border-4 border-white/20 border-t-white rounded-full animate-spin"
+      ></div>
       <div class="text-sm font-medium">正在同步服务端数据，请稍后...</div>
     </div>
   </div>
 
   <Transition name="fade-up">
     <button
-      v-if="showBackToTop"
+      v-if="!isStandaloneRoute && showBackToTop"
       @click="scrollToTop"
       class="fixed bottom-6 right-6 z-[100] w-12 h-12 rounded-full bg-white/20 backdrop-blur-md border border-white/30 text-white shadow-lg flex items-center justify-center hover:bg-white/40 active:scale-95 transition-all cursor-pointer"
       title="返回首页"
@@ -634,10 +722,70 @@ onMounted(() => {
     </button>
   </Transition>
 
-  <StatusMonitor v-if="statusMonitorWidget?.enable" :widget="statusMonitorWidget" />
+  <StatusMonitor
+    v-if="!isStandaloneRoute && statusMonitorWidget?.enable"
+    :widget="statusMonitorWidget"
+  />
+
+  <ToastHost
+    v-if="!isItabLiveRoute"
+    :items="uiFeedback.toasts"
+    @dismiss="uiFeedback.dismissToast"
+  />
+
+  <AppModalShell
+    v-if="!isStandaloneRoute"
+    :show="uiFeedback.alertDialog.show"
+    :title="uiFeedback.alertDialog.title"
+    :blocking="uiFeedback.alertDialog.blocking"
+    :show-close="!uiFeedback.alertDialog.blocking"
+    :close-on-overlay="!uiFeedback.alertDialog.blocking"
+    :close-on-escape="!uiFeedback.alertDialog.blocking"
+    :overlay-class="
+      uiFeedback.alertDialog.tone === 'danger'
+        ? 'sd-overlay-strong'
+        : 'sd-overlay'
+    "
+    panel-class="w-full max-w-sm"
+    @close="uiFeedback.closeAlert()"
+  >
+    <p
+      class="whitespace-pre-line text-sm leading-6 text-[var(--sd-color-text-secondary)]"
+    >
+      {{ uiFeedback.alertDialog.message }}
+    </p>
+
+    <template #footer>
+      <AppButton
+        :variant="
+          uiFeedback.alertDialog.tone === 'danger' ? 'danger' : 'primary'
+        "
+        @click="uiFeedback.closeAlert()"
+      >
+        {{ uiFeedback.alertDialog.actionLabel }}
+      </AppButton>
+    </template>
+  </AppModalShell>
+
+  <ConfirmDialog
+    v-if="!isStandaloneRoute"
+    :show="uiFeedback.confirmDialog.show"
+    :title="uiFeedback.confirmDialog.title"
+    :message="uiFeedback.confirmDialog.message"
+    :confirm-label="uiFeedback.confirmDialog.confirmLabel"
+    :cancel-label="uiFeedback.confirmDialog.cancelLabel"
+    :tone="uiFeedback.confirmDialog.tone"
+    :blocking="uiFeedback.confirmDialog.blocking"
+    @confirm="uiFeedback.resolveConfirm(true)"
+    @cancel="uiFeedback.resolveConfirm(false)"
+  />
 
   <!-- Global Audio Element for persistent playback across groups -->
-  <audio id="startdeck-global-audio" style="display: none" crossorigin="anonymous"></audio>
+  <audio
+    id="startdeck-global-audio"
+    style="display: none"
+    crossorigin="anonymous"
+  ></audio>
 </template>
 
 <style>

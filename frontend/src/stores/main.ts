@@ -50,12 +50,6 @@ export const useMainStore = defineStore("main", () => {
       configStore.isExpandedMode = v;
     },
   });
-  const activeMusicPlayer = computed({
-    get: () => configStore.activeMusicPlayer,
-    set: (v) => {
-      configStore.activeMusicPlayer = v;
-    },
-  });
   const webPaginationActiveGroupId = computed({
     get: () => configStore.webPaginationActiveGroupId,
     set: (v) => {
@@ -92,8 +86,6 @@ export const useMainStore = defineStore("main", () => {
       configStore.ipFetchStatus = v;
     },
   });
-  const weatherNetworkStatus = computed(() => configStore.weatherNetworkStatus);
-  const detectWeatherNetworkStatus = networkStore.detectWeatherNetworkStatus;
   const currentVersion = computed(() => configStore.currentVersion);
   const latestVersion = computed(() => configStore.latestVersion);
   const hasUpdate = computed(() => configStore.hasUpdate);
@@ -167,7 +159,10 @@ export const useMainStore = defineStore("main", () => {
     await widgetsStore.saveWidget(id, data);
     sync.markDirty();
   };
-  const saveSingleWidget = (widgetId: string, payload: Record<string, unknown>) =>
+  const saveSingleWidget = (
+    widgetId: string,
+    payload: Record<string, unknown>,
+  ) =>
     widgetsStore.saveSingleWidget(widgetId, payload, getHeaders, {
       get value() {
         return sync.dataVersion;
@@ -176,8 +171,13 @@ export const useMainStore = defineStore("main", () => {
         sync.dataVersion = v;
       },
     });
-  const applyMarketplaceItem = (item: Parameters<typeof widgetsStore.applyMarketplaceItem>[0]) => {
-    const changed = widgetsStore.applyMarketplaceItem(item, configStore.appConfig as unknown as Record<string, unknown>);
+  const applyMarketplaceItem = (
+    item: Parameters<typeof widgetsStore.applyMarketplaceItem>[0],
+  ) => {
+    const changed = widgetsStore.applyMarketplaceItem(
+      item,
+      configStore.appConfig as unknown as Record<string, unknown>,
+    );
     if (changed) {
       updateCustomScripts();
     }
@@ -221,7 +221,9 @@ export const useMainStore = defineStore("main", () => {
   const confirmSyncFromServer = sync.confirmSyncFromServer;
   const dismissSyncConfirm = sync.dismissSyncConfirm;
   const offlineQueueCount = computed(() => sync.offlineQueueCount);
-  const offlineQueueConflictState = computed(() => sync.offlineQueueConflictState);
+  const offlineQueueConflictState = computed(
+    () => sync.offlineQueueConflictState,
+  );
   const resolveOfflineQueueConflict = sync.resolveOfflineQueueConflict;
   const discardOfflineQueue = sync.discardOfflineQueue;
   const lastPingAt = computed(() => sync.lastPingAt);
@@ -273,7 +275,9 @@ export const useMainStore = defineStore("main", () => {
       sync.layoutEditInProgress = v;
     },
   });
-  const lastSavedLayoutSignature = computed(() => sync.lastSavedLayoutSignature);
+  const lastSavedLayoutSignature = computed(
+    () => sync.lastSavedLayoutSignature,
+  );
   const undoLayout = sync.undoLayout;
   const fetchVersionOnly = sync.fetchVersionOnly;
   const isHttpPollingActive = computed(() => sync.isHttpPollingActive);
@@ -298,15 +302,12 @@ export const useMainStore = defineStore("main", () => {
     systemConfig,
     forceNetworkMode,
     isExpandedMode,
-    activeMusicPlayer,
     webPaginationActiveGroupId,
     isLanModeInited,
     isLanMode,
     networkLatency,
     effectiveIsLan,
     ipFetchStatus,
-    weatherNetworkStatus,
-    detectWeatherNetworkStatus,
     currentVersion,
     latestVersion,
     hasUpdate,

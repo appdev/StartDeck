@@ -1,6 +1,11 @@
+<script lang="ts">
+let confirmDialogId = 0;
+</script>
+
 <script setup lang="ts">
-import { nextTick, onBeforeUnmount, ref, watch } from "vue";
-import OverlayMotion from "@/components/base/OverlayMotion.vue";
+import { computed } from "vue";
+import AppButton from "@/components/base/AppButton.vue";
+import AppModalShell from "@/components/base/AppModalShell.vue";
 
 const props = withDefaults(
   defineProps<{
@@ -11,12 +16,14 @@ const props = withDefaults(
     cancelLabel?: string;
     tone?: "default" | "danger";
     zIndex?: number | string;
+    blocking?: boolean;
   }>(),
   {
     confirmLabel: "确认",
     cancelLabel: "取消",
     tone: "default",
     zIndex: 80,
+    blocking: true,
   },
 );
 
@@ -26,7 +33,12 @@ const emit = defineEmits<{
   (e: "cancel"): void;
 }>();
 
-const cancelButtonRef = ref<HTMLButtonElement | null>(null);
+const dialogId = `confirm-dialog-${++confirmDialogId}`;
+const messageId = `${dialogId}-message`;
+const isBlocking = computed(() => props.blocking);
+const dialogRole = computed(() =>
+  isBlocking.value || props.tone === "danger" ? "alertdialog" : "dialog",
+);
 
 const close = () => {
   emit("cancel");
@@ -37,73 +49,41 @@ const confirm = () => {
   emit("confirm");
   emit("update:show", false);
 };
-
-const handleKeydown = (event: KeyboardEvent) => {
-  if (!props.show) return;
-  if (event.key === "Escape") {
-    event.preventDefault();
-    close();
-  }
-};
-
-watch(
-  () => props.show,
-  (show) => {
-    if (show) {
-      window.addEventListener("keydown", handleKeydown);
-      nextTick(() => cancelButtonRef.value?.focus());
-    } else {
-      window.removeEventListener("keydown", handleKeydown);
-    }
-  },
-);
-
-onBeforeUnmount(() => {
-  window.removeEventListener("keydown", handleKeydown);
-});
 </script>
 
 <template>
-  <OverlayMotion
+  <AppModalShell
     :show="show"
     :z-index="zIndex"
-    close-on-overlay
+    :title="title"
+    :show-close="!isBlocking"
+    :blocking="isBlocking"
+    :close-on-overlay="!isBlocking"
+    :close-on-escape="!isBlocking"
+    initial-focus="cancel"
+    :role="dialogRole"
+    :aria-describedby="messageId"
     :overlay-class="tone === 'danger' ? 'sd-overlay-strong' : 'sd-overlay'"
-    panel-class="max-w-sm"
+    panel-class="w-full max-w-sm"
     @close="close"
   >
-    <div
-      class="sd-modal-surface"
-      role="dialog"
-      aria-modal="true"
-      :aria-label="title"
+    <p
+      :id="messageId"
+      class="text-sm leading-6 text-[var(--sd-color-text-secondary)]"
     >
-      <div class="sd-modal-header">
-        <h3 class="sd-modal-title text-base">{{ title }}</h3>
-        <button type="button" class="sd-icon-button" aria-label="关闭" @click="close">
-          <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 6l12 12M18 6L6 18" />
-          </svg>
-        </button>
-      </div>
+      {{ message }}
+    </p>
 
-      <div class="sd-modal-body">
-        <p class="text-sm leading-6 text-slate-600">{{ message }}</p>
-      </div>
-
-      <div class="sd-modal-footer">
-        <button ref="cancelButtonRef" type="button" class="sd-btn sd-btn-secondary" @click="close">
-          {{ cancelLabel }}
-        </button>
-        <button
-          type="button"
-          class="sd-btn"
-          :class="tone === 'danger' ? 'sd-btn-danger' : 'sd-btn-primary'"
-          @click="confirm"
-        >
-          {{ confirmLabel }}
-        </button>
-      </div>
-    </div>
-  </OverlayMotion>
+    <template #footer>
+      <AppButton variant="secondary" data-modal-cancel @click="close">
+        {{ cancelLabel }}
+      </AppButton>
+      <AppButton
+        :variant="tone === 'danger' ? 'danger' : 'primary'"
+        @click="confirm"
+      >
+        {{ confirmLabel }}
+      </AppButton>
+    </template>
+  </AppModalShell>
 </template>

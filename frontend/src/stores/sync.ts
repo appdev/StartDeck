@@ -2,7 +2,13 @@ import { ref, computed, watch } from "vue";
 import { defineStore } from "pinia";
 import { useWebSocket } from "@vueuse/core";
 import { normalizeVersion } from "@/utils/storeHelpers";
-import type { LuckyStunData, NavGroup, RssCategory, RssFeed, WidgetConfig } from "@/types";
+import type {
+  LuckyStunData,
+  NavGroup,
+  RssCategory,
+  RssFeed,
+  WidgetConfig,
+} from "@/types";
 import { useAuthStore } from "./auth";
 import { useWidgetsStore } from "./widgets";
 import { useGroupsStore } from "./groups";
@@ -10,7 +16,11 @@ import { useConfigStore } from "./config";
 import { useCacheStore } from "./cache";
 import { useSaveStore } from "./save";
 import { useNetworkStore } from "./network";
-import { createDefaultSearchEngines, hydrateSearchEngineIcons } from "@/utils/searchEngines";
+import { useUiFeedbackStore } from "./uiFeedback";
+import {
+  createDefaultSearchEngines,
+  hydrateSearchEngineIcons,
+} from "@/utils/searchEngines";
 import { toWsUrl } from "@/utils/runtimeUrls";
 
 export const useSyncStore = defineStore("sync", () => {
@@ -21,6 +31,7 @@ export const useSyncStore = defineStore("sync", () => {
   const cacheStore = useCacheStore();
   const saveStore = useSaveStore();
   const networkStore = useNetworkStore();
+  const uiFeedback = useUiFeedbackStore();
 
   // ---- WebSocket ----
   const lastWsUrl = ref("");
@@ -43,42 +54,47 @@ export const useSyncStore = defineStore("sync", () => {
     }
   };
 
-  const { status, data: wsRawData, send: wsSendRaw, open: wsOpen, close: wsClose } = useWebSocket(
-    () => wsUrl.value,
-    {
-      autoReconnect: {
-        retries: Infinity,
-        delay: (attempt: number) => {
-          if (attempt <= 3) return 500 * (attempt + 1);
-          const base = Math.min(1000 * Math.pow(2, Math.min(attempt, 15)), 30000);
-          const jitter = base * 0.2 * (Math.random() * 2 - 1);
-          return base + jitter;
-        },
-        onFailed: () => {
-          console.warn("[WS] Auto-reconnect exhausted, marking network as stale");
-          networkStore.markStale();
-        },
+  const {
+    status,
+    data: wsRawData,
+    send: wsSendRaw,
+    open: wsOpen,
+    close: wsClose,
+  } = useWebSocket(() => wsUrl.value, {
+    autoReconnect: {
+      retries: Infinity,
+      delay: (attempt: number) => {
+        if (attempt <= 3) return 500 * (attempt + 1);
+        const base = Math.min(1000 * Math.pow(2, Math.min(attempt, 15)), 30000);
+        const jitter = base * 0.2 * (Math.random() * 2 - 1);
+        return base + jitter;
       },
-      immediate: false,
-      heartbeat: {
-        message: JSON.stringify({ type: "ping" }),
-        interval: 15000,
-        pongTimeout: 8000,
-      },
-      onConnected: (ws) => {
-        if (ws?.url) trackWsUrlChange(ws.url);
-        wsContinuousFailures = 0;
-        networkStore.markFresh();
-      },
-      onDisconnected: () => {
-        wsContinuousFailures++;
-        if (wsContinuousFailures > 6) {
-          console.warn(`[WS] ${wsContinuousFailures} consecutive disconnections, scheduling immediate sync`);
-          void fetchAndProcessData();
-        }
+      onFailed: () => {
+        console.warn("[WS] Auto-reconnect exhausted, marking network as stale");
+        networkStore.markStale();
       },
     },
-  );
+    immediate: false,
+    heartbeat: {
+      message: JSON.stringify({ type: "ping" }),
+      interval: 15000,
+      pongTimeout: 8000,
+    },
+    onConnected: (ws) => {
+      if (ws?.url) trackWsUrlChange(ws.url);
+      wsContinuousFailures = 0;
+      networkStore.markFresh();
+    },
+    onDisconnected: () => {
+      wsContinuousFailures++;
+      if (wsContinuousFailures > 6) {
+        console.warn(
+          `[WS] ${wsContinuousFailures} consecutive disconnections, scheduling immediate sync`,
+        );
+        void fetchAndProcessData();
+      }
+    },
+  });
 
   let wsHealthCheckTimer: ReturnType<typeof setInterval> | null = null;
 
@@ -88,7 +104,9 @@ export const useSyncStore = defineStore("sync", () => {
       if (!auth.isLogged || status.value !== "OPEN") return;
       if (networkStore.isStale(30000)) {
         const elapsed = Date.now() - networkStore.lastPingAt;
-        console.warn(`[WS] Health check: pong stale for ${elapsed}ms, forcing reconnect`);
+        console.warn(
+          `[WS] Health check: pong stale for ${elapsed}ms, forcing reconnect`,
+        );
         forceWsReconnect();
       }
     }, 10000);
@@ -151,9 +169,12 @@ export const useSyncStore = defineStore("sync", () => {
 
   let logoutInProgress = false;
 
-  const detectResponseRole = (data: Record<string, unknown>): "auth" | "guest" => {
+  const detectResponseRole = (
+    data: Record<string, unknown>,
+  ): "auth" | "guest" => {
     if (data.isGuest === true) return "guest";
     if (data.isGuest === false) return "auth";
+    if (auth.isLogged) return "auth";
     if (data.username && data.version !== undefined) return "auth";
     if (Array.isArray(data.widgets)) {
       const widgets = data.widgets as WidgetConfig[];
@@ -163,17 +184,25 @@ export const useSyncStore = defineStore("sync", () => {
     return "auth";
   };
 
-  const syncUsernameFromServer = (data: Record<string, unknown>, responseRole: "auth" | "guest") => {
+  const syncUsernameFromServer = (
+    data: Record<string, unknown>,
+    responseRole: "auth" | "guest",
+  ) => {
     if (!auth.isLogged || responseRole !== "auth") return;
-    const incomingSystemConfig = data.systemConfig as Record<string, unknown> | undefined;
-    const authMode = incomingSystemConfig?.authMode === "single" || configStore.systemConfig.authMode === "single"
-      ? "single"
-      : "multi";
-    const nextUsername = authMode === "single"
-      ? "admin"
-      : typeof data.username === "string"
-        ? data.username.trim()
-        : "";
+    const incomingSystemConfig = data.systemConfig as
+      | Record<string, unknown>
+      | undefined;
+    const authMode =
+      incomingSystemConfig?.authMode === "single" ||
+      configStore.systemConfig.authMode === "single"
+        ? "single"
+        : "multi";
+    const nextUsername =
+      authMode === "single"
+        ? "admin"
+        : typeof data.username === "string"
+          ? data.username.trim()
+          : "";
     if (!nextUsername || nextUsername === auth.username) return;
     auth.username = nextUsername;
     localStorage.setItem("start-deck-username", nextUsername);
@@ -186,18 +215,33 @@ export const useSyncStore = defineStore("sync", () => {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 10000);
       activePollAbortController = controller;
-      const res = await fetch("/api/version", { method: "GET", headers: networkStore.getHeaders(), signal: controller.signal });
+      const res = await fetch("/api/version", {
+        method: "GET",
+        headers: networkStore.getHeaders(),
+        signal: controller.signal,
+      });
       clearTimeout(timeout);
-      if (res.ok) { const data = await res.json(); return normalizeVersion(data?.version); }
-    } catch { /* ignore */ }
+      if (res.ok) {
+        const data = await res.json();
+        return normalizeVersion(data?.version);
+      }
+    } catch {
+      /* ignore */
+    }
     return dataVersion.value;
   };
 
   const stopHttpPolling = () => {
     if (!isHttpPollingActive) return;
     isHttpPollingActive = false;
-    if (httpPollTimer) { clearInterval(httpPollTimer); httpPollTimer = null; }
-    if (activePollAbortController) { activePollAbortController.abort(); activePollAbortController = null; }
+    if (httpPollTimer) {
+      clearInterval(httpPollTimer);
+      httpPollTimer = null;
+    }
+    if (activePollAbortController) {
+      activePollAbortController.abort();
+      activePollAbortController = null;
+    }
     console.log("[HTTP polling] Stopped");
   };
 
@@ -210,7 +254,8 @@ export const useSyncStore = defineStore("sync", () => {
     rssCategories: rssCategories.value,
     systemConfig: data.systemConfig ?? configStore.systemConfig,
     username: typeof data.username === "string" ? data.username : auth.username,
-    version: typeof data.version !== "undefined" ? data.version : dataVersion.value,
+    version:
+      typeof data.version !== "undefined" ? data.version : dataVersion.value,
   });
 
   const getSearchEngineIconHydrateFingerprint = () =>
@@ -234,7 +279,8 @@ export const useSyncStore = defineStore("sync", () => {
     if (!Array.isArray(engines) || engines.length === 0) return;
     const fingerprint = getSearchEngineIconHydrateFingerprint();
     if (searchEngineIconHydrateInFlight) return searchEngineIconHydrateInFlight;
-    if (fingerprint && fingerprint === lastSearchEngineIconHydrateFingerprint) return;
+    if (fingerprint && fingerprint === lastSearchEngineIconHydrateFingerprint)
+      return;
 
     searchEngineIconHydrateInFlight = (async () => {
       const changed = await hydrateSearchEngineIcons(engines);
@@ -249,7 +295,8 @@ export const useSyncStore = defineStore("sync", () => {
       })
       .finally(() => {
         searchEngineIconHydrateInFlight = null;
-        lastSearchEngineIconHydrateFingerprint = getSearchEngineIconHydrateFingerprint();
+        lastSearchEngineIconHydrateFingerprint =
+          getSearchEngineIconHydrateFingerprint();
       });
 
     return searchEngineIconHydrateInFlight;
@@ -257,7 +304,8 @@ export const useSyncStore = defineStore("sync", () => {
 
   const scheduleSearchEngineIconHydration = () => {
     if (typeof window === "undefined") return;
-    if (searchEngineIconHydrateTimer) clearTimeout(searchEngineIconHydrateTimer);
+    if (searchEngineIconHydrateTimer)
+      clearTimeout(searchEngineIconHydrateTimer);
     searchEngineIconHydrateTimer = setTimeout(() => {
       searchEngineIconHydrateTimer = null;
       void hydrateConfiguredSearchEngineIcons();
@@ -280,9 +328,17 @@ export const useSyncStore = defineStore("sync", () => {
     widgetsStore.updateLastSavedLayout();
     saveStore.hasUnsavedChanges = false;
     saveStore.hasPendingSave = false;
-    saveStore.conflictState = { show: false, serverVersion: 0, clientVersion: 0 };
+    saveStore.conflictState = {
+      show: false,
+      serverVersion: 0,
+      clientVersion: 0,
+    };
     saveStore.syncConfirmModal = { show: false, serverVersion: 0 };
-    saveStore.offlineQueueConflictState = { show: false, item: null, serverVersion: 0 };
+    saveStore.offlineQueueConflictState = {
+      show: false,
+      item: null,
+      serverVersion: 0,
+    };
     cacheStore.hasServerSnapshot = false;
     cacheStore.cacheLoadedAt = null;
     cacheStore.deferredSaveRequested = false;
@@ -298,7 +354,9 @@ export const useSyncStore = defineStore("sync", () => {
       try {
         const version = await fetchVersionOnly();
         if (version > dataVersion.value) await fetchAndProcessData();
-      } catch (e) { console.warn("[HTTP polling] Poll failed:", e); }
+      } catch (e) {
+        console.warn("[HTTP polling] Poll failed:", e);
+      }
     }, 15000);
   };
 
@@ -307,13 +365,14 @@ export const useSyncStore = defineStore("sync", () => {
     isApplyingServerData = true;
     // Route by role: guest responses must never overwrite auth state layout
     const responseRole = auth.isLogged ? detectResponseRole(data) : "guest";
-    const shouldApply = responseRole === "auth"
-      ? auth.isLogged
-      : !auth.isLogged; // guest data must not overwrite an authenticated session
+    const shouldApply =
+      responseRole === "auth" ? auth.isLogged : !auth.isLogged; // guest data must not overwrite an authenticated session
 
     if (!shouldApply) {
       if (responseRole === "guest") {
-        console.warn("[DualState] Dropping guest data while auth state is active");
+        console.warn(
+          "[DualState] Dropping guest data while auth state is active",
+        );
       }
       isApplyingServerData = false;
       return;
@@ -326,7 +385,8 @@ export const useSyncStore = defineStore("sync", () => {
       };
     }
     syncUsernameFromServer(data, responseRole);
-    if (typeof data.version !== "undefined") dataVersion.value = normalizeVersion(data.version);
+    if (typeof data.version !== "undefined")
+      dataVersion.value = normalizeVersion(data.version);
 
     if (data.groups) groupsStore.groups = data.groups as NavGroup[];
     else groupsStore.groups = [];
@@ -335,26 +395,52 @@ export const useSyncStore = defineStore("sync", () => {
       data.widgets as WidgetConfig[] | undefined,
       auth.isLogged,
     );
-    widgetsStore.applyServerWidgets(normalizedWidgets, auth.isLogged, widgetsStore.layoutEditInProgress);
+    widgetsStore.applyServerWidgets(
+      normalizedWidgets,
+      auth.isLogged,
+      widgetsStore.layoutEditInProgress,
+    );
 
     if (data.appConfig) {
       const incomingConfig = data.appConfig as Record<string, unknown>;
-      const mergedConfig = { ...configStore.appConfig, ...incomingConfig } as Record<string, unknown>;
+      const mergedConfig = {
+        ...configStore.appConfig,
+        ...incomingConfig,
+      } as Record<string, unknown>;
       delete (mergedConfig as Record<string, unknown>).forceNetworkMode;
       configStore.appConfig = mergedConfig as typeof configStore.appConfig;
     }
     if (
       !configStore.appConfig.marketplaceListUrl ||
-      configStore.appConfig.marketplaceListUrl === cacheStore.DEV_MARKETPLACE_LIST_URL ||
-      configStore.appConfig.marketplaceListUrl === cacheStore.LEGACY_DEFAULT_MARKETPLACE_LIST_URL
+      configStore.appConfig.marketplaceListUrl ===
+        cacheStore.DEV_MARKETPLACE_LIST_URL ||
+      configStore.appConfig.marketplaceListUrl ===
+        cacheStore.LEGACY_DEFAULT_MARKETPLACE_LIST_URL
     ) {
-      configStore.appConfig.marketplaceListUrl = cacheStore.DEFAULT_MARKETPLACE_LIST_URL;
+      configStore.appConfig.marketplaceListUrl =
+        cacheStore.DEFAULT_MARKETPLACE_LIST_URL;
     }
     // Migrations
     const ac = configStore.appConfig;
-    if (ac.customCss && !ac.customCssList?.length) ac.customCssList = [{ id: "default-css", name: "默认自定义 CSS", content: ac.customCss, enable: true }];
+    if (ac.customCss && !ac.customCssList?.length)
+      ac.customCssList = [
+        {
+          id: "default-css",
+          name: "默认自定义 CSS",
+          content: ac.customCss,
+          enable: true,
+        },
+      ];
     if (!ac.customCssList) ac.customCssList = [];
-    if (ac.customJs && !ac.customJsList?.length) ac.customJsList = [{ id: "default-js", name: "默认自定义 JS", content: ac.customJs, enable: true }];
+    if (ac.customJs && !ac.customJsList?.length)
+      ac.customJsList = [
+        {
+          id: "default-js",
+          name: "默认自定义 JS",
+          content: ac.customJs,
+          enable: true,
+        },
+      ];
     if (!ac.customJsList) ac.customJsList = [];
     const stripTransientWallpaperParams = (value: unknown) => {
       if (typeof value !== "string" || !value) return value;
@@ -371,9 +457,10 @@ export const useSyncStore = defineStore("sync", () => {
         return value.replace(/([?&])(t|v)=\d+/g, "$1").replace(/[?&]$/, "");
       }
     };
-    configStore.appConfig.background = (stripTransientWallpaperParams(
-      configStore.appConfig.background,
-    ) as string) || "/default-wallpaper.svg";
+    configStore.appConfig.background =
+      (stripTransientWallpaperParams(
+        configStore.appConfig.background,
+      ) as string) || "/default-wallpaper.svg";
     if (configStore.appConfig.mobileBackground) {
       configStore.appConfig.mobileBackground = stripTransientWallpaperParams(
         configStore.appConfig.mobileBackground,
@@ -382,20 +469,32 @@ export const useSyncStore = defineStore("sync", () => {
     if (!configStore.appConfig.searchEngines?.length) {
       configStore.appConfig.searchEngines = createDefaultSearchEngines();
     }
-    if (!configStore.appConfig.defaultSearchEngine) configStore.appConfig.defaultSearchEngine = "google";
-    if (typeof configStore.appConfig.rememberLastEngine !== "boolean") configStore.appConfig.rememberLastEngine = true;
+    if (!configStore.appConfig.defaultSearchEngine)
+      configStore.appConfig.defaultSearchEngine = "google";
+    if (typeof configStore.appConfig.rememberLastEngine !== "boolean")
+      configStore.appConfig.rememberLastEngine = true;
     if (typeof configStore.appConfig.widgetAreaCols !== "number") {
-      configStore.appConfig.widgetAreaCols = typeof configStore.appConfig.widgetAreaSize === "number" ? configStore.appConfig.widgetAreaSize : 4;
+      configStore.appConfig.widgetAreaCols =
+        typeof configStore.appConfig.widgetAreaSize === "number"
+          ? configStore.appConfig.widgetAreaSize
+          : 4;
     }
     if (typeof configStore.appConfig.widgetAreaRows !== "number") {
-      configStore.appConfig.widgetAreaRows = typeof configStore.appConfig.widgetAreaSize === "number" ? configStore.appConfig.widgetAreaSize : 4;
+      configStore.appConfig.widgetAreaRows =
+        typeof configStore.appConfig.widgetAreaSize === "number"
+          ? configStore.appConfig.widgetAreaSize
+          : 4;
     }
     if (data.rssFeeds) rssFeeds.value = data.rssFeeds as RssFeed[];
-    if (data.rssCategories) rssCategories.value = data.rssCategories as RssCategory[];
+    if (data.rssCategories)
+      rssCategories.value = data.rssCategories as RssCategory[];
 
     networkStore.fetchCustomScripts();
     widgetsStore.updateLastSavedLayout();
-    cacheStore.saveToCache(buildCacheSnapshot(data));
+    cacheStore.saveToCache({
+      ...buildCacheSnapshot(data),
+      widgets: normalizedWidgets,
+    });
     saveStore.hasUnsavedChanges = false;
     isApplyingServerData = false;
     scheduleSearchEngineIconHydration();
@@ -414,15 +513,26 @@ export const useSyncStore = defineStore("sync", () => {
       if (configStore.isServerSyncLocked && saveStore.hasUnsavedChanges) return;
       if (saveStore.saveTimer !== null || saveStore.isSaving) return;
       if (widgetsStore.layoutDirty) {
-        if (!confirm("检测到云端数据更新，但您当前有未保存的布局修改。\n是否放弃本地修改并使用云端版本覆盖？")) return;
+        const confirmed = await uiFeedback.confirm({
+          title: "云端配置已更新",
+          message:
+            "检测到云端数据更新，但您当前有未保存的布局修改。\n是否放弃本地修改并使用云端版本覆盖？",
+          confirmLabel: "使用云端版本",
+          cancelLabel: "保留本地修改",
+          tone: "danger",
+        });
+        if (!confirmed) return;
       }
       handleDataUpdate(data);
       widgetsStore.updateLastSavedLayout();
       if (!cacheStore.hasServerSnapshot) {
         cacheStore.markServerSnapshotReady();
       }
-    } catch (e) { console.error("Fetch data failed", e); }
-    finally { cacheStore.isFetchingData = false; }
+    } catch (e) {
+      console.error("Fetch data failed", e);
+    } finally {
+      cacheStore.isFetchingData = false;
+    }
   };
 
   // ---- WebSocket connect watch ----
@@ -434,34 +544,64 @@ export const useSyncStore = defineStore("sync", () => {
       const isReconnect = wsWasConnectedBefore;
       if (!isReconnect) isFirstConnect = false;
       wsWasConnectedBefore = true;
-      if (auth.isLogged && auth.token) wsSend({ type: "auth", payload: { token: auth.token } });
+      if (auth.isLogged && auth.token)
+        wsSend({ type: "auth", payload: { token: auth.token } });
       networkStore.startNetworkHeartbeat(wsSend);
       startWsHealthCheck();
       if (isFirstConnect) return;
       try {
         const serverVersion = await fetchVersionOnly();
         if (serverVersion > dataVersion.value) await fetchAndProcessData();
-        if (saveStore.hasUnsavedChanges) { saveStore.hasPendingSave = true; setTimeout(() => saveData(), 2000); }
+        if (saveStore.hasUnsavedChanges) {
+          saveStore.hasPendingSave = true;
+          setTimeout(() => saveData(), 2000);
+        }
         try {
           import("@/utils/offlineQueue").then(async (oq) => {
             const qSize = await oq.size();
-            if (qSize > 0) { saveStore.offlineQueueCount = qSize; setTimeout(() => saveStore.triggerOfflineQueueReplay(fetchVersionOnly, dataVersion, networkStore.getHeaders), 3000); }
+            if (qSize > 0) {
+              saveStore.offlineQueueCount = qSize;
+              setTimeout(
+                () =>
+                  saveStore.triggerOfflineQueueReplay(
+                    fetchVersionOnly,
+                    dataVersion,
+                    networkStore.getHeaders,
+                  ),
+                3000,
+              );
+            }
           });
-        } catch { /* ignore */ }
-      } catch (e) { console.warn("[WS reconnect] Failed to check server version:", e); }
+        } catch {
+          /* ignore */
+        }
+      } catch (e) {
+        console.warn("[WS reconnect] Failed to check server version:", e);
+      }
       const oldMode = configStore.systemConfig.authMode;
       await networkStore.fetchSystemConfig();
       if (configStore.systemConfig.authMode !== oldMode) {
         setTimeout(async () => {
           await networkStore.fetchSystemConfig();
-          if (configStore.systemConfig.authMode !== oldMode) { if (auth.isLogged) logout(); else init(); }
+          if (configStore.systemConfig.authMode !== oldMode) {
+            if (auth.isLogged) logout();
+            else init();
+          }
         }, 500);
       }
     } else if (newStatus === "CLOSED") {
-      if (newStatus === "CLOSED") { console.log("WS disconnected"); wsContinuousFailures++; }
+      if (newStatus === "CLOSED") {
+        console.log("WS disconnected");
+        wsContinuousFailures++;
+      }
       networkStore.stopNetworkHeartbeat();
       // Only trigger HTTP polling fallback when authenticated; guests use HTTP-only mode
-      if (auth.isLogged && wsContinuousFailures >= WS_FALLBACK_THRESHOLD && !isHttpPollingActive) startHttpPolling();
+      if (
+        auth.isLogged &&
+        wsContinuousFailures >= WS_FALLBACK_THRESHOLD &&
+        !isHttpPollingActive
+      )
+        startHttpPolling();
     }
   });
 
@@ -469,31 +609,63 @@ export const useSyncStore = defineStore("sync", () => {
   watch(wsRawData, (rawMsg) => {
     if (!rawMsg || !wsMessageHandlerBound) return;
     let msg: { type?: string; payload?: Record<string, unknown> };
-    try { msg = JSON.parse(rawMsg); } catch { return; }
+    try {
+      msg = JSON.parse(rawMsg);
+    } catch {
+      return;
+    }
     if (!msg?.type) return;
     switch (msg.type) {
-      case "auth_success": break;
-      case "memo_updated": case "todo_updated": {
+      case "auth_success":
+        break;
+      case "memo_updated":
+      case "todo_updated": {
         const p = msg.payload || {};
         const username = typeof p.username === "string" ? p.username : "";
-        if (username && username !== auth.username && !(auth.username === "admin" && username === "admin")) return;
-        if (p.widgetId) { const w = widgetsStore.widgets.find((x) => x.id === p.widgetId); if (w) w.data = p.content; }
+        if (
+          username &&
+          username !== auth.username &&
+          !(auth.username === "admin" && username === "admin")
+        )
+          return;
+        if (p.widgetId) {
+          const w = widgetsStore.widgets.find((x) => x.id === p.widgetId);
+          if (w) w.data = p.content;
+        }
         break;
       }
       case "data_updated": {
         const p = msg.payload || {};
-        if (p.username !== auth.username && !(auth.username === "admin" && p.username === "admin")) return;
-        const sv = typeof p.version !== "undefined" ? normalizeVersion(p.version) : 0;
-        if (saveStore.hasUnsavedChanges || saveStore.saveTimer !== null || saveStore.isSaving) {
-          if (sv > pendingServerVersion.value) pendingServerVersion.value = sv; return;
+        if (
+          p.username !== auth.username &&
+          !(auth.username === "admin" && p.username === "admin")
+        )
+          return;
+        const sv =
+          typeof p.version !== "undefined" ? normalizeVersion(p.version) : 0;
+        if (
+          saveStore.hasUnsavedChanges ||
+          saveStore.saveTimer !== null ||
+          saveStore.isSaving
+        ) {
+          if (sv > pendingServerVersion.value) pendingServerVersion.value = sv;
+          return;
         }
-        if (typeof p.version !== "undefined") dataVersion.value = normalizeVersion(p.version);
+        if (typeof p.version !== "undefined")
+          dataVersion.value = normalizeVersion(p.version);
         fetchAndProcessData();
         break;
       }
-      case "network_heartbeat": networkStore.lastNetworkHeartbeatAt = Date.now(); networkStore.isNetworkSyncActive = true; break;
-      case "lucky:stun": luckyStunData.value = (msg.payload || {}) as LuckyStunData; break;
-      case "ping": networkStore.lastPingAt = Date.now(); break;
+      case "network_heartbeat":
+        networkStore.lastNetworkHeartbeatAt = Date.now();
+        networkStore.isNetworkSyncActive = true;
+        break;
+      case "lucky:stun":
+        luckyStunData.value = (msg.payload || {}) as LuckyStunData;
+        break;
+      case "ping":
+        networkStore.lastPingAt = Date.now();
+        break;
     }
   });
 
@@ -503,33 +675,64 @@ export const useSyncStore = defineStore("sync", () => {
     isInitializing = true;
     initCompleted.value = false;
     // Only open WS when authenticated; avoid meaningless guest reconnect loops
-    if (typeof window !== "undefined" && auth.isLogged && status.value !== "OPEN") wsOpen();
+    if (
+      typeof window !== "undefined" &&
+      auth.isLogged &&
+      status.value !== "OPEN"
+    )
+      wsOpen();
     cacheStore.hasServerSnapshot = false;
     cacheStore.cacheLoadedAt = null;
     cacheStore.deferredSaveRequested = false;
 
-    const cacheLoaded = cacheStore.loadFromCache(rssFeeds, rssCategories, dataVersion);
+    const cacheLoaded = cacheStore.loadFromCache(
+      rssFeeds,
+      rssCategories,
+      dataVersion,
+    );
     if (cacheLoaded) cacheStore.cacheLoadedAt = Date.now();
 
     try {
       let serverSnapshotLoaded = false;
       let lastError: unknown = null;
-      const loadSnap = () => cacheStore.loadServerSnapshot(handleDataUpdate, widgetsStore.updateLastSavedLayout, saveStore.markDirty);
+      const loadSnap = () =>
+        cacheStore.loadServerSnapshot(
+          handleDataUpdate,
+          widgetsStore.updateLastSavedLayout,
+          saveStore.markDirty,
+        );
       for (let attempt = 0; attempt < 3; attempt++) {
-        try { await loadSnap(); serverSnapshotLoaded = true; setTimeout(() => { configStore.checkUpdate(); networkStore.fetchLuckyStunData(); }, 2000); break; }
-        catch (e) { lastError = e; }
+        try {
+          await loadSnap();
+          serverSnapshotLoaded = true;
+          setTimeout(() => {
+            configStore.checkUpdate();
+            networkStore.fetchLuckyStunData();
+          }, 2000);
+          break;
+        } catch (e) {
+          lastError = e;
+        }
         if (attempt < 2) await new Promise((r) => setTimeout(r, 1000));
       }
       if (!serverSnapshotLoaded) {
         if (lastError) console.error("Init failed", lastError);
         cacheStore.loadFromCache(rssFeeds, rssCategories, dataVersion);
-        if (cacheStore.cacheLoadedAt === null) cacheStore.cacheLoadedAt = Date.now();
+        if (cacheStore.cacheLoadedAt === null)
+          cacheStore.cacheLoadedAt = Date.now();
         if (!cacheStore.serverSnapshotRetryTimer) {
           cacheStore.serverSnapshotRetryTimer = setTimeout(async () => {
             cacheStore.serverSnapshotRetryTimer = null;
             if (cacheStore.hasServerSnapshot) return;
-            try { await loadSnap(); setTimeout(() => { configStore.checkUpdate(); networkStore.fetchLuckyStunData(); }, 2000); }
-            catch (e) { console.error("Init retry failed", e); }
+            try {
+              await loadSnap();
+              setTimeout(() => {
+                configStore.checkUpdate();
+                networkStore.fetchLuckyStunData();
+              }, 2000);
+            } catch (e) {
+              console.error("Init retry failed", e);
+            }
           }, 3000);
         }
       }
@@ -542,7 +745,12 @@ export const useSyncStore = defineStore("sync", () => {
         if (typeof document !== "undefined" && !visibilityVersionCheckBound) {
           visibilityVersionCheckBound = true;
           document.addEventListener("visibilitychange", () => {
-            if (document.visibilityState === "visible") saveStore.checkVersionAfterActivation(auth.isLogged, dataVersion.value, fetchVersionOnly);
+            if (document.visibilityState === "visible")
+              saveStore.checkVersionAfterActivation(
+                auth.isLogged,
+                dataVersion.value,
+                fetchVersionOnly,
+              );
           });
         }
       }
@@ -570,14 +778,23 @@ export const useSyncStore = defineStore("sync", () => {
 
   // ---- saveData wrapper ----
   const saveData = (immediate = false, force = false) =>
-    saveStore.saveData(immediate, force, dataVersion, rssFeeds, rssCategories, fetchAndProcessData);
+    saveStore.saveData(
+      immediate,
+      force,
+      dataVersion,
+      rssFeeds,
+      rssCategories,
+      fetchAndProcessData,
+    );
 
   const resolveConflict = (action: "remote" | "local") =>
     saveStore.resolveConflict(action, fetchAndProcessData, saveData);
 
-  const confirmSyncFromServer = () => saveStore.confirmSyncFromServer(fetchAndProcessData);
+  const confirmSyncFromServer = () =>
+    saveStore.confirmSyncFromServer(fetchAndProcessData);
   const dismissSyncConfirm = () => saveStore.dismissSyncConfirm();
-  const discardOfflineQueue = () => saveStore.discardOfflineQueue(fetchAndProcessData);
+  const discardOfflineQueue = () =>
+    saveStore.discardOfflineQueue(fetchAndProcessData);
   const resolveOfflineQueueConflict = (action: "force_save" | "discard") =>
     saveStore.resolveOfflineQueueConflict(action, fetchAndProcessData);
 
@@ -586,7 +803,12 @@ export const useSyncStore = defineStore("sync", () => {
     networkStore.initEventBindings(
       wsOpen,
       () => status.value,
-      () => saveStore.triggerOfflineQueueReplay(fetchVersionOnly, dataVersion, networkStore.getHeaders),
+      () =>
+        saveStore.triggerOfflineQueueReplay(
+          fetchVersionOnly,
+          dataVersion,
+          networkStore.getHeaders,
+        ),
     );
   }
 
@@ -599,79 +821,139 @@ export const useSyncStore = defineStore("sync", () => {
       if (status.value !== "OPEN") return;
       const elapsed = Date.now() - networkStore.lastPingAt;
       if (networkStore.lastPingAt > 0 && elapsed > WS_PING_TIMEOUT_MS) {
-        console.warn(`[Ping timeout] No server ping for ${elapsed}ms, reconnecting...`);
+        console.warn(
+          `[Ping timeout] No server ping for ${elapsed}ms, reconnecting...`,
+        );
         wsContinuousFailures++;
         wsClose();
       }
     }, 5000);
   };
-  const stopPingCheck = () => { if (pingCheckTimer) clearInterval(pingCheckTimer); pingCheckTimer = null; };
+  const stopPingCheck = () => {
+    if (pingCheckTimer) clearInterval(pingCheckTimer);
+    pingCheckTimer = null;
+  };
 
   // ---- Watches ----
-  watch(() => configStore.forceNetworkMode, (mode, prev) => {
-    if (!mode || mode === prev) return;
-    const ok = ["auto", "lan", "wan", "latency"].includes(mode);
-    if (!ok) return;
-    if (isConnected.value) { networkStore.stopNetworkHeartbeat(); networkStore.startNetworkHeartbeat(wsSend); }
-  });
+  watch(
+    () => configStore.forceNetworkMode,
+    (mode, prev) => {
+      if (!mode || mode === prev) return;
+      const ok = ["auto", "lan", "wan", "latency"].includes(mode);
+      if (!ok) return;
+      if (isConnected.value) {
+        networkStore.stopNetworkHeartbeat();
+        networkStore.startNetworkHeartbeat(wsSend);
+      }
+    },
+  );
 
   // Gate WS lifecycle on auth state changes to prevent guest reconnect storms
-  watch(() => auth.isLogged, (logged) => {
-    if (logged) {
-      if (typeof window !== "undefined" && status.value !== "OPEN") wsOpen();
-      stopHttpPolling();
-    } else {
-      // Guest mode: stop WS, polling, and ping checks to avoid reconnect storms
-      if (status.value === "OPEN") wsClose();
-      stopHttpPolling();
-      stopPingCheck();
-      if (!logoutInProgress) {
-        resetActiveStateForGuest();
-        void init();
+  watch(
+    () => auth.isLogged,
+    (logged) => {
+      if (logged) {
+        if (typeof window !== "undefined" && status.value !== "OPEN") wsOpen();
+        stopHttpPolling();
+      } else {
+        // Guest mode: stop WS, polling, and ping checks to avoid reconnect storms
+        if (status.value === "OPEN") wsClose();
+        stopHttpPolling();
+        stopPingCheck();
+        if (!logoutInProgress) {
+          resetActiveStateForGuest();
+          void init();
+        }
       }
-    }
-  });
-  const markDirtyIfActive = () => { if (!isInitializing && !isApplyingServerData) saveStore.markDirty(); };
+    },
+  );
+  const markDirtyIfActive = () => {
+    if (!isInitializing && !isApplyingServerData) saveStore.markDirty();
+  };
   watch(configStore.appConfig, markDirtyIfActive, { deep: true });
   watch(groupsStore.groups, markDirtyIfActive, { deep: true });
   watch(widgetsStore.widgets, markDirtyIfActive, { deep: true });
   watch(rssFeeds, markDirtyIfActive, { deep: true });
   watch(rssCategories, markDirtyIfActive, { deep: true });
-  watch(status, (newStatus) => { if (newStatus === "OPEN") { networkStore.lastPingAt = Date.now(); startPingCheck(); } else { stopPingCheck(); stopWsHealthCheck(); } });
+  watch(status, (newStatus) => {
+    if (newStatus === "OPEN") {
+      networkStore.lastPingAt = Date.now();
+      startPingCheck();
+    } else {
+      stopPingCheck();
+      stopWsHealthCheck();
+    }
+  });
 
   watch(wsUrl, (newUrl, oldUrl) => {
     if (!newUrl || !oldUrl || newUrl === oldUrl) return;
     if (!auth.isLogged) return;
     const wasConnected = status.value === "OPEN";
-    console.log(`[WS] URL changed: ${oldUrl} -> ${newUrl}, wasConnected=${wasConnected}`);
+    console.log(
+      `[WS] URL changed: ${oldUrl} -> ${newUrl}, wasConnected=${wasConnected}`,
+    );
     if (wasConnected) {
       forceWsReconnect();
     }
   });
 
   return {
-    status, wsRawData, wsSend, wsSendRaw, wsOpen, isConnected, forceWsReconnect,
-    dataVersion, pendingServerVersion, rssFeeds, rssCategories, luckyStunData,
-    isSaving: saveStore.isSaving, hasPendingSave: saveStore.hasPendingSave, hasUnsavedChanges: saveStore.hasUnsavedChanges,
-    markDirty: saveStore.markDirty, saveData, resolveConflict, logout,
+    status,
+    wsRawData,
+    wsSend,
+    wsSendRaw,
+    wsOpen,
+    isConnected,
+    forceWsReconnect,
+    dataVersion,
+    pendingServerVersion,
+    rssFeeds,
+    rssCategories,
+    luckyStunData,
+    isSaving: saveStore.isSaving,
+    hasPendingSave: saveStore.hasPendingSave,
+    hasUnsavedChanges: saveStore.hasUnsavedChanges,
+    markDirty: saveStore.markDirty,
+    saveData,
+    resolveConflict,
+    logout,
     conflictState: saveStore.conflictState,
-    isServerSnapshotReady: cacheStore.isServerSnapshotReady, isClientReady: computed(() => cacheStore.isClientReady || initCompleted.value),
-    cacheLoadedAt: cacheStore.cacheLoadedAt, hasServerSnapshot: cacheStore.hasServerSnapshot,
-    offlineQueueCount: saveStore.offlineQueueCount, offlineQueueConflictState: saveStore.offlineQueueConflictState,
-    resolveOfflineQueueConflict, discardOfflineQueue,
-    init, fetchData: fetchAndProcessData, fetchVersionOnly,
-    syncConfirmModal: saveStore.syncConfirmModal, confirmSyncFromServer, dismissSyncConfirm,
-    lastPingAt: networkStore.lastPingAt, isNetworkSyncActive: networkStore.isNetworkSyncActive,
-    startNetworkHeartbeat: () => networkStore.startNetworkHeartbeat(wsSend), stopNetworkHeartbeat: networkStore.stopNetworkHeartbeat,
-    detectWeatherNetworkStatus: networkStore.detectWeatherNetworkStatus,
-    registerDashboardPulse: networkStore.registerDashboardPulse, unregisterDashboardPulse: networkStore.unregisterDashboardPulse,
-    startDashboardPulse: networkStore.startDashboardPulse, stopDashboardPulse: networkStore.stopDashboardPulse,
-    lockServerSync: configStore.lockServerSync, unlockServerSync: configStore.unlockServerSync, isServerSyncLocked: configStore.isServerSyncLocked,
-    wallpaperListPc: networkStore.wallpaperListPc, wallpaperListMobile: networkStore.wallpaperListMobile,
+    isServerSnapshotReady: cacheStore.isServerSnapshotReady,
+    isClientReady: computed(
+      () => cacheStore.isClientReady || initCompleted.value,
+    ),
+    cacheLoadedAt: cacheStore.cacheLoadedAt,
+    hasServerSnapshot: cacheStore.hasServerSnapshot,
+    offlineQueueCount: saveStore.offlineQueueCount,
+    offlineQueueConflictState: saveStore.offlineQueueConflictState,
+    resolveOfflineQueueConflict,
+    discardOfflineQueue,
+    init,
+    fetchData: fetchAndProcessData,
+    fetchVersionOnly,
+    syncConfirmModal: saveStore.syncConfirmModal,
+    confirmSyncFromServer,
+    dismissSyncConfirm,
+    lastPingAt: networkStore.lastPingAt,
+    isNetworkSyncActive: networkStore.isNetworkSyncActive,
+    startNetworkHeartbeat: () => networkStore.startNetworkHeartbeat(wsSend),
+    stopNetworkHeartbeat: networkStore.stopNetworkHeartbeat,
+    registerDashboardPulse: networkStore.registerDashboardPulse,
+    unregisterDashboardPulse: networkStore.unregisterDashboardPulse,
+    startDashboardPulse: networkStore.startDashboardPulse,
+    stopDashboardPulse: networkStore.stopDashboardPulse,
+    lockServerSync: configStore.lockServerSync,
+    unlockServerSync: configStore.unlockServerSync,
+    isServerSyncLocked: configStore.isServerSyncLocked,
+    wallpaperListPc: networkStore.wallpaperListPc,
+    wallpaperListMobile: networkStore.wallpaperListMobile,
     fetchWallpaperLists: networkStore.fetchWallpaperLists,
-    globalDrag: networkStore.globalDrag, initGlobalDrag: networkStore.initGlobalDrag,
-    fetchSystemConfig: networkStore.fetchSystemConfig, fetchLuckyStunData: networkStore.fetchLuckyStunData,
-    layoutDirty: widgetsStore.layoutDirty, layoutEditInProgress: widgetsStore.layoutEditInProgress,
+    globalDrag: networkStore.globalDrag,
+    initGlobalDrag: networkStore.initGlobalDrag,
+    fetchSystemConfig: networkStore.fetchSystemConfig,
+    fetchLuckyStunData: networkStore.fetchLuckyStunData,
+    layoutDirty: widgetsStore.layoutDirty,
+    layoutEditInProgress: widgetsStore.layoutEditInProgress,
     lastSavedLayoutSignature: widgetsStore.lastSavedLayoutSignature,
     undoLayout: () => widgetsStore.undoLayout(saveData),
     isHttpPollingActive: isHttpPollingActiveRef,

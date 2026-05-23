@@ -104,7 +104,6 @@ func main() {
 	handlers.StartIPFetcher()
 	handlers.StartDataWarmup()
 	handlers.StartThumbSync()
-	handlers.NewWeatherPoller().Start()
 
 	r := gin.New()
 	r.Use(func(c *gin.Context) {
@@ -191,7 +190,6 @@ func main() {
 		s.Join(room)
 	})
 	handlers.BindHotHandlers(server)
-	handlers.BindWeatherHandlers(server)
 	handlers.BindRssHandlers(server) // Added RSS handlers
 	handlers.BindMemoHandlers(server)
 	handlers.BindTodoHandlers(server)
@@ -285,7 +283,16 @@ func main() {
 		api.GET("/rss/meta", handlers.GetRssMeta)
 		api.GET("/site/metadata", handlers.GetSiteMetadata)
 		api.GET("/site/icon", handlers.GetSiteIcon)
-		api.GET("/weather", handlers.GetWeather)                                                   // Added Weather
+		api.GET("/itab/today-english", handlers.GetItabDailyEnglish)
+		api.GET("/itab/today-english/media/:kind", handlers.GetItabDailyEnglishMedia)
+		api.GET("/itab/movie-calendar", handlers.GetItabMovieCalendar)
+		api.GET("/itab/movie-calendar/image/:kind", handlers.GetItabMovieCalendarImage)
+		api.GET("/itab/weather/location", handlers.GetItabWeatherLocation)
+		api.GET("/itab/weather/search", handlers.GetItabWeatherSearch)
+		api.GET("/itab/weather/current", handlers.GetItabWeatherCurrent)
+		api.GET("/itab/poem", handlers.GetItabPoem)
+		api.GET("/itab-resources/:resourceId", handlers.GetItabResource)
+		api.HEAD("/itab-resources/:resourceId", handlers.GetItabResource)
 		api.GET("/custom-scripts", middleware.OptionalAuthMiddleware(), handlers.GetCustomScripts) // Added Custom Scripts
 		api.GET("/docker-status", handlers.GetDockerStatus)                                        // Added Docker Status
 		api.GET("/docker/debug", handlers.GetDockerDebug)
@@ -295,11 +302,6 @@ func main() {
 
 		// Icon Routes
 		api.POST("/icon-cache", handlers.CacheIcon)
-
-		// Amap Proxy Routes
-		api.GET("/amap/weather", handlers.GetAmapWeather)
-		api.GET("/amap/ip", handlers.ProxyAmapIP)
-
 		api.GET("/ping", handlers.Ping)                   // Added Ping
 		api.GET("/rtt", handlers.RTT)                     // Added RTT for frontend latency check
 		api.POST("/visitor/track", handlers.TrackVisitor) // Public endpoint

@@ -14,14 +14,12 @@ export const useConfigStore = defineStore("config", () => {
     "auto",
   );
   const isExpandedMode = ref(false);
-  const activeMusicPlayer = ref<"mini-player" | "music-widget" | null>(null);
   const webPaginationActiveGroupId = ref("");
   const isLanModeInited = ref(false);
   const isLanMode = ref(false);
   const networkLatency = ref(0);
   const effectiveIsLan = ref(false);
   const ipFetchStatus = ref<"success" | "error" | "loading">("loading");
-  const weatherNetworkStatus = ref<"online" | "degraded" | "offline">("online");
   const isPageUnloading = ref(false);
   const serverSyncLockCount = ref(0);
 
@@ -29,7 +27,10 @@ export const useConfigStore = defineStore("config", () => {
   const currentVersion = "1.2.3";
   const latestVersion = ref("");
   const dockerUpdateAvailable = ref(false);
-  const updateCheckLastAt = useStorage<number>("start-deck-update-check-last-at", 0);
+  const updateCheckLastAt = useStorage<number>(
+    "start-deck-update-check-last-at",
+    0,
+  );
   const UPDATE_CHECK_TTL = 30 * 60 * 1000;
 
   const hasUpdate = computed(() => {
@@ -76,7 +77,6 @@ export const useConfigStore = defineStore("config", () => {
     mobileBackgroundMask: 0,
     daylightModeEnabled: false,
     daylightMask: 0.5,
-    weatherEffectEnabled: false,
     customTitle: "我的导航",
     titleAlign: "left",
     titleSize: 48,
@@ -95,7 +95,6 @@ export const useConfigStore = defineStore("config", () => {
     rememberLastEngine: true,
     groupTitleColor: "#ffffff",
     groupGap: 30,
-    autoPlayMusic: false,
     showFooterStats: false,
     footerHtml: "",
     footerHeight: 0,
@@ -158,7 +157,9 @@ export const useConfigStore = defineStore("config", () => {
 
       if (shouldCheckRemote) {
         updateCheckLastAt.value = now;
-        const res = await fetch("https://gitee.com/api/v5/repos/gjx0808/StartDeck/tags");
+        const res = await fetch(
+          "https://gitee.com/api/v5/repos/gjx0808/StartDeck/tags",
+        );
         if (res.ok) {
           const data = await res.json();
           if (data.length > 0) {
@@ -179,7 +180,8 @@ export const useConfigStore = defineStore("config", () => {
       const res = await fetch("/api/docker-status");
       if (res.ok) {
         const data = await res.json();
-        dockerUpdateAvailable.value = data.state === "ready" && Boolean(data.hasUpdate);
+        dockerUpdateAvailable.value =
+          data.state === "ready" && Boolean(data.hasUpdate);
       }
     } catch {
       // ignore
@@ -190,18 +192,21 @@ export const useConfigStore = defineStore("config", () => {
   watch(
     () => appConfig.value.iconShape,
     (val) => {
-      if (typeof val === "string") localStorage.setItem("start-deck-icon-shape", val);
+      if (typeof val === "string")
+        localStorage.setItem("start-deck-icon-shape", val);
     },
   );
   watch(
     () => appConfig.value.cardBgColor,
     (val) => {
-      if (typeof val === "string") localStorage.setItem("start-deck-card-bg-color", val);
+      if (typeof val === "string")
+        localStorage.setItem("start-deck-card-bg-color", val);
     },
   );
 
   watch(
-    () => [appConfig.value.widgetAreaCols, appConfig.value.widgetAreaRows] as const,
+    () =>
+      [appConfig.value.widgetAreaCols, appConfig.value.widgetAreaRows] as const,
     ([cols, rows]) => {
       const normalize = (v: unknown, fallback: number) => {
         const n = typeof v === "number" && Number.isFinite(v) ? v : fallback;
@@ -220,14 +225,12 @@ export const useConfigStore = defineStore("config", () => {
     systemConfig,
     forceNetworkMode,
     isExpandedMode,
-    activeMusicPlayer,
     webPaginationActiveGroupId,
     isLanModeInited,
     isLanMode,
     networkLatency,
     effectiveIsLan,
     ipFetchStatus,
-    weatherNetworkStatus,
     isPageUnloading,
     currentVersion,
     latestVersion,

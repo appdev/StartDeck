@@ -1,0 +1,53 @@
+// @vitest-environment jsdom
+import { mount } from "@vue/test-utils";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import ItabDailyEnglishOpenedPanel from "./ItabDailyEnglishOpenedPanel.vue";
+import { createDefaultItabDailyEnglishWidget } from "./itabDailyEnglishModel";
+
+vi.mock("./itabDailyEnglishApi", () => ({
+  fetchItabDailyEnglish: vi.fn(async () => ({
+    mode: "跟读",
+    sentence: "Light stretches longer, painting walls gold.",
+    translation: "日光拉得更长，把墙壁染成金色。",
+    progressLabel: "00:00",
+    imageUrl: "/api/itab/today-english/media/image",
+    audioUrl: "/api/itab/today-english/media/audio",
+    dateline: "2026-05-22",
+    sourceStatus: "ok",
+  })),
+}));
+
+const nextTickCycle = () => new Promise((resolve) => setTimeout(resolve, 0));
+
+describe("ItabDailyEnglishOpenedPanel", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.spyOn(window.HTMLMediaElement.prototype, "play").mockResolvedValue();
+    vi.spyOn(window.HTMLMediaElement.prototype, "pause").mockImplementation(
+      () => undefined,
+    );
+  });
+
+  it("renders the opened panel and toggles follow-reading audio", async () => {
+    const wrapper = mount(ItabDailyEnglishOpenedPanel, {
+      props: { widget: createDefaultItabDailyEnglishWidget() },
+    });
+
+    await nextTickCycle();
+
+    expect(wrapper.text()).toContain(
+      "Light stretches longer, painting walls gold.",
+    );
+    expect(wrapper.text()).toContain("日光拉得更长，把墙壁染成金色。");
+    expect(wrapper.attributes("data-daily-english-state")).toBe("paused");
+
+    const playButton = wrapper.find(".opened-english-play");
+    await playButton.trigger("click");
+    expect(window.HTMLMediaElement.prototype.play).toHaveBeenCalledTimes(1);
+    expect(wrapper.attributes("data-daily-english-state")).toBe("playing");
+
+    await playButton.trigger("click");
+    expect(window.HTMLMediaElement.prototype.pause).toHaveBeenCalledTimes(1);
+    expect(wrapper.attributes("data-daily-english-state")).toBe("paused");
+  });
+});
