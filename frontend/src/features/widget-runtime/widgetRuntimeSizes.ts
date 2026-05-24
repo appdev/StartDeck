@@ -37,6 +37,10 @@ import {
   ITAB_ANNIVERSARY_DEFAULT_SIZE,
   ITAB_ANNIVERSARY_WIDGET_TYPE,
 } from "@/features/itab-anniversary/itabAnniversaryTypes";
+import {
+  ITAB_CALENDAR_DEFAULT_SIZE,
+  ITAB_CALENDAR_WIDGET_TYPE,
+} from "@/features/itab-calendar/itabCalendarTypes";
 
 export type RuntimeWidgetSizeScope = "itab";
 export type RuntimeWidgetSizeKey = ItabWidgetSizeKey;
@@ -123,6 +127,13 @@ const runtimeWidgetSizeFamilies = new Map<string, RuntimeWidgetSizeFamily>([
     createItabRuntimeSizeFamily(
       ITAB_ANNIVERSARY_WIDGET_TYPE,
       ITAB_ANNIVERSARY_DEFAULT_SIZE,
+    ),
+  ],
+  [
+    ITAB_CALENDAR_WIDGET_TYPE,
+    createItabRuntimeSizeFamily(
+      ITAB_CALENDAR_WIDGET_TYPE,
+      ITAB_CALENDAR_DEFAULT_SIZE,
     ),
   ],
 ]);

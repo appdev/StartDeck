@@ -37,6 +37,10 @@ import {
   ITAB_ANNIVERSARY_CATALOG_ID,
   ITAB_ANNIVERSARY_WIDGET_TYPE,
 } from "@/features/itab-anniversary/itabAnniversaryTypes";
+import {
+  ITAB_CALENDAR_CATALOG_ID,
+  ITAB_CALENDAR_WIDGET_TYPE,
+} from "@/features/itab-calendar/itabCalendarTypes";
 import { createDefaultItabWeatherWidget } from "@/features/itab-weather/itabWeatherModel";
 import { createDefaultItabTodoWidget } from "@/features/itab-todo/itabTodoModel";
 import { createDefaultItabMemoWidget } from "@/features/itab-memo/itabMemoModel";
@@ -45,6 +49,7 @@ import { createDefaultItabDailyEnglishWidget } from "@/features/itab-daily-engli
 import { createDefaultItabPoemWidget } from "@/features/itab-poem/itabPoemModel";
 import { createDefaultItabPomodoroWidget } from "@/features/itab-pomodoro/itabPomodoroModel";
 import { createDefaultItabAnniversaryWidget } from "@/features/itab-anniversary/itabAnniversaryModel";
+import { createDefaultItabCalendarWidget } from "@/features/itab-calendar/itabCalendarModel";
 import { withItabGridData } from "@/features/itab-widgets/itabGrid";
 import {
   resolveRuntimeWidgetSizeFamily,
@@ -144,6 +149,15 @@ export const WIDGET_CATALOG: WidgetCatalogItem[] = [
     category: "common",
     mode: "multi",
     glyph: "纪",
+  }),
+  catalogItem({
+    id: ITAB_CALENDAR_CATALOG_ID,
+    type: ITAB_CALENDAR_WIDGET_TYPE,
+    title: "日历",
+    description: "公历、农历、节气和节假日",
+    category: "common",
+    mode: "singleton",
+    glyph: "历",
   }),
   catalogItem({
     id: "search",
@@ -351,6 +365,7 @@ const WIDGET_CATALOG_ALIASES = new Map([
   [ITAB_POEM_WIDGET_TYPE, ITAB_POEM_CATALOG_ID],
   [ITAB_POMODORO_WIDGET_TYPE, ITAB_POMODORO_CATALOG_ID],
   [ITAB_ANNIVERSARY_WIDGET_TYPE, ITAB_ANNIVERSARY_CATALOG_ID],
+  [ITAB_CALENDAR_WIDGET_TYPE, ITAB_CALENDAR_CATALOG_ID],
 ]);
 
 export const getWidgetCatalogItem = (id: string) => {
@@ -421,6 +436,13 @@ export const findExistingCatalogWidget = (
             widget.type === ITAB_ANNIVERSARY_WIDGET_TYPE),
       );
     }
+    if (item.type === ITAB_CALENDAR_WIDGET_TYPE) {
+      return widgets.find(
+        (widget) =>
+          widget.type === ITAB_CALENDAR_WIDGET_TYPE ||
+          (widget.id === item.id && widget.type === ITAB_CALENDAR_WIDGET_TYPE),
+      );
+    }
     return widgets.find(
       (widget) => widget.type === item.type || widget.id === item.id,
     );
@@ -478,6 +500,11 @@ export const createWidgetFromCatalog = (
   if (item.type === ITAB_ANNIVERSARY_WIDGET_TYPE) {
     const widget = createDefaultItabAnniversaryWidget();
     widget.id = createId(ITAB_ANNIVERSARY_CATALOG_ID);
+    widget.enable = true;
+    return widget;
+  }
+  if (item.type === ITAB_CALENDAR_WIDGET_TYPE) {
+    const widget = createDefaultItabCalendarWidget();
     widget.enable = true;
     return widget;
   }

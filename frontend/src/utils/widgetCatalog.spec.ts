@@ -19,6 +19,10 @@ import { ITAB_POEM_WIDGET_TYPE } from "@/features/itab-poem/itabPoemTypes";
 import { ITAB_DAILY_ENGLISH_WIDGET_TYPE } from "@/features/itab-daily-english/itabDailyEnglishTypes";
 import { ITAB_POMODORO_WIDGET_TYPE } from "@/features/itab-pomodoro/itabPomodoroTypes";
 import { ITAB_ANNIVERSARY_WIDGET_TYPE } from "@/features/itab-anniversary/itabAnniversaryTypes";
+import {
+  ITAB_CALENDAR_CATALOG_ID,
+  ITAB_CALENDAR_WIDGET_TYPE,
+} from "@/features/itab-calendar/itabCalendarTypes";
 
 const runtimeTypes = [
   "itab-weather-00",
@@ -29,6 +33,7 @@ const runtimeTypes = [
   ITAB_DAILY_ENGLISH_WIDGET_TYPE,
   ITAB_POMODORO_WIDGET_TYPE,
   ITAB_ANNIVERSARY_WIDGET_TYPE,
+  ITAB_CALENDAR_WIDGET_TYPE,
 ];
 
 describe("widgetCatalog", () => {
@@ -267,6 +272,28 @@ describe("widgetCatalog", () => {
       "daily-english",
     );
     expect(dailyEnglish?.supportedSizes.map((size) => size.key)).toEqual([
+      "1x1",
+      "1x2",
+      "2x1",
+      "2x2",
+      "2x4",
+    ]);
+  });
+
+  it("exposes iTab calendar as canonical catalog item with scoped sizes", () => {
+    const calendar = getWidgetCatalogItem(ITAB_CALENDAR_CATALOG_ID);
+    expect(calendar).toBeTruthy();
+    expect(calendar).toMatchObject({
+      id: ITAB_CALENDAR_CATALOG_ID,
+      type: ITAB_CALENDAR_WIDGET_TYPE,
+      title: "日历",
+      mode: "singleton",
+      sizeScope: "itab",
+    });
+    expect(getWidgetCatalogItem(ITAB_CALENDAR_WIDGET_TYPE)?.id).toBe(
+      ITAB_CALENDAR_CATALOG_ID,
+    );
+    expect(calendar?.supportedSizes.map((size) => size.key)).toEqual([
       "1x1",
       "1x2",
       "2x1",
@@ -567,6 +594,26 @@ describe("widgetCatalog", () => {
       h: 2,
       data: {
         runtime: "itab-daily-english",
+        version: 1,
+        sizeKey: "2x2",
+      },
+    });
+  });
+
+  it("creates canonical iTab calendar widgets from the user-facing item", () => {
+    const calendar = createWidgetFromCatalog(
+      getWidgetCatalogItem(ITAB_CALENDAR_CATALOG_ID)!,
+    );
+
+    expect(calendar).toMatchObject({
+      id: ITAB_CALENDAR_CATALOG_ID,
+      type: ITAB_CALENDAR_WIDGET_TYPE,
+      colSpan: 2,
+      rowSpan: 2,
+      w: 2,
+      h: 2,
+      data: {
+        runtime: "itab-calendar",
         version: 1,
         sizeKey: "2x2",
       },

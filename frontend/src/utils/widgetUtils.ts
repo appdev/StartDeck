@@ -38,6 +38,10 @@ import {
   ITAB_ANNIVERSARY_WIDGET_TYPE,
 } from "@/features/itab-anniversary/itabAnniversaryTypes";
 import {
+  ITAB_CALENDAR_CATALOG_ID,
+  ITAB_CALENDAR_WIDGET_TYPE,
+} from "@/features/itab-calendar/itabCalendarTypes";
+import {
   applyItabWeatherSizeToWidget,
   createDefaultItabWeatherWidget,
   normalizeItabWeatherWidgetData,
@@ -76,6 +80,11 @@ import {
   createDefaultItabAnniversaryWidget,
   normalizeItabAnniversaryWidgetData,
 } from "@/features/itab-anniversary/itabAnniversaryModel";
+import {
+  applyItabCalendarSizeToWidget,
+  createDefaultItabCalendarWidget,
+  normalizeItabCalendarWidgetData,
+} from "@/features/itab-calendar/itabCalendarModel";
 import {
   hasItabGridSchema,
   withItabGridData,
@@ -154,6 +163,7 @@ export function createDefaultWidgetList(isLoggedIn: boolean): WidgetConfig[] {
     createDefaultItabMemoWidget(),
     createDefaultItabPomodoroWidget(),
     createDefaultItabAnniversaryWidget(),
+    createDefaultItabCalendarWidget(),
     createDefaultItabDailyEnglishWidget(),
     withDefaultWidgetSize({
       id: "calculator",
@@ -390,6 +400,27 @@ export function normalizeIncomingWidgets(
     widget.enable = widget.enable !== false;
     widget.isPublic = widget.isPublic ?? true;
     applyItabAnniversarySizeToWidget(widget, normalizedData.sizeKey);
+  }
+
+  const itabCalendarCandidates = nextWidgets.filter(
+    (widget) => widget.type === ITAB_CALENDAR_WIDGET_TYPE,
+  );
+  if (itabCalendarCandidates.length > 0) {
+    const keep =
+      itabCalendarCandidates.find(
+        (widget) => widget.id === ITAB_CALENDAR_CATALOG_ID,
+      ) || itabCalendarCandidates[0]!;
+    const normalizedData = normalizeItabCalendarWidgetData(keep.data);
+    keep.id = ITAB_CALENDAR_CATALOG_ID;
+    keep.type = ITAB_CALENDAR_WIDGET_TYPE;
+    keep.enable = keep.enable !== false;
+    keep.isPublic = keep.isPublic ?? true;
+    applyItabCalendarSizeToWidget(keep, normalizedData.sizeKey);
+    const withoutItabCalendar = nextWidgets.filter(
+      (widget) => widget.type !== ITAB_CALENDAR_WIDGET_TYPE,
+    );
+    nextWidgets.length = 0;
+    nextWidgets.push(...withoutItabCalendar, keep);
   }
 
   // Normalize Docker widget

@@ -166,6 +166,16 @@ const panelStyle = computed(() => {
   backdrop-filter: none;
 }
 
+.sd-widget-opened-window.opened-itab-calendar {
+  border: 1px solid rgba(0, 0, 0, 0.13);
+  background: #fff;
+  color: #222;
+  font-size: 14px;
+  line-height: 21px;
+  box-shadow: rgba(0, 0, 0, 0.48) 0 12px 32px 0;
+  backdrop-filter: none;
+}
+
 .sd-widget-opened-traffic {
   position: absolute;
   top: 11px;

@@ -16,6 +16,8 @@ import ItabPomodoroOpenedPanel from "@/features/itab-pomodoro/ItabPomodoroOpened
 import ItabPomodoroWidget from "@/features/itab-pomodoro/ItabPomodoroWidget.vue";
 import ItabAnniversaryOpenedPanel from "@/features/itab-anniversary/ItabAnniversaryOpenedPanel.vue";
 import ItabAnniversaryWidget from "@/features/itab-anniversary/ItabAnniversaryWidget.vue";
+import ItabCalendarOpenedPanel from "@/features/itab-calendar/ItabCalendarOpenedPanel.vue";
+import ItabCalendarWidget from "@/features/itab-calendar/ItabCalendarWidget.vue";
 import {
   ITAB_WEATHER_DEFAULT_SIZE,
   ITAB_WEATHER_RUNTIME,
@@ -65,6 +67,12 @@ import {
   type ItabAnniversaryWidgetData,
 } from "@/features/itab-anniversary/itabAnniversaryTypes";
 import {
+  ITAB_CALENDAR_DEFAULT_SIZE,
+  ITAB_CALENDAR_RUNTIME,
+  ITAB_CALENDAR_WIDGET_TYPE,
+  type ItabCalendarWidgetData,
+} from "@/features/itab-calendar/itabCalendarTypes";
+import {
   normalizeItabWeatherWidgetData,
   applyItabWeatherSizeToWidget,
 } from "@/features/itab-weather/itabWeatherModel";
@@ -96,6 +104,10 @@ import {
   applyItabAnniversarySizeToWidget,
   normalizeItabAnniversaryWidgetData,
 } from "@/features/itab-anniversary/itabAnniversaryModel";
+import {
+  applyItabCalendarSizeToWidget,
+  normalizeItabCalendarWidgetData,
+} from "@/features/itab-calendar/itabCalendarModel";
 import {
   resolveRuntimeWidgetSizeFamily,
   resolveRuntimeWidgetSizeKey as resolveRuntimeSizeKey,
@@ -139,6 +151,9 @@ const itabPomodoroFamily = resolveRuntimeWidgetSizeFamily(
 const itabAnniversaryFamily = resolveRuntimeWidgetSizeFamily(
   ITAB_ANNIVERSARY_WIDGET_TYPE,
 );
+const itabCalendarFamily = resolveRuntimeWidgetSizeFamily(
+  ITAB_CALENDAR_WIDGET_TYPE,
+);
 
 export type WidgetRuntimeData =
   | ItabWeatherWidgetData
@@ -148,7 +163,8 @@ export type WidgetRuntimeData =
   | ItabDailyEnglishWidgetData
   | ItabPoemWidgetData
   | ItabPomodoroWidgetData
-  | ItabAnniversaryWidgetData;
+  | ItabAnniversaryWidgetData
+  | ItabCalendarWidgetData;
 
 export const WIDGET_RUNTIME_DEFINITIONS: Record<
   string,
@@ -282,6 +298,22 @@ export const WIDGET_RUNTIME_DEFINITIONS: Record<
       trafficVisible: true,
     },
   },
+  [ITAB_CALENDAR_WIDGET_TYPE]: {
+    type: ITAB_CALENDAR_WIDGET_TYPE,
+    runtime: ITAB_CALENDAR_RUNTIME,
+    title: "日历",
+    component: ItabCalendarWidget,
+    openedPanel: ItabCalendarOpenedPanel,
+    defaultSizeKey: ITAB_CALENDAR_DEFAULT_SIZE,
+    supportedSizes: itabCalendarFamily?.supported || [],
+    openedShell: {
+      width: 1200,
+      height: 700,
+      maxWidthInset: 42,
+      maxHeightInset: 18,
+      trafficVisible: true,
+    },
+  },
 };
 
 export const getWidgetRuntimeDefinition = (type: string) =>
@@ -325,6 +357,9 @@ export const normalizeWidgetRuntimeData = (
   if (type === ITAB_ANNIVERSARY_WIDGET_TYPE) {
     return normalizeItabAnniversaryWidgetData(data);
   }
+  if (type === ITAB_CALENDAR_WIDGET_TYPE) {
+    return normalizeItabCalendarWidgetData(data);
+  }
   return undefined;
 };
 
@@ -355,5 +390,8 @@ export const applyRuntimeWidgetSize = (
   }
   if (widget.type === ITAB_ANNIVERSARY_WIDGET_TYPE) {
     applyItabAnniversarySizeToWidget(widget, sizeKey);
+  }
+  if (widget.type === ITAB_CALENDAR_WIDGET_TYPE) {
+    applyItabCalendarSizeToWidget(widget, sizeKey);
   }
 };

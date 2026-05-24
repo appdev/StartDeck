@@ -73,6 +73,7 @@ import {
   ITAB_ANNIVERSARY_CATALOG_ID,
   ITAB_ANNIVERSARY_WIDGET_TYPE,
 } from "@/features/itab-anniversary/itabAnniversaryTypes";
+import { ITAB_CALENDAR_WIDGET_TYPE } from "@/features/itab-calendar/itabCalendarTypes";
 import { createDefaultItabAnniversaryWidget } from "@/features/itab-anniversary/itabAnniversaryModel";
 import ItabMemoFixedLayer from "@/features/itab-memo/ItabMemoFixedLayer.vue";
 import { useUiFeedbackStore } from "@/stores/uiFeedback";
@@ -164,6 +165,7 @@ const gridWidgetTypes = new Set([
   ITAB_DAILY_ENGLISH_WIDGET_TYPE,
   ITAB_POMODORO_WIDGET_TYPE,
   ITAB_ANNIVERSARY_WIDGET_TYPE,
+  ITAB_CALENDAR_WIDGET_TYPE,
   "calculator",
   "ip",
   "div-card",
