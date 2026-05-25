@@ -1957,8 +1957,8 @@ const submitCustom = async (
   align-content: center;
   justify-items: center;
   border-radius: 12px;
-  background: var(--sd-theme-add-widget-modal-surface-01);
-  color: white;
+  background: var(--sd-theme-add-widget-modal-preview-surface);
+  color: var(--sd-theme-add-widget-modal-preview-text);
 }
 
 .itab-add-english-art {

@@ -590,49 +590,51 @@
   --sd-theme-add-widget-modal-accent-text-04: #475569;
   --sd-theme-add-widget-modal-accent-text-05: #991b1b;
   --sd-theme-add-widget-modal-accent-text-06: #0369a1;
-  --sd-theme-add-widget-modal-border-01: rgba(223, 221, 221, 0.55);
-  --sd-theme-add-widget-modal-border-02: rgba(223, 221, 221, 0.58);
+  --sd-theme-add-widget-modal-border-01: rgba(17, 24, 39, 0.12);
+  --sd-theme-add-widget-modal-border-02: rgba(17, 24, 39, 0.1);
   --sd-theme-add-widget-modal-border-03: rgba(0, 0, 0, 0.08);
   --sd-theme-add-widget-modal-border-04: rgb(147, 147, 147);
-  --sd-theme-add-widget-modal-border-05: rgba(148, 163, 184, 0.22);
-  --sd-theme-add-widget-modal-border-06: rgba(148, 163, 184, 0.32);
+  --sd-theme-add-widget-modal-border-05: rgba(148, 163, 184, 0.28);
+  --sd-theme-add-widget-modal-border-06: rgba(148, 163, 184, 0.36);
+  --sd-theme-add-widget-modal-preview-surface: #0f172a;
+  --sd-theme-add-widget-modal-preview-text: #fff;
   --sd-theme-add-widget-modal-shadow-01: rgba(0, 0, 0, 0.16);
   --sd-theme-add-widget-modal-shadow-02: rgb(24, 144, 255);
-  --sd-theme-add-widget-modal-surface-01: rgba(0, 0, 0, 0.22);
-  --sd-theme-add-widget-modal-surface-02: rgba(255, 255, 255, 0.18);
-  --sd-theme-add-widget-modal-surface-03: rgba(255, 255, 255, 0.11);
-  --sd-theme-add-widget-modal-surface-04: rgba(255, 255, 255, 0.1);
-  --sd-theme-add-widget-modal-surface-05: rgba(223, 221, 221, 0.55);
-  --sd-theme-add-widget-modal-surface-06: rgba(255, 255, 255, 0.12);
-  --sd-theme-add-widget-modal-surface-07: rgba(0, 0, 0, 0.32);
-  --sd-theme-add-widget-modal-surface-08: rgba(255, 255, 255, 0.14);
-  --sd-theme-add-widget-modal-surface-09: rgba(203, 213, 225, 0.25);
-  --sd-theme-add-widget-modal-surface-10: rgba(0, 0, 0, 0.18);
+  --sd-theme-add-widget-modal-surface-01: rgba(255, 255, 255, 0.94);
+  --sd-theme-add-widget-modal-surface-02: rgba(248, 250, 252, 0.92);
+  --sd-theme-add-widget-modal-surface-03: rgba(241, 245, 249, 0.95);
+  --sd-theme-add-widget-modal-surface-04: rgba(241, 245, 249, 0.86);
+  --sd-theme-add-widget-modal-surface-05: rgba(226, 232, 240, 0.9);
+  --sd-theme-add-widget-modal-surface-06: rgba(248, 250, 252, 0.92);
+  --sd-theme-add-widget-modal-surface-07: rgba(15, 23, 42, 0.18);
+  --sd-theme-add-widget-modal-surface-08: rgba(255, 255, 255, 0.9);
+  --sd-theme-add-widget-modal-surface-09: rgba(203, 213, 225, 0.32);
+  --sd-theme-add-widget-modal-surface-10: rgba(15, 23, 42, 0.06);
   --sd-theme-add-widget-modal-surface-11: rgba(0, 0, 0, 0.58);
-  --sd-theme-add-widget-modal-surface-12: #000;
-  --sd-theme-add-widget-modal-surface-13: rgba(0, 0, 0, 0.3);
-  --sd-theme-add-widget-modal-surface-14: rgba(0, 0, 0, 0.45);
+  --sd-theme-add-widget-modal-surface-12: #0f172a;
+  --sd-theme-add-widget-modal-surface-13: rgba(15, 23, 42, 0.12);
+  --sd-theme-add-widget-modal-surface-14: rgba(15, 23, 42, 0.22);
   --sd-theme-add-widget-modal-surface-15: #fff;
   --sd-theme-add-widget-modal-surface-16: rgba(255, 255, 255, 0.58);
   --sd-theme-add-widget-modal-surface-17: rgba(254, 226, 226, 0.72);
-  --sd-theme-add-widget-modal-surface-18: rgba(255, 255, 255, 0.72);
+  --sd-theme-add-widget-modal-surface-18: rgba(255, 255, 255, 0.94);
   --sd-theme-add-widget-modal-surface-19: #e0f2fe;
-  --sd-theme-add-widget-modal-surface-20: rgb(44, 44, 44);
-  --sd-theme-add-widget-modal-text-01: rgb(223, 221, 221);
-  --sd-theme-add-widget-modal-text-02: rgba(223, 221, 221, 0.82);
-  --sd-theme-add-widget-modal-text-03: rgba(223, 221, 221, 0.96);
+  --sd-theme-add-widget-modal-surface-20: #f8fafc;
+  --sd-theme-add-widget-modal-text-01: #111827;
+  --sd-theme-add-widget-modal-text-02: rgba(17, 24, 39, 0.82);
+  --sd-theme-add-widget-modal-text-03: rgba(17, 24, 39, 0.94);
   --sd-theme-add-widget-modal-text-04: #fff;
-  --sd-theme-add-widget-modal-text-05: rgba(255, 255, 255, 0.28);
-  --sd-theme-add-widget-modal-text-06: rgba(223, 221, 221, 0.92);
-  --sd-theme-add-widget-modal-text-07: rgba(223, 221, 221, 0.64);
-  --sd-theme-add-widget-modal-text-08: rgba(255, 255, 255, 0.92);
-  --sd-theme-add-widget-modal-text-09: rgba(255, 255, 255, 0.52);
-  --sd-theme-add-widget-modal-text-10: rgba(255, 255, 255, 0.72);
+  --sd-theme-add-widget-modal-text-05: rgba(15, 23, 42, 0.28);
+  --sd-theme-add-widget-modal-text-06: rgba(17, 24, 39, 0.88);
+  --sd-theme-add-widget-modal-text-07: rgba(75, 85, 99, 0.72);
+  --sd-theme-add-widget-modal-text-08: #111827;
+  --sd-theme-add-widget-modal-text-09: rgba(255, 255, 255, 0.68);
+  --sd-theme-add-widget-modal-text-10: rgba(255, 255, 255, 0.78);
   --sd-theme-add-widget-modal-text-11: rgba(0, 0, 0, 0.82);
   --sd-theme-add-widget-modal-text-12: rgba(0, 0, 0, 0.78);
-  --sd-theme-add-widget-modal-text-13: rgba(223, 221, 221, 0.78);
+  --sd-theme-add-widget-modal-text-13: rgba(75, 85, 99, 0.78);
   --sd-theme-add-widget-modal-text-14: #94a3b8;
-  --sd-theme-add-widget-modal-text-15: rgb(207, 211, 220);
+  --sd-theme-add-widget-modal-text-15: #374151;
   --sd-theme-custom-css-widget-accent-border-01: #2563eb;
   --sd-theme-custom-css-widget-accent-surface-01: #2563eb;
   --sd-theme-custom-css-widget-accent-text-01: #0f172a;
@@ -2284,6 +2286,12 @@
     var(--sd-component-text-primary) 32%,
     transparent
   );
+  --sd-theme-add-widget-modal-preview-surface: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 22%,
+    transparent
+  );
+  --sd-theme-add-widget-modal-preview-text: var(--sd-component-on-strong);
   --sd-theme-add-widget-modal-shadow-01: rgba(0, 0, 0, 0.2);
   --sd-theme-add-widget-modal-shadow-02: rgba(0, 0, 0, 0.42);
   --sd-theme-add-widget-modal-surface-01: color-mix(
