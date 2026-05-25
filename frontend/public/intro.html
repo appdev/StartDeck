@@ -878,6 +878,7 @@
   -v $(pwd)/data:/app/server/data \
   -v $(pwd)/music:/app/server/music \
   -v $(pwd)/icon-service-data:/app/icon-service/data \
+  -e ICON_SERVICE_DATA_DIR=/app/icon-service/data \
   -v /var/run/docker.sock:/var/run/docker.sock \
   -e STARTDECK_ADMIN_PASSWORD=admin \
   --name startdeck \

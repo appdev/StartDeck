@@ -11,7 +11,7 @@ async fn imports_legacy_navigation_widgets_and_icon_seed_into_relational_tables(
     let temp = tempfile::tempdir().unwrap();
     let base = temp.path();
     let data_dir = base.join("server/data");
-    let icon_data_dir = base.join("icon-service/data");
+    let icon_data_dir = base.join("rust/crates/startdeck-iconserver/resources/data");
     std::fs::create_dir_all(&data_dir).unwrap();
     std::fs::create_dir_all(icon_data_dir.join("icons")).unwrap();
     std::fs::write(

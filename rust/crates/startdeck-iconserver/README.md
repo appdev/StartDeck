@@ -108,10 +108,11 @@ curl 'http://icons.put.run/api/icon?url=https://apkdv.com/posts/implementing_ios
 
 ## 配置
 
-Rust 图标服务读取仓库根目录下的 `icon-service/data`，默认监听 `9002`。常用环境变量：
+Rust 图标服务默认读取 `rust/crates/startdeck-iconserver/resources/data` 中的种子资源，部署时通过 `ICON_SERVICE_DATA_DIR` 指向可写运行期目录，默认监听 `9002`。常用环境变量：
 
 - `BASE_DIR`: StartDeck 运行根目录，默认由当前工作目录推断。
 - `ICON_SERVICE_PORT`: 图标服务监听端口，默认 `9002`。
+- `ICON_SERVICE_DATA_DIR`: 图标服务可写数据目录。未设置时会优先使用 Rust crate 下的 `resources/data`，再回退到旧版 `icon-service/data`。
 
 服务不再读取旧版 `config.json`。若缓存未命中，服务会优先使用本地 seed/cache 数据；外部回源能力由 Rust 服务实现和部署环境决定。
 

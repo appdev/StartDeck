@@ -8,7 +8,7 @@ use tower::ServiceExt;
 async fn test_app() -> axum::Router {
     let temp = tempfile::tempdir().unwrap();
     let base = temp.keep();
-    let icon_data = base.join("icon-service/data");
+    let icon_data = base.join("rust/crates/startdeck-iconserver/resources/data");
     std::fs::create_dir_all(icon_data.join("icons")).unwrap();
     std::fs::create_dir_all(base.join("server/data")).unwrap();
     std::fs::write(

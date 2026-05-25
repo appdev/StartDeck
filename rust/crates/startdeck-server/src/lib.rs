@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::io::Read;
 use std::net::IpAddr;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -15,7 +15,7 @@ use axum::{Json, Router};
 use base64::Engine;
 use base64::engine::general_purpose::STANDARD;
 use bcrypt::{DEFAULT_COST, hash, verify};
-use chrono::{Datelike, Duration as ChronoDuration, Utc};
+use chrono::{Datelike, Duration as ChronoDuration, NaiveDate, Utc};
 use flate2::read::GzDecoder;
 use jsonwebtoken::{Algorithm, DecodingKey, EncodingKey, Header, Validation, decode, encode};
 use reqwest::Client;
@@ -43,10 +43,19 @@ pub struct AppState {
     http: Client,
     jwt_secret: Arc<String>,
     icon_service_base: Arc<String>,
+    remote_itab_fetch_enabled: bool,
 }
 
 impl AppState {
     pub fn new(config: RuntimeConfig, pool: SqlitePool) -> Self {
+        Self::new_with_remote_itab_fetch(config, pool, true)
+    }
+
+    pub fn new_with_remote_itab_fetch(
+        config: RuntimeConfig,
+        pool: SqlitePool,
+        remote_itab_fetch_enabled: bool,
+    ) -> Self {
         let jwt_secret = std::env::var("STARTDECK_SECRET").unwrap_or_else(|_| {
             format!(
                 "{:x}",
@@ -64,6 +73,7 @@ impl AppState {
                 .expect("reqwest client"),
             jwt_secret: Arc::new(jwt_secret),
             icon_service_base: Arc::new(icon_service_base.trim_end_matches('/').to_string()),
+            remote_itab_fetch_enabled,
         }
     }
 }
@@ -74,6 +84,9 @@ pub fn app(state: AppState) -> Router {
     let backgrounds_dir = state.config.backgrounds_dir.clone();
     let mobile_dir = state.config.mobile_backgrounds_dir.clone();
     let icon_cache_dir = state.config.icon_cache_dir.clone();
+    let itab_live_assets_dir = static_public_subdir(&state.config, "itab-live-assets");
+    let itab_assets_dir = static_public_subdir(&state.config, "itab");
+    let intro_assets_dir = static_public_subdir(&state.config, "intro-assets");
     Router::new()
         .route("/healthz", get(healthz))
         .route("/ws", get(ws_handler))
@@ -151,11 +164,11 @@ pub fn app(state: AppState) -> Router {
         .route("/api/itab/poem", get(cached_widget_data))
         .route(
             "/api/itab/today-english/media/{kind}",
-            get(cached_media_missing),
+            get(cached_today_english_media),
         )
         .route(
             "/api/itab/movie-calendar/image/{kind}",
-            get(cached_media_missing),
+            get(cached_movie_calendar_image),
         )
         .route(
             "/api/itab-resources/{resource_id}",
@@ -164,6 +177,15 @@ pub fn app(state: AppState) -> Router {
         .nest_service(
             "/assets",
             get_service(ServeDir::new(public_dir.join("assets"))),
+        )
+        .nest_service(
+            "/itab-live-assets",
+            get_service(ServeDir::new(itab_live_assets_dir)),
+        )
+        .nest_service("/itab", get_service(ServeDir::new(itab_assets_dir)))
+        .nest_service(
+            "/intro-assets",
+            get_service(ServeDir::new(intro_assets_dir)),
         )
         .nest_service("/music", get_service(ServeDir::new(music_dir)))
         .nest_service("/backgrounds", get_service(ServeDir::new(backgrounds_dir)))
@@ -227,6 +249,12 @@ const ITAB_BING_WALLPAPER_CACHE_TTL_MS: i64 = 6 * 60 * 60 * 1000;
 const ITAB_BING_WALLPAPER_DEFAULT_PAGE_SIZE: usize = 24;
 const ITAB_BING_WALLPAPER_MAX_PAGE_SIZE: usize = 24;
 const ITAB_BING_WALLPAPER_DEFAULT_SIZE: &str = "large";
+const ITAB_DAILY_ENGLISH_KIND: &str = "itab_daily_english";
+const ITAB_MOVIE_CALENDAR_KIND: &str = "itab_movie_calendar";
+const ITAB_POEM_KIND: &str = "itab_poem";
+const ITAB_DAILY_WIDGET_CACHE_TTL_MS: i64 = 12 * 60 * 60 * 1000;
+const ITAB_POEM_CACHE_TTL_MS: i64 = 2 * 60 * 60 * 1000;
+const ITAB_MEDIA_PROXY_MAX_BYTES: usize = 12 * 1024 * 1024;
 
 #[derive(Debug, Deserialize)]
 struct TimelessqBingListResponse {
@@ -257,6 +285,96 @@ struct TimelessqBingImage {
     title: String,
     url: String,
     urlbase: String,
+}
+
+#[derive(Debug, Deserialize)]
+struct TimelessqDailyEnglishResponse {
+    errno: i64,
+    errmsg: String,
+    data: Option<TimelessqDailyEnglishData>,
+}
+
+#[derive(Debug, Deserialize)]
+struct TimelessqDailyEnglishData {
+    #[serde(rename = "_id")]
+    id: Option<String>,
+    date: Option<String>,
+    content: Option<String>,
+    note: Option<String>,
+    picture: Option<String>,
+    #[serde(rename = "middlePicture")]
+    middle_picture: Option<String>,
+    #[serde(rename = "largePicture")]
+    large_picture: Option<String>,
+    tts: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+struct CodelifeMovieResponse {
+    code: i64,
+    data: Option<CodelifeMovieData>,
+    msg: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+struct CodelifeMovieData {
+    date: Option<String>,
+    mov_area: Option<String>,
+    mov_director: Option<String>,
+    mov_intro: Option<String>,
+    mov_link: Option<String>,
+    mov_pic: Option<String>,
+    poster_url: Option<String>,
+    mov_rating: Option<String>,
+    mov_text: Option<String>,
+    mov_title: Option<String>,
+    mov_type: Option<Vec<String>>,
+    mov_year: Option<String>,
+    #[serde(rename = "bgColor")]
+    bg_color: Option<String>,
+    color: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+struct JinrishiciResponse {
+    status: String,
+    data: Option<JinrishiciData>,
+    warning: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+struct JinrishiciData {
+    id: Option<String>,
+    content: Option<String>,
+    popularity: Option<i64>,
+    origin: Option<JinrishiciOrigin>,
+    #[serde(rename = "cacheAt")]
+    cache_at: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+struct JinrishiciOrigin {
+    title: Option<String>,
+    dynasty: Option<String>,
+    author: Option<String>,
+    content: Option<Vec<String>>,
+    translate: Option<Value>,
+}
+
+#[derive(Debug, Deserialize)]
+struct TimelessqIpRegionResponse {
+    errno: i64,
+    errmsg: String,
+    data: Option<TimelessqIpRegionData>,
+}
+
+#[derive(Debug, Deserialize)]
+struct TimelessqIpRegionData {
+    ip: String,
+    country: String,
+    province: String,
+    city: String,
+    isp: String,
 }
 
 async fn healthz() -> Json<Value> {
@@ -677,7 +795,11 @@ async fn cache_icon(
     ))
 }
 
-async fn ip_info(headers: HeaderMap) -> Json<Value> {
+async fn ip_info(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+    Query(query): Query<HashMap<String, String>>,
+) -> Result<Json<Value>, ApiError> {
     let client_ip = headers
         .get("x-forwarded-for")
         .and_then(|value| value.to_str().ok())
@@ -692,7 +814,98 @@ async fn ip_info(headers: HeaderMap) -> Json<Value> {
                 .filter(|value| !value.is_empty())
         })
         .unwrap_or("127.0.0.1");
-    Json(json!({
+    let query_ip = query
+        .get("ip")
+        .or_else(|| query.get("query"))
+        .map(String::as_str)
+        .map(str::trim)
+        .filter(|value| !value.is_empty());
+    if let Some(ip) = query_ip
+        && !matches!(ip.parse::<IpAddr>(), Ok(IpAddr::V4(_)))
+    {
+        return Err(ApiError::bad_request("invalid_ipv4"));
+    }
+
+    match fetch_ip_region(&state.http, query_ip).await {
+        Ok(data) => Ok(Json(json!({
+            "success": true,
+            "ip": data.ip,
+            "queryIp": data.ip,
+            "clientIp": client_ip,
+            "clientIpSource": "request-header",
+            "location": join_location_parts([&data.country, &data.province, &data.city, &data.isp]),
+            "country": data.country,
+            "region": data.province,
+            "province": data.province,
+            "city": data.city,
+            "isp": data.isp,
+            "network": data.isp,
+            "cached": false,
+            "source": "timelessq-ip-to-region",
+            "sourceStatus": "ok"
+        }))),
+        Err(error) => {
+            let fallback_ip = query_ip.unwrap_or(client_ip);
+            Ok(Json(json!({
+                "success": false,
+                "error": format!("ip_region_unavailable: {error}"),
+                "ip": fallback_ip,
+                "queryIp": fallback_ip,
+                "clientIp": client_ip,
+                "clientIpSource": "request-header",
+                "location": "本机 本地网络",
+                "country": "本机",
+                "region": "本地网络",
+                "province": "本地网络",
+                "city": "本机",
+                "isp": "本地网络",
+                "network": "本地网络",
+                "cached": false,
+                "source": "rust-local-fallback",
+                "sourceStatus": "error"
+            })))
+        }
+    }
+}
+
+async fn fetch_ip_region(
+    client: &Client,
+    query_ip: Option<&str>,
+) -> Result<TimelessqIpRegionData, String> {
+    let mut request = client.get("https://api.timelessq.com/ip-to-region");
+    if let Some(ip) = query_ip {
+        request = request.query(&[("ip", ip)]);
+    }
+    let response = request.send().await.map_err(|err| err.to_string())?;
+    let status = response.status();
+    if !status.is_success() {
+        return Err(format!("source_status_{status}"));
+    }
+    let payload = response
+        .json::<TimelessqIpRegionResponse>()
+        .await
+        .map_err(|err| err.to_string())?;
+    if payload.errno != 0 {
+        return Err(if payload.errmsg.is_empty() {
+            format!("source_errno_{}", payload.errno)
+        } else {
+            payload.errmsg
+        });
+    }
+    payload.data.ok_or_else(|| "missing_source_data".to_string())
+}
+
+fn join_location_parts<'a>(parts: impl IntoIterator<Item = &'a str>) -> String {
+    parts
+        .into_iter()
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .collect::<Vec<_>>()
+        .join(" ")
+}
+
+fn local_ip_response(client_ip: &str) -> Value {
+    json!({
         "success": true,
         "ip": client_ip,
         "queryIp": client_ip,
@@ -706,7 +919,7 @@ async fn ip_info(headers: HeaderMap) -> Json<Value> {
         "network": "本地网络",
         "cached": false,
         "source": "rust-local"
-    }))
+    })
 }
 
 async fn ping(Query(query): Query<HashMap<String, String>>) -> Json<Value> {

@@ -502,8 +502,8 @@ watch(
   min-height: 240px;
   place-items: center;
   border-radius: 18px;
-  background: rgba(255, 255, 255, 0.68);
-  color: rgba(15, 23, 42, 0.58);
+  background: var(--sd-component-empty-surface);
+  color: var(--sd-component-empty-text);
   font-size: 14px;
   line-height: 1.6;
   text-align: center;

@@ -33,21 +33,21 @@ impl RuntimeConfig {
             .unwrap_or_else(|| default_server_resource_dir(&base_dir));
         let data_dir = env_path(&["STARTDECK_DATA_DIR", "DATA_DIR"])
             .unwrap_or_else(|| base_dir.join("server").join("data"));
-        let public_dir =
-            env_path(&["STARTDECK_PUBLIC_DIR", "PUBLIC_DIR"]).unwrap_or_else(|| {
-                first_existing_path([
-                    server_resource_dir.join("public"),
-                    base_dir.join("server").join("public"),
-                ])
-            });
+        let public_dir = env_path(&["STARTDECK_PUBLIC_DIR", "PUBLIC_DIR"]).unwrap_or_else(|| {
+            first_existing_path([
+                server_resource_dir.join("public"),
+                base_dir.join("server").join("public"),
+            ])
+        });
         let default_template_file =
-            env_path(&["STARTDECK_DEFAULT_TEMPLATE_FILE", "DEFAULT_TEMPLATE_FILE"])
-                .unwrap_or_else(|| {
+            env_path(&["STARTDECK_DEFAULT_TEMPLATE_FILE", "DEFAULT_TEMPLATE_FILE"]).unwrap_or_else(
+                || {
                     first_existing_path([
                         server_resource_dir.join("data").join("default.json"),
                         data_dir.join("default.json"),
                     ])
-                });
+                },
+            );
         let port = env::var("PORT")
             .ok()
             .and_then(|value| value.parse::<u16>().ok())
@@ -99,7 +99,10 @@ fn infer_base_dir(cwd: &Path) -> PathBuf {
         return root;
     }
     match cwd.file_name().and_then(|value| value.to_str()) {
-        Some("backend") | Some("frontend") | Some("icon-service") | Some("startdeck-server")
+        Some("backend")
+        | Some("frontend")
+        | Some("icon-service")
+        | Some("startdeck-server")
         | Some("startdeck-iconserver") => cwd
             .parent()
             .map(Path::to_path_buf)
@@ -119,26 +122,30 @@ fn env_path(keys: &[&str]) -> Option<PathBuf> {
 }
 
 fn default_server_resource_dir(base_dir: &Path) -> PathBuf {
-    first_existing_path([
-        base_dir
-            .join("rust")
-            .join("crates")
-            .join("startdeck-server")
-            .join("resources"),
-        base_dir.join("server"),
-    ])
+    let rust_resources = base_dir
+        .join("rust")
+        .join("crates")
+        .join("startdeck-server")
+        .join("resources");
+    if rust_resources.exists() {
+        rust_resources
+    } else {
+        base_dir.join("server")
+    }
 }
 
 fn default_icon_service_data_dir(base_dir: &Path) -> PathBuf {
-    first_existing_path([
-        base_dir
-            .join("rust")
-            .join("crates")
-            .join("startdeck-iconserver")
-            .join("resources")
-            .join("data"),
-        base_dir.join("icon-service").join("data"),
-    ])
+    let rust_resources = base_dir
+        .join("rust")
+        .join("crates")
+        .join("startdeck-iconserver")
+        .join("resources")
+        .join("data");
+    if rust_resources.exists() {
+        rust_resources
+    } else {
+        base_dir.join("icon-service").join("data")
+    }
 }
 
 fn first_existing_path<const N: usize>(paths: [PathBuf; N]) -> PathBuf {

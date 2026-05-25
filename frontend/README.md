@@ -151,6 +151,7 @@ StartDeck 后端集成了智能网络环境识别功能，能够根据用户的�
      -v $(pwd)/icon-service-data:/app/icon-service/data \
      -e PORT=9001 \
      -e ICON_SERVICE_PORT=9002 \
+     -e ICON_SERVICE_DATA_DIR=/app/icon-service/data \
      -e ICON_SERVER_BASE_URL=http://127.0.0.1:9002 \
      -e ICON_SERVER_TIMEOUT_MS=5000 \
      -v /var/run/docker.sock:/var/run/docker.sock \
@@ -174,16 +175,17 @@ StartDeck 后端集成了智能网络环境识别功能，能够根据用户的�
          - '9001:9001'
        environment:
          - PORT=9001
-         - STARTDECK_ADMIN_PASSWORD=violet
-         - ICON_SERVICE_PORT=9002
-         - ICON_SERVER_BASE_URL=http://127.0.0.1:9002
+        - STARTDECK_ADMIN_PASSWORD=violet
+        - ICON_SERVICE_PORT=9002
+        - ICON_SERVICE_DATA_DIR=/app/icon-service/data
+        - ICON_SERVER_BASE_URL=http://127.0.0.1:9002
          - ICON_SERVER_TIMEOUT_MS=5000
        volumes:
          - ./data:/app/server/data #指定路径下新建data
          - ./music:/app/server/music #映射播放器路径
          - ./PC:/app/server/PC #映射PC端壁纸路径
          - ./APP:/app/server/APP #映射移动端壁纸路径
-         - ./icon-service-data:/app/icon-service/data #映射站点元数据与图标服务数据
+        - ./icon-service-data:/app/icon-service/data #映射图标服务运行期数据
          - /var/run/docker.sock:/var/run/docker.sock #映射Docker Socket
    ```
 
@@ -214,7 +216,7 @@ sudo ./deploy.sh install
 - **默认密码**: 系统初始密码为 `admin`。Docker 部署可设置 `STARTDECK_ADMIN_PASSWORD`，容器启动时会同步 admin 密码；未设置时请登录后在设置中及时修改。
 - **数据文件**: 所有配置（布局、组件、书签等）均存储在 `server/data/startdeck.sqlite3` 中，二进制资源仍保存在 `server/` 下的对应目录。
 - **音乐文件**: 将 MP3 文件放入 `server/music` 目录，刷新页面后即可在播放器中看到。
-- **站点图标数据**: `icon-service/data` 保存种子图标、运行期缓存和站点 metadata，Debian 部署路径为 `/opt/startdeck/icon-service/data`。
+- **站点图标数据**: Rust crate 下的 `rust/crates/startdeck-iconserver/resources/data` 保存默认种子图标；运行期缓存和站点 metadata 写入 Docker `/app/icon-service/data` 或 Debian `/opt/startdeck/icon-service/data`。
 - **Docker 自动升级镜像**:
   - 入口：设置 → Docker 管理 → 自动升级镜像(每2小时)。
   - 关闭时：后台不会进行任何镜像拉取或版本对比。
@@ -362,8 +364,8 @@ export default {
 
 如果您希望子应用能与 StartDeck 深度交互（如读取 Store 数据），可以将子应用构建为库 (Library)。
 
-1. **放置资源**: StartDeck 内置了一个公共静态目录 `server/public`。
-   - 在 `server` 目录下新建 `public` 文件夹（如果没有）。
+1. **放置资源**: StartDeck 运行时会通过 `PUBLIC_DIR` 暴露公共静态目录，默认安装路径为 `server/public`。
+   - 在运行时 `server` 目录下新建 `public` 文件夹（如果没有）。
    - 将您的子项目构建产物（如 `my-widget.js`, `style.css`）放入其中。
    - 访问路径为: `/public/my-widget.js`。
 

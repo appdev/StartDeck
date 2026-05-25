@@ -3691,17 +3691,21 @@ watch(activeTab, (val) => {
 }
 
 .settings-shell-sidebar {
-  background: rgba(255, 255, 255, 0.035);
-  border-right-color: rgba(255, 255, 255, 0.1);
+  background: color-mix(
+    in srgb,
+    var(--sd-shell-surface-muted) 42%,
+    transparent
+  );
+  border-right-color: var(--sd-shell-border);
 }
 
 .settings-shell-sidebar-eyebrow,
 .settings-shell-sidebar-summary {
-  color: rgba(223, 221, 221, 0.56);
+  color: var(--sd-shell-text-secondary);
 }
 
 .settings-shell-sidebar-title {
-  color: rgb(223, 221, 221);
+  color: var(--sd-shell-text-primary);
 }
 
 .settings-shell-content,

@@ -23,6 +23,7 @@ BIN_SRC_ALT="${BASE_DIR}/startdeck-server"
 ICON_BIN_SRC="${BASE_DIR}/${ICON_SERVICE_BINARY}"
 DIST_SRC="${BASE_DIR}/dist"
 DIST_SRC_ALT="${BASE_DIR}/server/public"
+DIST_SRC_RUST="${BASE_DIR}/startdeck-server/resources/public"
 
 # 安装目标目录
 INSTALL_DIR="/opt/${APP_NAME}"
@@ -223,6 +224,7 @@ WorkingDirectory=${ICON_SERVICE_DIR}
 EnvironmentFile=-${CONFIG_FILE}
 Environment=BASE_DIR=${INSTALL_DIR}
 Environment=ICON_SERVICE_PORT=${ICON_SERVER_PORT}
+Environment=ICON_SERVICE_DATA_DIR=${ICON_DATA_DIR}
 ExecStart=${BIN_DIR}/${ICON_SERVICE_BINARY}
 Restart=on-failure
 RestartSec=5
@@ -310,10 +312,16 @@ write_config() {
 cat > "${CONFIG_FILE}" <<EOF
 PORT=${BACKEND_PORT}
 PUBLIC_DIR=${PUBLIC_DIR}
+DATA_DIR=${DATA_DIR}
+MUSIC_DIR=${MUSIC_DIR}
+PC_DIR=${PC_DIR}
+APP_DIR=${APP_DIR}
+STARTDECK_DEFAULT_TEMPLATE_FILE=${DATA_DIR}/default.json
 FRONTEND_PORT=${FRONTEND_PORT}
 BACKEND_PORT=${BACKEND_PORT}
 ICON_SERVER_PORT=${ICON_SERVER_PORT}
 ICON_SERVICE_PORT=${ICON_SERVER_PORT}
+ICON_SERVICE_DATA_DIR=${ICON_DATA_DIR}
 ICON_SERVER_BASE_URL=http://127.0.0.1:${ICON_SERVER_PORT}
 ICON_SERVER_TIMEOUT_MS=5000
 EOF
@@ -435,8 +443,7 @@ log_info "准备目录结构..."
 mkdir -p "${BIN_DIR}" "${STATIC_DIR}" "${PUBLIC_DIR}" "${CACHE_DIR}" "${LOG_DIR}" "${CONFIG_DIR}" "${ICON_SERVICE_DIR}" "${ICON_DATA_DIR}"
 mkdir -p "${DATA_DIR}" "${MUSIC_DIR}" "${PC_DIR}" "${APP_DIR}" "${DOC_DIR}"
 
-# 尝试从源码或当前目录初始化数据 (仅当目标为空时)
-# 优先查找 debian/server/NAME (打包资源)，其次查找 ../NAME (项目源码)
+# 尝试从 Rust crate 资源、离线包运行时目录或源码目录初始化数据 (仅当目标为空时)
 SOURCE_ROOT="$(dirname "${BASE_DIR}")"
 
 init_data_dir() {
@@ -444,13 +451,18 @@ init_data_dir() {
   local dest_path="$2"
   
   local src_path=""
-  # 1. 检查脚本所在目录下的 server/NAME (例如 debian/server/data)
-  if [ -d "${BASE_DIR}/server/${src_name}" ]; then
-    src_path="${BASE_DIR}/server/${src_name}"
-  # 2. 检查项目根目录下的 server/NAME (例如 ../server/data)
-  elif [ -d "${SOURCE_ROOT}/server/${src_name}" ]; then
-    src_path="${SOURCE_ROOT}/server/${src_name}"
-  fi
+  for candidate in \
+    "${BASE_DIR}/startdeck-server/resources/${src_name}" \
+    "${BASE_DIR}/rust/crates/startdeck-server/resources/${src_name}" \
+    "${BASE_DIR}/server/${src_name}" \
+    "${SOURCE_ROOT}/rust/crates/startdeck-server/resources/${src_name}" \
+    "${SOURCE_ROOT}/startdeck-server/resources/${src_name}" \
+    "${SOURCE_ROOT}/server/${src_name}"; do
+    if [ -d "${candidate}" ]; then
+      src_path="${candidate}"
+      break
+    fi
+  done
   
   if [ -n "${src_path}" ]; then
     # 如果目标目录为空，则复制
@@ -465,11 +477,18 @@ init_data_dir() {
 
 init_icon_service_data() {
   local src_path=""
-  if [ -d "${BASE_DIR}/icon-service/data" ]; then
-    src_path="${BASE_DIR}/icon-service/data"
-  elif [ -d "${SOURCE_ROOT}/icon-service/data" ]; then
-    src_path="${SOURCE_ROOT}/icon-service/data"
-  fi
+  for candidate in \
+    "${BASE_DIR}/startdeck-iconserver/resources/data" \
+    "${BASE_DIR}/rust/crates/startdeck-iconserver/resources/data" \
+    "${BASE_DIR}/icon-service/data" \
+    "${SOURCE_ROOT}/rust/crates/startdeck-iconserver/resources/data" \
+    "${SOURCE_ROOT}/startdeck-iconserver/resources/data" \
+    "${SOURCE_ROOT}/icon-service/data"; do
+    if [ -d "${candidate}" ]; then
+      src_path="${candidate}"
+      break
+    fi
+  done
 
   mkdir -p "${ICON_DATA_DIR}/icons" "${ICON_DATA_DIR}/cache"
 
@@ -489,7 +508,7 @@ init_icon_service_data() {
       cp -a "${src_path}/cache/." "${ICON_DATA_DIR}/cache/"
     fi
   else
-    log_warn "未找到 icon-service/data，图标服务将以空种子数据启动"
+    log_warn "未找到 Rust 图标服务资源目录，图标服务将以空种子数据启动"
   fi
 }
 
@@ -505,13 +524,17 @@ if [ ! -f "${BIN_SRC}" ]; then
   if [ -f "${BIN_SRC_ALT}" ]; then
     BIN_SRC="${BIN_SRC_ALT}"
   else
-    fail_with_tip "未找到 Go 二进制文件"
+    fail_with_tip "未找到 Rust 后端二进制文件"
   fi
 fi
 
 if [ ! -d "${DIST_SRC}" ]; then
   if [ -d "${DIST_SRC_ALT}" ]; then
     DIST_SRC="${DIST_SRC_ALT}"
+  elif [ -d "${DIST_SRC_RUST}" ]; then
+    DIST_SRC="${DIST_SRC_RUST}"
+  elif [ -d "${SOURCE_ROOT}/rust/crates/startdeck-server/resources/public" ]; then
+    DIST_SRC="${SOURCE_ROOT}/rust/crates/startdeck-server/resources/public"
   else
     fail_with_tip "未找到前端静态目录"
   fi

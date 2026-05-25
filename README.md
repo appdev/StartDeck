@@ -182,6 +182,7 @@ docker run -d \
   -v $(pwd)/icon-service-data:/app/icon-service/data \
   -e PORT=9001 \
   -e ICON_SERVICE_PORT=9002 \
+  -e ICON_SERVICE_DATA_DIR=/app/icon-service/data \
   -e ICON_SERVER_BASE_URL=http://127.0.0.1:9002 \
   -e ICON_SERVER_TIMEOUT_MS=5000 \
   -v /var/run/docker.sock:/var/run/docker.sock \
@@ -206,6 +207,7 @@ services:
       - PORT=9001
       - STARTDECK_ADMIN_PASSWORD=violet
       - ICON_SERVICE_PORT=9002
+      - ICON_SERVICE_DATA_DIR=/app/icon-service/data
       - ICON_SERVER_BASE_URL=http://127.0.0.1:9002
       - ICON_SERVER_TIMEOUT_MS=5000
       # 如需让后端自己识别子路径，可启用：
@@ -224,7 +226,7 @@ services:
 - **默认密码**: 系统初始密码为 `admin`。Docker 部署可设置 `STARTDECK_ADMIN_PASSWORD`，容器启动时会同步 admin 密码；未设置时请登录后在设置中及时修改。
 - **数据文件**: 所有配置（布局、组件、书签等）均存储在 `server/data/startdeck.sqlite3` 中，二进制资源仍保存在 `server/` 下的对应目录。
 - **音乐文件**: 将 MP3 文件放入 `server/music` 目录，刷新页面后即可在播放器中看到。
-- **站点图标数据**: Rust 图标服务使用 `icon-service/data`，Docker 挂载为 `/app/icon-service/data`，Debian 安装到 `/opt/startdeck/icon-service/data`。
+- **站点图标数据**: Rust 图标服务的默认种子资源位于 `rust/crates/startdeck-iconserver/resources/data`；Docker 运行期挂载为 `/app/icon-service/data`，Debian 安装到 `/opt/startdeck/icon-service/data`。
 - **Docker 自动升级镜像**:
   - 入口：设置 → Docker 管理 → 自动升级镜像(每2小时)。
   - 关闭时：后台不会进行任何镜像拉取或版本对比。

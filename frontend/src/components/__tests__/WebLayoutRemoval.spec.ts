@@ -93,6 +93,7 @@ describe("web layout presentation removal", () => {
     for (const token of [
       "--sd-shell-surface",
       "--sd-component-surface",
+      "--sd-component-empty-surface",
       "--sd-state-info",
       "--sd-state-danger",
       '[data-sd-theme="light"]',
@@ -102,6 +103,28 @@ describe("web layout presentation removal", () => {
     ]) {
       expect(mainCssSource).toContain(token);
     }
+  });
+
+  it("keeps theme controls and Settings sidebar colors semantic", () => {
+    const sidebarThemeBlockStart = settingsModalSource.indexOf(
+      ".settings-shell-sidebar {\n  background: color-mix(",
+    );
+    const sidebarThemeBlockEnd = settingsModalSource.indexOf(
+      ".settings-shell-content,",
+      sidebarThemeBlockStart,
+    );
+    const sidebarThemeBlock = settingsModalSource.slice(
+      sidebarThemeBlockStart,
+      sidebarThemeBlockEnd,
+    );
+
+    expect(sidebarThemeBlockStart).toBeGreaterThanOrEqual(0);
+    expect(sidebarThemeBlockEnd).toBeGreaterThan(sidebarThemeBlockStart);
+    expect(mainCssSource).toContain(".sd-segment-button:focus-visible");
+    expect(mainCssSource).toContain("box-shadow: var(--sd-focus-ring)");
+    expect(sidebarThemeBlock).toContain("var(--sd-shell-text-primary)");
+    expect(sidebarThemeBlock).toContain("var(--sd-shell-text-secondary)");
+    expect(sidebarThemeBlock).not.toContain("rgba(223, 221, 221, 0.56)");
   });
 
   it("splits the overloaded appearance layout Settings surface into focused tabs", () => {

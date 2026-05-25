@@ -94,12 +94,9 @@ async fn test_app_with_widget_cache(include_poem_cache: bool) -> axum::Router {
         )
         .unwrap();
     }
-    std::fs::create_dir_all(base.join("server/public")).unwrap();
-    std::fs::write(
-        base.join("server/public/index.html"),
-        "<main>StartDeck</main>",
-    )
-    .unwrap();
+    let public_dir = base.join("rust/crates/startdeck-server/resources/public");
+    std::fs::create_dir_all(&public_dir).unwrap();
+    std::fs::write(public_dir.join("index.html"), "<main>StartDeck</main>").unwrap();
     let config = RuntimeConfig::from_base_dir(base);
     let pool = connect_sqlite(&config).await.unwrap();
     import_legacy_data(&pool, &config).await.unwrap();
