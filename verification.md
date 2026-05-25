@@ -1637,3 +1637,24 @@ Verified:
 
 Limitations:
 - The currently running `9001/9002` services were not restarted in place. Restart them with the patched binaries before judging the live local page.
+
+## 2026-05-26 - Rust-Owned Resource Relocation
+
+Status: pass.
+
+Implemented:
+- Moved tracked main backend default resources into `rust/crates/startdeck-server/resources`.
+- Moved tracked icon service seed/cache resources into `rust/crates/startdeck-iconserver/resources/data`.
+- Updated Rust runtime configuration, Docker, Debian deploy/manage scripts, packaged artifact sync, docs, and tests to treat Rust crate resources as the source of truth.
+- Preserved mutable runtime data under runtime/configured directories instead of moving SQLite, secrets, generated build output, user media, or caches into source crates.
+
+Verified:
+- `cargo fmt --all` passed.
+- `bash -n scripts/docker-entrypoint.sh deploy_debian.sh manage.sh debian/deploy.sh debian/manage.sh` passed.
+- `cargo test --workspace` passed.
+- `cargo clippy --workspace --all-targets -- -D warnings` passed.
+- `git diff --check` passed.
+
+Limitations:
+- Live local services were not restarted in-place. Rebuild/restart is required before the running processes use the new resource defaults.
+- `server/public` can still exist as ignored generated/package output; it is no longer the source resource root for tracked defaults.
