@@ -58,8 +58,8 @@ onMounted(() => {
   width: 100%;
   height: 100%;
   overflow: hidden;
-  background: #fff;
-  color: #141414;
+  background: var(--sd-theme-itab-ip-ip-opened-panel-surface-01);
+  color: var(--sd-theme-itab-ip-ip-opened-panel-text-01);
   font-family:
     "HarmonyOS Sans",
     "PingFang SC",
@@ -76,7 +76,7 @@ onMounted(() => {
 
 .opened-ip-result h2 {
   margin: 0;
-  color: #111;
+  color: var(--sd-theme-itab-ip-ip-opened-panel-text-02);
   font-size: 16px;
   font-weight: 600;
   line-height: 22px;
@@ -84,7 +84,7 @@ onMounted(() => {
 
 .opened-ip-error {
   margin: 8px 0 0;
-  color: #b56b00;
+  color: var(--sd-theme-itab-ip-ip-opened-panel-accent-text-01);
   font-size: 12px;
   line-height: 18px;
 }
@@ -105,7 +105,7 @@ onMounted(() => {
 .opened-ip-result dt,
 .opened-ip-result dd {
   margin: 0;
-  color: #111;
+  color: var(--sd-theme-itab-ip-ip-opened-panel-text-02);
   font-size: 16px;
   font-weight: 400;
   line-height: 24px;

@@ -62,17 +62,29 @@ describe("ItabPoemOpenedPanel", () => {
       "utf8",
     );
 
-    expect(source).toContain("background: var(--poem-bg, #eee)");
+    expect(source).toContain(
+      "--sd-theme-itab-poem-poem-opened-panel-surface-01",
+    );
     expect(source).toContain("allowDailyPaletteRefresh: false");
     expect(source).not.toContain("runtime.randomizePalette();");
-    expect(source).toContain("color: #333");
+    expect(source).toContain(
+      "color: var(--sd-theme-itab-poem-poem-opened-panel-text-01)",
+    );
     expect(source).toContain("font-size: 36px");
     expect(source).toContain("line-height: 54px");
-    expect(source).toContain('fill="var(--poem-wave-back, #8ec2c6)"');
-    expect(source).toContain('fill="var(--poem-wave-middle, #74aaa4)"');
-    expect(source).toContain('fill="var(--poem-wave-front, #549087)"');
+    expect(source).toContain(
+      'fill="var(--poem-wave-back, var(--sd-itab-poem-wave-back))"',
+    );
+    expect(source).toContain(
+      'fill="var(--poem-wave-middle, var(--sd-itab-poem-wave-middle))"',
+    );
+    expect(source).toContain(
+      'fill="var(--poem-wave-front, var(--sd-itab-poem-wave-front))"',
+    );
     expect(source).toContain('fill-opacity="0.6"');
     expect(source).toContain("max-width: 700px");
-    expect(source).toContain("background: #fff");
+    expect(source).toContain(
+      "background: var(--sd-theme-itab-poem-poem-opened-panel-surface-04)",
+    );
   });
 });

@@ -152,7 +152,7 @@ const runtime = useItabClockRuntime(widgetRef, (data) =>
   display: flex;
   align-items: center;
   gap: 11px;
-  color: rgba(255, 255, 255, 0.64);
+  color: var(--sd-theme-itab-clock-clock-opened-panel-text-01);
 }
 
 .toggle-fullscreen,
@@ -190,7 +190,7 @@ const runtime = useItabClockRuntime(widgetRef, (data) =>
   position: relative;
   width: 100%;
   height: 100%;
-  background: #000;
+  background: var(--sd-theme-itab-clock-clock-opened-panel-surface-01);
 }
 
 .clock-dialog-center {
@@ -208,7 +208,7 @@ const runtime = useItabClockRuntime(widgetRef, (data) =>
   align-items: center;
   justify-content: center;
   margin-top: -53.227px;
-  color: #222;
+  color: var(--sd-theme-itab-clock-clock-opened-panel-text-02);
   font-size: 33.2667px;
   line-height: 49.9px;
 }
@@ -229,7 +229,7 @@ const runtime = useItabClockRuntime(widgetRef, (data) =>
   align-items: center;
   justify-content: center;
   margin: 5px 0;
-  color: #bdbdbd;
+  color: var(--sd-theme-itab-clock-clock-opened-panel-text-03);
   font-family: Arial, Helvetica, sans-serif;
   font-size: 58px;
   font-weight: 700;
@@ -244,16 +244,26 @@ const runtime = useItabClockRuntime(widgetRef, (data) =>
   --flip-font-family: Arial, Helvetica, sans-serif;
   --flip-font-size: 166.333px;
   --flip-font-weight: 800;
-  --flip-text-color: #ccc;
-  --flip-bg-top: linear-gradient(180deg, #1f1f1f 0%, #181818 100%);
-  --flip-bg-bottom: linear-gradient(180deg, #171717 0%, #1d1d1d 100%);
-  --flip-border-color: rgba(0, 0, 0, 0.62);
-  --flip-shadow: 0 1px 10px rgba(0, 0, 0, 0.7);
+  --flip-text-color: var(--sd-theme-itab-clock-clock-opened-panel-text-04);
+  --flip-bg-top: linear-gradient(
+    180deg,
+    var(--sd-theme-itab-clock-clock-opened-panel-surface-02) 0%,
+    var(--sd-theme-itab-clock-clock-opened-panel-surface-03) 100%
+  );
+  --flip-bg-bottom: linear-gradient(
+    180deg,
+    var(--sd-theme-itab-clock-clock-opened-panel-surface-04) 0%,
+    var(--sd-theme-itab-clock-clock-opened-panel-surface-05) 100%
+  );
+  --flip-border-color: var(--sd-theme-itab-clock-clock-opened-panel-border-01);
+  --flip-shadow: 0 1px 10px
+    var(--sd-theme-itab-clock-clock-opened-panel-shadow-01);
   --flip-perspective: 480px;
   --flip-timing-down: cubic-bezier(0.45, 0, 0.35, 1);
   --flip-timing-up: cubic-bezier(0.25, 0, 0.15, 1);
-  --flip-center-line: rgba(0, 0, 0, 0.76);
-  --flip-center-line-shadow: 0 1px 0 rgba(255, 255, 255, 0.03);
+  --flip-center-line: var(--sd-theme-itab-clock-clock-opened-panel-surface-06);
+  --flip-center-line-shadow: 0 1px 0
+    var(--sd-theme-itab-clock-clock-opened-panel-shadow-02);
   display: block;
   margin: 5px;
 }
@@ -279,7 +289,7 @@ const runtime = useItabClockRuntime(widgetRef, (data) =>
   align-items: center;
   justify-content: flex-end;
   gap: 14px;
-  color: rgba(255, 255, 255, 0.28);
+  color: var(--sd-theme-itab-clock-clock-opened-panel-text-05);
 }
 
 .clock-control-button {
@@ -307,7 +317,7 @@ const runtime = useItabClockRuntime(widgetRef, (data) =>
   height: 24px;
   flex: 0 0 auto;
   align-items: center;
-  color: #fff;
+  color: var(--sd-theme-itab-clock-clock-opened-panel-text-06);
   cursor: pointer;
 }
 
@@ -326,9 +336,9 @@ const runtime = useItabClockRuntime(widgetRef, (data) =>
   width: 30px;
   height: 16px;
   align-items: center;
-  border: 1px solid #dcdfe6;
+  border: 1px solid var(--sd-theme-itab-clock-clock-opened-panel-border-02);
   border-radius: 8px;
-  background: #dcdfe6;
+  background: var(--sd-theme-itab-clock-clock-opened-panel-surface-07);
   line-height: 16px;
   transition:
     background-color 0.18s ease,
@@ -336,8 +346,8 @@ const runtime = useItabClockRuntime(widgetRef, (data) =>
 }
 
 .el-switch.is-checked .el-switch__core {
-  border-color: #1890ff;
-  background: #1890ff;
+  border-color: var(--sd-theme-itab-clock-clock-opened-panel-accent-border-01);
+  background: var(--sd-theme-itab-clock-clock-opened-panel-accent-surface-01);
 }
 
 .el-switch__action {
@@ -348,7 +358,7 @@ const runtime = useItabClockRuntime(widgetRef, (data) =>
   width: 12px;
   height: 12px;
   border-radius: 100%;
-  background: #fff;
+  background: var(--sd-theme-itab-clock-clock-opened-panel-surface-08);
   transition: left 0.18s ease;
 }
 

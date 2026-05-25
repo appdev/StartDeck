@@ -747,7 +747,7 @@ const isMediaCustomized = computed(() => !!group.value?.backgroundImage);
 .group-settings-kicker,
 .group-settings-section-kicker {
   margin: 0;
-  color: rgba(223, 221, 221, 0.48);
+  color: var(--sd-theme-group-settings-modal-text-01);
   font-size: 11px;
   font-weight: 700;
   line-height: 14px;
@@ -758,7 +758,7 @@ const isMediaCustomized = computed(() => !!group.value?.backgroundImage);
 .group-settings-title {
   min-width: 0;
   overflow: hidden;
-  color: rgb(223, 221, 221);
+  color: var(--sd-theme-group-settings-modal-text-02);
   font-size: 17px;
   font-weight: 800;
   line-height: 1.25;
@@ -768,7 +768,7 @@ const isMediaCustomized = computed(() => !!group.value?.backgroundImage);
 
 .group-settings-summary,
 .group-settings-section-summary {
-  color: rgba(223, 221, 221, 0.68);
+  color: var(--sd-theme-group-settings-modal-text-03);
   font-size: 12px;
   font-weight: 500;
   line-height: 1.35;
@@ -783,21 +783,21 @@ const isMediaCustomized = computed(() => !!group.value?.backgroundImage);
 
 .group-settings-quick-actions button {
   min-height: 26px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid var(--sd-theme-group-settings-modal-border-01);
   border-radius: 10px;
-  background: rgba(255, 255, 255, 0.1);
-  color: rgba(223, 221, 221, 0.86);
+  background: var(--sd-theme-group-settings-modal-surface-01);
+  color: var(--sd-theme-group-settings-modal-text-04);
   font-size: 12px;
   font-weight: 700;
 }
 
 .group-settings-quick-actions button:hover {
-  border-color: rgba(24, 144, 255, 0.42);
-  background: rgba(255, 255, 255, 0.15);
+  border-color: var(--sd-theme-group-settings-modal-accent-border-01);
+  background: var(--sd-theme-group-settings-modal-surface-02);
 }
 
 .group-settings-quick-actions button.is-danger {
-  color: rgb(255, 143, 151);
+  color: var(--sd-theme-group-settings-modal-accent-text-01);
 }
 
 .group-settings-overview {
@@ -812,21 +812,21 @@ const isMediaCustomized = computed(() => !!group.value?.backgroundImage);
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--sd-theme-group-settings-modal-border-02);
   border-radius: 11px;
-  background: rgba(255, 255, 255, 0.075);
+  background: var(--sd-theme-group-settings-modal-surface-03);
   padding: 0 10px;
 }
 
 .group-settings-overview-row span {
-  color: rgba(223, 221, 221, 0.58);
+  color: var(--sd-theme-group-settings-modal-text-05);
   font-size: 12px;
   font-weight: 700;
 }
 
 .group-settings-overview-row strong {
   overflow: hidden;
-  color: rgb(223, 221, 221);
+  color: var(--sd-theme-group-settings-modal-text-02);
   font-size: 12px;
   font-weight: 800;
   text-overflow: ellipsis;
@@ -851,7 +851,7 @@ const isMediaCustomized = computed(() => !!group.value?.backgroundImage);
 
 .group-settings-section-title {
   margin: 2px 0;
-  color: rgb(223, 221, 221);
+  color: var(--sd-theme-group-settings-modal-text-02);
   font-size: 22px;
   font-weight: 800;
   line-height: 1.15;
@@ -870,8 +870,8 @@ const isMediaCustomized = computed(() => !!group.value?.backgroundImage);
   min-height: 24px;
   align-items: center;
   border-radius: 999px;
-  background: rgba(24, 144, 255, 0.18);
-  color: rgb(118, 188, 255);
+  background: var(--sd-theme-group-settings-modal-accent-surface-01);
+  color: var(--sd-theme-group-settings-modal-accent-text-02);
   font-size: 12px;
   font-weight: 800;
   padding: 0 10px;
@@ -906,7 +906,7 @@ const isMediaCustomized = computed(() => !!group.value?.backgroundImage);
   height: 36px;
   flex: 0 0 auto;
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.16);
+  border: 1px solid var(--sd-theme-group-settings-modal-border-03);
   border-radius: 12px;
   background: transparent;
   cursor: pointer;
@@ -927,7 +927,7 @@ const isMediaCustomized = computed(() => !!group.value?.backgroundImage);
 
 .group-settings-visibility-card span,
 .group-settings-swatch-field span {
-  color: rgba(223, 221, 221, 0.54);
+  color: var(--sd-theme-group-settings-modal-text-06);
   font-size: 12px;
   font-weight: 700;
 }
@@ -935,7 +935,7 @@ const isMediaCustomized = computed(() => !!group.value?.backgroundImage);
 .group-settings-visibility-card strong {
   display: block;
   margin-top: 2px;
-  color: rgb(223, 221, 221);
+  color: var(--sd-theme-group-settings-modal-text-02);
   font-size: 16px;
   font-weight: 800;
 }
@@ -965,9 +965,9 @@ const isMediaCustomized = computed(() => !!group.value?.backgroundImage);
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.11);
+  border: 1px solid var(--sd-theme-group-settings-modal-border-04);
   border-radius: 14px;
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--sd-theme-group-settings-modal-surface-04);
   padding: 10px 12px;
 }
 
@@ -977,9 +977,9 @@ const isMediaCustomized = computed(() => !!group.value?.backgroundImage);
   height: 42px;
   flex: 0 0 auto;
   place-items: center;
-  border: 1px solid rgba(255, 255, 255, 0.11);
+  border: 1px solid var(--sd-theme-group-settings-modal-border-04);
   border-radius: 14px;
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--sd-theme-group-settings-modal-surface-05);
 }
 
 .group-settings-icon-button {
@@ -987,15 +987,15 @@ const isMediaCustomized = computed(() => !!group.value?.backgroundImage);
   width: 36px;
   height: 36px;
   place-items: center;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid var(--sd-theme-group-settings-modal-border-01);
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.08);
-  color: rgba(223, 221, 221, 0.72);
+  background: var(--sd-theme-group-settings-modal-surface-05);
+  color: var(--sd-theme-group-settings-modal-text-07);
 }
 
 .group-settings-icon-button:hover {
-  border-color: rgba(255, 70, 82, 0.32);
-  color: rgb(255, 143, 151);
+  border-color: var(--sd-theme-group-settings-modal-accent-border-02);
+  color: var(--sd-theme-group-settings-modal-accent-text-01);
 }
 
 .group-settings-icon-button svg {
@@ -1004,8 +1004,8 @@ const isMediaCustomized = computed(() => !!group.value?.backgroundImage);
 }
 
 .group-settings-layout :deep(.sd-section-card) {
-  border-color: rgba(255, 255, 255, 0.11);
-  background: rgba(255, 255, 255, 0.075);
+  border-color: var(--sd-theme-group-settings-modal-border-04);
+  background: var(--sd-theme-group-settings-modal-surface-03);
   box-shadow: none;
 }
 
@@ -1020,43 +1020,43 @@ const isMediaCustomized = computed(() => !!group.value?.backgroundImage);
 .group-settings-layout :deep(.sd-section-card-title),
 .group-settings-layout :deep(.sd-field-label),
 .group-settings-layout :deep(.sd-range-field-value) {
-  color: rgb(223, 221, 221);
+  color: var(--sd-theme-group-settings-modal-text-02);
 }
 
 .group-settings-layout :deep(.sd-section-card-description),
 .group-settings-layout :deep(.sd-field-hint),
 .group-settings-layout :deep(.sd-range-field-title),
 .group-settings-layout :deep(.sd-switch-hint) {
-  color: rgba(223, 221, 221, 0.62);
+  color: var(--sd-theme-group-settings-modal-text-08);
 }
 
 .group-settings-layout :deep(.sd-input),
 .group-settings-layout :deep(.sd-select) {
-  border-color: rgba(255, 255, 255, 0.11);
-  background: rgba(255, 255, 255, 0.1);
-  color: rgb(223, 221, 221);
+  border-color: var(--sd-theme-group-settings-modal-border-04);
+  background: var(--sd-theme-group-settings-modal-surface-01);
+  color: var(--sd-theme-group-settings-modal-text-02);
 }
 
 .group-settings-layout :deep(.sd-input::placeholder) {
-  color: rgba(223, 221, 221, 0.4);
+  color: var(--sd-theme-group-settings-modal-text-09);
 }
 
 .group-settings-layout :deep(.sd-segmented) {
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--sd-theme-group-settings-modal-surface-05);
 }
 
 .group-settings-layout :deep(.sd-segment-button.is-active) {
-  background: rgb(24, 144, 255);
-  color: #ffffff;
+  background: var(--sd-theme-group-settings-modal-accent-surface-02);
+  color: var(--sd-theme-group-settings-modal-text-10);
   box-shadow: none;
 }
 
 .group-settings-layout :deep(.sd-switch:not(.is-checked)) {
-  background: rgba(255, 255, 255, 0.12);
+  background: var(--sd-theme-group-settings-modal-surface-06);
 }
 
 .group-settings-layout :deep(.sd-range) {
-  background: rgba(255, 255, 255, 0.18);
+  background: var(--sd-theme-group-settings-modal-surface-07);
 }
 
 input[type="range"]::-webkit-slider-thumb {
@@ -1064,7 +1064,7 @@ input[type="range"]::-webkit-slider-thumb {
   height: 16px;
   width: 16px;
   border-radius: 50%;
-  background: #3b82f6;
+  background: var(--sd-theme-group-settings-modal-accent-surface-03);
   cursor: pointer;
   margin-top: -6px;
 }
@@ -1072,7 +1072,7 @@ input[type="range"]::-webkit-slider-runnable-track {
   width: 100%;
   height: 4px;
   cursor: pointer;
-  background: #e5e7eb;
+  background: var(--sd-theme-group-settings-modal-surface-08);
   border-radius: 2px;
 }
 

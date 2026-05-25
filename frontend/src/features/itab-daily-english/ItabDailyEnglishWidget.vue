@@ -101,8 +101,10 @@ watch(
   overflow: hidden;
   box-sizing: border-box;
   padding: 12px;
-  background: #000;
-  color: #fff;
+  background: var(
+    --sd-theme-itab-daily-english-daily-english-widget-surface-01
+  );
+  color: var(--sd-theme-itab-daily-english-daily-english-widget-text-01);
   font-family:
     "PingFang SC",
     -apple-system,
@@ -126,7 +128,7 @@ watch(
   width: 100%;
   height: 100%;
   place-items: center;
-  color: #fff;
+  color: var(--sd-theme-itab-daily-english-daily-english-widget-text-01);
   font-size: 19px;
 }
 
@@ -143,7 +145,7 @@ watch(
   display: inline-flex;
   height: 18px;
   align-items: center;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--sd-theme-itab-daily-english-daily-english-widget-text-02);
   font-size: 12px;
   line-height: 18px;
   transform: scale(0.84);
@@ -167,7 +169,7 @@ watch(
 
 .daily-english-copy p {
   margin: 0;
-  color: #fff;
+  color: var(--sd-theme-itab-daily-english-daily-english-widget-text-01);
   font-size: 12px;
   line-height: 18px;
 }
@@ -175,7 +177,7 @@ watch(
 .daily-english-copy em {
   display: block;
   margin-top: 5px;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--sd-theme-itab-daily-english-daily-english-widget-text-03);
   font-size: 12px;
   font-style: normal;
   line-height: 18px;

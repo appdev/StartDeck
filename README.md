@@ -175,10 +175,10 @@ PORT=9001 ICON_SERVER_BASE_URL=http://127.0.0.1:9002 ./startdeck-server
 ```bash
 docker run -d \
   -p 9001:9001 \
-  -v $(pwd)/data:/app/server/data \
-  -v $(pwd)/music:/app/server/music \
-  -v $(pwd)/PC:/app/server/PC \
-  -v $(pwd)/APP:/app/server/APP \
+  -v $(pwd)/Data/data:/app/Data/data \
+  -v $(pwd)/Data/music:/app/Data/music \
+  -v $(pwd)/Data/PC:/app/Data/PC \
+  -v $(pwd)/Data/APP:/app/Data/APP \
   -v $(pwd)/icon-service-data:/app/icon-service/data \
   -e PORT=9001 \
   -e ICON_SERVICE_PORT=9002 \
@@ -213,10 +213,10 @@ services:
       # 如需让后端自己识别子路径，可启用：
       # - BASE_PATH=/startdeck
     volumes:
-      - ./data:/app/server/data
-      - ./music:/app/server/music
-      - ./PC:/app/server/PC
-      - ./APP:/app/server/APP
+      - ./Data/data:/app/Data/data
+      - ./Data/music:/app/Data/music
+      - ./Data/PC:/app/Data/PC
+      - ./Data/APP:/app/Data/APP
       - ./icon-service-data:/app/icon-service/data
       - /var/run/docker.sock:/var/run/docker.sock
 ```
@@ -224,8 +224,8 @@ services:
 ## ⚙️ 配置说明
 
 - **默认密码**: 系统初始密码为 `admin`。Docker 部署可设置 `STARTDECK_ADMIN_PASSWORD`，容器启动时会同步 admin 密码；未设置时请登录后在设置中及时修改。
-- **数据文件**: 所有配置（布局、组件、书签等）均存储在 `server/data/startdeck.sqlite3` 中，二进制资源仍保存在 `server/` 下的对应目录。
-- **音乐文件**: 将 MP3 文件放入 `server/music` 目录，刷新页面后即可在播放器中看到。
+- **数据文件**: 所有配置（布局、组件、书签等）均存储在 `Data/data/startdeck.sqlite3` 中，二进制资源保存在 `Data/` 下的对应目录。
+- **音乐文件**: 将 MP3 文件放入 `Data/music` 目录，刷新页面后即可在播放器中看到。
 - **站点图标数据**: Rust 图标服务的默认种子资源位于 `rust/crates/startdeck-iconserver/resources/data`；Docker 运行期挂载为 `/app/icon-service/data`，Debian 安装到 `/opt/startdeck/icon-service/data`。
 - **Docker 自动升级镜像**:
   - 入口：设置 → Docker 管理 → 自动升级镜像(每2小时)。

@@ -337,8 +337,8 @@ watch(
   box-sizing: border-box;
   min-height: 600px;
   overflow: hidden auto;
-  background: rgba(245, 247, 250, 0.82);
-  color: rgba(16, 24, 40, 0.88);
+  background: var(--sd-theme-itab-wallpaper-wallpaper-opened-panel-surface-01);
+  color: var(--sd-theme-itab-wallpaper-wallpaper-opened-panel-accent-text-01);
   font-family:
     "PingFang SC",
     -apple-system,
@@ -360,10 +360,11 @@ watch(
   place-items: center;
   border: 0;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.88);
-  color: rgb(24, 144, 255);
+  background: var(--sd-theme-itab-wallpaper-wallpaper-opened-panel-surface-02);
+  color: var(--sd-theme-itab-wallpaper-wallpaper-opened-panel-accent-text-02);
   padding: 0;
-  box-shadow: 0 0 16px rgba(255, 255, 255, 0.72);
+  box-shadow: 0 0 16px
+    var(--sd-theme-itab-wallpaper-wallpaper-opened-panel-shadow-01);
 }
 
 .wallpaper-settings-trigger svg {
@@ -373,7 +374,7 @@ watch(
 }
 
 .wallpaper-settings-trigger.active {
-  background: #fff;
+  background: var(--sd-theme-itab-wallpaper-wallpaper-opened-panel-surface-03);
 }
 
 .wallpaper-settings-popover {
@@ -385,8 +386,9 @@ watch(
   width: 268px;
   gap: 14px;
   border-radius: 16px;
-  background: rgba(255, 255, 255, 0.96);
-  box-shadow: 0 18px 48px rgba(15, 23, 42, 0.2);
+  background: var(--sd-theme-itab-wallpaper-wallpaper-opened-panel-surface-04);
+  box-shadow: 0 18px 48px
+    var(--sd-theme-itab-wallpaper-wallpaper-opened-panel-shadow-02);
   padding: 20px 22px;
 }
 
@@ -394,7 +396,7 @@ watch(
   display: flex;
   align-items: center;
   gap: 10px;
-  color: rgba(0, 0, 0, 0.78);
+  color: var(--sd-theme-itab-wallpaper-wallpaper-opened-panel-text-01);
   font-size: 15px;
   font-weight: 700;
 }
@@ -402,7 +404,7 @@ watch(
 .wallpaper-settings-popover input[type="checkbox"] {
   width: 18px;
   height: 18px;
-  accent-color: rgb(24, 144, 255);
+  accent-color: var(--sd-theme-itab-wallpaper-wallpaper-opened-panel-accent-01);
 }
 
 .wallpaper-range {
@@ -412,11 +414,11 @@ watch(
 
 .wallpaper-range input {
   width: 100%;
-  accent-color: rgb(24, 144, 255);
+  accent-color: var(--sd-theme-itab-wallpaper-wallpaper-opened-panel-accent-01);
 }
 
 .wallpaper-range b {
-  color: rgb(24, 144, 255);
+  color: var(--sd-theme-itab-wallpaper-wallpaper-opened-panel-accent-text-02);
   text-align: right;
 }
 
@@ -429,7 +431,7 @@ watch(
 
 .wallpaper-panel-head h2 {
   margin: 0;
-  color: rgba(0, 0, 0, 0.86);
+  color: var(--sd-theme-itab-wallpaper-wallpaper-opened-panel-text-02);
   font-size: 30px;
   font-weight: 800;
   line-height: 42px;
@@ -437,7 +439,7 @@ watch(
 
 .wallpaper-panel-head p {
   margin: 0;
-  color: rgba(0, 0, 0, 0.44);
+  color: var(--sd-theme-itab-wallpaper-wallpaper-opened-panel-text-03);
   font-size: 14px;
   line-height: 22px;
 }
@@ -458,7 +460,7 @@ watch(
   overflow: hidden;
   border: 0;
   border-radius: 12px;
-  background: #d7d9dc;
+  background: var(--sd-theme-itab-wallpaper-wallpaper-opened-panel-surface-05);
   padding: 0;
   cursor: pointer;
 }
@@ -472,7 +474,7 @@ watch(
 
 .wallpaper-featured-copy {
   padding-top: 2px;
-  color: rgba(62, 66, 72, 0.62);
+  color: var(--sd-theme-itab-wallpaper-wallpaper-opened-panel-text-04);
   font-size: 14px;
   line-height: 22px;
 }
@@ -480,7 +482,7 @@ watch(
 .wallpaper-featured-copy strong {
   display: block;
   margin-bottom: 10px;
-  color: rgba(49, 54, 60, 0.62);
+  color: var(--sd-theme-itab-wallpaper-wallpaper-opened-panel-text-05);
   font-size: 16px;
   font-weight: 600;
   line-height: 24px;
@@ -492,7 +494,7 @@ watch(
 
 .wallpaper-featured-copy b,
 .wallpaper-featured-copy a {
-  color: rgb(24, 144, 255);
+  color: var(--sd-theme-itab-wallpaper-wallpaper-opened-panel-accent-text-02);
   font-weight: 600;
   text-decoration: none;
 }
@@ -525,7 +527,7 @@ watch(
   overflow: hidden;
   border: 0;
   border-radius: 10px;
-  background: #dfe6ee;
+  background: var(--sd-theme-itab-wallpaper-wallpaper-opened-panel-surface-06);
   padding: 0;
   box-shadow: none;
 }
@@ -540,7 +542,7 @@ watch(
 .wallpaper-grid-card.active::after {
   position: absolute;
   inset: 0;
-  background: rgba(0, 0, 0, 0.18);
+  background: var(--sd-theme-itab-wallpaper-wallpaper-opened-panel-surface-07);
   content: "";
 }
 
@@ -555,8 +557,8 @@ watch(
   place-items: center;
   transform: translate(-50%, -50%);
   border-radius: 999px;
-  background: rgba(0, 0, 0, 0.38);
-  color: #fff;
+  background: var(--sd-theme-itab-wallpaper-wallpaper-opened-panel-surface-08);
+  color: var(--sd-theme-itab-wallpaper-wallpaper-opened-panel-text-06);
   font-size: 26px;
   font-weight: 800;
 }
@@ -576,8 +578,10 @@ watch(
 .wallpaper-opened-footer button {
   border: 0;
   border-radius: 999px;
-  background: rgb(24, 144, 255);
-  color: #fff;
+  background: var(
+    --sd-theme-itab-wallpaper-wallpaper-opened-panel-accent-surface-01
+  );
+  color: var(--sd-theme-itab-wallpaper-wallpaper-opened-panel-text-06);
   font-size: 14px;
   font-weight: 800;
   padding: 10px 22px;
@@ -590,13 +594,13 @@ watch(
 
 .wallpaper-opened-footer p {
   margin: 0;
-  color: rgba(16, 24, 40, 0.54);
+  color: var(--sd-theme-itab-wallpaper-wallpaper-opened-panel-accent-text-03);
   font-size: 13px;
   font-weight: 700;
 }
 
 .wallpaper-opened-footer p.is-error {
-  color: #dc2626;
+  color: var(--sd-theme-itab-wallpaper-wallpaper-opened-panel-accent-text-04);
 }
 
 @media (max-width: 760px) {

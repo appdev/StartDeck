@@ -20,7 +20,7 @@ ICON_SERVICE_BINARY="startdeck-iconserver"
 
 # 目录结构 (保持与 deploy.sh 一致)
 INSTALL_DIR="/opt/${APP_NAME}"
-SERVER_DIR="${INSTALL_DIR}/server"
+SERVER_DIR="${INSTALL_DIR}/Data"
 PUBLIC_DIR="${SERVER_DIR}/public"
 DATA_DIR="${SERVER_DIR}/data"
 MUSIC_DIR="${SERVER_DIR}/music"

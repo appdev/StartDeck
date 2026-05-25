@@ -118,11 +118,13 @@ const style = computed(() => anniversaryTemplateStyle(cardTemplate.value));
 }
 
 .variant-mini {
-  box-shadow: 0 0 10px 3px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 0 10px 3px
+    var(--sd-theme-itab-anniversary-anniversary-card-shadow-01);
 }
 
 .variant-preview {
-  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 8px 18px
+    var(--sd-theme-itab-anniversary-anniversary-card-shadow-02);
 }
 
 .variant-mini.size-2-2 {
@@ -249,7 +251,7 @@ const style = computed(() => anniversaryTemplateStyle(cardTemplate.value));
   background: linear-gradient(
     to bottom,
     var(--anniversary-text) 0 44px,
-    #fff 44px 100%
+    var(--sd-theme-itab-anniversary-anniversary-card-surface-01) 44px 100%
   );
   color: var(--anniversary-text);
   text-align: center;
@@ -266,7 +268,7 @@ const style = computed(() => anniversaryTemplateStyle(cardTemplate.value));
 
 .is-payday .anniversary-card-copy > span {
   height: 44px;
-  color: #fff;
+  color: var(--sd-theme-itab-anniversary-anniversary-card-text-01);
   font-size: 14px;
   font-weight: 600;
   line-height: 44px;
@@ -292,7 +294,7 @@ const style = computed(() => anniversaryTemplateStyle(cardTemplate.value));
   background: linear-gradient(
     to bottom,
     var(--anniversary-text) 0 37.5px,
-    #fff 37.5px 100%
+    var(--sd-theme-itab-anniversary-anniversary-card-surface-01) 37.5px 100%
   );
 }
 
@@ -354,7 +356,7 @@ const style = computed(() => anniversaryTemplateStyle(cardTemplate.value));
 }
 
 .is-payday.size-1-2 {
-  background: #fff;
+  background: var(--sd-theme-itab-anniversary-anniversary-card-surface-01);
 }
 
 .is-payday.size-1-2 .anniversary-card-copy {
@@ -378,7 +380,7 @@ const style = computed(() => anniversaryTemplateStyle(cardTemplate.value));
 }
 
 .is-payday.size-2-1 {
-  background: #fff;
+  background: var(--sd-theme-itab-anniversary-anniversary-card-surface-01);
 }
 
 .is-payday.size-2-1 .anniversary-card-copy {
@@ -688,7 +690,7 @@ const style = computed(() => anniversaryTemplateStyle(cardTemplate.value));
 .anniversary-card-calendar .weekend,
 .anniversary-card-calendar i:nth-child(6),
 .anniversary-card-calendar i:nth-child(7) {
-  color: #db5c76;
+  color: var(--sd-theme-itab-anniversary-anniversary-card-accent-text-01);
 }
 
 .anniversary-card-calendar .muted {
@@ -702,8 +704,10 @@ const style = computed(() => anniversaryTemplateStyle(cardTemplate.value));
   place-items: center;
   justify-self: center;
   border-radius: 50%;
-  background: #db5c76;
-  color: #fff;
+  background: var(
+    --sd-theme-itab-anniversary-anniversary-card-accent-surface-01
+  );
+  color: var(--sd-theme-itab-anniversary-anniversary-card-text-01);
   line-height: 15px;
 }
 
@@ -748,7 +752,8 @@ const style = computed(() => anniversaryTemplateStyle(cardTemplate.value));
   background: linear-gradient(
     to bottom,
     var(--anniversary-text) 0 var(--payday-band),
-    #fff var(--payday-band) 100%
+    var(--sd-theme-itab-anniversary-anniversary-card-surface-01)
+      var(--payday-band) 100%
   );
 }
 
@@ -790,7 +795,7 @@ const style = computed(() => anniversaryTemplateStyle(cardTemplate.value));
   align-items: center;
   justify-content: center;
   padding: 0 6px;
-  color: #fff;
+  color: var(--sd-theme-itab-anniversary-anniversary-card-text-01);
   font-size: var(--payday-label-size);
   font-weight: 500;
   line-height: var(--payday-label-line);

@@ -578,7 +578,7 @@ const processIcon = (iconStr: string) => {
   if (badColorRegex.test(fixed)) {
     fixed = fixed.replace(
       /class="([^"]*)\bfill-[a-z]+-(50|100|200)\b([^"]*)"/g,
-      'class="$1 $3" style="fill: #ffffff;"',
+      'class="$1 $3" style="fill: var(--sd-component-on-strong);"',
     );
   }
   return fixed;
@@ -3132,16 +3132,14 @@ onUnmounted(() => {
       <div
         v-else-if="!store.appConfig.empireMode"
         class="absolute inset-0 transition-all duration-500"
-        style="
-          background-image: linear-gradient(to top, #a18cd1 0%, #fbc2eb 100%);
-        "
+        style="background-image: var(--sd-home-preview-default-background)"
       ></div>
 
       <!-- Empire Mode Background -->
       <div
         v-if="store.appConfig.empireMode"
         class="absolute inset-0 z-20"
-        style="background: radial-gradient(circle at 50% 50%, #2a2a2a, #000000)"
+        style="background: var(--sd-home-preview-empire-background)"
       >
         <div
           class="absolute inset-0 opacity-30"
@@ -3213,8 +3211,10 @@ onUnmounted(() => {
         backgroundColor:
           store.appConfig.background || store.appConfig.solidBackgroundColor
             ? 'transparent'
-            : '#f3f4f6',
-        '--group-title-color': store.appConfig.groupTitleColor || '#ffffff',
+            : 'var(--sd-home-background-fallback)',
+        '--group-title-color':
+          store.appConfig.groupTitleColor ||
+          'var(--sd-home-card-title-on-media)',
         '--card-bg-color': store.appConfig.cardBgColor || 'transparent',
         '--card-border-color': store.appConfig.cardBorderColor || 'transparent',
         '--card-border-hover-color':
@@ -3222,8 +3222,8 @@ onUnmounted(() => {
           store.appConfig.cardBorderColor !== 'transparent'
             ? store.appConfig.cardBorderColor
             : store.appConfig.background || store.appConfig.solidBackgroundColor
-              ? 'rgba(255, 255, 255, 0.35)'
-              : 'rgba(15, 23, 42, 0.12)',
+              ? 'var(--sd-home-card-outline-on-media)'
+              : 'var(--sd-home-card-outline-default)',
       }"
     >
       <div
@@ -3252,7 +3252,7 @@ onUnmounted(() => {
                 maxWidth: headerTitleMaxWidth + 'px',
                 color: store.appConfig.titleColor,
                 textShadow: store.appConfig.background
-                  ? '0 2px 8px rgba(0,0,0,0.5)'
+                  ? 'var(--sd-home-title-text-shadow-on-media)'
                   : 'none',
               }"
             >
@@ -3265,7 +3265,7 @@ onUnmounted(() => {
               :style="{
                 color: store.appConfig.titleColor,
                 textShadow: store.appConfig.background
-                  ? '0 2px 8px rgba(0,0,0,0.5)'
+                  ? 'var(--sd-home-title-text-shadow-on-media)'
                   : 'none',
               }"
             >
@@ -3317,8 +3317,8 @@ onUnmounted(() => {
             :style="{
               color: store.appConfig.titleColor,
               textShadow: store.appConfig.background
-                ? '0 2px 18px rgba(0,0,0,0.42)'
-                : '0 2px 14px rgba(15,23,42,0.18)',
+                ? 'var(--sd-home-card-search-shadow-on-media)'
+                : 'var(--sd-home-card-search-shadow-default)',
             }"
           >
             <div class="sd-itab-home-clock-digits">
@@ -3657,7 +3657,7 @@ onUnmounted(() => {
                   store.appConfig.mouseHoverEffect === 'lift'
                     ? 'hover:-translate-y-1 hover:shadow-lg'
                     : store.appConfig.mouseHoverEffect === 'glow'
-                      ? 'hover:shadow-[0_0_15px_rgba(168,85,247,0.5)]'
+                      ? 'hover:shadow-[var(--sd-home-card-hover-glow-shadow)]'
                       : store.appConfig.mouseHoverEffect === 'none'
                         ? ''
                         : 'hover:scale-105 active:scale-95',
@@ -3710,7 +3710,12 @@ onUnmounted(() => {
                       getContainerStatus(item)?.hasUpdate &&
                       (!item.containerId || !isUpdating.has(item.containerId))
                     "
-                    class="absolute top-1.5 left-1.5 w-2.5 h-2.5 rounded-full bg-red-500 z-50 shadow-[0_0_4px_rgba(239,68,68,0.8)] border border-white/40 animate-pulse"
+                    class="absolute top-1.5 left-1.5 w-2.5 h-2.5 rounded-full z-50 border animate-pulse"
+                    :style="{
+                      backgroundColor: 'var(--sd-home-card-update-dot-bg)',
+                      borderColor: 'var(--sd-home-card-update-dot-border)',
+                      boxShadow: 'var(--sd-home-card-update-dot-shadow)',
+                    }"
                     title="Container Image Update Available"
                   ></div>
 
@@ -3755,7 +3760,7 @@ onUnmounted(() => {
                     >
                       <path
                         d="M719.768116 237.449275H304.231884a59.362319 59.362319 0 0 0-59.362319 59.362319v415.536232a59.362319 59.362319 0 0 0 59.362319 59.362319h415.536232a59.362319 59.362319 0 0 0 59.362319-59.362319V296.811594a59.362319 59.362319 0 0 0-59.362319-59.362319z m0 474.898551H304.231884V296.811594h415.536232v415.536232z m267.130435-237.449275a29.681159 29.681159 0 0 0 0-59.362319h-103.884058v-89.043478h103.884058a29.681159 29.681159 0 0 0 0-59.362319h-103.884058v-50.265044A78.313739 78.313739 0 0 0 801.391304 133.565217H764.289855V29.681159a29.681159 29.681159 0 0 0-59.362319 0v103.884058h-89.043478V29.681159a29.681159 29.681159 0 0 0-59.362319 0v103.884058h-89.043478V29.681159a29.681159 29.681159 0 0 0-59.362319 0v103.884058h-37.101449C173.516058 133.565217 126.144928 167.698551 126.144928 216.865391V267.130435H37.101449a29.681159 29.681159 0 0 0 0 59.362319h89.043479v89.043478H37.101449a29.681159 29.681159 0 0 0 0 59.362319h89.043479v89.043478H37.101449a29.681159 29.681159 0 0 0 0 59.362319h89.043479v89.043478H37.101449a29.681159 29.681159 0 0 0 0 59.362319h89.043479v23.937855A100.826899 100.826899 0 0 0 222.608696 890.434783H259.710145v103.884058a29.681159 29.681159 0 0 0 59.362319 0v-103.884058h89.043478v103.884058a29.681159 29.681159 0 0 0 59.362319 0v-103.884058h89.043478v103.884058a29.681159 29.681159 0 0 0 59.362319 0v-103.884058h37.101449c49.092638 0 81.623188-45.694145 81.623189-94.786783V771.710145h103.884058a29.681159 29.681159 0 0 0 0-59.362319h-103.884058v-89.043478h103.884058a29.681159 29.681159 0 0 0 0-59.362319h-103.884058v-89.043478h103.884058zM823.652174 801.391304a29.681159 29.681159 0 0 1-29.68116 29.68116H215.188406a29.681159 29.681159 0 0 1-29.68116-29.68116V222.608696a29.681159 29.681159 0 0 1 29.68116-29.68116h578.782608a29.681159 29.681159 0 0 1 29.68116 29.68116v578.782608z"
-                        fill="#465975"
+                        fill="var(--sd-home-card-icon-fill)"
                         p-id="8932"
                       ></path>
                     </svg>
@@ -3792,7 +3797,7 @@ onUnmounted(() => {
                     >
                       <path
                         d="M85.333333 213.333333a42.666667 42.666667 0 0 0-42.666666 42.666667v384a42.666667 42.666667 0 0 0 42.666666 42.666667v85.333333a42.666667 42.666667 0 0 0 42.666667 42.666667h316.330667l42.666666-42.666667h50.005334l42.666666 42.666667H896a42.666667 42.666667 0 0 0 42.666667-42.666667v-85.333333a42.666667 42.666667 0 0 0 42.666666-42.666667V256a42.666667 42.666667 0 0 0-42.666666-42.666667H85.333333z m768 469.333334v42.666666h-238.336l-42.666666-42.666666H853.333333z m-401.664 0l-42.666666 42.666666H170.666667v-42.666666h281.002666zM128 597.333333V298.666667h768v298.666666H128z m85.333333-213.333333h85.333334v128H213.333333V384z m256 0H384v128h85.333333V384z m85.333334 0h85.333333v128h-85.333333V384z m256 0h-85.333334v128h85.333334V384z"
-                        fill="#465975"
+                        fill="var(--sd-home-card-icon-fill)"
                         p-id="4801"
                       ></path>
                     </svg>
@@ -3939,16 +3944,16 @@ onUnmounted(() => {
                       color:
                         item.titleColor ||
                         (item.backgroundImage || group.backgroundImage
-                          ? '#ffffff'
+                          ? 'var(--sd-home-card-title-on-media)'
                           : group.cardTitleColor ||
                             store.appConfig.cardTitleColor ||
-                            '#111827'),
+                            'var(--sd-home-card-title-primary)'),
                       fontSize: group.cardTitleSize
                         ? group.cardTitleSize + 'px'
                         : undefined,
                       textShadow:
                         item.backgroundImage || group.backgroundImage
-                          ? '0 1px 2px rgba(0,0,0,0.8)'
+                          ? 'var(--sd-home-card-text-shadow-on-media)'
                           : 'none',
                       opacity:
                         item.description1 ||
@@ -3970,13 +3975,13 @@ onUnmounted(() => {
                       color:
                         item.titleColor ||
                         (item.backgroundImage || group.backgroundImage
-                          ? '#ffffff'
+                          ? 'var(--sd-home-card-title-on-media)'
                           : group.cardTitleColor ||
                             store.appConfig.cardTitleColor ||
-                            '#374151'),
+                            'var(--sd-home-card-title-secondary)'),
                       textShadow:
                         item.backgroundImage || group.backgroundImage
-                          ? '0 1px 2px rgba(0,0,0,0.8)'
+                          ? 'var(--sd-home-card-text-shadow-on-media)'
                           : 'none',
                     }"
                   >
@@ -4023,13 +4028,13 @@ onUnmounted(() => {
                     :style="{
                       color:
                         item.backgroundImage || group.backgroundImage
-                          ? '#e5e7eb'
+                          ? 'var(--sd-home-card-description-on-media)'
                           : group.cardTitleColor ||
                             store.appConfig.cardTitleColor ||
-                            '#4b5563',
+                            'var(--sd-home-card-title-tertiary)',
                       textShadow:
                         item.backgroundImage || group.backgroundImage
-                          ? '0 1px 2px rgba(0,0,0,0.8)'
+                          ? 'var(--sd-home-card-text-shadow-on-media)'
                           : 'none',
                     }"
                   >
@@ -4042,13 +4047,13 @@ onUnmounted(() => {
                     :style="{
                       color:
                         item.backgroundImage || group.backgroundImage
-                          ? '#d1d5db'
+                          ? 'var(--sd-home-card-description-muted-on-media)'
                           : group.cardTitleColor ||
                             store.appConfig.cardTitleColor ||
-                            '#6b7280',
+                            'var(--sd-home-card-title-quaternary)',
                       textShadow:
                         item.backgroundImage || group.backgroundImage
-                          ? '0 1px 2px rgba(0,0,0,0.8)'
+                          ? 'var(--sd-home-card-text-shadow-on-media)'
                           : 'none',
                     }"
                   >
@@ -4065,14 +4070,14 @@ onUnmounted(() => {
                     color:
                       item.titleColor ||
                       (item.backgroundImage || group.backgroundImage
-                        ? '#ffffff'
+                        ? 'var(--sd-home-card-title-on-media)'
                         : group.cardTitleColor ||
                           store.appConfig.cardTitleColor ||
-                          '#111827'),
+                          'var(--sd-home-card-title-primary)'),
                     fontSize: (group.cardTitleSize ?? 13) + 'px',
                     textShadow:
                       item.backgroundImage || group.backgroundImage
-                        ? '0 2px 4px rgba(0,0,0,0.8)'
+                        ? 'var(--sd-home-card-text-shadow-strong)'
                         : 'none',
                   }"
                 >
@@ -4124,10 +4129,16 @@ onUnmounted(() => {
           >
             <div
               class="w-2 h-2 rounded-full transition-colors duration-300"
-              :class="
+              :class="store.isConnected ? '' : 'animate-pulse'"
+              :style="
                 store.isConnected
-                  ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.8)]'
-                  : 'bg-red-500 animate-pulse'
+                  ? {
+                      backgroundColor: 'var(--sd-home-live-dot-bg)',
+                      boxShadow: 'var(--sd-home-live-dot-shadow)',
+                    }
+                  : {
+                      backgroundColor: 'var(--sd-home-offline-dot-bg)',
+                    }
               "
             ></div>
             <span
@@ -4596,11 +4607,11 @@ onUnmounted(() => {
 <style scoped>
 .ghost {
   opacity: 0.4;
-  background: rgba(255, 255, 255, 0.5);
-  border: 2px dashed #9ca3af;
+  background: var(--sd-theme-grid-panel-surface-01);
+  border: 2px dashed var(--sd-theme-grid-panel-border-01);
 }
 .shadow-text {
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.6);
+  text-shadow: 0 2px 4px var(--sd-theme-grid-panel-shadow-01);
 }
 
 .sd-itab-home-top {
@@ -4657,11 +4668,11 @@ onUnmounted(() => {
   height: 46px;
   align-items: center;
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.36);
+  border: 1px solid var(--sd-theme-grid-panel-border-02);
   border-radius: 999px;
-  background: rgba(239, 246, 250, 0.74);
-  color: #20242a;
-  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.12);
+  background: var(--sd-theme-grid-panel-surface-02);
+  color: var(--sd-theme-grid-panel-text-01);
+  box-shadow: 0 12px 34px var(--sd-theme-grid-panel-shadow-02);
   backdrop-filter: blur(18px) saturate(130%);
 }
 
@@ -4674,7 +4685,7 @@ onUnmounted(() => {
   place-items: center;
   border: 0;
   background: transparent;
-  color: rgba(0, 0, 0, 0.58);
+  color: var(--sd-theme-grid-panel-text-02);
   cursor: pointer;
 }
 
@@ -4696,13 +4707,13 @@ onUnmounted(() => {
   border: 0;
   outline: none;
   background: transparent;
-  color: #20242a;
+  color: var(--sd-theme-grid-panel-text-01);
   font-size: 14px;
   line-height: 20px;
 }
 
 .sd-itab-home-search input::placeholder {
-  color: rgba(0, 0, 0, 0.42);
+  color: var(--sd-theme-grid-panel-text-03);
 }
 
 .sd-itab-home-search-engines {
@@ -4728,26 +4739,26 @@ onUnmounted(() => {
   border: 0;
   border-radius: 999px;
   background: transparent;
-  color: rgba(255, 255, 255, 0.86);
+  color: var(--sd-theme-grid-panel-text-04);
   font-size: 12px;
   font-weight: 700;
   line-height: 24px;
   text-align: center;
   text-overflow: ellipsis;
   white-space: nowrap;
-  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.42);
+  text-shadow: 0 1px 8px var(--sd-theme-grid-panel-shadow-03);
   cursor: pointer;
 }
 
 .sd-itab-home-search-engines button:hover,
 .sd-itab-home-search-engines button:focus-visible,
 .sd-itab-home-search-engines button.is-active {
-  background: rgba(255, 255, 255, 0.18);
+  background: var(--sd-theme-grid-panel-surface-03);
   outline: none;
 }
 
 .sd-itab-home-search-engines button.is-add {
-  color: rgba(255, 255, 255, 0.72);
+  color: var(--sd-theme-grid-panel-text-05);
 }
 
 @media (max-width: 767px) {
@@ -4775,9 +4786,9 @@ onUnmounted(() => {
   gap: 4px;
   padding: 9px 5px;
   border-radius: 12px;
-  background: rgba(11, 11, 11, 0.7);
-  color: #fff;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  background: var(--sd-theme-grid-panel-surface-04);
+  color: var(--sd-theme-grid-panel-text-06);
+  box-shadow: 0 10px 30px var(--sd-theme-grid-panel-shadow-04);
   backdrop-filter: blur(10px);
 }
 
@@ -4810,12 +4821,12 @@ onUnmounted(() => {
 .itab-add-blank-context-row:hover,
 .itab-add-blank-context-row:focus-visible,
 .itab-add-blank-context-row.is-active {
-  background: rgba(255, 255, 255, 0.14);
+  background: var(--sd-theme-grid-panel-surface-05);
   outline: none;
 }
 
 .itab-add-blank-context-shortcut {
-  color: rgba(255, 255, 255, 0.55);
+  color: var(--sd-theme-grid-panel-text-07);
   font-size: 11px;
 }
 .card-item {
@@ -4829,7 +4840,7 @@ onUnmounted(() => {
   border-color: var(--card-border-hover-color);
 }
 [contenteditable]:focus {
-  background-color: rgba(255, 255, 255, 0.2);
+  background-color: var(--sd-theme-grid-panel-surface-06);
 }
 .fade-enter-active,
 .fade-leave-active {
@@ -4852,13 +4863,13 @@ onUnmounted(() => {
 :deep(path[class*="fill-red-100"]),
 :deep(path[class*="fill-yellow-100"]),
 :deep(path[class*="fill-orange-100"]) {
-  fill: #ffffff !important;
+  fill: var(--sd-theme-grid-panel-fill-01) !important;
 }
 
 .empire-theme {
-  --group-title-color: #ffd700 !important;
-  --card-title-color: #ffd700 !important;
-  color: #ffd700 !important;
+  --group-title-color: var(--sd-theme-grid-panel-accent-text-01) !important;
+  --card-title-color: var(--sd-theme-grid-panel-accent-text-01) !important;
+  color: var(--sd-theme-grid-panel-accent-text-01) !important;
 }
 
 .empire-theme :deep(.text-gray-900),
@@ -4867,7 +4878,7 @@ onUnmounted(() => {
 .empire-theme :deep(.text-gray-600),
 .empire-theme :deep(.text-gray-500),
 .empire-theme :deep(.text-gray-400) {
-  color: #ffd700 !important;
+  color: var(--sd-theme-grid-panel-accent-text-01) !important;
 }
 
 .empire-theme :deep(.bg-white) {
@@ -4875,29 +4886,33 @@ onUnmounted(() => {
 }
 
 .empire-theme :deep(.bg-gray-50) {
-  background-color: rgba(0, 0, 0, 0.2) !important;
+  background-color: var(--sd-theme-grid-panel-surface-07) !important;
 }
 
 .empire-theme :deep(svg) {
-  color: #ffd700 !important;
+  color: var(--sd-theme-grid-panel-accent-text-01) !important;
   fill: currentColor;
 }
 
 .empire-theme :deep(.border-gray-200),
 .empire-theme :deep(.border-gray-100) {
-  border-color: rgba(255, 215, 0, 0.2) !important;
+  border-color: var(--sd-theme-grid-panel-accent-border-01) !important;
 }
 
 /* Force background override for ALL widget root elements */
 .empire-theme .grid-stack-item > * {
-  background-color: #000000 !important;
+  background-color: var(--sd-theme-grid-panel-surface-08) !important;
   background-image:
     url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23d4af37' fill-opacity='0.1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E"),
-    radial-gradient(circle at 50% 50%, #2a2a2a, #000000) !important;
-  border: 1px solid rgba(255, 215, 0, 0.6) !important;
+    radial-gradient(
+      circle at 50% 50%,
+      var(--sd-theme-grid-panel-text-08),
+      var(--sd-theme-grid-panel-text-09)
+    ) !important;
+  border: 1px solid var(--sd-theme-grid-panel-accent-border-02) !important;
   box-shadow:
-    inset 0 0 20px rgba(0, 0, 0, 0.8),
-    0 0 10px rgba(255, 215, 0, 0.2) !important;
+    inset 0 0 20px var(--sd-theme-grid-panel-shadow-05),
+    0 0 10px var(--sd-theme-grid-panel-shadow-06) !important;
 }
 
 /* Hide original backgrounds of inner elements */
@@ -4940,7 +4955,7 @@ onUnmounted(() => {
 .empire-theme :deep(.text-gray-500),
 .empire-theme :deep(.text-gray-400),
 .empire-theme :deep(.text-gray-300) {
-  color: #ffd700 !important;
+  color: var(--sd-theme-grid-panel-accent-text-01) !important;
 }
 
 /* Fix for Todo Widget input area */
@@ -4948,9 +4963,9 @@ onUnmounted(() => {
 .empire-theme :deep(.focus\:bg-white:focus),
 .empire-theme :deep(input),
 .empire-theme :deep(textarea) {
-  background-color: rgba(255, 255, 255, 0.05) !important;
-  color: #ffd700 !important;
-  border-color: rgba(255, 215, 0, 0.3) !important;
+  background-color: var(--sd-theme-grid-panel-surface-09) !important;
+  color: var(--sd-theme-grid-panel-accent-text-01) !important;
+  border-color: var(--sd-theme-grid-panel-accent-border-03) !important;
 }
 
 /* Fix for buttons and active states */
@@ -4962,9 +4977,9 @@ onUnmounted(() => {
 .empire-theme :deep(.bg-green-100),
 .empire-theme :deep(.hover\:bg-gray-100:hover),
 .empire-theme :deep(.hover\:bg-gray-200:hover) {
-  background-color: rgba(255, 215, 0, 0.1) !important;
-  color: #ffd700 !important;
-  border-color: rgba(255, 215, 0, 0.2) !important;
+  background-color: var(--sd-theme-grid-panel-accent-surface-01) !important;
+  color: var(--sd-theme-grid-panel-accent-text-01) !important;
+  border-color: var(--sd-theme-grid-panel-accent-border-01) !important;
 }
 
 /* Fix for specific text colors (Blue/Red/Green usually used for links/status) */
@@ -4975,18 +4990,18 @@ onUnmounted(() => {
 .empire-theme :deep(.text-red-500),
 .empire-theme :deep(.text-green-600),
 .empire-theme :deep(.text-orange-600) {
-  color: #ffd700 !important;
-  text-shadow: 0 0 5px rgba(255, 215, 0, 0.3);
+  color: var(--sd-theme-grid-panel-accent-text-01) !important;
+  text-shadow: 0 0 5px var(--sd-theme-grid-panel-shadow-07);
 }
 
 /* Calendar Today Highlight */
 .empire-theme :deep(.text-red-600.font-bold) {
-  color: #ff4500 !important;
-  text-shadow: 0 0 10px rgba(255, 69, 0, 0.5);
+  color: var(--sd-theme-grid-panel-accent-text-02) !important;
+  text-shadow: 0 0 10px var(--sd-theme-grid-panel-shadow-08);
 }
 
 /* Docker Status Bars */
 .empire-theme :deep(.bg-gray-200) {
-  background-color: rgba(255, 255, 255, 0.1) !important;
+  background-color: var(--sd-theme-grid-panel-surface-10) !important;
 }
 </style>

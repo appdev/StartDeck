@@ -142,7 +142,10 @@ onBeforeUnmount(() => {
   height: 100%;
   min-width: 0;
   min-height: 0;
-  color: var(--sd-runtime-widget-text, #15171c);
+  color: var(
+    --sd-runtime-widget-text,
+    var(--sd-theme-home-main-widget-shell-text-01)
+  );
 }
 
 .sd-main-widget-shell-card {
@@ -172,14 +175,14 @@ onBeforeUnmount(() => {
   width: max(88px, 100%);
   z-index: 2;
   overflow: hidden;
-  color: #fff;
+  color: var(--sd-theme-home-main-widget-shell-text-02);
   font-size: 12px;
   font-weight: 400;
   line-height: 15px;
   pointer-events: none;
   text-align: center;
   text-overflow: ellipsis;
-  text-shadow: 0 1px 7px rgba(0, 0, 0, 0.72);
+  text-shadow: 0 1px 7px var(--sd-theme-home-main-widget-shell-shadow-01);
   transform: translateX(-50%);
   white-space: nowrap;
 }
@@ -192,8 +195,8 @@ onBeforeUnmount(() => {
   align-content: center;
   gap: 0.35rem;
   border-radius: 1rem;
-  background: rgba(127, 29, 29, 0.9);
-  color: #fff;
+  background: var(--sd-theme-home-main-widget-shell-accent-surface-01);
+  color: var(--sd-theme-home-main-widget-shell-text-02);
   padding: 0.875rem;
   font-size: 0.75rem;
   line-height: 1.35;

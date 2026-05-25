@@ -644,8 +644,7 @@ const settingsPreviewEffectsLabel = computed(
 const inspectorPreviewSurfaceStyle = computed(() => {
   if (store.appConfig.empireMode) {
     return {
-      background:
-        "radial-gradient(circle at 50% 50%, rgb(42, 42, 42), rgb(0, 0, 0))",
+      background: "var(--sd-home-preview-empire-background)",
     };
   }
   if (store.appConfig.solidBackgroundColor) {
@@ -655,7 +654,7 @@ const inspectorPreviewSurfaceStyle = computed(() => {
     };
   }
   return {
-    backgroundImage: "linear-gradient(to top, #a18cd1 0%, #fbc2eb 100%)",
+    backgroundImage: "var(--sd-home-preview-default-background)",
   };
 });
 const handleInspectorPreviewImageLoad = () => {
@@ -3163,7 +3162,7 @@ watch(activeTab, (val) => {
 }
 
 :global(.settings-shell-itab .sd-window-subtitle) {
-  color: rgba(223, 221, 221, 0.58);
+  color: var(--sd-theme-settings-modal-text-01);
 }
 
 .settings-shell-window {
@@ -3441,7 +3440,11 @@ watch(activeTab, (val) => {
     color-mix(in srgb, var(--sd-color-border-subtle) 88%, transparent);
   border-radius: 1rem;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.16), rgba(15, 23, 42, 0.16)),
+    linear-gradient(
+      180deg,
+      var(--sd-theme-settings-modal-surface-01),
+      var(--sd-theme-settings-modal-accent-surface-01)
+    ),
     color-mix(
       in srgb,
       var(--sd-color-surface-muted) 82%,
@@ -3484,11 +3487,11 @@ watch(activeTab, (val) => {
   display: inline-flex;
   width: fit-content;
   align-items: center;
-  border: 1px solid rgba(255, 255, 255, 0.18);
+  border: 1px solid var(--sd-theme-settings-modal-border-01);
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.14);
+  background: var(--sd-theme-settings-modal-surface-02);
   padding: 0.3125rem 0.625rem;
-  color: rgba(255, 255, 255, 0.92);
+  color: var(--sd-theme-settings-modal-text-02);
   font-size: 0.6875rem;
   font-weight: 700;
   backdrop-filter: blur(12px);
@@ -3507,9 +3510,9 @@ watch(activeTab, (val) => {
   display: grid;
   justify-items: center;
   gap: 0.0625rem;
-  color: #ffffff;
+  color: var(--sd-theme-settings-modal-text-03);
   text-align: center;
-  text-shadow: 0 2px 10px rgba(15, 23, 42, 0.45);
+  text-shadow: 0 2px 10px var(--sd-theme-settings-modal-shadow-01);
 }
 .settings-preview-clock strong {
   font-size: clamp(1.875rem, 8vw, 2.625rem);
@@ -3519,7 +3522,7 @@ watch(activeTab, (val) => {
 .settings-preview-clock span {
   max-width: 100%;
   overflow: hidden;
-  color: rgba(255, 255, 255, 0.86);
+  color: var(--sd-theme-settings-modal-text-04);
   font-size: 0.625rem;
   font-weight: 700;
   line-height: 1.1;
@@ -3532,12 +3535,12 @@ watch(activeTab, (val) => {
   min-height: 2rem;
   align-items: center;
   gap: 0.4375rem;
-  border: 1px solid rgba(255, 255, 255, 0.34);
+  border: 1px solid var(--sd-theme-settings-modal-border-02);
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.82);
+  background: var(--sd-theme-settings-modal-surface-03);
   padding: 0.25rem 0.375rem 0.25rem 0.625rem;
-  color: rgba(15, 23, 42, 0.52);
-  box-shadow: 0 0.75rem 1.875rem rgba(15, 23, 42, 0.18);
+  color: var(--sd-theme-settings-modal-accent-text-01);
+  box-shadow: 0 0.75rem 1.875rem var(--sd-theme-settings-modal-shadow-02);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
 }
@@ -3546,7 +3549,7 @@ watch(activeTab, (val) => {
   flex: 0 0 auto;
   width: 0.6875rem;
   height: 0.6875rem;
-  border: 2px solid rgba(15, 23, 42, 0.32);
+  border: 2px solid var(--sd-theme-settings-modal-accent-border-01);
   border-radius: 999px;
 }
 .settings-preview-search-icon::after {
@@ -3556,7 +3559,7 @@ watch(activeTab, (val) => {
   width: 0.375rem;
   height: 0.125rem;
   border-radius: 999px;
-  background: rgba(15, 23, 42, 0.32);
+  background: var(--sd-theme-settings-modal-accent-surface-02);
   content: "";
   transform: rotate(45deg);
   transform-origin: left center;
@@ -3576,9 +3579,9 @@ watch(activeTab, (val) => {
   max-width: 4.5rem;
   overflow: hidden;
   border-radius: 999px;
-  background: rgba(15, 23, 42, 0.08);
+  background: var(--sd-theme-settings-modal-accent-surface-03);
   padding: 0.25rem 0.4375rem;
-  color: rgba(15, 23, 42, 0.72);
+  color: var(--sd-theme-settings-modal-accent-text-02);
   font-size: 0.625rem;
   font-style: normal;
   font-weight: 800;
@@ -3589,12 +3592,12 @@ watch(activeTab, (val) => {
 .settings-preview-title {
   max-width: min(100%, 14rem);
   overflow: hidden;
-  color: #ffffff;
+  color: var(--sd-theme-settings-modal-text-03);
   font-size: 1rem;
   font-weight: 800;
   line-height: 1.2;
   text-align: center;
-  text-shadow: 0 2px 8px rgba(15, 23, 42, 0.32);
+  text-shadow: 0 2px 8px var(--sd-theme-settings-modal-shadow-03);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -3719,21 +3722,21 @@ watch(activeTab, (val) => {
 }
 
 .settings-inline-switch {
-  border-color: rgba(255, 255, 255, 0.11);
-  background: rgba(255, 255, 255, 0.06);
+  border-color: var(--sd-theme-settings-modal-border-03);
+  background: var(--sd-theme-settings-modal-surface-04);
 }
 
 .settings-inline-switch-title {
-  color: rgb(223, 221, 221);
+  color: var(--sd-theme-settings-modal-text-05);
 }
 
 .settings-inline-switch-summary,
 .settings-layout-group-summary {
-  color: rgba(223, 221, 221, 0.62);
+  color: var(--sd-theme-settings-modal-text-06);
 }
 
 .settings-layout-group-title {
-  color: rgb(223, 221, 221);
+  color: var(--sd-theme-settings-modal-text-05);
 }
 
 .settings-system-page {
@@ -3748,21 +3751,21 @@ watch(activeTab, (val) => {
   justify-content: space-between;
   gap: 1rem;
   min-height: 7rem;
-  border: 1px solid rgba(255, 255, 255, 0.11);
+  border: 1px solid var(--sd-theme-settings-modal-border-03);
   border-radius: 16px;
   background:
     radial-gradient(
       circle at top right,
-      rgba(24, 144, 255, 0.18),
+      var(--sd-theme-settings-modal-accent-surface-04),
       transparent 36%
     ),
-    rgba(255, 255, 255, 0.065);
+    var(--sd-theme-settings-modal-surface-05);
   padding: 1rem;
 }
 
 .settings-system-kicker {
   margin: 0;
-  color: rgba(223, 221, 221, 0.5);
+  color: var(--sd-theme-settings-modal-text-07);
   font-size: 0.6875rem;
   font-weight: 800;
   line-height: 1rem;
@@ -3772,7 +3775,7 @@ watch(activeTab, (val) => {
 
 .settings-system-title {
   margin: 0.1875rem 0;
-  color: rgb(223, 221, 221);
+  color: var(--sd-theme-settings-modal-text-05);
   font-size: 1.45rem;
   font-weight: 800;
   line-height: 1.15;
@@ -3780,7 +3783,7 @@ watch(activeTab, (val) => {
 
 .settings-system-summary,
 .settings-system-note {
-  color: rgba(223, 221, 221, 0.68);
+  color: var(--sd-theme-settings-modal-text-08);
   font-size: 0.8125rem;
   line-height: 1.45;
 }
@@ -3790,15 +3793,15 @@ watch(activeTab, (val) => {
   min-width: 8.5rem;
   justify-items: end;
   gap: 0.125rem;
-  border: 1px solid rgba(255, 255, 255, 0.11);
+  border: 1px solid var(--sd-theme-settings-modal-border-03);
   border-radius: 14px;
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--sd-theme-settings-modal-surface-06);
   padding: 0.75rem 0.875rem;
 }
 
 .settings-system-metric span,
 .settings-system-mode-row span {
-  color: rgba(223, 221, 221, 0.52);
+  color: var(--sd-theme-settings-modal-text-09);
   font-size: 0.75rem;
   font-weight: 700;
 }
@@ -3807,7 +3810,7 @@ watch(activeTab, (val) => {
 .settings-system-mode-row strong {
   max-width: 12rem;
   overflow: hidden;
-  color: rgb(223, 221, 221);
+  color: var(--sd-theme-settings-modal-text-05);
   font-size: 1rem;
   font-weight: 800;
   line-height: 1.2;
@@ -3832,33 +3835,33 @@ watch(activeTab, (val) => {
 }
 
 .settings-system-page :deep(.sd-section-card) {
-  border-color: rgba(255, 255, 255, 0.11);
-  background: rgba(255, 255, 255, 0.075);
+  border-color: var(--sd-theme-settings-modal-border-03);
+  background: var(--sd-theme-settings-modal-surface-07);
   box-shadow: none;
 }
 
 .settings-system-page :deep(.sd-section-card-title),
 .settings-system-page :deep(.sd-field-label) {
-  color: rgb(223, 221, 221);
+  color: var(--sd-theme-settings-modal-text-05);
 }
 
 .settings-system-page :deep(.sd-section-card-description),
 .settings-system-page :deep(.sd-field-hint),
 .settings-system-page :deep(.sd-switch-hint) {
-  color: rgba(223, 221, 221, 0.62);
+  color: var(--sd-theme-settings-modal-text-06);
 }
 
 .settings-system-page :deep(.sd-input),
 .settings-system-page :deep(.sd-select),
 .settings-system-page :deep(.sd-textarea) {
-  border-color: rgba(255, 255, 255, 0.11);
-  background: rgba(255, 255, 255, 0.1);
-  color: rgb(223, 221, 221);
+  border-color: var(--sd-theme-settings-modal-border-03);
+  background: var(--sd-theme-settings-modal-surface-08);
+  color: var(--sd-theme-settings-modal-text-05);
 }
 
 .settings-system-page :deep(.sd-input::placeholder),
 .settings-system-page :deep(.sd-textarea::placeholder) {
-  color: rgba(223, 221, 221, 0.4);
+  color: var(--sd-theme-settings-modal-text-10);
 }
 
 .settings-system-login-card {
@@ -3867,15 +3870,15 @@ watch(activeTab, (val) => {
   width: min(26rem, 100%);
   justify-self: center;
   align-self: center;
-  border: 1px solid rgba(255, 255, 255, 0.11);
+  border: 1px solid var(--sd-theme-settings-modal-border-03);
   border-radius: 16px;
-  background: rgba(255, 255, 255, 0.075);
+  background: var(--sd-theme-settings-modal-surface-07);
   padding: 1.25rem;
 }
 
 .settings-system-login-card h4 {
   margin: 0;
-  color: rgb(223, 221, 221);
+  color: var(--sd-theme-settings-modal-text-05);
   font-size: 1.25rem;
   font-weight: 800;
 }
@@ -3900,7 +3903,7 @@ watch(activeTab, (val) => {
 }
 
 .settings-system-mode-row small {
-  color: rgba(223, 221, 221, 0.54);
+  color: var(--sd-theme-settings-modal-text-11);
   font-size: 0.75rem;
   line-height: 1.35;
 }
@@ -3917,7 +3920,7 @@ watch(activeTab, (val) => {
 }
 
 .settings-system-unit {
-  color: rgba(223, 221, 221, 0.62);
+  color: var(--sd-theme-settings-modal-text-06);
   font-size: 0.75rem;
   font-weight: 800;
 }
@@ -3939,9 +3942,9 @@ watch(activeTab, (val) => {
   align-items: center;
   justify-content: space-between;
   gap: 0.75rem;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--sd-theme-settings-modal-border-04);
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.065);
+  background: var(--sd-theme-settings-modal-surface-05);
   padding: 0.625rem 0.75rem;
 }
 
@@ -3954,7 +3957,7 @@ watch(activeTab, (val) => {
 .settings-system-list-row strong {
   min-width: 0;
   overflow: hidden;
-  color: rgb(223, 221, 221);
+  color: var(--sd-theme-settings-modal-text-05);
   font-size: 0.875rem;
   font-weight: 800;
   text-overflow: ellipsis;
@@ -3964,13 +3967,13 @@ watch(activeTab, (val) => {
 .settings-system-list-row strong span,
 .settings-system-list-row span,
 .settings-system-empty {
-  color: rgba(223, 221, 221, 0.56);
+  color: var(--sd-theme-settings-modal-text-12);
   font-size: 0.75rem;
   line-height: 1.25;
 }
 
 .settings-system-empty {
-  border: 1px dashed rgba(255, 255, 255, 0.12);
+  border: 1px dashed var(--sd-theme-settings-modal-border-05);
   border-radius: 12px;
   padding: 1rem;
   text-align: center;
@@ -3987,10 +3990,10 @@ watch(activeTab, (val) => {
 .settings-system-row-actions button,
 .settings-system-list-row > button {
   min-height: 1.75rem;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--sd-theme-settings-modal-border-04);
   border-radius: 9px;
-  background: rgba(255, 255, 255, 0.08);
-  color: rgba(223, 221, 221, 0.74);
+  background: var(--sd-theme-settings-modal-surface-06);
+  color: var(--sd-theme-settings-modal-text-13);
   font-size: 0.75rem;
   font-weight: 800;
   padding: 0 0.625rem;
@@ -3998,12 +4001,12 @@ watch(activeTab, (val) => {
 
 .settings-system-row-actions button:hover,
 .settings-system-list-row > button:hover {
-  border-color: rgba(24, 144, 255, 0.4);
-  color: rgb(223, 221, 221);
+  border-color: var(--sd-theme-settings-modal-accent-border-02);
+  color: var(--sd-theme-settings-modal-text-05);
 }
 
 .settings-system-danger-link {
-  color: rgb(255, 143, 151) !important;
+  color: var(--sd-theme-settings-modal-accent-text-03) !important;
 }
 
 .settings-system-password-row {
@@ -4032,13 +4035,13 @@ watch(activeTab, (val) => {
   border: 0;
   border-radius: 8px;
   background: transparent;
-  color: rgba(223, 221, 221, 0.62);
+  color: var(--sd-theme-settings-modal-text-06);
   transform: translateY(-50%);
 }
 
 .settings-system-password-input button:hover {
-  background: rgba(255, 255, 255, 0.08);
-  color: rgb(223, 221, 221);
+  background: var(--sd-theme-settings-modal-surface-06);
+  color: var(--sd-theme-settings-modal-text-05);
 }
 
 .settings-system-password-input svg {
@@ -4048,7 +4051,7 @@ watch(activeTab, (val) => {
 
 .settings-system-divider {
   height: 1px;
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--sd-theme-settings-modal-surface-08);
 }
 
 .settings-about-hero {
@@ -4064,20 +4067,20 @@ watch(activeTab, (val) => {
 .settings-about-feature-grid div {
   display: grid;
   gap: 0.25rem;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--sd-theme-settings-modal-border-04);
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.055);
+  background: var(--sd-theme-settings-modal-surface-09);
   padding: 0.75rem;
 }
 
 .settings-about-feature-grid strong {
-  color: rgb(223, 221, 221);
+  color: var(--sd-theme-settings-modal-text-05);
   font-size: 0.8125rem;
   font-weight: 800;
 }
 
 .settings-about-feature-grid span {
-  color: rgba(223, 221, 221, 0.64);
+  color: var(--sd-theme-settings-modal-text-14);
   font-size: 0.75rem;
   line-height: 1.35;
 }
@@ -4093,18 +4096,18 @@ watch(activeTab, (val) => {
   display: inline-flex;
   min-height: 1.75rem;
   align-items: center;
-  border: 1px solid rgba(255, 255, 255, 0.11);
+  border: 1px solid var(--sd-theme-settings-modal-border-03);
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.08);
-  color: rgba(223, 221, 221, 0.78);
+  background: var(--sd-theme-settings-modal-surface-06);
+  color: var(--sd-theme-settings-modal-text-15);
   font-size: 0.75rem;
   font-weight: 800;
   padding: 0 0.625rem;
 }
 
 .settings-system-page :deep(.sd-status-banner) {
-  border-color: rgba(255, 255, 255, 0.11);
-  background: rgba(255, 255, 255, 0.075);
+  border-color: var(--sd-theme-settings-modal-border-03);
+  background: var(--sd-theme-settings-modal-surface-07);
 }
 
 .settings-top-switch-grid {

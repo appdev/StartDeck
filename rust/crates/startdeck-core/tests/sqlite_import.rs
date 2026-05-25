@@ -10,7 +10,7 @@ use startdeck_core::{
 async fn imports_legacy_navigation_widgets_and_icon_seed_into_relational_tables() {
     let temp = tempfile::tempdir().unwrap();
     let base = temp.path();
-    let data_dir = base.join("server/data");
+    let data_dir = base.join("Data/data");
     let icon_data_dir = base.join("rust/crates/startdeck-iconserver/resources/data");
     std::fs::create_dir_all(&data_dir).unwrap();
     std::fs::create_dir_all(icon_data_dir.join("icons")).unwrap();
@@ -60,7 +60,7 @@ async fn imports_legacy_navigation_widgets_and_icon_seed_into_relational_tables(
 async fn incompatible_legacy_schema_is_rebuilt_destructively() {
     let temp = tempfile::tempdir().unwrap();
     let base = temp.path();
-    let data_dir = base.join("server/data");
+    let data_dir = base.join("Data/data");
     std::fs::create_dir_all(&data_dir).unwrap();
     std::fs::write(
         data_dir.join("system.json"),
@@ -156,7 +156,7 @@ async fn incompatible_legacy_schema_is_rebuilt_destructively() {
 async fn restart_import_does_not_overwrite_saved_sqlite_app_data() {
     let temp = tempfile::tempdir().unwrap();
     let base = temp.path();
-    let data_dir = base.join("server/data");
+    let data_dir = base.join("Data/data");
     std::fs::create_dir_all(&data_dir).unwrap();
     std::fs::write(
         data_dir.join("system.json"),

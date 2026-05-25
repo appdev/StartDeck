@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::io::Read;
 use std::net::IpAddr;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -15,7 +15,7 @@ use axum::{Json, Router};
 use base64::Engine;
 use base64::engine::general_purpose::STANDARD;
 use bcrypt::{DEFAULT_COST, hash, verify};
-use chrono::{Datelike, Duration as ChronoDuration, NaiveDate, Utc};
+use chrono::{Duration as ChronoDuration, Utc};
 use flate2::read::GzDecoder;
 use jsonwebtoken::{Algorithm, DecodingKey, EncodingKey, Header, Validation, decode, encode};
 use reqwest::Client;
@@ -35,6 +35,10 @@ use tower_http::cors::{Any, CorsLayer};
 use tower_http::services::ServeDir;
 use tower_http::trace::TraceLayer;
 use uuid::Uuid;
+
+mod ip_lookup;
+mod itab;
+mod static_assets;
 
 #[derive(Clone)]
 pub struct AppState {
@@ -84,9 +88,10 @@ pub fn app(state: AppState) -> Router {
     let backgrounds_dir = state.config.backgrounds_dir.clone();
     let mobile_dir = state.config.mobile_backgrounds_dir.clone();
     let icon_cache_dir = state.config.icon_cache_dir.clone();
-    let itab_live_assets_dir = static_public_subdir(&state.config, "itab-live-assets");
-    let itab_assets_dir = static_public_subdir(&state.config, "itab");
-    let intro_assets_dir = static_public_subdir(&state.config, "intro-assets");
+    let itab_live_assets_dir = static_assets::public_subdir(&state.config, "itab-live-assets");
+    let itab_assets_dir = static_assets::public_subdir(&state.config, "itab");
+    let intro_assets_dir = static_assets::public_subdir(&state.config, "intro-assets");
+    let icons_dir = static_assets::public_subdir(&state.config, "icons");
     Router::new()
         .route("/healthz", get(healthz))
         .route("/ws", get(ws_handler))
@@ -116,7 +121,7 @@ pub fn app(state: AppState) -> Router {
         .route("/api/site/metadata", get(site_metadata))
         .route("/api/site/icon", get(site_icon))
         .route("/api/icon-cache", post(cache_icon))
-        .route("/api/ip", get(ip_info))
+        .route("/api/ip", get(ip_lookup::ip_info))
         .route("/api/ping", get(ping))
         .route("/api/rtt", get(rtt))
         .route("/api/visitor/track", post(track_visitor))
@@ -155,20 +160,20 @@ pub fn app(state: AppState) -> Router {
         )
         .route("/api/config-versions/restore", post(restore_config_version))
         .route("/api/config-versions/{id}", delete(delete_config_version))
-        .route("/api/itab/today-english", get(cached_widget_data))
-        .route("/api/itab/movie-calendar", get(cached_widget_data))
-        .route("/api/itab/bing-wallpapers", get(cached_widget_data))
-        .route("/api/itab/weather/location", get(cached_widget_data))
-        .route("/api/itab/weather/search", get(cached_widget_data))
-        .route("/api/itab/weather/current", get(cached_widget_data))
-        .route("/api/itab/poem", get(cached_widget_data))
+        .route("/api/itab/today-english", get(itab::cached_widget_data))
+        .route("/api/itab/movie-calendar", get(itab::cached_widget_data))
+        .route("/api/itab/bing-wallpapers", get(itab::cached_widget_data))
+        .route("/api/itab/weather/location", get(itab::cached_widget_data))
+        .route("/api/itab/weather/search", get(itab::cached_widget_data))
+        .route("/api/itab/weather/current", get(itab::cached_widget_data))
+        .route("/api/itab/poem", get(itab::cached_widget_data))
         .route(
             "/api/itab/today-english/media/{kind}",
-            get(cached_today_english_media),
+            get(itab::cached_today_english_media),
         )
         .route(
             "/api/itab/movie-calendar/image/{kind}",
-            get(cached_movie_calendar_image),
+            get(itab::cached_movie_calendar_image),
         )
         .route(
             "/api/itab-resources/{resource_id}",
@@ -183,6 +188,7 @@ pub fn app(state: AppState) -> Router {
             get_service(ServeDir::new(itab_live_assets_dir)),
         )
         .nest_service("/itab", get_service(ServeDir::new(itab_assets_dir)))
+        .nest_service("/icons", get_service(ServeDir::new(icons_dir)))
         .nest_service(
             "/intro-assets",
             get_service(ServeDir::new(intro_assets_dir)),
@@ -242,139 +248,6 @@ struct WallpaperFetchRequest {
 struct Claims {
     username: String,
     exp: i64,
-}
-
-const ITAB_BING_WALLPAPER_KIND: &str = "itab_bing_wallpaper";
-const ITAB_BING_WALLPAPER_CACHE_TTL_MS: i64 = 6 * 60 * 60 * 1000;
-const ITAB_BING_WALLPAPER_DEFAULT_PAGE_SIZE: usize = 24;
-const ITAB_BING_WALLPAPER_MAX_PAGE_SIZE: usize = 24;
-const ITAB_BING_WALLPAPER_DEFAULT_SIZE: &str = "large";
-const ITAB_DAILY_ENGLISH_KIND: &str = "itab_daily_english";
-const ITAB_MOVIE_CALENDAR_KIND: &str = "itab_movie_calendar";
-const ITAB_POEM_KIND: &str = "itab_poem";
-const ITAB_DAILY_WIDGET_CACHE_TTL_MS: i64 = 12 * 60 * 60 * 1000;
-const ITAB_POEM_CACHE_TTL_MS: i64 = 2 * 60 * 60 * 1000;
-const ITAB_MEDIA_PROXY_MAX_BYTES: usize = 12 * 1024 * 1024;
-
-#[derive(Debug, Deserialize)]
-struct TimelessqBingListResponse {
-    errno: i64,
-    errmsg: String,
-    data: Option<TimelessqBingListData>,
-}
-
-#[derive(Debug, Deserialize)]
-struct TimelessqBingListData {
-    count: usize,
-    #[serde(rename = "totalPages")]
-    total_pages: usize,
-    #[serde(rename = "pageSize")]
-    page_size: usize,
-    #[serde(rename = "currentPage")]
-    current_page: usize,
-    #[serde(default)]
-    data: Vec<TimelessqBingImage>,
-}
-
-#[derive(Debug, Deserialize)]
-struct TimelessqBingImage {
-    #[serde(rename = "_id")]
-    id: String,
-    copyright: String,
-    time: String,
-    title: String,
-    url: String,
-    urlbase: String,
-}
-
-#[derive(Debug, Deserialize)]
-struct TimelessqDailyEnglishResponse {
-    errno: i64,
-    errmsg: String,
-    data: Option<TimelessqDailyEnglishData>,
-}
-
-#[derive(Debug, Deserialize)]
-struct TimelessqDailyEnglishData {
-    #[serde(rename = "_id")]
-    id: Option<String>,
-    date: Option<String>,
-    content: Option<String>,
-    note: Option<String>,
-    picture: Option<String>,
-    #[serde(rename = "middlePicture")]
-    middle_picture: Option<String>,
-    #[serde(rename = "largePicture")]
-    large_picture: Option<String>,
-    tts: Option<String>,
-}
-
-#[derive(Debug, Deserialize)]
-struct CodelifeMovieResponse {
-    code: i64,
-    data: Option<CodelifeMovieData>,
-    msg: Option<String>,
-}
-
-#[derive(Debug, Deserialize)]
-struct CodelifeMovieData {
-    date: Option<String>,
-    mov_area: Option<String>,
-    mov_director: Option<String>,
-    mov_intro: Option<String>,
-    mov_link: Option<String>,
-    mov_pic: Option<String>,
-    poster_url: Option<String>,
-    mov_rating: Option<String>,
-    mov_text: Option<String>,
-    mov_title: Option<String>,
-    mov_type: Option<Vec<String>>,
-    mov_year: Option<String>,
-    #[serde(rename = "bgColor")]
-    bg_color: Option<String>,
-    color: Option<String>,
-}
-
-#[derive(Debug, Deserialize)]
-struct JinrishiciResponse {
-    status: String,
-    data: Option<JinrishiciData>,
-    warning: Option<String>,
-}
-
-#[derive(Debug, Deserialize)]
-struct JinrishiciData {
-    id: Option<String>,
-    content: Option<String>,
-    popularity: Option<i64>,
-    origin: Option<JinrishiciOrigin>,
-    #[serde(rename = "cacheAt")]
-    cache_at: Option<String>,
-}
-
-#[derive(Debug, Deserialize)]
-struct JinrishiciOrigin {
-    title: Option<String>,
-    dynasty: Option<String>,
-    author: Option<String>,
-    content: Option<Vec<String>>,
-    translate: Option<Value>,
-}
-
-#[derive(Debug, Deserialize)]
-struct TimelessqIpRegionResponse {
-    errno: i64,
-    errmsg: String,
-    data: Option<TimelessqIpRegionData>,
-}
-
-#[derive(Debug, Deserialize)]
-struct TimelessqIpRegionData {
-    ip: String,
-    country: String,
-    province: String,
-    city: String,
-    isp: String,
 }
 
 async fn healthz() -> Json<Value> {
@@ -795,133 +668,6 @@ async fn cache_icon(
     ))
 }
 
-async fn ip_info(
-    State(state): State<AppState>,
-    headers: HeaderMap,
-    Query(query): Query<HashMap<String, String>>,
-) -> Result<Json<Value>, ApiError> {
-    let client_ip = headers
-        .get("x-forwarded-for")
-        .and_then(|value| value.to_str().ok())
-        .and_then(|value| value.split(',').next())
-        .map(str::trim)
-        .filter(|value| !value.is_empty())
-        .or_else(|| {
-            headers
-                .get("x-real-ip")
-                .and_then(|value| value.to_str().ok())
-                .map(str::trim)
-                .filter(|value| !value.is_empty())
-        })
-        .unwrap_or("127.0.0.1");
-    let query_ip = query
-        .get("ip")
-        .or_else(|| query.get("query"))
-        .map(String::as_str)
-        .map(str::trim)
-        .filter(|value| !value.is_empty());
-    if let Some(ip) = query_ip
-        && !matches!(ip.parse::<IpAddr>(), Ok(IpAddr::V4(_)))
-    {
-        return Err(ApiError::bad_request("invalid_ipv4"));
-    }
-
-    match fetch_ip_region(&state.http, query_ip).await {
-        Ok(data) => Ok(Json(json!({
-            "success": true,
-            "ip": data.ip,
-            "queryIp": data.ip,
-            "clientIp": client_ip,
-            "clientIpSource": "request-header",
-            "location": join_location_parts([&data.country, &data.province, &data.city, &data.isp]),
-            "country": data.country,
-            "region": data.province,
-            "province": data.province,
-            "city": data.city,
-            "isp": data.isp,
-            "network": data.isp,
-            "cached": false,
-            "source": "timelessq-ip-to-region",
-            "sourceStatus": "ok"
-        }))),
-        Err(error) => {
-            let fallback_ip = query_ip.unwrap_or(client_ip);
-            Ok(Json(json!({
-                "success": false,
-                "error": format!("ip_region_unavailable: {error}"),
-                "ip": fallback_ip,
-                "queryIp": fallback_ip,
-                "clientIp": client_ip,
-                "clientIpSource": "request-header",
-                "location": "本机 本地网络",
-                "country": "本机",
-                "region": "本地网络",
-                "province": "本地网络",
-                "city": "本机",
-                "isp": "本地网络",
-                "network": "本地网络",
-                "cached": false,
-                "source": "rust-local-fallback",
-                "sourceStatus": "error"
-            })))
-        }
-    }
-}
-
-async fn fetch_ip_region(
-    client: &Client,
-    query_ip: Option<&str>,
-) -> Result<TimelessqIpRegionData, String> {
-    let mut request = client.get("https://api.timelessq.com/ip-to-region");
-    if let Some(ip) = query_ip {
-        request = request.query(&[("ip", ip)]);
-    }
-    let response = request.send().await.map_err(|err| err.to_string())?;
-    let status = response.status();
-    if !status.is_success() {
-        return Err(format!("source_status_{status}"));
-    }
-    let payload = response
-        .json::<TimelessqIpRegionResponse>()
-        .await
-        .map_err(|err| err.to_string())?;
-    if payload.errno != 0 {
-        return Err(if payload.errmsg.is_empty() {
-            format!("source_errno_{}", payload.errno)
-        } else {
-            payload.errmsg
-        });
-    }
-    payload.data.ok_or_else(|| "missing_source_data".to_string())
-}
-
-fn join_location_parts<'a>(parts: impl IntoIterator<Item = &'a str>) -> String {
-    parts
-        .into_iter()
-        .map(str::trim)
-        .filter(|value| !value.is_empty())
-        .collect::<Vec<_>>()
-        .join(" ")
-}
-
-fn local_ip_response(client_ip: &str) -> Value {
-    json!({
-        "success": true,
-        "ip": client_ip,
-        "queryIp": client_ip,
-        "clientIp": client_ip,
-        "clientIpSource": "request-header",
-        "location": "本机 本地网络",
-        "country": "本机",
-        "region": "本地网络",
-        "city": "本机",
-        "isp": "本地网络",
-        "network": "本地网络",
-        "cached": false,
-        "source": "rust-local"
-    })
-}
-
 async fn ping(Query(query): Query<HashMap<String, String>>) -> Json<Value> {
     let url = query.get("url").cloned().unwrap_or_default();
     Json(json!({"success": !url.is_empty(), "url": url, "latency": null}))
@@ -1288,365 +1034,6 @@ async fn delete_config_version(
         .execute(&state.pool)
         .await?;
     Ok(Json(json!({"success": true})))
-}
-
-async fn cached_widget_data(
-    State(state): State<AppState>,
-    uri: axum::http::Uri,
-    Query(query): Query<HashMap<String, String>>,
-) -> Result<Json<Value>, ApiError> {
-    let kind = widget_kind_from_path(uri.path());
-    if kind == ITAB_BING_WALLPAPER_KIND {
-        return bing_wallpaper_data(&state, &query).await;
-    }
-    let row = sqlx::query(
-        "SELECT value_json, source_status FROM runtime_cache WHERE kind = ? ORDER BY updated_at DESC LIMIT 1",
-    )
-    .bind(kind)
-    .fetch_optional(&state.pool)
-    .await?;
-    if let Some(row) = row {
-        let data = parse_json(row.get::<String, _>("value_json"));
-        let status = row.get::<String, _>("source_status");
-        Ok(Json(cached_widget_response(data, &status)))
-    } else if let Some((cache_key, data, status)) = fallback_widget_cache(kind) {
-        sqlx::query(
-            r#"INSERT OR REPLACE INTO runtime_cache(kind, cache_key, value_json, expires_at, source_status, updated_at)
-               VALUES (?, ?, ?, ?, ?, ?)"#,
-        )
-        .bind(kind)
-        .bind(cache_key)
-        .bind(data.to_string())
-        .bind(None::<i64>)
-        .bind(status)
-        .bind(Utc::now().timestamp_millis())
-        .execute(&state.pool)
-        .await?;
-        Ok(Json(cached_widget_response(data, status)))
-    } else {
-        Err(ApiError::bad_gateway("cache_miss"))
-    }
-}
-
-async fn bing_wallpaper_data(
-    state: &AppState,
-    query: &HashMap<String, String>,
-) -> Result<Json<Value>, ApiError> {
-    let page = query_usize(query, "page", 1, 1, usize::MAX);
-    let page_size = query_usize(
-        query,
-        "pageSize",
-        ITAB_BING_WALLPAPER_DEFAULT_PAGE_SIZE,
-        1,
-        ITAB_BING_WALLPAPER_MAX_PAGE_SIZE,
-    );
-    let size = sanitize_bing_image_size(
-        query
-            .get("size")
-            .map(String::as_str)
-            .unwrap_or(ITAB_BING_WALLPAPER_DEFAULT_SIZE),
-    );
-    let refresh = query
-        .get("refresh")
-        .map(|value| value == "1" || value.eq_ignore_ascii_case("true"))
-        .unwrap_or(false);
-    let cache_key = format!("timelessq:{size}:page:{page}:pageSize:{page_size}:v1");
-    let now = Utc::now().timestamp_millis();
-    let cached = sqlx::query(
-        "SELECT value_json, source_status, expires_at FROM runtime_cache WHERE kind = ? AND cache_key = ?",
-    )
-    .bind(ITAB_BING_WALLPAPER_KIND)
-    .bind(&cache_key)
-    .fetch_optional(&state.pool)
-    .await?;
-
-    if let Some(row) = cached.as_ref() {
-        let expires_at = row.get::<Option<i64>, _>("expires_at");
-        if !refresh && expires_at.map(|value| value > now).unwrap_or(true) {
-            let data = parse_json(row.get::<String, _>("value_json"));
-            let status = row.get::<String, _>("source_status");
-            return Ok(Json(bing_wallpaper_response(data, &status)));
-        }
-    }
-
-    match fetch_bing_wallpaper_page(&state.http, page, page_size, &size).await {
-        Ok(data) => {
-            sqlx::query(
-                r#"INSERT OR REPLACE INTO runtime_cache(kind, cache_key, value_json, expires_at, source_status, updated_at)
-                   VALUES (?, ?, ?, ?, 'ok', ?)"#,
-            )
-            .bind(ITAB_BING_WALLPAPER_KIND)
-            .bind(&cache_key)
-            .bind(data.to_string())
-            .bind(now + ITAB_BING_WALLPAPER_CACHE_TTL_MS)
-            .bind(now)
-            .execute(&state.pool)
-            .await?;
-            Ok(Json(bing_wallpaper_response(data, "ok")))
-        }
-        Err(source_error) => {
-            if let Some(row) = cached {
-                let data = parse_json(row.get::<String, _>("value_json"));
-                return Ok(Json(bing_wallpaper_response(data, "stale")));
-            }
-            Err(ApiError::bad_gateway(format!(
-                "bing_wallpaper_source_unavailable: {source_error}"
-            )))
-        }
-    }
-}
-
-fn query_usize(
-    query: &HashMap<String, String>,
-    key: &str,
-    fallback: usize,
-    min: usize,
-    max: usize,
-) -> usize {
-    query
-        .get(key)
-        .and_then(|value| value.parse::<usize>().ok())
-        .unwrap_or(fallback)
-        .clamp(min, max)
-}
-
-fn sanitize_bing_image_size(value: &str) -> String {
-    let trimmed = value.trim();
-    match trimmed {
-        "default" | "mini" | "small" | "middle" | "large" | "mobile-mini" | "mobile-small"
-        | "mobile-middle" | "mobile-default" => trimmed.to_string(),
-        _ => ITAB_BING_WALLPAPER_DEFAULT_SIZE.to_string(),
-    }
-}
-
-async fn fetch_bing_wallpaper_page(
-    client: &Client,
-    page: usize,
-    page_size: usize,
-    size: &str,
-) -> Result<Value, String> {
-    let response = client
-        .get("https://api.timelessq.com/bing/list")
-        .query(&[
-            ("page", page.to_string()),
-            ("pageSize", page_size.to_string()),
-            ("size", size.to_string()),
-        ])
-        .send()
-        .await
-        .map_err(|err| err.to_string())?;
-    let status = response.status();
-    if !status.is_success() {
-        return Err(format!("source_status_{status}"));
-    }
-    let payload = response
-        .json::<TimelessqBingListResponse>()
-        .await
-        .map_err(|err| err.to_string())?;
-    if payload.errno != 0 {
-        return Err(if payload.errmsg.is_empty() {
-            format!("source_errno_{}", payload.errno)
-        } else {
-            payload.errmsg
-        });
-    }
-    let Some(data) = payload.data else {
-        return Err("missing_source_data".to_string());
-    };
-    let entries: Vec<Value> = data
-        .data
-        .into_iter()
-        .map(normalize_bing_wallpaper_entry)
-        .collect();
-
-    Ok(json!({
-        "entries": entries,
-        "updatedAt": Utc::now().to_rfc3339(),
-        "count": data.count,
-        "totalPages": data.total_pages.max(1),
-        "pageSize": data.page_size,
-        "currentPage": data.current_page,
-        "sourceStatus": "ok"
-    }))
-}
-
-fn normalize_bing_wallpaper_entry(image: TimelessqBingImage) -> Value {
-    let download_url = absolute_bing_url(image.url.trim());
-    let thumbnail_url = thumbnail_bing_url(&download_url);
-    let (location, credit) = split_bing_copyright(&image.copyright);
-    let id_seed = if image.id.trim().is_empty() {
-        image.urlbase.trim()
-    } else {
-        image.id.trim()
-    };
-
-    json!({
-        "id": format!("bing-{}", sanitize_wallpaper_id(id_seed)),
-        "title": image.title.trim(),
-        "location": location,
-        "credit": if credit.is_empty() { "Bing".to_string() } else { credit },
-        "thumbnailUrl": thumbnail_url,
-        "downloadUrl": download_url,
-        "sourceUrl": absolute_bing_url(image.urlbase.trim()),
-        "bingTitle": image.title.trim(),
-        "startDate": image.time,
-        "copyrightText": image.copyright
-    })
-}
-
-fn absolute_bing_url(raw: &str) -> String {
-    if raw.starts_with("http://") || raw.starts_with("https://") {
-        raw.to_string()
-    } else if raw.starts_with('/') {
-        format!("https://www.bing.com{raw}")
-    } else {
-        format!("https://www.bing.com/{raw}")
-    }
-}
-
-fn thumbnail_bing_url(download_url: &str) -> String {
-    let separator = if download_url.contains('?') { '&' } else { '?' };
-    format!("{download_url}{separator}w=360&h=202")
-}
-
-fn split_bing_copyright(copyright: &str) -> (String, String) {
-    if let Some((location, rest)) = copyright.split_once(" (© ") {
-        let credit = rest.trim_end_matches(')').trim().to_string();
-        (location.trim().to_string(), credit)
-    } else {
-        (copyright.trim().to_string(), "Bing".to_string())
-    }
-}
-
-fn sanitize_wallpaper_id(seed: &str) -> String {
-    let sanitized: String = seed
-        .chars()
-        .filter_map(|character| {
-            if character.is_ascii_alphanumeric() {
-                Some(character.to_ascii_lowercase())
-            } else if character == '-' || character == '_' {
-                Some('-')
-            } else {
-                None
-            }
-        })
-        .collect();
-    if sanitized.is_empty() {
-        Uuid::new_v4().to_string()
-    } else {
-        sanitized
-    }
-}
-
-fn bing_wallpaper_response(mut data: Value, status: &str) -> Value {
-    if let Value::Object(ref mut object) = data {
-        object.insert("sourceStatus".to_string(), json!(status));
-    }
-    cached_widget_response(data, status)
-}
-
-fn cached_widget_response(mut data: Value, status: &str) -> Value {
-    if let Value::Object(ref mut object) = data {
-        object
-            .entry("sourceStatus")
-            .or_insert_with(|| json!(status));
-    }
-    json!({"success": true, "data": data, "sourceStatus": status})
-}
-
-fn fallback_widget_cache(kind: &str) -> Option<(&'static str, Value, &'static str)> {
-    match kind {
-        "itab_daily_english" => Some((
-            "fallback",
-            json!({
-                "mode": "跟读",
-                "sentence": "Light stretches longer, painting walls gold.",
-                "translation": "日光拉得更长，把墙壁染成金色。",
-                "progressLabel": "00:00",
-                "imageUrl": "",
-                "audioUrl": "",
-                "dateline": local_date_parts().0,
-                "sourceStatus": "fallback"
-            }),
-            "fallback",
-        )),
-        "itab_movie_calendar" => {
-            let (date, day, month_label, weekday) = local_date_parts();
-            Some((
-                "today:v2",
-                json!({
-                    "date": date,
-                    "day": day,
-                    "monthLabel": month_label,
-                    "weekday": weekday,
-                    "movieTitle": "雌雄莫辨",
-                    "rating": "7.4",
-                    "quote": "你不需要成为任何人，只需做你自己。",
-                    "posterUrl": "",
-                    "coverUrl": "",
-                    "sourceUrl": "https://movie.douban.com/subject/4712730/",
-                    "year": "2011",
-                    "area": "英国 爱尔兰",
-                    "director": "罗德里戈·加西亚",
-                    "intro": "阿尔伯特穿上男侍制服，靠谨慎与坚韧在陌生城市里寻找属于自己的生活。",
-                    "genres": ["剧情"],
-                    "bgColor": "3a444c",
-                    "textColor": "f4f7f9",
-                    "sourceStatus": "fallback"
-                }),
-                "fallback",
-            ))
-        }
-        "itab_poem" => Some((
-            "fallback:v1",
-            json!({
-                "id": "fallback-ouyangxiu-langtaosha",
-                "sentence": "垂杨紫陌洛城东，总是当时携手处，游遍芳丛。",
-                "poemTitle": "浪淘沙",
-                "author": "欧阳修",
-                "dynasty": "宋",
-                "fullText": [
-                    "把酒祝东风，且共从容。",
-                    "垂杨紫陌洛城东，总是当时携手处，游遍芳丛。",
-                    "聚散苦匆匆，此恨无穷。",
-                    "今年花胜去年红，可惜明年花更好，知与谁同？"
-                ],
-                "translation": [
-                    "端起酒杯向东方祈祷，请你再留些时日不要一去匆匆。",
-                    "洛阳城东垂柳婆娑的郊野小道，就是我们去年携手同游的地方。",
-                    "欢聚和离散都是这样匆促，心中的遗恨却无尽无穷。"
-                ],
-                "annotations": [
-                    "把酒：端着酒杯。",
-                    "从容：留恋，不舍。",
-                    "紫陌：指洛阳的道路。",
-                    "匆匆：形容时间匆促。"
-                ],
-                "preface": [
-                    "此词为春日与友人在洛阳城东旧地同游，有感而作。",
-                    "上片叙事，回忆昔日洛城游春赏花之欢聚；下片写聚散无常之感。"
-                ],
-                "sourceStatus": "fallback"
-            }),
-            "fallback",
-        )),
-        _ => None,
-    }
-}
-
-fn local_date_parts() -> (String, String, String, String) {
-    let local = Utc::now() + ChronoDuration::hours(8);
-    let weekdays = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"];
-    (
-        local.format("%Y-%m-%d").to_string(),
-        local.day().to_string(),
-        format!("{}月", local.month()),
-        weekdays[local.weekday().num_days_from_monday() as usize].to_string(),
-    )
-}
-
-async fn cached_media_missing() -> Result<Response, ApiError> {
-    Err(ApiError::not_found("media_not_cached"))
 }
 
 async fn itab_resource(AxumPath(resource_id): AxumPath<String>) -> Response {
@@ -2220,7 +1607,7 @@ fn sanitize_username(raw: &str) -> Result<String, ApiError> {
     Ok(username.to_string())
 }
 
-fn parse_json(raw: String) -> Value {
+pub(crate) fn parse_json(raw: String) -> Value {
     serde_json::from_str(&raw).unwrap_or_else(|_| json!({}))
 }
 
@@ -2252,19 +1639,6 @@ fn string_value(value: &Value, key: &str) -> Option<String> {
         .map(ToOwned::to_owned)
 }
 
-fn widget_kind_from_path(path: &str) -> &'static str {
-    match path {
-        "/api/itab/today-english" => "itab_daily_english",
-        "/api/itab/movie-calendar" => "itab_movie_calendar",
-        "/api/itab/bing-wallpapers" => ITAB_BING_WALLPAPER_KIND,
-        "/api/itab/weather/location" | "/api/itab/weather/search" | "/api/itab/weather/current" => {
-            "itab_weather"
-        }
-        "/api/itab/poem" => "itab_poem",
-        _ => "unknown",
-    }
-}
-
 fn decode_data_url(raw: &str) -> Result<(String, Vec<u8>), ApiError> {
     let (meta, data) = raw
         .split_once(',')
@@ -2292,7 +1666,7 @@ fn extension_for_content_type(content_type: &str) -> Option<&'static str> {
     }
 }
 
-async fn validate_remote_url(raw: &str) -> Result<reqwest::Url, ApiError> {
+pub(crate) async fn validate_remote_url(raw: &str) -> Result<reqwest::Url, ApiError> {
     let parsed = reqwest::Url::parse(raw).map_err(|_| ApiError::bad_request("invalid_url"))?;
     if !matches!(parsed.scheme(), "http" | "https") || parsed.host_str().is_none() {
         return Err(ApiError::bad_request("unsupported_protocol"));
@@ -2304,7 +1678,7 @@ async fn is_blocked_wallpaper_host(host: &str) -> Result<bool, ApiError> {
     Ok(is_blocked_host(host).await? && !is_allowed_wallpaper_host(host))
 }
 
-async fn is_blocked_host(host: &str) -> Result<bool, ApiError> {
+pub(crate) async fn is_blocked_host(host: &str) -> Result<bool, ApiError> {
     let host = host.trim().trim_end_matches('.').to_ascii_lowercase();
     if host.is_empty() || host == "localhost" {
         return Ok(true);
@@ -2323,7 +1697,7 @@ async fn is_blocked_host(host: &str) -> Result<bool, ApiError> {
     Ok(false)
 }
 
-fn is_blocked_ip(ip: IpAddr) -> bool {
+pub(crate) fn is_blocked_ip(ip: IpAddr) -> bool {
     match ip {
         IpAddr::V4(ip) => {
             ip.is_loopback()
@@ -2364,7 +1738,11 @@ fn is_allowed_wallpaper_host(host: &str) -> bool {
         .any(|item| host == *item || host.ends_with(&format!(".{item}")))
 }
 
-fn copy_response_header(headers_in: &HeaderMap, headers_out: &mut HeaderMap, name: HeaderName) {
+pub(crate) fn copy_response_header(
+    headers_in: &HeaderMap,
+    headers_out: &mut HeaderMap,
+    name: HeaderName,
+) {
     if let Some(value) = headers_in.get(&name) {
         headers_out.insert(name, value.clone());
     }
@@ -2386,7 +1764,7 @@ pub struct ApiError {
 }
 
 impl ApiError {
-    fn bad_request(message: impl Into<String>) -> Self {
+    pub(crate) fn bad_request(message: impl Into<String>) -> Self {
         Self {
             status: StatusCode::BAD_REQUEST,
             message: message.into(),
@@ -2400,21 +1778,21 @@ impl ApiError {
         }
     }
 
-    fn not_found(message: impl Into<String>) -> Self {
+    pub(crate) fn not_found(message: impl Into<String>) -> Self {
         Self {
             status: StatusCode::NOT_FOUND,
             message: message.into(),
         }
     }
 
-    fn bad_gateway(message: impl Into<String>) -> Self {
+    pub(crate) fn bad_gateway(message: impl Into<String>) -> Self {
         Self {
             status: StatusCode::BAD_GATEWAY,
             message: message.into(),
         }
     }
 
-    fn forbidden(message: impl Into<String>) -> Self {
+    pub(crate) fn forbidden(message: impl Into<String>) -> Self {
         Self {
             status: StatusCode::FORBIDDEN,
             message: message.into(),
@@ -2433,6 +1811,10 @@ impl ApiError {
             status: StatusCode::INTERNAL_SERVER_ERROR,
             message: message.into(),
         }
+    }
+
+    pub(crate) fn into_message(self) -> String {
+        self.message
     }
 }
 

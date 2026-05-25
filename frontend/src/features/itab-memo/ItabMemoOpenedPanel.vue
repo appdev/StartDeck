@@ -169,8 +169,8 @@ const updateActiveBody = (event: Event) => {
   width: 998px;
   height: 600px;
   overflow: hidden;
-  background: #fff;
-  color: #222;
+  background: var(--sd-theme-itab-memo-memo-opened-panel-surface-01);
+  color: var(--sd-theme-itab-memo-memo-opened-panel-text-01);
   font-size: 14px;
   line-height: 21px;
 }
@@ -192,7 +192,7 @@ const updateActiveBody = (event: Event) => {
   justify-content: space-between;
   margin: 0 0 12px;
   padding-left: 4px;
-  color: rgb(34, 34, 34);
+  color: var(--sd-theme-itab-memo-memo-opened-panel-text-02);
   font-size: 18px;
   font-weight: 700;
   line-height: 27px;
@@ -216,11 +216,12 @@ const updateActiveBody = (event: Event) => {
 }
 
 .memo-sort-caret.desc {
-  border-top: 6px solid #1890ff;
+  border-top: 6px solid
+    var(--sd-theme-itab-memo-memo-opened-panel-accent-border-01);
 }
 
 .memo-sort-caret.asc {
-  border-bottom: 6px solid #939393;
+  border-bottom: 6px solid var(--sd-theme-itab-memo-memo-opened-panel-border-01);
 }
 
 .memo-search {
@@ -236,7 +237,7 @@ const updateActiveBody = (event: Event) => {
   border: 0;
   border-radius: 2px;
   background: transparent;
-  color: rgb(34, 34, 34);
+  color: var(--sd-theme-itab-memo-memo-opened-panel-text-02);
   font-size: 12px;
   line-height: 22px;
   outline: none;
@@ -259,17 +260,17 @@ const updateActiveBody = (event: Event) => {
   align-items: flex-start;
   border-radius: 8px;
   padding: 12px 34px 12px 8px;
-  color: rgb(34, 34, 34);
+  color: var(--sd-theme-itab-memo-memo-opened-panel-text-02);
   cursor: pointer;
 }
 
 .memo-tabs-item:hover {
-  background: rgba(240, 241, 244, 0.72);
+  background: var(--sd-theme-itab-memo-memo-opened-panel-surface-02);
 }
 
 .memo-tabs-item.active {
-  background: rgb(240, 241, 244);
-  color: rgb(52, 120, 247);
+  background: var(--sd-theme-itab-memo-memo-opened-panel-surface-03);
+  color: var(--sd-theme-itab-memo-memo-opened-panel-accent-text-01);
 }
 
 .memo-item-copy {
@@ -292,7 +293,7 @@ const updateActiveBody = (event: Event) => {
 .memo-tabs-item time {
   display: block;
   overflow: hidden;
-  color: rgb(147, 147, 147);
+  color: var(--sd-theme-itab-memo-memo-opened-panel-text-03);
   font-size: 12px;
   line-height: 18px;
   text-overflow: ellipsis;
@@ -309,7 +310,7 @@ const updateActiveBody = (event: Event) => {
   justify-content: center;
   border: 0;
   background: transparent;
-  color: rgb(52, 120, 247);
+  color: var(--sd-theme-itab-memo-memo-opened-panel-accent-text-01);
   cursor: pointer;
   opacity: 0;
 }
@@ -329,7 +330,8 @@ const updateActiveBody = (event: Event) => {
 }
 
 .memo-note-action:focus-visible {
-  outline: 2px solid rgba(24, 144, 255, 0.48);
+  outline: 2px solid
+    var(--sd-theme-itab-memo-memo-opened-panel-accent-border-02);
   outline-offset: 1px;
 }
 
@@ -351,9 +353,9 @@ const updateActiveBody = (event: Event) => {
   justify-content: center;
   border: 0;
   border-radius: 999px;
-  background: #1890ff;
-  color: #fff;
-  box-shadow: rgba(0, 0, 0, 0.12) 0 0 5px 2px;
+  background: var(--sd-theme-itab-memo-memo-opened-panel-accent-surface-01);
+  color: var(--sd-theme-itab-memo-memo-opened-panel-text-04);
+  box-shadow: var(--sd-theme-itab-memo-memo-opened-panel-shadow-01) 0 0 5px 2px;
   cursor: pointer;
 }
 
@@ -378,7 +380,7 @@ const updateActiveBody = (event: Event) => {
   width: 753px;
   height: 30px;
   border: 0;
-  color: rgb(34, 34, 34);
+  color: var(--sd-theme-itab-memo-memo-opened-panel-text-02);
   font-size: 16px;
   font-weight: 700;
   line-height: 30px;
@@ -389,7 +391,7 @@ const updateActiveBody = (event: Event) => {
   display: block;
   width: 778px;
   height: 528px;
-  border-top: 1px solid #f2f2f2;
+  border-top: 1px solid var(--sd-theme-itab-memo-memo-opened-panel-border-02);
 }
 
 .memo-textarea-wrap textarea {
@@ -399,7 +401,7 @@ const updateActiveBody = (event: Event) => {
   resize: none;
   border: 0;
   padding: 5px 11px;
-  color: rgb(34, 34, 34);
+  color: var(--sd-theme-itab-memo-memo-opened-panel-text-02);
   font-size: 14px;
   line-height: 21px;
   outline: none;
@@ -409,14 +411,14 @@ const updateActiveBody = (event: Event) => {
   width: 778px;
   height: 18px;
   margin: 5px 0 0;
-  color: rgb(147, 147, 147);
+  color: var(--sd-theme-itab-memo-memo-opened-panel-text-03);
   font-size: 12px;
   line-height: 18px;
 }
 
 .memo-empty,
 .memo-content-empty {
-  color: rgb(147, 147, 147);
+  color: var(--sd-theme-itab-memo-memo-opened-panel-text-03);
   font-size: 12px;
   line-height: 18px;
 }

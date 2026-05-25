@@ -1,5 +1,5 @@
 # 将「当前仓库」里刚构建的产物同步到本目录（Debian 离线包 / deploy.sh 所用布局）。
-# 默认资源源头位于 Rust crate 的 resources 目录，server/public 仅作为运行时构建输出兼容路径。
+# Rust 默认资源源头位于 crate resources 目录；Data/public 仅作为前端构建输出兼容路径。
 # 用法（在仓库根目录）:  powershell -ExecutionPolicy Bypass -File debian/sync-packaged-artifacts.ps1
 # 可选: 跳过前端构建 -SkipFrontend   跳过后端构建 -SkipBackend   跳过图标服务 -SkipIconService
 
@@ -40,14 +40,13 @@ if (-not $SkipFrontend) {
 }
 
 $srcPublicCandidates = @(
-    (Join-Path $repoRoot "server\public"),
-    (Join-Path $repoRoot "frontend\dist"),
-    (Join-Path $repoRoot "rust\crates\startdeck-server\resources\public")
+    (Join-Path $repoRoot "Data\public"),
+    (Join-Path $repoRoot "frontend\dist")
 )
 $srcPublic = $srcPublicCandidates | Where-Object { Test-Path $_ } | Select-Object -First 1
-$dstPublic = Join-Path $debianRoot "server\public"
+$dstPublic = Join-Path $debianRoot "Data\public"
 if (-not $srcPublic) {
-    Write-Error "缺少前端静态目录，请先构建前端或检查 Rust resources。"
+    Write-Error "缺少前端静态目录，请先构建前端。"
 }
 New-Item -ItemType Directory -Force -Path $dstPublic | Out-Null
 robocopy $srcPublic $dstPublic /MIR /NFL /NDL /NJH /NJS /nc /ns /np | Out-Null
@@ -71,4 +70,4 @@ New-Item -ItemType Directory -Force -Path $dstIconData | Out-Null
 robocopy $srcIconData $dstIconData /MIR /XD .gocache /XF .DS_Store /NFL /NDL /NJH /NJS /nc /ns /np | Out-Null
 if ($LASTEXITCODE -ge 8) { exit $LASTEXITCODE }
 
-Write-Host "已同步: startdeck-server + startdeck-iconserver + server/public + Rust resources -> debian/"
+Write-Host "已同步: startdeck-server + startdeck-iconserver + Data/public + Rust resources -> debian/"

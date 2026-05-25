@@ -1,8 +1,10 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { mount, type VueWrapper } from "@vue/test-utils";
+import { flushPromises, mount, type VueWrapper } from "@vue/test-utils";
 import { createTestingPinia } from "@pinia/testing";
 import LoginModal from "./LoginModal.vue";
+import { useMainStore } from "../stores/main";
+import { useUiFeedbackStore } from "@/stores/uiFeedback";
 
 let wrapper: VueWrapper | null = null;
 
@@ -60,5 +62,36 @@ describe("LoginModal", () => {
     await modal.vm.$nextTick();
 
     expect(modal.emitted("update:show")).toEqual([[false]]);
+  });
+
+  it("shows a toast instead of an alert when the password is incorrect", async () => {
+    const modal = mountLoginModal();
+    const store = useMainStore();
+    const uiFeedback = useUiFeedbackStore();
+    vi.mocked(store.login).mockRejectedValueOnce(
+      new Error("password_incorrect\n"),
+    );
+
+    const passwordInput = document.body.querySelector<HTMLInputElement>(
+      'input[type="password"]',
+    );
+    const loginButton =
+      document.body.querySelector<HTMLButtonElement>("button.sd-btn-primary");
+    expect(passwordInput).not.toBeNull();
+    expect(loginButton).not.toBeNull();
+
+    passwordInput!.value = "bad-password";
+    passwordInput!.dispatchEvent(new Event("input", { bubbles: true }));
+    loginButton!.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    await flushPromises();
+
+    expect(uiFeedback.notify).toHaveBeenCalledWith({
+      title: "登录失败",
+      message: "密码错误，请重新输入。",
+      tone: "danger",
+    });
+    expect(uiFeedback.alert).not.toHaveBeenCalled();
+    expect(modal.emitted("update:show")).toBeUndefined();
+    expect(passwordInput!.value).toBe("");
   });
 });

@@ -134,33 +134,37 @@ const panelStyle = computed(() => {
 .sd-widget-opened-window.opened-itab-daily-english {
   border: 0;
   background: transparent;
-  color: #fff;
-  box-shadow: rgba(0, 0, 0, 0.48) 0 12px 32px 0;
+  color: var(--sd-theme-runtime-widget-opened-panel-host-text-01);
+  box-shadow: var(--sd-theme-runtime-widget-opened-panel-host-shadow-01) 0 12px
+    32px 0;
   backdrop-filter: none;
 }
 
 .sd-widget-opened-window.opened-itab-poem {
-  border: 1px solid rgba(255, 255, 255, 0.13);
-  background: #eee;
-  color: #333;
-  box-shadow: rgba(0, 0, 0, 0.48) 0 12px 32px 0;
+  border: 1px solid var(--sd-theme-runtime-widget-opened-panel-host-border-01);
+  background: var(--sd-theme-runtime-widget-opened-panel-host-surface-01);
+  color: var(--sd-theme-runtime-widget-opened-panel-host-text-02);
+  box-shadow: var(--sd-theme-runtime-widget-opened-panel-host-shadow-01) 0 12px
+    32px 0;
   backdrop-filter: none;
   overflow: auto;
 }
 
 .sd-widget-opened-window.opened-itab-pomodoro {
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--sd-theme-runtime-widget-opened-panel-host-border-02);
   background: transparent;
-  color: #fff;
-  box-shadow: rgba(0, 0, 0, 0.48) 0 12px 32px 0;
+  color: var(--sd-theme-runtime-widget-opened-panel-host-text-01);
+  box-shadow: var(--sd-theme-runtime-widget-opened-panel-host-shadow-01) 0 12px
+    32px 0;
   backdrop-filter: none;
 }
 
 .sd-widget-opened-window.opened-itab-anniversary {
-  border: 1px solid rgba(255, 255, 255, 0.13);
-  background: rgb(17, 17, 21);
-  color: #fff;
-  box-shadow: rgba(0, 0, 0, 0.48) 0 12px 32px 0;
+  border: 1px solid var(--sd-theme-runtime-widget-opened-panel-host-border-01);
+  background: var(--sd-theme-runtime-widget-opened-panel-host-surface-02);
+  color: var(--sd-theme-runtime-widget-opened-panel-host-text-01);
+  box-shadow: var(--sd-theme-runtime-widget-opened-panel-host-shadow-01) 0 12px
+    32px 0;
   backdrop-filter: none;
 }
 
@@ -173,10 +177,11 @@ const panelStyle = computed(() => {
 }
 
 .sd-widget-opened-window.opened-itab-movie-calendar {
-  border: 1px solid rgba(255, 255, 255, 0.13);
+  border: 1px solid var(--sd-theme-runtime-widget-opened-panel-host-border-01);
   background: transparent;
-  color: #f9d5ad;
-  box-shadow: rgba(0, 0, 0, 0.48) 0 12px 32px 0;
+  color: var(--sd-theme-runtime-widget-opened-panel-host-accent-text-01);
+  box-shadow: var(--sd-theme-runtime-widget-opened-panel-host-shadow-01) 0 12px
+    32px 0;
   backdrop-filter: none;
 }
 
@@ -204,8 +209,9 @@ const panelStyle = computed(() => {
   border: 0;
   border-radius: 15px;
   background: transparent;
-  color: #facc15;
-  box-shadow: rgb(223, 223, 223) 0 0 2px 0;
+  color: var(--sd-theme-runtime-widget-opened-panel-host-accent-text-02);
+  box-shadow: var(--sd-theme-runtime-widget-opened-panel-host-shadow-02) 0 0 2px
+    0;
   backdrop-filter: none;
 }
 

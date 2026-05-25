@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync, statSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
@@ -49,6 +49,20 @@ const collectBaselineColors = (entry: ColorAuditEntry) =>
     }),
   );
 
+const collectVueFiles = (dir: string): string[] =>
+  readdirSync(dir).flatMap((name) => {
+    const absolutePath = resolve(dir, name);
+    const stats = statSync(absolutePath);
+    if (stats.isDirectory()) return collectVueFiles(absolutePath);
+    return name.endsWith(".vue") ? [absolutePath] : [];
+  });
+
+const collectStyleBlocks = (source: string) =>
+  Array.from(
+    source.matchAll(/<style[^>]*>([\s\S]*?)<\/style>/g),
+    (match) => match[1] ?? "",
+  ).join("\n");
+
 describe("component color policy", () => {
   it("blocks new hard-coded product colors outside the audited baseline", () => {
     for (const entry of audit.entries) {
@@ -62,6 +76,26 @@ describe("component color policy", () => {
       expect(
         addedColors,
         `${entry.file} introduced hard-coded colors; use semantic --sd-* tokens or update the audited exception list with a reason.`,
+      ).toEqual([]);
+    }
+  });
+
+  it("keeps Vue component style blocks on theme tokens", () => {
+    const vueFiles = [
+      ...collectVueFiles(resolve(repoRoot, "frontend/src/components")),
+      ...collectVueFiles(resolve(repoRoot, "frontend/src/features")),
+    ].filter((file) => !file.endsWith("ItabLiveReplica.vue"));
+
+    for (const file of vueFiles) {
+      const relativeFile = file.slice(repoRoot.length + 1);
+      const styleColors = Array.from(
+        new Set(
+          collectExactColors(collectStyleBlocks(readFileSync(file, "utf8"))),
+        ),
+      );
+      expect(
+        styleColors,
+        `${relativeFile} style block contains hard-coded colors; move product UI color to semantic --sd-* tokens.`,
       ).toEqual([]);
     }
   });

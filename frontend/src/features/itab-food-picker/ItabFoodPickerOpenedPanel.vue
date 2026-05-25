@@ -88,11 +88,15 @@ watch(
   background:
     radial-gradient(
       circle at 67% 23%,
-      rgba(255, 225, 142, 0.84),
+      var(
+        --sd-theme-itab-food-picker-food-picker-opened-panel-accent-surface-01
+      ),
       transparent 24%
     ),
-    #fff;
-  color: #1f2937;
+    var(--sd-theme-itab-food-picker-food-picker-opened-panel-surface-01);
+  color: var(
+    --sd-theme-itab-food-picker-food-picker-opened-panel-accent-text-01
+  );
 }
 
 .food-picker-stage {
@@ -106,7 +110,9 @@ watch(
 
 .food-picker-stage h2 {
   margin: 0 0 28px;
-  color: #111827;
+  color: var(
+    --sd-theme-itab-food-picker-food-picker-opened-panel-accent-text-02
+  );
   font-size: 34px;
   font-weight: 700;
   line-height: 42px;
@@ -120,14 +126,20 @@ watch(
   place-items: center;
   border-radius: 50%;
   background: conic-gradient(
-    #ffbd59 0 16.6%,
-    #ff8d59 16.6% 33.2%,
-    #ffd75e 33.2% 49.8%,
-    #8adf89 49.8% 66.4%,
-    #70c7ff 66.4% 83%,
-    #b58cff 83% 100%
+    var(--sd-theme-itab-food-picker-food-picker-opened-panel-accent-surface-02)
+      0 16.6%,
+    var(--sd-theme-itab-food-picker-food-picker-opened-panel-accent-surface-03)
+      16.6% 33.2%,
+    var(--sd-theme-itab-food-picker-food-picker-opened-panel-accent-surface-04)
+      33.2% 49.8%,
+    var(--sd-theme-itab-food-picker-food-picker-opened-panel-accent-surface-05)
+      49.8% 66.4%,
+    var(--sd-theme-itab-food-picker-food-picker-opened-panel-accent-surface-06)
+      66.4% 83%,
+    var(--sd-theme-itab-food-picker-food-picker-opened-panel-accent-surface-07)
+      83% 100%
   );
-  color: #fff;
+  color: var(--sd-theme-itab-food-picker-food-picker-opened-panel-text-01);
 }
 
 .food-wheel::after {
@@ -135,7 +147,9 @@ watch(
   width: 110px;
   height: 110px;
   border-radius: 50%;
-  background: #fff;
+  background: var(
+    --sd-theme-itab-food-picker-food-picker-opened-panel-surface-01
+  );
   content: "";
 }
 
@@ -144,7 +158,7 @@ watch(
   z-index: 1;
   max-width: 82px;
   overflow: hidden;
-  color: #fff;
+  color: var(--sd-theme-itab-food-picker-food-picker-opened-panel-text-01);
   font-size: 15px;
   line-height: 22px;
   text-overflow: ellipsis;
@@ -185,8 +199,10 @@ watch(
   padding: 0 18px;
   border: 0;
   border-radius: 22px;
-  background: #f39b2d;
-  color: #fff;
+  background: var(
+    --sd-theme-itab-food-picker-food-picker-opened-panel-accent-surface-08
+  );
+  color: var(--sd-theme-itab-food-picker-food-picker-opened-panel-text-01);
   font-size: 18px;
   line-height: 42px;
   text-overflow: ellipsis;
@@ -210,13 +226,17 @@ watch(
 }
 
 .food-picker-menu-editor strong {
-  color: #111827;
+  color: var(
+    --sd-theme-itab-food-picker-food-picker-opened-panel-accent-text-02
+  );
   font-size: 18px;
   line-height: 26px;
 }
 
 .food-picker-menu-editor span {
-  color: rgba(31, 41, 55, 0.58);
+  color: var(
+    --sd-theme-itab-food-picker-food-picker-opened-panel-accent-text-03
+  );
   font-size: 12px;
   line-height: 18px;
   white-space: nowrap;
@@ -228,10 +248,15 @@ watch(
   resize: none;
   box-sizing: border-box;
   padding: 12px 14px;
-  border: 1px solid rgba(31, 41, 55, 0.16);
+  border: 1px solid
+    var(--sd-theme-itab-food-picker-food-picker-opened-panel-accent-border-01);
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.72);
-  color: #1f2937;
+  background: var(
+    --sd-theme-itab-food-picker-food-picker-opened-panel-surface-02
+  );
+  color: var(
+    --sd-theme-itab-food-picker-food-picker-opened-panel-accent-text-01
+  );
   font:
     14px/22px "PingFang SC",
     -apple-system,
@@ -242,8 +267,11 @@ watch(
 }
 
 .food-picker-menu-editor textarea:focus {
-  border-color: rgba(243, 155, 45, 0.72);
-  box-shadow: 0 0 0 3px rgba(243, 155, 45, 0.16);
+  border-color: var(
+    --sd-theme-itab-food-picker-food-picker-opened-panel-accent-border-02
+  );
+  box-shadow: 0 0 0 3px
+    var(--sd-theme-itab-food-picker-food-picker-opened-panel-shadow-01);
 }
 
 .food-picker-editor-actions {
@@ -256,16 +284,22 @@ watch(
   height: 34px;
   border: 0;
   border-radius: 17px;
-  background: rgba(31, 41, 55, 0.08);
-  color: #1f2937;
+  background: var(
+    --sd-theme-itab-food-picker-food-picker-opened-panel-accent-surface-09
+  );
+  color: var(
+    --sd-theme-itab-food-picker-food-picker-opened-panel-accent-text-01
+  );
   font-size: 13px;
   line-height: 34px;
   cursor: pointer;
 }
 
 .food-picker-editor-actions button:first-child {
-  background: #f39b2d;
-  color: #fff;
+  background: var(
+    --sd-theme-itab-food-picker-food-picker-opened-panel-accent-surface-08
+  );
+  color: var(--sd-theme-itab-food-picker-food-picker-opened-panel-text-01);
 }
 
 @media (max-width: 760px) {

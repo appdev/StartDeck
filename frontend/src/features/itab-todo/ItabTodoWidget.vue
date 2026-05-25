@@ -115,22 +115,22 @@ watch(
 
 .todo-icon-asset {
   position: relative;
-  background: #fff;
+  background: var(--sd-theme-itab-todo-todo-widget-surface-01);
 }
 
 .todo-icon-asset img {
   display: block;
   width: 100%;
   height: 100%;
-  background-color: rgb(32, 102, 204);
+  background-color: var(--sd-theme-itab-todo-todo-widget-accent-surface-01);
   object-fit: contain;
 }
 
 .todo-icon-content {
   display: flex;
   overflow: hidden;
-  background: #fff;
-  color: rgba(0, 0, 0, 0.8);
+  background: var(--sd-theme-itab-todo-todo-widget-surface-01);
+  color: var(--sd-theme-itab-todo-todo-widget-text-01);
 }
 
 .todo-icon-main {
@@ -154,7 +154,7 @@ watch(
   height: 24px;
   align-items: center;
   padding: 0 8.4px;
-  color: rgb(52, 110, 253);
+  color: var(--sd-theme-itab-todo-todo-widget-accent-text-01);
   font-size: 12px;
   font-weight: 700;
   line-height: 18px;
@@ -165,7 +165,7 @@ watch(
   height: 30px;
   align-items: center;
   padding: 0 10.416px;
-  color: rgba(0, 0, 0, 0.8);
+  color: var(--sd-theme-itab-todo-todo-widget-text-01);
   font-size: 13.02px;
   line-height: 19.53px;
 }
@@ -181,7 +181,7 @@ watch(
   flex: 0 0 3px;
   margin-right: 7px;
   border-radius: 3px;
-  background: rgb(147, 147, 147);
+  background: var(--sd-theme-itab-todo-todo-widget-surface-02);
 }
 
 .todo-icon-check {
@@ -191,14 +191,14 @@ watch(
   flex: 0 0 15px;
   margin-right: 10px;
   padding: 0;
-  border: 2px solid rgb(147, 147, 147);
+  border: 2px solid var(--sd-theme-itab-todo-todo-widget-border-01);
   border-radius: 4px;
-  background: #fff;
+  background: var(--sd-theme-itab-todo-todo-widget-surface-01);
   cursor: pointer;
 }
 
 .todo-icon-check:hover {
-  border-color: rgb(24, 144, 255);
+  border-color: var(--sd-theme-itab-todo-todo-widget-accent-border-01);
 }
 
 .todo-icon-row em {

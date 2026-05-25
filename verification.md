@@ -1657,4 +1657,23 @@ Verified:
 
 Limitations:
 - Live local services were not restarted in-place. Rebuild/restart is required before the running processes use the new resource defaults.
-- `server/public` can still exist as ignored generated/package output; it is no longer the source resource root for tracked defaults.
+- `Data/public` has been removed from the current worktree as a tracked generated bundle. It can still exist after frontend/package builds, but it is no longer the source resource root for tracked defaults.
+
+## 2026-05-26 - Theme Color Pairing Review
+
+Status: pass.
+
+Implemented:
+- Settings sidebar light/dark text now consumes `--sd-shell-text-*` tokens instead of old dark-only literals.
+- Theme segmented buttons now use explicit semantic focus rings instead of browser/system focus outlines.
+- Wallpaper opened-panel empty state now consumes `--sd-component-empty-*` semantic tokens; light values preserve the existing component colors and dark values map to graphite component surfaces.
+- Component color audit JSON/Markdown refreshed after the token move.
+
+Verified:
+- Focused theme/color Vitest passed, 5 files / 23 tests.
+- `npm --prefix frontend run type-check` passed.
+- Browser computed contrast in Settings passed AA for sampled normal text in light and dark.
+- Screenshots captured at `/tmp/startdeck-theme-light-review-fixed.png` and `/tmp/startdeck-theme-dark-review-fixed.png`.
+
+Limitations:
+- Full `npm --prefix frontend test -- --run` still has one unrelated existing failure in `src/stores/cache.spec.ts`, where the test expects the old clock guest-cache default.

@@ -138,8 +138,8 @@ watch(
 
 .calendar-card {
   overflow: hidden;
-  background: #fff;
-  color: #222;
+  background: var(--sd-theme-itab-calendar-calendar-widget-surface-01);
+  color: var(--sd-theme-itab-calendar-calendar-widget-text-01);
   font-family:
     HarmonyOS_Sans,
     "PingFang SC",
@@ -160,7 +160,7 @@ watch(
 }
 
 .accent {
-  color: rgb(216, 48, 48);
+  color: var(--sd-theme-itab-calendar-calendar-widget-accent-text-01);
 }
 
 .single-day-card {
@@ -235,8 +235,12 @@ watch(
   height: 38px;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(90deg, #ff4d5f, #ff6571);
-  color: #fff;
+  background: linear-gradient(
+    90deg,
+    var(--sd-theme-itab-calendar-calendar-widget-accent-surface-01),
+    var(--sd-theme-itab-calendar-calendar-widget-accent-surface-02)
+  );
+  color: var(--sd-theme-itab-calendar-calendar-widget-text-02);
   font-size: 15px;
   font-weight: 600;
   line-height: 22px;
@@ -253,7 +257,7 @@ watch(
 }
 
 .month-day {
-  color: #1f1f1f;
+  color: var(--sd-theme-itab-calendar-calendar-widget-text-03);
   font-size: 58px;
   font-weight: 500;
   line-height: 64px;
@@ -273,12 +277,12 @@ watch(
 
 .month-meta,
 .summary-meta {
-  color: #999;
+  color: var(--sd-theme-itab-calendar-calendar-widget-text-04);
 }
 
 .month-lunar,
 .summary-lunar {
-  color: rgba(0, 0, 0, 0.8);
+  color: var(--sd-theme-itab-calendar-calendar-widget-text-05);
 }
 
 .large-horizontal {
@@ -302,7 +306,7 @@ watch(
 }
 
 .summary-day {
-  color: #202124;
+  color: var(--sd-theme-itab-calendar-calendar-widget-text-06);
   font-size: 58px;
   font-weight: 500;
   line-height: 62px;
@@ -325,18 +329,18 @@ watch(
   min-width: 0;
   align-items: center;
   justify-content: center;
-  color: #222;
+  color: var(--sd-theme-itab-calendar-calendar-widget-text-01);
   font-size: 11.5px;
   line-height: 16px;
 }
 
 .mini-week.weekend,
 .mini-day.weekend {
-  color: #d84a58;
+  color: var(--sd-theme-itab-calendar-calendar-widget-accent-text-02);
 }
 
 .mini-day.muted {
-  color: rgba(34, 34, 34, 0.46);
+  color: var(--sd-theme-itab-calendar-calendar-widget-text-07);
 }
 
 .mini-day.today {
@@ -344,7 +348,7 @@ watch(
   height: 20px;
   justify-self: center;
   border-radius: 999px;
-  background: #e9485a;
-  color: #fff;
+  background: var(--sd-theme-itab-calendar-calendar-widget-accent-surface-03);
+  color: var(--sd-theme-itab-calendar-calendar-widget-text-02);
 }
 </style>

@@ -119,10 +119,10 @@ const toggle = () => {
   background: transparent;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background-color: rgba(156, 163, 175, 0.3);
+  background-color: var(--sd-theme-group-selector-surface-01);
   border-radius: 2px;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background-color: rgba(156, 163, 175, 0.5);
+  background-color: var(--sd-theme-group-selector-surface-02);
 }
 </style>

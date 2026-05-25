@@ -22,14 +22,13 @@ BIN_SRC="${BASE_DIR}/startdeck"
 BIN_SRC_ALT="${BASE_DIR}/startdeck-server"
 ICON_BIN_SRC="${BASE_DIR}/${ICON_SERVICE_BINARY}"
 DIST_SRC="${BASE_DIR}/dist"
-DIST_SRC_ALT="${BASE_DIR}/server/public"
-DIST_SRC_RUST="${BASE_DIR}/startdeck-server/resources/public"
+DIST_SRC_ALT="${BASE_DIR}/Data/public"
 
 # 安装目标目录
 INSTALL_DIR="/opt/${APP_NAME}"
 BIN_DIR="${INSTALL_DIR}/bin"
 STATIC_DIR="${INSTALL_DIR}/static"
-SERVER_DIR="${INSTALL_DIR}/server"
+SERVER_DIR="${INSTALL_DIR}/Data"
 PUBLIC_DIR="${SERVER_DIR}/public"
 CACHE_DIR="${SERVER_DIR}/cache"
 DATA_DIR="${SERVER_DIR}/data"
@@ -377,7 +376,7 @@ verify_deploy() {
     log_warn "前端首页拉取失败，未能完成产物校验"
   else
     if printf "%s" "${html}" | grep -Eq '/@vite/client|virtual:vue-devtools-path|/src/main\.(ts|js)'; then
-      fail_with_tip "检测到开发版前端（Vite）被部署到线上，请重新构建并同步 server/public"
+      fail_with_tip "检测到开发版前端（Vite）被部署到线上，请重新构建并同步 Data/public"
     fi
     if ! printf "%s" "${html}" | grep -q '/assets/'; then
       log_warn "前端首页未检测到 /assets/ 引用，请确认静态产物是否完整"
@@ -454,10 +453,10 @@ init_data_dir() {
   for candidate in \
     "${BASE_DIR}/startdeck-server/resources/${src_name}" \
     "${BASE_DIR}/rust/crates/startdeck-server/resources/${src_name}" \
-    "${BASE_DIR}/server/${src_name}" \
+    "${BASE_DIR}/Data/${src_name}" \
     "${SOURCE_ROOT}/rust/crates/startdeck-server/resources/${src_name}" \
     "${SOURCE_ROOT}/startdeck-server/resources/${src_name}" \
-    "${SOURCE_ROOT}/server/${src_name}"; do
+    "${SOURCE_ROOT}/Data/${src_name}"; do
     if [ -d "${candidate}" ]; then
       src_path="${candidate}"
       break
@@ -531,10 +530,6 @@ fi
 if [ ! -d "${DIST_SRC}" ]; then
   if [ -d "${DIST_SRC_ALT}" ]; then
     DIST_SRC="${DIST_SRC_ALT}"
-  elif [ -d "${DIST_SRC_RUST}" ]; then
-    DIST_SRC="${DIST_SRC_RUST}"
-  elif [ -d "${SOURCE_ROOT}/rust/crates/startdeck-server/resources/public" ]; then
-    DIST_SRC="${SOURCE_ROOT}/rust/crates/startdeck-server/resources/public"
   else
     fail_with_tip "未找到前端静态目录"
   fi

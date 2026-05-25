@@ -15,7 +15,7 @@ async fn test_app() -> axum::Router {
 async fn test_app_with_widget_cache(include_poem_cache: bool) -> axum::Router {
     let temp = tempfile::tempdir().unwrap();
     let base = temp.keep();
-    let data_dir = base.join("server/data");
+    let data_dir = base.join("Data/data");
     std::fs::create_dir_all(&data_dir).unwrap();
     std::fs::write(
         data_dir.join("system.json"),
@@ -94,13 +94,13 @@ async fn test_app_with_widget_cache(include_poem_cache: bool) -> axum::Router {
         )
         .unwrap();
     }
-    let public_dir = base.join("rust/crates/startdeck-server/resources/public");
+    let public_dir = base.join("Data/public");
     std::fs::create_dir_all(&public_dir).unwrap();
     std::fs::write(public_dir.join("index.html"), "<main>StartDeck</main>").unwrap();
     let config = RuntimeConfig::from_base_dir(base);
     let pool = connect_sqlite(&config).await.unwrap();
     import_legacy_data(&pool, &config).await.unwrap();
-    app(AppState::new(config, pool))
+    app(AppState::new_with_remote_itab_fetch(config, pool, false))
 }
 
 async fn json_call(
@@ -431,6 +431,10 @@ async fn route_surface_smoke_covers_auth_and_runtime_semantics() {
     let (status, body) = json_call(&app, "GET", "/api/ip", None, None).await;
     assert_eq!(status, StatusCode::OK);
     assert_eq!(body["queryIp"], "127.0.0.1");
+
+    let (status, body) = json_call(&app, "GET", "/api/ip?ip=not-ip", None, None).await;
+    assert_eq!(status, StatusCode::BAD_REQUEST);
+    assert_eq!(body["error"], "invalid_ipv4");
 
     let (status, body) = json_call(&app, "POST", "/api/visitor/track", None, None).await;
     assert_eq!(status, StatusCode::OK);

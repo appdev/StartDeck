@@ -74,17 +74,17 @@ onBeforeUnmount(() => {
           <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
             <path
               d="M1310.09105,191.626557 C1496.65509,191.626557 1770.14929,157.346326 1920,106.258614 L1920,226.585567 C1920,226.585567 57.7507064,226.769694 1.29607535,226.778064 L0,226.778064 C0.301412873,150.421181 0.452119309,112.242739 0.452119309,112.242739 C402.829314,254.28206 430.581953,106.258614 671.986104,106.258614 C913.390256,106.258614 1123.52701,191.626557 1310.09105,191.626557 Z"
-              fill="var(--poem-wave-back, #8ec2c6)"
+              fill="var(--poem-wave-back, var(--sd-itab-poem-wave-back))"
               fill-opacity="0.6"
             />
             <path
               d="M0.0139194415,226.56425 C0.0139194415,207.632936 0.00602482649,190.017506 -0.00976440346,173.717958 C-0.00976440346,173.717958 64.0945019,127.498953 182.10043,132.182456 C300.106358,136.865959 566.945531,199.128662 690.656287,199.128662 C926.193135,199.128662 1181.88325,106.258614 1429.28183,106.258614 C1676.68041,106.258614 1762.21292,199.128662 1920,132.182456 C1920,132.182456 1920,163.707219 1920,226.756746 L1918.70393,226.756746 C1862.24971,226.748377 0.0139194415,226.56425 0.0139194415,226.56425 Z"
-              fill="var(--poem-wave-middle, #74aaa4)"
+              fill="var(--poem-wave-middle, var(--sd-itab-poem-wave-middle))"
               fill-opacity="0.6"
             />
             <path
               d="M1463.25587,166.368856 C1551.98939,166.368856 1579.00033,142.163535 1682.98644,125.993122 C1786.97255,109.822709 1903.42761,144.008202 1920,142.125085 L1920,226.246611 C1920,226.246611 57.7382953,226.430738 1.31380552,226.439107 L0,226.439107 C0.875870348,212.023153 1.31380552,204.815176 1.31380552,204.815176 C1.31380552,204.815176 171.201223,92.2827368 319.815615,99.6364213 C498.755382,108.490655 535.30872,172.276704 680.584032,172.276704 C825.859343,172.276704 892.163947,69.0953634 1074.42656,72.7600803 C1256.68917,76.4247971 1374.52235,166.368856 1463.25587,166.368856 Z"
-              fill="var(--poem-wave-front, #549087)"
+              fill="var(--poem-wave-front, var(--sd-itab-poem-wave-front))"
               fill-opacity="0.3"
             />
           </g>
@@ -175,8 +175,11 @@ onBeforeUnmount(() => {
   height: 100%;
   overflow-x: hidden;
   overflow-y: auto;
-  background: var(--poem-bg, #eee);
-  color: #333;
+  background: var(
+    --poem-bg,
+    var(--sd-theme-itab-poem-poem-opened-panel-surface-01)
+  );
+  color: var(--sd-theme-itab-poem-poem-opened-panel-text-01);
   font-family:
     "PingFang SC",
     -apple-system,
@@ -195,7 +198,7 @@ onBeforeUnmount(() => {
   width: 100%;
   min-height: 100%;
   overflow: visible;
-  color: #333;
+  color: var(--sd-theme-itab-poem-poem-opened-panel-text-01);
 }
 
 .opened-poem-hero {
@@ -219,7 +222,7 @@ onBeforeUnmount(() => {
 
 .opened-poem-quotes h2 {
   margin: 0;
-  color: #333;
+  color: var(--sd-theme-itab-poem-poem-opened-panel-text-01);
   font-family: KaiTi, STKaiti, "Kaiti SC", serif;
   font-size: 36px;
   font-weight: 400;
@@ -228,7 +231,7 @@ onBeforeUnmount(() => {
 
 .opened-poem-quotes p {
   margin: 0 0 20px;
-  color: #555;
+  color: var(--sd-theme-itab-poem-poem-opened-panel-text-02);
   font-size: 14px;
   line-height: 21px;
 }
@@ -237,16 +240,16 @@ onBeforeUnmount(() => {
   width: 100px;
   height: 34px;
   padding: 0;
-  border: 1px solid rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--sd-theme-itab-poem-poem-opened-panel-border-01);
   border-radius: 5px;
-  background: rgba(255, 255, 255, 0.1);
-  color: #333;
+  background: var(--sd-theme-itab-poem-poem-opened-panel-surface-02);
+  color: var(--sd-theme-itab-poem-poem-opened-panel-text-01);
   font-size: 13px;
   line-height: 32px;
 }
 
 .opened-poem-quotes button:not(.opened-poem-chevron):hover {
-  background: rgba(255, 255, 255, 0.18);
+  background: var(--sd-theme-itab-poem-poem-opened-panel-surface-03);
 }
 
 .opened-poem-hero button:disabled {
@@ -271,7 +274,7 @@ onBeforeUnmount(() => {
   max-width: 700px;
   margin: 120px auto 0;
   padding: 0 0 50px;
-  color: #303133;
+  color: var(--sd-theme-itab-poem-poem-opened-panel-text-03);
   line-height: 1.6;
   text-align: start;
 }
@@ -282,15 +285,15 @@ onBeforeUnmount(() => {
   margin: 0 0 50px;
   padding: 20px;
   overflow: hidden;
-  border: 1px solid #ebeef5;
+  border: 1px solid var(--sd-theme-itab-poem-poem-opened-panel-border-02);
   border-radius: 4px;
-  background: #fff;
+  background: var(--sd-theme-itab-poem-poem-opened-panel-surface-04);
   box-shadow: none;
 }
 
 .opened-poem-detail h3 {
   margin: 0 0 20px;
-  color: #303133;
+  color: var(--sd-theme-itab-poem-poem-opened-panel-text-03);
   font-size: 20px;
   font-weight: 400;
   line-height: 32px;
@@ -298,7 +301,7 @@ onBeforeUnmount(() => {
 
 .opened-poem-detail h4 {
   margin: 0;
-  color: #303133;
+  color: var(--sd-theme-itab-poem-poem-opened-panel-text-03);
   font-size: 14px;
   font-weight: 700;
   line-height: 22.4px;
@@ -306,14 +309,14 @@ onBeforeUnmount(() => {
 
 .opened-poem-author {
   margin: 0 0 20px;
-  color: #606266;
+  color: var(--sd-theme-itab-poem-poem-opened-panel-text-04);
   font-size: 12px;
   line-height: 19.2px;
 }
 
 .opened-poem-detail p {
   margin: 0 0 20px;
-  color: #303133;
+  color: var(--sd-theme-itab-poem-poem-opened-panel-text-03);
   font-size: 14px;
   line-height: 22.4px;
 }
@@ -342,7 +345,7 @@ onBeforeUnmount(() => {
   padding: 0;
   border: 0;
   background: transparent;
-  color: #fff;
+  color: var(--sd-theme-itab-poem-poem-opened-panel-text-05);
   transform: translateX(-50%);
 }
 

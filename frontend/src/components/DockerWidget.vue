@@ -1729,8 +1729,11 @@ const cancelPublicHost = () => {
   grid-template-rows: auto minmax(0, 1fr);
   gap: 1rem;
   overflow: auto;
-  background: var(--sd-color-surface, #fff);
-  color: var(--sd-color-text-primary, #0f172a);
+  background: var(--sd-color-surface, var(--sd-theme-docker-widget-surface-01));
+  color: var(
+    --sd-color-text-primary,
+    var(--sd-theme-docker-widget-accent-text-01)
+  );
   padding: 1.4rem;
 }
 
@@ -1751,7 +1754,10 @@ const cancelPublicHost = () => {
 }
 
 .docker-opened-kicker {
-  color: var(--sd-color-accent-primary, #2563eb);
+  color: var(
+    --sd-color-accent-primary,
+    var(--sd-theme-docker-widget-accent-text-02)
+  );
   font-size: 0.72rem;
   font-weight: 800;
   text-transform: uppercase;
@@ -1759,7 +1765,10 @@ const cancelPublicHost = () => {
 
 .docker-opened-header h2 {
   margin: 0.1rem 0;
-  color: var(--sd-color-text-primary, #0f172a);
+  color: var(
+    --sd-color-text-primary,
+    var(--sd-theme-docker-widget-accent-text-01)
+  );
   font-size: 1.8rem;
   font-weight: 820;
   letter-spacing: 0;
@@ -1768,7 +1777,10 @@ const cancelPublicHost = () => {
 
 .docker-opened-header p {
   margin: 0;
-  color: var(--sd-color-text-secondary, #64748b);
+  color: var(
+    --sd-color-text-secondary,
+    var(--sd-theme-docker-widget-accent-text-03)
+  );
   font-size: 0.82rem;
   font-weight: 650;
 }
@@ -1781,10 +1793,17 @@ const cancelPublicHost = () => {
 
 .docker-opened-actions button,
 .docker-opened-container-actions button {
-  border: 1px solid var(--sd-color-border-subtle, rgb(203 213 225 / 0.9));
+  border: 1px solid
+    var(--sd-color-border-subtle, var(--sd-theme-docker-widget-border-01));
   border-radius: 999px;
-  background: var(--sd-color-surface-muted, #f2f2f5);
-  color: var(--sd-color-accent-primary, #1d4ed8);
+  background: var(
+    --sd-color-surface-muted,
+    var(--sd-theme-docker-widget-surface-02)
+  );
+  color: var(
+    --sd-color-accent-primary,
+    var(--sd-theme-docker-widget-accent-text-04)
+  );
   cursor: pointer;
   font-size: 0.75rem;
   font-weight: 760;
@@ -1826,10 +1845,14 @@ const cancelPublicHost = () => {
 .docker-opened-overview article,
 .docker-opened-container,
 .docker-opened-settings .docker-settings-section {
-  border: 1px solid var(--sd-color-border-subtle, rgb(203 213 225 / 0.8));
+  border: 1px solid
+    var(--sd-color-border-subtle, var(--sd-theme-docker-widget-border-02));
   border-radius: 1rem;
-  background: var(--sd-color-surface-muted, #f8fafc);
-  box-shadow: 0 14px 30px rgb(15 23 42 / 0.06);
+  background: var(
+    --sd-color-surface-muted,
+    var(--sd-theme-docker-widget-surface-03)
+  );
+  box-shadow: 0 14px 30px var(--sd-theme-docker-widget-shadow-01);
 }
 
 .docker-opened-overview article {
@@ -1844,7 +1867,10 @@ const cancelPublicHost = () => {
 .docker-opened-section-title span,
 .docker-opened-container-metrics,
 .docker-opened-empty {
-  color: var(--sd-color-text-secondary, #64748b);
+  color: var(
+    --sd-color-text-secondary,
+    var(--sd-theme-docker-widget-accent-text-03)
+  );
   font-size: 0.72rem;
   font-style: normal;
   font-weight: 680;
@@ -1852,7 +1878,10 @@ const cancelPublicHost = () => {
 
 .docker-opened-overview strong {
   overflow: hidden;
-  color: var(--sd-color-text-primary, #0f172a);
+  color: var(
+    --sd-color-text-primary,
+    var(--sd-theme-docker-widget-accent-text-01)
+  );
   font-size: 1.18rem;
   font-weight: 820;
   text-overflow: ellipsis;
@@ -1876,7 +1905,10 @@ const cancelPublicHost = () => {
 }
 
 .docker-opened-section-title strong {
-  color: var(--sd-color-text-primary, #0f172a);
+  color: var(
+    --sd-color-text-primary,
+    var(--sd-theme-docker-widget-accent-text-01)
+  );
   font-size: 0.96rem;
   font-weight: 800;
 }
@@ -1894,12 +1926,18 @@ const cancelPublicHost = () => {
 }
 
 .docker-opened-container .docker-container-title strong {
-  color: var(--sd-color-text-primary, #0f172a);
+  color: var(
+    --sd-color-text-primary,
+    var(--sd-theme-docker-widget-accent-text-01)
+  );
 }
 
 .docker-opened-container .docker-container-title span,
 .docker-opened-container .docker-container-state span {
-  color: var(--sd-color-text-secondary, #64748b);
+  color: var(
+    --sd-color-text-secondary,
+    var(--sd-theme-docker-widget-accent-text-03)
+  );
 }
 
 .docker-opened-container-metrics {
@@ -1909,7 +1947,7 @@ const cancelPublicHost = () => {
 
 .docker-opened-container-metrics span {
   border-radius: 999px;
-  background: var(--sd-color-surface, #fff);
+  background: var(--sd-color-surface, var(--sd-theme-docker-widget-surface-01));
   padding: 0.32rem 0.5rem;
 }
 
@@ -1922,27 +1960,43 @@ const cancelPublicHost = () => {
   display: grid;
   min-height: 10rem;
   place-items: center;
-  border: 1px dashed var(--sd-color-border-subtle, rgb(203 213 225 / 0.8));
+  border: 1px dashed
+    var(--sd-color-border-subtle, var(--sd-theme-docker-widget-border-02));
   border-radius: 1rem;
 }
 
 .docker-opened-settings .docker-settings-section {
-  background: var(--sd-color-surface-muted, #f8fafc);
+  background: var(
+    --sd-color-surface-muted,
+    var(--sd-theme-docker-widget-surface-03)
+  );
 }
 
 .docker-opened-settings .docker-settings-section-title strong {
-  color: var(--sd-color-text-primary, #0f172a);
+  color: var(
+    --sd-color-text-primary,
+    var(--sd-theme-docker-widget-accent-text-01)
+  );
 }
 
 .docker-opened-settings .docker-settings-section-title span,
 .docker-opened-settings .docker-settings-field span {
-  color: var(--sd-color-text-secondary, #64748b);
+  color: var(
+    --sd-color-text-secondary,
+    var(--sd-theme-docker-widget-accent-text-03)
+  );
 }
 
 .docker-opened-settings .docker-settings-field input {
-  border-color: var(--sd-color-border-subtle, rgb(203 213 225 / 0.9));
-  background: var(--sd-color-surface, #fff);
-  color: var(--sd-color-text-primary, #0f172a);
+  border-color: var(
+    --sd-color-border-subtle,
+    var(--sd-theme-docker-widget-border-01)
+  );
+  background: var(--sd-color-surface, var(--sd-theme-docker-widget-surface-01));
+  color: var(
+    --sd-color-text-primary,
+    var(--sd-theme-docker-widget-accent-text-01)
+  );
 }
 
 .docker-toast {
@@ -1950,8 +2004,8 @@ const cancelPublicHost = () => {
   right: 1.2rem;
   bottom: 1rem;
   border-radius: 999px;
-  background: rgb(15 23 42 / 0.92);
-  color: #f8fafc;
+  background: var(--sd-theme-docker-widget-accent-surface-01);
+  color: var(--sd-theme-docker-widget-text-01);
   font-size: 0.78rem;
   font-weight: 760;
   padding: 0.55rem 0.8rem;
@@ -1967,16 +2021,26 @@ const cancelPublicHost = () => {
   min-width: 0;
   gap: 0.62rem;
   overflow: hidden;
-  border: 1px solid var(--sd-color-border-subtle, rgb(255 255 255 / 0.12));
+  border: 1px solid
+    var(--sd-color-border-subtle, var(--sd-theme-docker-widget-border-03));
   border-radius: 1rem;
-  background: var(--sd-color-surface, rgb(255 255 255));
+  background: var(--sd-color-surface, var(--sd-theme-docker-widget-surface-04));
   padding: 0.9rem;
-  color: var(--sd-color-text-primary, #111827);
-  box-shadow: var(--sd-shadow-widget, 0 16px 36px rgb(15 23 42 / 0.16));
+  color: var(
+    --sd-color-text-primary,
+    var(--sd-theme-docker-widget-accent-text-05)
+  );
+  box-shadow: var(
+    --sd-shadow-widget,
+    0 16px 36px var(--sd-theme-docker-widget-shadow-02)
+  );
 }
 
 :global(.dark) .docker-widget {
-  background: var(--sd-color-surface, rgb(17 24 39));
+  background: var(
+    --sd-color-surface,
+    var(--sd-theme-docker-widget-accent-surface-02)
+  );
 }
 
 .docker-widget.is-compact {
@@ -2029,7 +2093,10 @@ const cancelPublicHost = () => {
 .docker-widget-empty em,
 .docker-container-title span,
 .docker-container-state span {
-  color: var(--sd-color-text-secondary, #64748b);
+  color: var(
+    --sd-color-text-secondary,
+    var(--sd-theme-docker-widget-accent-text-03)
+  );
   font-size: 0.69rem;
   font-weight: 650;
 }
@@ -2041,17 +2108,20 @@ const cancelPublicHost = () => {
   height: 0.45rem;
   flex: 0 0 auto;
   border-radius: 999px;
-  background: var(--sd-color-text-tertiary, #94a3b8);
+  background: var(
+    --sd-color-text-tertiary,
+    var(--sd-theme-docker-widget-surface-05)
+  );
 }
 
 .docker-widget-counters i.is-ready,
 .docker-container-card.is-running .docker-container-dot {
-  background: #22c55e;
-  box-shadow: 0 0 0 0.2rem rgb(34 197 94 / 0.14);
+  background: var(--sd-theme-docker-widget-accent-surface-03);
+  box-shadow: 0 0 0 0.2rem var(--sd-theme-docker-widget-shadow-03);
 }
 
 .docker-widget-counters i.is-danger {
-  background: #ef4444;
+  background: var(--sd-theme-docker-widget-accent-surface-04);
 }
 
 .docker-widget-summary {
@@ -2071,13 +2141,16 @@ const cancelPublicHost = () => {
 }
 
 .docker-widget-total span {
-  color: var(--sd-color-text-tertiary, #94a3b8);
+  color: var(--sd-color-text-tertiary, var(--sd-theme-docker-widget-text-02));
   font-size: 0.68rem;
   font-weight: 740;
 }
 
 .docker-widget-total strong {
-  color: var(--sd-color-text-primary, #111827);
+  color: var(
+    --sd-color-text-primary,
+    var(--sd-theme-docker-widget-accent-text-05)
+  );
   font-size: 2.6rem;
   font-weight: 780;
   letter-spacing: 0;
@@ -2117,7 +2190,10 @@ const cancelPublicHost = () => {
   min-width: 0;
   overflow: hidden;
   margin: -0.05rem 0 0;
-  color: var(--sd-color-text-secondary, #64748b);
+  color: var(
+    --sd-color-text-secondary,
+    var(--sd-theme-docker-widget-accent-text-03)
+  );
   font-size: 0.72rem;
   font-weight: 720;
   line-height: 1.2;
@@ -2130,7 +2206,10 @@ const cancelPublicHost = () => {
   align-items: center;
   gap: 0.28rem;
   border-radius: 999px;
-  background: var(--sd-color-surface-muted, rgb(241 245 249 / 0.74));
+  background: var(
+    --sd-color-surface-muted,
+    var(--sd-theme-docker-widget-surface-06)
+  );
   padding: 0.24rem 0.46rem;
 }
 
@@ -2159,8 +2238,14 @@ const cancelPublicHost = () => {
 .docker-public-host-editor button {
   border: 0;
   border-radius: 999px;
-  background: var(--sd-color-surface-muted, rgb(241 245 249 / 0.9));
-  color: var(--sd-color-text-primary, #111827);
+  background: var(
+    --sd-color-surface-muted,
+    var(--sd-theme-docker-widget-surface-07)
+  );
+  color: var(
+    --sd-color-text-primary,
+    var(--sd-theme-docker-widget-accent-text-05)
+  );
   cursor: pointer;
   font-size: 0.7rem;
   font-weight: 720;
@@ -2176,8 +2261,12 @@ const cancelPublicHost = () => {
 .docker-widget-empty button:hover,
 .docker-container-actions button:hover,
 .docker-public-host-editor button:hover {
-  background: color-mix(in srgb, #3b82f6 16%, var(--sd-color-surface-muted));
-  color: #2563eb;
+  background: color-mix(
+    in srgb,
+    var(--sd-theme-docker-widget-accent-surface-05) 16%,
+    var(--sd-color-surface-muted)
+  );
+  color: var(--sd-theme-docker-widget-accent-text-02);
 }
 
 .docker-action:disabled,
@@ -2192,22 +2281,32 @@ const cancelPublicHost = () => {
   place-items: center;
   align-content: center;
   gap: 0.45rem;
-  border: 1px dashed var(--sd-color-border-subtle, rgb(226 232 240 / 0.78));
+  border: 1px dashed
+    var(--sd-color-border-subtle, var(--sd-theme-docker-widget-border-04));
   border-radius: 0.9rem;
-  background: var(--sd-color-surface-muted, rgb(248 250 252));
+  background: var(
+    --sd-color-surface-muted,
+    var(--sd-theme-docker-widget-surface-08)
+  );
   padding: 0.75rem;
   text-align: center;
 }
 
 .docker-widget-empty strong {
-  color: var(--sd-color-text-primary, #111827);
+  color: var(
+    --sd-color-text-primary,
+    var(--sd-theme-docker-widget-accent-text-05)
+  );
   font-size: 0.84rem;
   font-weight: 760;
   line-height: 1.25;
 }
 
 .docker-widget-empty.is-error strong {
-  color: var(--sd-color-accent-danger, #ef4444);
+  color: var(
+    --sd-color-accent-danger,
+    var(--sd-theme-docker-widget-accent-text-06)
+  );
 }
 
 .docker-widget-empty.is-error span {
@@ -2251,8 +2350,8 @@ const cancelPublicHost = () => {
 
 .docker-widget-warning {
   border-radius: 0.72rem;
-  background: rgb(245 158 11 / 0.12);
-  color: #b45309;
+  background: var(--sd-theme-docker-widget-accent-surface-06);
+  color: var(--sd-theme-docker-widget-accent-text-07);
   font-size: 0.68rem;
   font-weight: 720;
   padding: 0.42rem 0.55rem;
@@ -2262,9 +2361,13 @@ const cancelPublicHost = () => {
   display: grid;
   min-width: 0;
   gap: 0.46rem;
-  border: 1px solid var(--sd-color-border-subtle, rgb(226 232 240 / 0.7));
+  border: 1px solid
+    var(--sd-color-border-subtle, var(--sd-theme-docker-widget-border-05));
   border-radius: 0.86rem;
-  background: var(--sd-color-surface-muted, rgb(248 250 252));
+  background: var(
+    --sd-color-surface-muted,
+    var(--sd-theme-docker-widget-surface-08)
+  );
   padding: 0.58rem;
 }
 
@@ -2300,7 +2403,10 @@ const cancelPublicHost = () => {
 
 .docker-container-title strong {
   overflow: hidden;
-  color: var(--sd-color-text-primary, #111827);
+  color: var(
+    --sd-color-text-primary,
+    var(--sd-theme-docker-widget-accent-text-05)
+  );
   font-size: 0.78rem;
   font-weight: 760;
   line-height: 1.16;
@@ -2329,8 +2435,8 @@ const cancelPublicHost = () => {
 
 .docker-container-state em {
   border-radius: 999px;
-  background: rgb(239 68 68 / 0.1);
-  color: #dc2626;
+  background: var(--sd-theme-docker-widget-accent-surface-07);
+  color: var(--sd-theme-docker-widget-accent-text-08);
   font-size: 0.62rem;
   font-style: normal;
   font-weight: 760;
@@ -2352,13 +2458,19 @@ const cancelPublicHost = () => {
 
 .docker-container-metrics div > span,
 .docker-container-metrics strong {
-  color: var(--sd-color-text-secondary, #64748b);
+  color: var(
+    --sd-color-text-secondary,
+    var(--sd-theme-docker-widget-accent-text-03)
+  );
   font-size: 0.66rem;
   font-weight: 700;
 }
 
 .docker-container-metrics strong {
-  color: var(--sd-color-text-primary, #111827);
+  color: var(
+    --sd-color-text-primary,
+    var(--sd-theme-docker-widget-accent-text-05)
+  );
   text-align: right;
 }
 
@@ -2367,7 +2479,7 @@ const cancelPublicHost = () => {
   height: 0.32rem;
   overflow: hidden;
   border-radius: 999px;
-  background: var(--sd-color-surface, rgb(226 232 240 / 0.8));
+  background: var(--sd-color-surface, var(--sd-theme-docker-widget-surface-09));
 }
 
 .docker-container-metrics b {
@@ -2375,17 +2487,18 @@ const cancelPublicHost = () => {
   height: 100%;
   max-width: 100%;
   border-radius: inherit;
-  background: #3b82f6;
+  background: var(--sd-theme-docker-widget-accent-surface-05);
 }
 
 .docker-container-metrics div:nth-child(2) b {
-  background: #8b5cf6;
+  background: var(--sd-theme-docker-widget-accent-surface-08);
 }
 
 .docker-container-actions {
   flex-wrap: wrap;
   gap: 0.32rem;
-  border-top: 1px solid var(--sd-color-border-subtle, rgb(226 232 240 / 0.68));
+  border-top: 1px solid
+    var(--sd-color-border-subtle, var(--sd-theme-docker-widget-border-06));
   padding-top: 0.45rem;
 }
 
@@ -2394,8 +2507,14 @@ const cancelPublicHost = () => {
   align-items: center;
   gap: 0.3rem;
   border-radius: 999px;
-  background: var(--sd-color-surface-muted, rgb(241 245 249 / 0.9));
-  color: var(--sd-color-text-secondary, #64748b);
+  background: var(
+    --sd-color-surface-muted,
+    var(--sd-theme-docker-widget-surface-07)
+  );
+  color: var(
+    --sd-color-text-secondary,
+    var(--sd-theme-docker-widget-accent-text-03)
+  );
   cursor: pointer;
   font-size: 0.68rem;
   font-weight: 700;
@@ -2409,10 +2528,14 @@ const cancelPublicHost = () => {
 .docker-public-host-editor input {
   min-width: 0;
   flex: 1 1 auto;
-  border: 1px solid var(--sd-color-border-subtle, rgb(226 232 240 / 0.8));
+  border: 1px solid
+    var(--sd-color-border-subtle, var(--sd-theme-docker-widget-border-07));
   border-radius: 999px;
-  background: var(--sd-color-surface, rgb(255 255 255));
-  color: var(--sd-color-text-primary, #111827);
+  background: var(--sd-color-surface, var(--sd-theme-docker-widget-surface-04));
+  color: var(
+    --sd-color-text-primary,
+    var(--sd-theme-docker-widget-accent-text-05)
+  );
   font-size: 0.72rem;
   outline: none;
   padding: 0.42rem 0.62rem;
@@ -2499,20 +2622,24 @@ const cancelPublicHost = () => {
   background: transparent;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #e5e7eb;
+  background: var(--sd-theme-docker-widget-surface-10);
   border-radius: 2px;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #d1d5db;
+  background: var(--sd-theme-docker-widget-surface-11);
 }
 
 .docker-settings-section {
   display: grid;
   min-width: 0;
   gap: 0.75rem;
-  border: 1px solid var(--sd-color-border-subtle, rgb(226 232 240 / 0.76));
+  border: 1px solid
+    var(--sd-color-border-subtle, var(--sd-theme-docker-widget-border-08));
   border-radius: 1rem;
-  background: var(--sd-color-surface-muted, rgb(248 250 252));
+  background: var(
+    --sd-color-surface-muted,
+    var(--sd-theme-docker-widget-surface-08)
+  );
   padding: 0.9rem;
 }
 
@@ -2527,7 +2654,10 @@ const cancelPublicHost = () => {
 }
 
 .docker-settings-section-title strong {
-  color: var(--sd-color-text-primary, #111827);
+  color: var(
+    --sd-color-text-primary,
+    var(--sd-theme-docker-widget-accent-text-05)
+  );
   font-size: 0.98rem;
   font-weight: 780;
 }
@@ -2535,7 +2665,10 @@ const cancelPublicHost = () => {
 .docker-settings-section-title span,
 .docker-settings-error,
 .docker-settings-field span {
-  color: var(--sd-color-text-secondary, #64748b);
+  color: var(
+    --sd-color-text-secondary,
+    var(--sd-theme-docker-widget-accent-text-03)
+  );
   font-size: 0.78rem;
   font-weight: 650;
 }
@@ -2562,10 +2695,14 @@ const cancelPublicHost = () => {
 .docker-settings-field input {
   width: 100%;
   min-width: 0;
-  border: 1px solid var(--sd-color-border-subtle, rgb(226 232 240 / 0.86));
+  border: 1px solid
+    var(--sd-color-border-subtle, var(--sd-theme-docker-widget-border-09));
   border-radius: 0.78rem;
-  background: var(--sd-color-surface, rgb(255 255 255));
-  color: var(--sd-color-text-primary, #111827);
+  background: var(--sd-color-surface, var(--sd-theme-docker-widget-surface-04));
+  color: var(
+    --sd-color-text-primary,
+    var(--sd-theme-docker-widget-accent-text-05)
+  );
   font-size: 0.9rem;
   font-weight: 680;
   outline: none;
@@ -2579,8 +2716,11 @@ const cancelPublicHost = () => {
 
 .docker-settings-error {
   border-radius: 0.78rem;
-  background: rgb(239 68 68 / 0.1);
-  color: var(--sd-color-accent-danger, #ef4444);
+  background: var(--sd-theme-docker-widget-accent-surface-07);
+  color: var(
+    --sd-color-accent-danger,
+    var(--sd-theme-docker-widget-accent-text-06)
+  );
   padding: 0.62rem 0.7rem;
 }
 

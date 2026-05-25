@@ -70,8 +70,8 @@ watch(
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  background: #fff;
-  color: #1f2937;
+  background: var(--sd-theme-itab-food-picker-food-picker-widget-surface-01);
+  color: var(--sd-theme-itab-food-picker-food-picker-widget-accent-text-01);
   text-align: center;
 }
 
@@ -94,9 +94,12 @@ watch(
   padding: 0;
   border: 0;
   border-radius: 8px;
-  background: #f39b2d;
-  color: #fff;
-  box-shadow: rgb(242, 178, 65) 0 2px 6px 0;
+  background: var(
+    --sd-theme-itab-food-picker-food-picker-widget-accent-surface-01
+  );
+  color: var(--sd-theme-itab-food-picker-food-picker-widget-text-01);
+  box-shadow: var(--sd-theme-itab-food-picker-food-picker-widget-shadow-01) 0
+    2px 6px 0;
   font-size: 5.36px;
   line-height: 8.04px;
   cursor: pointer;

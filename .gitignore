@@ -137,46 +137,49 @@ target/
 frontend/dist/
 frontend/tmp/vite-verify/
 frontend/test-results/
+.vite/
 .playwright-mcp/
 
 # Vite build outputs copied into runtime/package directories.
 # Static source assets live in frontend/public; release packaging should
 # generate these files during build instead of tracking hash artifacts.
-server/public/**
-debian/server/public/index.html
-debian/server/public/assets/
+server/
+Data/public/**
+debian/Data/public/index.html
+debian/Data/public/assets/
 
 # ----------------------
 # Project Data & Config
 # ----------------------
 # User generated data
-server/data/**
-!server/data/
-server/music/*
-server/PC/*
-server/APP/*
-server/doc/transfer/
+Data/data/**
+!Data/data/
+!Data/README.md
+Data/music/*
+Data/PC/*
+Data/APP/*
+Data/doc/transfer/
 
-debian/server/data/**
-debian/server/doc/**
+debian/Data/data/**
+debian/Data/doc/**
 debian/startdeck
 debian/startdeck-server
 debian/startdeck-iconserver
 debian/flatnas
 debian/flatnas-server
-server/index.html
+Data/index.html
 
 # Keep default.json if it is a template, but ensure no secrets
 # If it's modified runtime, ignore it.
-debian/server/data/default.json
+debian/Data/data/default.json
 
 # Uploads
-debian/server/music/*
-!debian/server/music/.gitkeep
-debian/server/PC/*
-!debian/server/PC/.gitkeep
-debian/server/APP/*
-!debian/server/APP/.gitkeep
+debian/Data/music/*
+!debian/Data/music/.gitkeep
+debian/Data/PC/*
+!debian/Data/PC/.gitkeep
+debian/Data/APP/*
+!debian/Data/APP/.gitkeep
 .fnsync_temp_dir/
 win/
 .cursor/

@@ -57,7 +57,9 @@ describe("ItabMemoFixedLayer", () => {
     expect(componentSource).toContain(
       "-webkit-backdrop-filter: blur(10px) saturate(116%);",
     );
-    expect(componentSource).toContain("background: rgba(255, 255, 255, 0.3);");
+    expect(componentSource).toContain(
+      "background: var(--sd-theme-itab-memo-memo-fixed-layer-surface-01);",
+    );
     expect(componentSource).not.toContain(
       "border: 1px solid rgba(255, 255, 255, 0.2);",
     );

@@ -28,9 +28,13 @@ describe("ItabAnniversaryOpenedPanel", () => {
     expect(firstThumbnail.attributes("style")).toContain(
       "--anniversary-bg: #eee1d9",
     );
-    expect(openedPanelSource).toContain("rgb(245, 245, 245) 374px 100%");
+    expect(openedPanelSource).toContain(
+      "var(--sd-theme-itab-anniversary-anniversary-opened-panel-surface-01) 0 374px",
+    );
     expect(openedPanelSource).toContain("font-size: 12px;");
-    expect(openedPanelSource).toContain("0 0 0 3px rgb(24, 144, 255)");
+    expect(openedPanelSource).toContain(
+      "0 0 0 3px\n      var(--sd-theme-itab-anniversary-anniversary-opened-panel-shadow-02)",
+    );
     expect(openedPanelSource).toContain("padding: 8px 0 4px 17px;");
     expect(openedPanelSource).toContain('class="anniversary-image-panel"');
     expect(openedPanelSource).toContain("height: 100px;");

@@ -10,9 +10,9 @@ async fn test_app() -> axum::Router {
     let base = temp.keep();
     let icon_data = base.join("rust/crates/startdeck-iconserver/resources/data");
     std::fs::create_dir_all(icon_data.join("icons")).unwrap();
-    std::fs::create_dir_all(base.join("server/data")).unwrap();
+    std::fs::create_dir_all(base.join("Data/data")).unwrap();
     std::fs::write(
-        base.join("server/data/system.json"),
+        base.join("Data/data/system.json"),
         r#"{"authMode":"single","enableDocker":false}"#,
     )
     .unwrap();

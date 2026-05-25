@@ -62,8 +62,11 @@ watch(
   width: var(--flip-card-width, 40px);
   height: var(--flip-card-height, 60px);
   border-radius: var(--flip-card-radius, 6px);
-  box-shadow: var(--flip-shadow, 0 2px 8px rgba(0, 0, 0, 0.3));
-  color: var(--flip-text-color, #fff);
+  box-shadow: var(
+    --flip-shadow,
+    0 2px 8px var(--sd-theme-itab-live-flip-card-shadow-01)
+  );
+  color: var(--flip-text-color, var(--sd-theme-itab-live-flip-card-text-01));
   font-family: var(
     --flip-font-family,
     "DIN",
@@ -83,8 +86,14 @@ watch(
   z-index: 5;
   width: 100%;
   height: 1px;
-  background: var(--flip-center-line, rgba(0, 0, 0, 0.65));
-  box-shadow: var(--flip-center-line-shadow, 0 1px 0 rgba(255, 255, 255, 0.03));
+  background: var(
+    --flip-center-line,
+    var(--sd-theme-itab-live-flip-card-surface-01)
+  );
+  box-shadow: var(
+    --flip-center-line-shadow,
+    0 1px 0 var(--sd-theme-itab-live-flip-card-shadow-02)
+  );
   content: "";
 }
 
@@ -105,11 +114,16 @@ watch(
 .flip-card__top {
   top: 0;
   z-index: 1;
-  border-bottom: 1px solid var(--flip-border-color, rgba(0, 0, 0, 0.4));
+  border-bottom: 1px solid
+    var(--flip-border-color, var(--sd-theme-itab-live-flip-card-border-01));
   border-radius: var(--flip-card-radius, 6px) var(--flip-card-radius, 6px) 0 0;
   background: var(
     --flip-bg-top,
-    linear-gradient(180deg, #3a3a5a 0%, #2a2a4a 100%)
+    linear-gradient(
+      180deg,
+      var(--sd-theme-itab-live-flip-card-accent-surface-01) 0%,
+      var(--sd-theme-itab-live-flip-card-accent-surface-02) 100%
+    )
   );
 }
 
@@ -119,7 +133,11 @@ watch(
   border-radius: 0 0 var(--flip-card-radius, 6px) var(--flip-card-radius, 6px);
   background: var(
     --flip-bg-bottom,
-    linear-gradient(180deg, #2a2a4a 0%, #3a3a5a 100%)
+    linear-gradient(
+      180deg,
+      var(--sd-theme-itab-live-flip-card-accent-surface-02) 0%,
+      var(--sd-theme-itab-live-flip-card-accent-surface-01) 100%
+    )
   );
 }
 
@@ -133,11 +151,16 @@ watch(
 .flip-card__back {
   top: 0;
   z-index: 3;
-  border-bottom: 1px solid var(--flip-border-color, rgba(0, 0, 0, 0.4));
+  border-bottom: 1px solid
+    var(--flip-border-color, var(--sd-theme-itab-live-flip-card-border-01));
   border-radius: var(--flip-card-radius, 6px) var(--flip-card-radius, 6px) 0 0;
   background: var(
     --flip-bg-top,
-    linear-gradient(180deg, #3a3a5a 0%, #2a2a4a 100%)
+    linear-gradient(
+      180deg,
+      var(--sd-theme-itab-live-flip-card-accent-surface-01) 0%,
+      var(--sd-theme-itab-live-flip-card-accent-surface-02) 100%
+    )
   );
   transform: rotateX(0deg);
   transform-origin: bottom center;
@@ -149,7 +172,11 @@ watch(
   border-radius: 0 0 var(--flip-card-radius, 6px) var(--flip-card-radius, 6px);
   background: var(
     --flip-bg-bottom,
-    linear-gradient(180deg, #2a2a4a 0%, #3a3a5a 100%)
+    linear-gradient(
+      180deg,
+      var(--sd-theme-itab-live-flip-card-accent-surface-02) 0%,
+      var(--sd-theme-itab-live-flip-card-accent-surface-01) 100%
+    )
   );
   transform: rotateX(90deg);
   transform-origin: top center;
@@ -217,19 +244,19 @@ watch(
 
 @keyframes flipDownShadow {
   0% {
-    background: rgba(255, 255, 255, 0.03);
+    background: var(--sd-theme-itab-live-flip-card-surface-02);
   }
   100% {
-    background: rgba(0, 0, 0, 0.48);
+    background: var(--sd-theme-itab-live-flip-card-surface-03);
   }
 }
 
 @keyframes flipUpShadow {
   0% {
-    background: rgba(0, 0, 0, 0.56);
+    background: var(--sd-theme-itab-live-flip-card-surface-04);
   }
   100% {
-    background: rgba(0, 0, 0, 0);
+    background: var(--sd-theme-itab-live-flip-card-surface-05);
   }
 }
 </style>

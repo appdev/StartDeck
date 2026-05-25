@@ -72,8 +72,8 @@ watch(
 .itab-ip-card {
   overflow: hidden;
   box-sizing: border-box;
-  background: rgb(60, 102, 255);
-  color: #fff;
+  background: var(--sd-theme-itab-ip-ip-widget-accent-surface-01);
+  color: var(--sd-theme-itab-ip-ip-widget-text-01);
   font-family: HarmonyOS_Sans, Arial, "PingFang SC", sans-serif;
 }
 
@@ -118,7 +118,7 @@ watch(
   display: block;
   max-width: 100%;
   overflow: hidden;
-  color: #fff;
+  color: var(--sd-theme-itab-ip-ip-widget-text-01);
   font-size: 18px;
   font-variant-numeric: tabular-nums;
   font-weight: 700;
@@ -133,7 +133,7 @@ watch(
   max-width: 100%;
   margin-top: 8px;
   overflow: hidden;
-  color: rgba(255, 255, 255, 0.92);
+  color: var(--sd-theme-itab-ip-ip-widget-text-02);
   font-size: 14px;
   font-weight: 500;
   letter-spacing: 0;

@@ -221,8 +221,8 @@ watch(
 .tomato-icon-wrap {
   position: relative;
   overflow: visible;
-  background: #000;
-  color: #fff;
+  background: var(--sd-theme-itab-pomodoro-pomodoro-widget-surface-01);
+  color: var(--sd-theme-itab-pomodoro-pomodoro-widget-text-01);
   font-family: Arial, sans-serif;
   text-align: center;
 }
@@ -245,7 +245,7 @@ watch(
   position: absolute;
   inset: 0;
   z-index: 1;
-  background: rgba(3, 25, 56, 0.6);
+  background: var(--sd-theme-itab-pomodoro-pomodoro-widget-accent-surface-01);
 }
 
 .tomato-bg-item img {
@@ -266,7 +266,7 @@ watch(
   align-items: center;
   justify-content: center;
   margin-top: -11px;
-  color: #fff;
+  color: var(--sd-theme-itab-pomodoro-pomodoro-widget-text-01);
 }
 
 .tomato-switch-btn svg {
@@ -311,7 +311,7 @@ watch(
   align-items: center;
   justify-content: center;
   padding: 12px;
-  color: #fff;
+  color: var(--sd-theme-itab-pomodoro-pomodoro-widget-text-01);
 }
 
 .iconsize-2x4 .tomato-progress-box {
@@ -325,7 +325,7 @@ watch(
   z-index: 0;
   width: calc(100% - 24px);
   height: calc(100% - 24px);
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--sd-theme-itab-pomodoro-pomodoro-widget-text-02);
   pointer-events: none;
 }
 
@@ -342,11 +342,11 @@ watch(
 }
 
 .tomato-progress-ring .tomato-progress-track {
-  stroke: rgba(255, 255, 255, 0.3);
+  stroke: var(--sd-theme-itab-pomodoro-pomodoro-widget-surface-02);
 }
 
 .tomato-progress-ring .tomato-progress-fill {
-  stroke: rgba(255, 255, 255, 0.4);
+  stroke: var(--sd-theme-itab-pomodoro-pomodoro-widget-surface-03);
   stroke-linecap: butt;
   transition:
     stroke-dashoffset 0.6s ease 0s,
@@ -370,7 +370,7 @@ watch(
 
 .tomato-time-grid p {
   margin: 0;
-  color: #fff;
+  color: var(--sd-theme-itab-pomodoro-pomodoro-widget-text-01);
   font-weight: 700;
 }
 
@@ -397,7 +397,7 @@ watch(
   inset: 0;
   display: none;
   margin-top: 0;
-  background-color: #000;
+  background-color: var(--sd-theme-itab-pomodoro-pomodoro-widget-surface-01);
   transform: none;
 }
 
@@ -418,10 +418,10 @@ watch(
   place-items: center;
   margin: 0 2px;
   padding: 0;
-  border: 2px solid rgba(255, 255, 255, 0.4);
+  border: 2px solid var(--sd-theme-itab-pomodoro-pomodoro-widget-border-01);
   border-radius: 999px;
   background: transparent;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--sd-theme-itab-pomodoro-pomodoro-widget-text-03);
   cursor: pointer;
 }
 
@@ -435,14 +435,14 @@ watch(
 }
 
 .tomato-outer-control-primary {
-  border-color: rgba(255, 255, 255, 0.4);
+  border-color: var(--sd-theme-itab-pomodoro-pomodoro-widget-border-01);
   background: transparent;
 }
 
 .tomato-outer-control:hover {
-  border-color: rgba(255, 255, 255, 0.6);
-  background: rgba(255, 255, 255, 0.2);
-  color: #fff;
+  border-color: var(--sd-theme-itab-pomodoro-pomodoro-widget-border-02);
+  background: var(--sd-theme-itab-pomodoro-pomodoro-widget-surface-04);
+  color: var(--sd-theme-itab-pomodoro-pomodoro-widget-text-01);
 }
 
 .tomato-outer-control svg {

@@ -8,6 +8,7 @@ pub struct RuntimeConfig {
     pub users_dir: PathBuf,
     pub sqlite_file: PathBuf,
     pub public_dir: PathBuf,
+    pub server_resource_dir: PathBuf,
     pub music_dir: PathBuf,
     pub backgrounds_dir: PathBuf,
     pub mobile_backgrounds_dir: PathBuf,
@@ -32,13 +33,9 @@ impl RuntimeConfig {
         let server_resource_dir = env_path(&["STARTDECK_SERVER_RESOURCE_DIR"])
             .unwrap_or_else(|| default_server_resource_dir(&base_dir));
         let data_dir = env_path(&["STARTDECK_DATA_DIR", "DATA_DIR"])
-            .unwrap_or_else(|| base_dir.join("server").join("data"));
-        let public_dir = env_path(&["STARTDECK_PUBLIC_DIR", "PUBLIC_DIR"]).unwrap_or_else(|| {
-            first_existing_path([
-                server_resource_dir.join("public"),
-                base_dir.join("server").join("public"),
-            ])
-        });
+            .unwrap_or_else(|| base_dir.join("Data").join("data"));
+        let public_dir = env_path(&["STARTDECK_PUBLIC_DIR", "PUBLIC_DIR"])
+            .unwrap_or_else(|| base_dir.join("Data").join("public"));
         let default_template_file =
             env_path(&["STARTDECK_DEFAULT_TEMPLATE_FILE", "DEFAULT_TEMPLATE_FILE"]).unwrap_or_else(
                 || {
@@ -59,12 +56,13 @@ impl RuntimeConfig {
             users_dir: data_dir.join("users"),
             sqlite_file: data_dir.join("startdeck.sqlite3"),
             public_dir,
+            server_resource_dir,
             music_dir: env_path(&["STARTDECK_MUSIC_DIR", "MUSIC_DIR"])
-                .unwrap_or_else(|| base_dir.join("server").join("music")),
+                .unwrap_or_else(|| base_dir.join("Data").join("music")),
             backgrounds_dir: env_path(&["STARTDECK_PC_DIR", "PC_DIR"])
-                .unwrap_or_else(|| base_dir.join("server").join("PC")),
+                .unwrap_or_else(|| base_dir.join("Data").join("PC")),
             mobile_backgrounds_dir: env_path(&["STARTDECK_APP_DIR", "APP_DIR"])
-                .unwrap_or_else(|| base_dir.join("server").join("APP")),
+                .unwrap_or_else(|| base_dir.join("Data").join("APP")),
             icon_cache_dir: data_dir.join("icon-cache"),
             icon_service_data_dir: env_path(&["ICON_SERVICE_DATA_DIR", "ICON_DATA_DIR"])
                 .unwrap_or_else(|| default_icon_service_data_dir(&base_dir)),
@@ -130,7 +128,7 @@ fn default_server_resource_dir(base_dir: &Path) -> PathBuf {
     if rust_resources.exists() {
         rust_resources
     } else {
-        base_dir.join("server")
+        base_dir.join("Data")
     }
 }
 

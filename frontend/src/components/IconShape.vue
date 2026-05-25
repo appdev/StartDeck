@@ -171,7 +171,7 @@ const pathD = computed(() => {
           dominant-baseline="middle"
           :font-size="sizePx * textScale"
           font-family="system-ui"
-          fill="#111"
+          fill="var(--sd-component-text-primary)"
         >
           {{ finalIcon }}
         </text>
@@ -182,9 +182,9 @@ const pathD = computed(() => {
 
 <style scoped>
 .fill-gray-100 {
-  fill: rgb(243 244 246);
+  fill: var(--sd-theme-icon-shape-fill-01);
 }
 .fill-white {
-  fill: #ffffff;
+  fill: var(--sd-theme-icon-shape-fill-02);
 }
 </style>

@@ -108,15 +108,21 @@ watch(
 
 .poem-icon-content {
   overflow: hidden;
-  background: var(--itab-poem-card-bg, var(--poem-bg, #eee));
+  background: var(
+    --itab-poem-card-bg,
+    var(--poem-bg, var(--sd-theme-itab-poem-poem-widget-surface-01))
+  );
 }
 
 .poem-icon-content.is-poem-size-1-1 {
-  --itab-poem-card-bg: rgb(9, 55, 68);
+  --itab-poem-card-bg: var(--sd-theme-itab-poem-poem-widget-accent-01);
 }
 
 .poem-icon-content img {
-  background: var(--itab-poem-card-bg, rgb(9, 55, 68));
+  background: var(
+    --itab-poem-card-bg,
+    var(--sd-theme-itab-poem-poem-widget-accent-surface-01)
+  );
   object-fit: contain;
 }
 
@@ -125,7 +131,7 @@ watch(
   left: 0;
   width: 100%;
   height: auto;
-  color: #333;
+  color: var(--sd-theme-itab-poem-poem-widget-text-01);
   pointer-events: none;
 }
 
@@ -160,7 +166,7 @@ watch(
   align-items: stretch;
   justify-content: center;
   overflow: visible;
-  color: #333;
+  color: var(--sd-theme-itab-poem-poem-widget-text-01);
 }
 
 .poem-body p {

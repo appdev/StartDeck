@@ -875,8 +875,8 @@
               </div>
               <pre id="docker-command"><code>docker run -d \
   -p 23000:3000 \
-  -v $(pwd)/data:/app/server/data \
-  -v $(pwd)/music:/app/server/music \
+  -v $(pwd)/data:/app/Data/data \
+  -v $(pwd)/music:/app/Data/music \
   -v $(pwd)/icon-service-data:/app/icon-service/data \
   -e ICON_SERVICE_DATA_DIR=/app/icon-service/data \
   -v /var/run/docker.sock:/var/run/docker.sock \

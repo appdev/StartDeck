@@ -134,8 +134,22 @@ onMounted(() => {
   min-width: 0;
   min-height: 0;
   overflow: hidden;
-  background: linear-gradient(135deg, #111827, #1f2937 48%, #000);
-  color: #cbd5e1;
+  background: linear-gradient(
+    135deg,
+    var(
+      --sd-theme-itab-number-uppercase-number-uppercase-opened-panel-accent-surface-01
+    ),
+    var(
+        --sd-theme-itab-number-uppercase-number-uppercase-opened-panel-accent-surface-02
+      )
+      48%,
+    var(
+      --sd-theme-itab-number-uppercase-number-uppercase-opened-panel-surface-01
+    )
+  );
+  color: var(
+    --sd-theme-itab-number-uppercase-number-uppercase-opened-panel-text-01
+  );
   font-family:
     -apple-system, BlinkMacSystemFont, "Helvetica Neue", "PingFang SC",
     "Microsoft YaHei", sans-serif;
@@ -149,7 +163,19 @@ onMounted(() => {
   min-height: 0;
   overflow: auto;
   padding: 47px 40px 40px;
-  background: linear-gradient(135deg, #111827, #1f2937 48%, #000);
+  background: linear-gradient(
+    135deg,
+    var(
+      --sd-theme-itab-number-uppercase-number-uppercase-opened-panel-accent-surface-01
+    ),
+    var(
+        --sd-theme-itab-number-uppercase-number-uppercase-opened-panel-accent-surface-02
+      )
+      48%,
+    var(
+      --sd-theme-itab-number-uppercase-number-uppercase-opened-panel-surface-01
+    )
+  );
 }
 
 .amount-conversion-input-group {
@@ -166,11 +192,18 @@ onMounted(() => {
   width: 100%;
   height: 59px;
   padding: 15px;
-  border: 1px solid #4a5568;
+  border: 1px solid
+    var(
+      --sd-theme-itab-number-uppercase-number-uppercase-opened-panel-accent-border-01
+    );
   border-radius: 12px;
   outline: none;
-  background: #1a202c;
-  color: #facc15;
+  background: var(
+    --sd-theme-itab-number-uppercase-number-uppercase-opened-panel-accent-surface-03
+  );
+  color: var(
+    --sd-theme-itab-number-uppercase-number-uppercase-opened-panel-accent-text-01
+  );
   font-size: 18px;
   line-height: 27px;
   text-align: center;
@@ -181,14 +214,23 @@ onMounted(() => {
 }
 
 .amount-conversion-input::placeholder {
-  color: rgba(203, 213, 224, 0.58);
+  color: var(
+    --sd-theme-itab-number-uppercase-number-uppercase-opened-panel-text-02
+  );
 }
 
 .amount-conversion-input:focus,
 .amount-conversion-input--active {
-  border-color: #facc15;
-  background: rgba(250, 204, 21, 0.05);
-  box-shadow: rgba(250, 204, 21, 0.19) 0 0 3px 0;
+  border-color: var(
+    --sd-theme-itab-number-uppercase-number-uppercase-opened-panel-accent-border-02
+  );
+  background: var(
+    --sd-theme-itab-number-uppercase-number-uppercase-opened-panel-accent-surface-04
+  );
+  box-shadow: var(
+      --sd-theme-itab-number-uppercase-number-uppercase-opened-panel-shadow-01
+    )
+    0 0 3px 0;
 }
 
 .amount-conversion-result-container {
@@ -200,10 +242,17 @@ onMounted(() => {
   justify-content: center;
   overflow: hidden;
   padding: 20px;
-  border: 1px solid #4a5568;
+  border: 1px solid
+    var(
+      --sd-theme-itab-number-uppercase-number-uppercase-opened-panel-accent-border-01
+    );
   border-radius: 12px;
-  background: #1a202c;
-  color: #a0aec0;
+  background: var(
+    --sd-theme-itab-number-uppercase-number-uppercase-opened-panel-accent-surface-03
+  );
+  color: var(
+    --sd-theme-itab-number-uppercase-number-uppercase-opened-panel-text-03
+  );
   font-size: 18px;
   line-height: 28px;
   text-align: center;
@@ -216,7 +265,9 @@ onMounted(() => {
 }
 
 .amount-conversion-active .amount-conversion-result {
-  color: #facc15;
+  color: var(
+    --sd-theme-itab-number-uppercase-number-uppercase-opened-panel-accent-text-01
+  );
   font-size: 22px;
   font-weight: 500;
   line-height: 33px;
@@ -227,16 +278,25 @@ onMounted(() => {
   width: 100%;
   margin: 25px 0 0;
   padding: 20px;
-  border: 1px solid #4a5568;
+  border: 1px solid
+    var(
+      --sd-theme-itab-number-uppercase-number-uppercase-opened-panel-accent-border-01
+    );
   border-radius: 10px;
-  background: #2d3748;
-  color: #cbd5e0;
+  background: var(
+    --sd-theme-itab-number-uppercase-number-uppercase-opened-panel-accent-surface-05
+  );
+  color: var(
+    --sd-theme-itab-number-uppercase-number-uppercase-opened-panel-text-04
+  );
 }
 
 .amount-conversion-example-title {
   display: flex;
   margin: 0 0 20px;
-  color: #e2e8f0;
+  color: var(
+    --sd-theme-itab-number-uppercase-number-uppercase-opened-panel-text-05
+  );
   font-size: 16px;
   font-weight: 600;
   letter-spacing: 0;
@@ -262,22 +322,33 @@ onMounted(() => {
   align-items: center;
   justify-content: center;
   padding: 10px;
-  border: 1px solid #4a5568;
+  border: 1px solid
+    var(
+      --sd-theme-itab-number-uppercase-number-uppercase-opened-panel-accent-border-01
+    );
   border-radius: 8px;
-  background: #1a202c;
-  color: #a0aec0;
+  background: var(
+    --sd-theme-itab-number-uppercase-number-uppercase-opened-panel-accent-surface-03
+  );
+  color: var(
+    --sd-theme-itab-number-uppercase-number-uppercase-opened-panel-text-03
+  );
   text-align: center;
 }
 
 .amount-conversion-character-item strong {
-  color: #aeb8c7;
+  color: var(
+    --sd-theme-itab-number-uppercase-number-uppercase-opened-panel-text-06
+  );
   font-size: 20px;
   font-weight: 600;
   line-height: 30px;
 }
 
 .amount-conversion-character-item small {
-  color: #cbd5e0;
+  color: var(
+    --sd-theme-itab-number-uppercase-number-uppercase-opened-panel-text-04
+  );
   font-size: 12px;
   line-height: 18px;
 }
@@ -288,7 +359,14 @@ onMounted(() => {
   bottom: 0;
   left: 0;
   height: 2px;
-  background: linear-gradient(90deg, transparent, #eab308, transparent);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(
+      --sd-theme-itab-number-uppercase-number-uppercase-opened-panel-accent-surface-06
+    ),
+    transparent
+  );
 }
 
 @media (max-width: 760px) {

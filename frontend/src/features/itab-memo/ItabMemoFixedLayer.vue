@@ -83,7 +83,7 @@ const fixedMemoBody = (note: ItabMemoNote) => note.body.trim() || "无内容";
   margin: 0;
   padding: 0;
   overflow-x: auto;
-  color: rgba(0, 0, 0, 0.9);
+  color: var(--sd-theme-itab-memo-memo-fixed-layer-text-01);
   font-size: 13px;
   line-height: 19.5px;
   list-style: none;
@@ -97,12 +97,12 @@ const fixedMemoBody = (note: ItabMemoNote) => note.body.trim() || "无内容";
   padding: 8px 12px;
   overflow: hidden;
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.3);
-  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.12);
+  background: var(--sd-theme-itab-memo-memo-fixed-layer-surface-01);
+  box-shadow: 0 14px 32px var(--sd-theme-itab-memo-memo-fixed-layer-shadow-01);
   backdrop-filter: blur(10px) saturate(116%);
   -webkit-backdrop-filter: blur(10px) saturate(116%);
   box-sizing: border-box;
-  color: rgba(0, 0, 0, 0.9);
+  color: var(--sd-theme-itab-memo-memo-fixed-layer-text-01);
 }
 
 .notes-fixed-content {
@@ -137,7 +137,7 @@ const fixedMemoBody = (note: ItabMemoNote) => note.body.trim() || "无内容";
   border: 0;
   outline: 0;
   background: transparent;
-  color: rgba(0, 0, 0, 0.9);
+  color: var(--sd-theme-itab-memo-memo-fixed-layer-text-01);
   font-size: 12px;
   line-height: 18px;
   resize: none;
@@ -149,7 +149,7 @@ const fixedMemoBody = (note: ItabMemoNote) => note.body.trim() || "无内容";
 
 .notes-fixed-content time {
   display: inline;
-  color: rgba(0, 0, 0, 0.36);
+  color: var(--sd-theme-itab-memo-memo-fixed-layer-text-02);
   font-size: 12px;
   line-height: 16px;
 }
@@ -164,7 +164,7 @@ const fixedMemoBody = (note: ItabMemoNote) => note.body.trim() || "无内容";
   padding: 0;
   border: 0;
   background: transparent;
-  color: rgba(0, 0, 0, 0.9);
+  color: var(--sd-theme-itab-memo-memo-fixed-layer-text-01);
   cursor: pointer;
 }
 

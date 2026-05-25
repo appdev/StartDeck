@@ -63,6 +63,11 @@ ENV TZ=Asia/Shanghai \
     GIN_MODE=release \
     BASE_DIR=/app \
     STARTDECK_SERVER_RESOURCE_DIR=/app/startdeck-server-defaults \
+    STARTDECK_PUBLIC_DIR=/app/Data/public \
+    DATA_DIR=/app/Data/data \
+    MUSIC_DIR=/app/Data/music \
+    PC_DIR=/app/Data/PC \
+    APP_DIR=/app/Data/APP \
     ICON_SERVICE_DATA_DIR=/app/icon-service/data \
     PORT=9001 \
     ICON_SERVICE_PORT=9002 \
@@ -80,10 +85,10 @@ COPY scripts/docker-entrypoint.sh ./scripts/docker-entrypoint.sh
 
 # Copy frontend dist to public directory
 # This includes the built assets and static files copied from frontend/public during build.
-COPY --from=frontend-builder /app/frontend/dist ./server/public
+COPY --from=frontend-builder /app/frontend/dist ./Data/public
 
 # Create necessary directories for volumes
-RUN mkdir -p server/data server/music server/PC server/APP server/icon-cache icon-service/data/icons icon-service/data/cache \
+RUN mkdir -p Data/data Data/public Data/music Data/PC Data/APP Data/doc icon-service/data/icons icon-service/data/cache \
     && chmod +x ./scripts/docker-entrypoint.sh
 
 # Expose port

@@ -139,8 +139,14 @@ watch(
   overflow: hidden;
   box-sizing: border-box;
   border-radius: 18px;
-  background: var(--movie-bg-color, #3a444c);
-  color: var(--movie-text-color, #f4f7f9);
+  background: var(
+    --movie-bg-color,
+    var(--sd-theme-itab-movie-calendar-movie-calendar-widget-surface-01)
+  );
+  color: var(
+    --movie-text-color,
+    var(--sd-theme-itab-movie-calendar-movie-calendar-widget-text-01)
+  );
   font-family:
     "PingFang SC",
     -apple-system,
@@ -157,16 +163,28 @@ watch(
   z-index: 0;
   display: block;
   background:
-    linear-gradient(0deg, var(--movie-bg-color, #3a444c), rgba(0, 0, 0, 0)),
+    linear-gradient(
+      0deg,
+      var(
+        --movie-bg-color,
+        var(--sd-theme-itab-movie-calendar-movie-calendar-widget-surface-01)
+      ),
+      var(--sd-theme-itab-movie-calendar-movie-calendar-widget-surface-02)
+    ),
     var(--movie-cover-image, none) center/cover no-repeat,
-    var(--movie-bg-color, #3a444c);
+    var(
+      --movie-bg-color,
+      var(--sd-theme-itab-movie-calendar-movie-calendar-widget-surface-01)
+    );
 }
 
 .movie-calendar-card::after {
   position: absolute;
   inset: 0;
   z-index: 0;
-  background: rgba(0, 0, 0, 0.12);
+  background: var(
+    --sd-theme-itab-movie-calendar-movie-calendar-widget-surface-03
+  );
   content: "";
 }
 
@@ -190,13 +208,15 @@ watch(
 .movie-size-1-1,
 .movie-size-1-2,
 .movie-size-2-1 {
-  box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 0 5px
+    var(--sd-theme-itab-movie-calendar-movie-calendar-widget-shadow-01);
 }
 
 .movie-size-2-2,
 .movie-size-2-4 {
   padding: 10px;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 0 10px
+    var(--sd-theme-itab-movie-calendar-movie-calendar-widget-shadow-02);
 }
 
 .movie-icon-view {
@@ -210,7 +230,7 @@ watch(
   display: block;
   width: 86%;
   height: 86%;
-  color: #fff;
+  color: var(--sd-theme-itab-movie-calendar-movie-calendar-widget-text-02);
   font-style: normal;
   line-height: 12px;
 }
@@ -236,7 +256,7 @@ watch(
   align-items: center;
   justify-content: center;
   border-radius: 6px;
-  color: #333;
+  color: var(--sd-theme-itab-movie-calendar-movie-calendar-widget-text-03);
   font-size: 19.2px;
   font-weight: 700;
   line-height: 12px;
@@ -329,8 +349,12 @@ watch(
   box-sizing: border-box;
   padding: 0 2px;
   border-radius: 6px;
-  background: #ffac2d;
-  color: #4f0e03;
+  background: var(
+    --sd-theme-itab-movie-calendar-movie-calendar-widget-accent-surface-01
+  );
+  color: var(
+    --sd-theme-itab-movie-calendar-movie-calendar-widget-accent-text-01
+  );
   font-size: 12px;
   line-height: 12px;
   white-space: nowrap;

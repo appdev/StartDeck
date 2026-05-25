@@ -1535,7 +1535,7 @@ const submit = async () => {
   gap: 17px;
   overflow-y: auto;
   padding: 18px;
-  color: rgb(223, 221, 221);
+  color: var(--sd-theme-edit-modal-text-01);
   overscroll-behavior: contain;
 }
 
@@ -1544,12 +1544,12 @@ const submit = async () => {
 }
 
 :global(.edit-card-body::-webkit-scrollbar-track) {
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--sd-theme-edit-modal-surface-01);
 }
 
 :global(.edit-card-body::-webkit-scrollbar-thumb) {
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.24);
+  background: var(--sd-theme-edit-modal-surface-02);
 }
 
 :global(.edit-card-footer) {
@@ -1557,8 +1557,8 @@ const submit = async () => {
   align-items: center;
   justify-content: flex-end;
   gap: 10px;
-  border-top-color: rgba(255, 255, 255, 0.1);
-  background: rgba(255, 255, 255, 0.055);
+  border-top-color: var(--sd-theme-edit-modal-border-01);
+  background: var(--sd-theme-edit-modal-surface-03);
   padding: 12px 18px;
 }
 
@@ -1583,10 +1583,10 @@ const submit = async () => {
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.18);
+  border: 1px solid var(--sd-theme-edit-modal-border-02);
   border-radius: 16px;
-  background: rgba(255, 255, 255, 0.1);
-  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.18);
+  background: var(--sd-theme-edit-modal-surface-04);
+  box-shadow: 0 8px 18px var(--sd-theme-edit-modal-shadow-01);
   cursor: pointer;
   transition:
     border-color 0.16s ease,
@@ -1596,8 +1596,8 @@ const submit = async () => {
 
 .edit-card-icon-preview:hover,
 .edit-card-icon-preview:focus-visible {
-  border-color: rgba(24, 144, 255, 0.5);
-  background: rgba(24, 144, 255, 0.14);
+  border-color: var(--sd-theme-edit-modal-accent-border-01);
+  background: var(--sd-theme-edit-modal-accent-surface-01);
   outline: none;
   transform: translateY(-1px);
 }
@@ -1632,32 +1632,32 @@ const submit = async () => {
 }
 
 .edit-card-header-actions :deep(button) {
-  border-color: rgba(255, 255, 255, 0.11);
-  background: rgba(255, 255, 255, 0.08);
-  color: rgba(223, 221, 221, 0.8);
+  border-color: var(--sd-theme-edit-modal-border-03);
+  background: var(--sd-theme-edit-modal-surface-05);
+  color: var(--sd-theme-edit-modal-text-02);
 }
 
 .edit-card-header-actions :deep(button:hover),
 .edit-card-header-actions :deep(button:focus-visible) {
-  border-color: rgba(24, 144, 255, 0.36);
-  background: rgba(255, 255, 255, 0.14);
-  color: rgb(223, 221, 221);
+  border-color: var(--sd-theme-edit-modal-accent-border-02);
+  background: var(--sd-theme-edit-modal-surface-06);
+  color: var(--sd-theme-edit-modal-text-01);
 }
 
 .edit-card-header-actions :deep(.bg-gray-50),
 .edit-card-header-actions :deep(.bg-gray-100) {
-  background: rgba(255, 255, 255, 0.12);
+  background: var(--sd-theme-edit-modal-surface-07);
 }
 
 .edit-card-header-actions :deep(.text-gray-600),
 .edit-card-header-actions :deep(.text-gray-400) {
-  color: rgba(223, 221, 221, 0.68);
+  color: var(--sd-theme-edit-modal-text-03);
 }
 
 :global(.edit-card-surface .sd-label) {
   display: block;
   margin-bottom: 7px;
-  color: rgba(223, 221, 221, 0.76);
+  color: var(--sd-theme-edit-modal-text-04);
   font-size: 12px;
   font-weight: 800;
   line-height: 16px;
@@ -1667,23 +1667,23 @@ const submit = async () => {
 :global(.edit-card-surface .sd-input),
 :global(.edit-card-surface .sd-textarea),
 :global(.edit-card-surface .sd-select) {
-  border-color: rgba(255, 255, 255, 0.11);
-  background: rgba(255, 255, 255, 0.1);
-  color: rgb(223, 221, 221);
+  border-color: var(--sd-theme-edit-modal-border-03);
+  background: var(--sd-theme-edit-modal-surface-04);
+  color: var(--sd-theme-edit-modal-text-01);
   box-shadow: none;
 }
 
 :global(.edit-card-surface .sd-input::placeholder),
 :global(.edit-card-surface .sd-textarea::placeholder) {
-  color: rgba(223, 221, 221, 0.4);
+  color: var(--sd-theme-edit-modal-text-05);
 }
 
 :global(.edit-card-surface .sd-input:focus),
 :global(.edit-card-surface .sd-textarea:focus),
 :global(.edit-card-surface .sd-select:focus) {
-  border-color: rgba(24, 144, 255, 0.52);
-  background: rgba(255, 255, 255, 0.14);
-  box-shadow: 0 0 0 3px rgba(24, 144, 255, 0.16);
+  border-color: var(--sd-theme-edit-modal-accent-border-03);
+  background: var(--sd-theme-edit-modal-surface-06);
+  box-shadow: 0 0 0 3px var(--sd-theme-edit-modal-shadow-02);
 }
 
 :global(.edit-card-surface .sd-section),
@@ -1691,9 +1691,9 @@ const submit = async () => {
 :global(.edit-card-surface [class~="bg-blue-50/70"]),
 :global(.edit-card-surface .bg-white),
 :global(.edit-card-surface [class~="bg-white/90"]) {
-  border-color: rgba(255, 255, 255, 0.11);
-  background-color: rgba(255, 255, 255, 0.075);
-  color: rgb(223, 221, 221);
+  border-color: var(--sd-theme-edit-modal-border-03);
+  background-color: var(--sd-theme-edit-modal-surface-08);
+  color: var(--sd-theme-edit-modal-text-01);
   box-shadow: none;
 }
 
@@ -1701,60 +1701,60 @@ const submit = async () => {
 :global(.edit-card-surface .border-gray-200),
 :global(.edit-card-surface .border-slate-200),
 :global(.edit-card-surface .border-blue-100) {
-  border-color: rgba(255, 255, 255, 0.11);
+  border-color: var(--sd-theme-edit-modal-border-03);
 }
 
 :global(.edit-card-surface .text-gray-900),
 :global(.edit-card-surface .text-gray-700),
 :global(.edit-card-surface .text-gray-600),
 :global(.edit-card-surface .text-gray-500) {
-  color: rgba(223, 221, 221, 0.76);
+  color: var(--sd-theme-edit-modal-text-04);
 }
 
 :global(.edit-card-surface .text-gray-400),
 :global(.edit-card-surface .text-gray-300) {
-  color: rgba(223, 221, 221, 0.5);
+  color: var(--sd-theme-edit-modal-text-06);
 }
 
 :global(.edit-card-surface .hover\\:text-gray-900:hover),
 :global(.edit-card-surface .hover\\:text-gray-600:hover) {
-  color: rgb(223, 221, 221);
+  color: var(--sd-theme-edit-modal-text-01);
 }
 
 :global(.edit-card-surface .hover\\:text-red-500:hover),
 :global(.edit-card-surface .text-red-500) {
-  color: rgb(255, 143, 151);
+  color: var(--sd-theme-edit-modal-accent-text-01);
 }
 
 :global(.edit-card-surface .bg-red-50) {
-  background-color: rgba(255, 70, 82, 0.1);
+  background-color: var(--sd-theme-edit-modal-accent-surface-02);
 }
 
 :global(.edit-card-surface .border-red-300) {
-  border-color: rgba(255, 70, 82, 0.42);
+  border-color: var(--sd-theme-edit-modal-accent-border-04);
 }
 
 :global(.edit-card-surface .bg-gray-900) {
-  background-color: rgb(24, 144, 255);
+  background-color: var(--sd-theme-edit-modal-accent-surface-03);
 }
 
 :global(.edit-card-surface .hover\\:bg-gray-50:hover),
 :global(.edit-card-surface .hover\\:bg-blue-50:hover),
 :global(.edit-card-surface .hover\\:bg-white:hover) {
-  background-color: rgba(255, 255, 255, 0.14);
+  background-color: var(--sd-theme-edit-modal-surface-06);
 }
 
 :global(.edit-card-surface .hover\\:border-blue-200:hover),
 :global(.edit-card-surface .hover\\:border-blue-400:hover) {
-  border-color: rgba(24, 144, 255, 0.48);
+  border-color: var(--sd-theme-edit-modal-accent-border-05);
 }
 
 :global(.edit-card-surface .sd-range) {
-  accent-color: rgb(24, 144, 255);
+  accent-color: var(--sd-theme-edit-modal-accent-01);
 }
 
 :global(.edit-card-surface input[type="color"]) {
-  border-color: rgba(255, 255, 255, 0.16);
+  border-color: var(--sd-theme-edit-modal-border-04);
   background: transparent;
 }
 

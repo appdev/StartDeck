@@ -577,8 +577,8 @@ const selectFestivalEvent = (event: CalendarFestivalEvent) => {
   height: 100%;
   grid-template-columns: minmax(0, 1fr) 300px;
   overflow: hidden;
-  background: #fff;
-  color: #222;
+  background: var(--sd-theme-itab-calendar-calendar-opened-panel-surface-01);
+  color: var(--sd-theme-itab-calendar-calendar-opened-panel-text-01);
   font-family:
     HarmonyOS_Sans,
     "PingFang SC",
@@ -595,7 +595,7 @@ const selectFestivalEvent = (event: CalendarFestivalEvent) => {
   overflow: hidden;
   box-sizing: border-box;
   padding: 44px 34px 30px;
-  background: #fff;
+  background: var(--sd-theme-itab-calendar-calendar-opened-panel-surface-01);
 }
 
 .calendar-toolbar {
@@ -623,15 +623,15 @@ const selectFestivalEvent = (event: CalendarFestivalEvent) => {
   justify-content: center;
   border: 0;
   border-radius: 8px;
-  background: rgb(240, 241, 244);
-  color: #222;
+  background: var(--sd-theme-itab-calendar-calendar-opened-panel-surface-02);
+  color: var(--sd-theme-itab-calendar-calendar-opened-panel-text-01);
   font: inherit;
 }
 
 .calendar-picker {
   width: 90px;
   gap: 7px;
-  color: #7b7f88;
+  color: var(--sd-theme-itab-calendar-calendar-opened-panel-text-02);
   font-size: 12px;
 }
 
@@ -641,8 +641,8 @@ const selectFestivalEvent = (event: CalendarFestivalEvent) => {
 }
 
 .calendar-picker[aria-expanded="true"] {
-  background: #e7ebf3;
-  color: #4d5564;
+  background: var(--sd-theme-itab-calendar-calendar-opened-panel-surface-03);
+  color: var(--sd-theme-itab-calendar-calendar-opened-panel-text-03);
 }
 
 .calendar-picker-popover {
@@ -653,11 +653,12 @@ const selectFestivalEvent = (event: CalendarFestivalEvent) => {
   display: grid;
   width: 132px;
   border-radius: 10px;
-  background: rgba(255, 255, 255, 0.98);
+  background: var(--sd-theme-itab-calendar-calendar-opened-panel-surface-04);
   padding: 8px;
   box-shadow:
-    0 16px 34px rgba(0, 0, 0, 0.16),
-    inset 0 0 0 1px rgba(0, 0, 0, 0.06);
+    0 16px 34px var(--sd-theme-itab-calendar-calendar-opened-panel-shadow-01),
+    inset 0 0 0 1px
+      var(--sd-theme-itab-calendar-calendar-opened-panel-shadow-02);
 }
 
 .year-picker {
@@ -673,27 +674,31 @@ const selectFestivalEvent = (event: CalendarFestivalEvent) => {
   border: 0;
   border-radius: 7px;
   background: transparent;
-  color: #444b57;
+  color: var(--sd-theme-itab-calendar-calendar-opened-panel-text-04);
   font-size: 12px;
 }
 
 .calendar-picker-popover button:hover,
 .calendar-picker-popover button[aria-selected="true"] {
-  background: rgb(54, 125, 241);
-  color: #fff;
+  background: var(
+    --sd-theme-itab-calendar-calendar-opened-panel-accent-surface-01
+  );
+  color: var(--sd-theme-itab-calendar-calendar-opened-panel-text-05);
 }
 
 .square-action {
   width: 24px;
   padding: 0;
-  color: #5b6472;
+  color: var(--sd-theme-itab-calendar-calendar-opened-panel-text-06);
 }
 
 .today-action {
   width: 24px;
   padding: 0;
-  background: rgb(54, 125, 241);
-  color: #fff;
+  background: var(
+    --sd-theme-itab-calendar-calendar-opened-panel-accent-surface-01
+  );
+  color: var(--sd-theme-itab-calendar-calendar-opened-panel-text-05);
   font-size: 14px;
 }
 
@@ -705,7 +710,7 @@ const selectFestivalEvent = (event: CalendarFestivalEvent) => {
   align-items: center;
   justify-content: center;
   border-radius: 999px;
-  background: #e9e9ec;
+  background: var(--sd-theme-itab-calendar-calendar-opened-panel-surface-05);
   padding: 2px;
 }
 
@@ -716,7 +721,7 @@ const selectFestivalEvent = (event: CalendarFestivalEvent) => {
   width: 68px;
   height: 28px;
   border-radius: 999px;
-  background: rgba(0, 0, 0, 0.2);
+  background: var(--sd-theme-itab-calendar-calendar-opened-panel-surface-06);
   content: "";
   transition: transform 160ms ease;
 }
@@ -733,12 +738,12 @@ const selectFestivalEvent = (event: CalendarFestivalEvent) => {
   border: 0;
   border-radius: 999px;
   background: transparent;
-  color: #555;
+  color: var(--sd-theme-itab-calendar-calendar-opened-panel-text-07);
   font-size: 14px;
 }
 
 .calendar-tabs .active {
-  color: #fff;
+  color: var(--sd-theme-itab-calendar-calendar-opened-panel-text-05);
 }
 
 .calendar-switch {
@@ -750,9 +755,9 @@ const selectFestivalEvent = (event: CalendarFestivalEvent) => {
   margin-left: auto;
   border: 0;
   border-radius: 999px;
-  background: #e9e9ef;
+  background: var(--sd-theme-itab-calendar-calendar-opened-panel-surface-07);
   padding: 0;
-  color: #8c929c;
+  color: var(--sd-theme-itab-calendar-calendar-opened-panel-text-08);
   font: inherit;
 }
 
@@ -763,8 +768,9 @@ const selectFestivalEvent = (event: CalendarFestivalEvent) => {
   width: 18px;
   height: 18px;
   border-radius: 999px;
-  background: #fff;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.18);
+  background: var(--sd-theme-itab-calendar-calendar-opened-panel-surface-01);
+  box-shadow: 0 1px 4px
+    var(--sd-theme-itab-calendar-calendar-opened-panel-shadow-03);
   content: "";
   transition:
     right 160ms ease,
@@ -819,7 +825,7 @@ const selectFestivalEvent = (event: CalendarFestivalEvent) => {
   position: absolute;
   inset: 120px 0 auto;
   z-index: 0;
-  color: rgba(0, 0, 0, 0.04);
+  color: var(--sd-theme-itab-calendar-calendar-opened-panel-text-09);
   font-size: 216px;
   font-weight: 700;
   line-height: 1;
@@ -838,13 +844,13 @@ const selectFestivalEvent = (event: CalendarFestivalEvent) => {
 .weekday-row {
   height: 38px;
   align-items: center;
-  color: #222;
+  color: var(--sd-theme-itab-calendar-calendar-opened-panel-text-01);
   font-size: 16px;
   text-align: center;
 }
 
 .weekday-row .weekend {
-  color: #d84a58;
+  color: var(--sd-theme-itab-calendar-calendar-opened-panel-accent-text-01);
 }
 
 .month-grid {
@@ -864,49 +870,55 @@ const selectFestivalEvent = (event: CalendarFestivalEvent) => {
   border: 0;
   border-radius: 10px;
   background: transparent;
-  color: #222;
+  color: var(--sd-theme-itab-calendar-calendar-opened-panel-text-01);
   font: inherit;
 }
 
 .day-cell:hover,
 .day-cell.selected:not(.today) {
   background: transparent;
-  box-shadow: inset 0 0 0 2px rgba(0, 0, 0, 0.2);
+  box-shadow: inset 0 0 0 2px
+    var(--sd-theme-itab-calendar-calendar-opened-panel-shadow-04);
 }
 
 .day-cell:hover:not(.today):not(.selected) {
   background: transparent;
-  box-shadow: inset 0 0 0 2px rgba(0, 0, 0, 0.16);
+  box-shadow: inset 0 0 0 2px
+    var(--sd-theme-itab-calendar-calendar-opened-panel-shadow-01);
 }
 
 .day-cell.today {
-  background: rgb(54, 125, 241);
-  color: #fff;
+  background: var(
+    --sd-theme-itab-calendar-calendar-opened-panel-accent-surface-01
+  );
+  color: var(--sd-theme-itab-calendar-calendar-opened-panel-text-05);
 }
 
 .day-cell.rest:not(.today) {
-  background: rgba(255, 76, 91, 0.07);
+  background: var(
+    --sd-theme-itab-calendar-calendar-opened-panel-accent-surface-02
+  );
 }
 
 .day-cell.work:not(.today) {
-  background: rgba(0, 0, 0, 0.04);
+  background: var(--sd-theme-itab-calendar-calendar-opened-panel-surface-08);
 }
 
 .day-cell.muted {
-  color: rgba(34, 34, 34, 0.42);
+  color: var(--sd-theme-itab-calendar-calendar-opened-panel-text-10);
 }
 
 .day-cell.muted.rest:not(.today),
 .day-cell.muted.work:not(.today) {
-  background: rgba(0, 0, 0, 0.025);
+  background: var(--sd-theme-itab-calendar-calendar-opened-panel-surface-09);
 }
 
 .day-cell.weekend:not(.today) .solar-day {
-  color: #d84a58;
+  color: var(--sd-theme-itab-calendar-calendar-opened-panel-accent-text-01);
 }
 
 .day-cell.muted.weekend:not(.today) .solar-day {
-  color: rgba(216, 74, 88, 0.56);
+  color: var(--sd-theme-itab-calendar-calendar-opened-panel-accent-text-02);
 }
 
 .day-cell.muted .holiday-badge {
@@ -939,17 +951,21 @@ const selectFestivalEvent = (event: CalendarFestivalEvent) => {
   align-items: center;
   justify-content: center;
   border-radius: 5px;
-  color: #fff;
+  color: var(--sd-theme-itab-calendar-calendar-opened-panel-text-05);
   font-size: 12px;
   line-height: 18px;
 }
 
 .holiday-badge.rest {
-  background: #ff4d5f;
+  background: var(
+    --sd-theme-itab-calendar-calendar-opened-panel-accent-surface-03
+  );
 }
 
 .holiday-badge.work {
-  background: #506176;
+  background: var(
+    --sd-theme-itab-calendar-calendar-opened-panel-accent-surface-04
+  );
 }
 
 .calendar-tools-board {
@@ -967,9 +983,10 @@ const selectFestivalEvent = (event: CalendarFestivalEvent) => {
   min-height: 0;
   overflow: hidden;
   border-radius: 16px;
-  background: #f5f6f8;
+  background: var(--sd-theme-itab-calendar-calendar-opened-panel-surface-10);
   padding: 16px;
-  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.04);
+  box-shadow: inset 0 0 0 1px
+    var(--sd-theme-itab-calendar-calendar-opened-panel-shadow-05);
 }
 
 .tool-card header {
@@ -978,13 +995,13 @@ const selectFestivalEvent = (event: CalendarFestivalEvent) => {
   align-items: center;
   gap: 8px;
   margin-bottom: 14px;
-  color: #30343b;
+  color: var(--sd-theme-itab-calendar-calendar-opened-panel-text-11);
   font-size: 15px;
   font-weight: 600;
 }
 
 .tool-card header svg {
-  color: rgb(54, 125, 241);
+  color: var(--sd-theme-itab-calendar-calendar-opened-panel-accent-text-03);
 }
 
 .tool-card label {
@@ -994,7 +1011,7 @@ const selectFestivalEvent = (event: CalendarFestivalEvent) => {
 .tool-card label span {
   display: block;
   margin-bottom: 6px;
-  color: #8c929c;
+  color: var(--sd-theme-itab-calendar-calendar-opened-panel-text-08);
   font-size: 12px;
   line-height: 16px;
 }
@@ -1004,9 +1021,9 @@ const selectFestivalEvent = (event: CalendarFestivalEvent) => {
   height: 34px;
   border: 0;
   border-radius: 9px;
-  background: #fff;
+  background: var(--sd-theme-itab-calendar-calendar-opened-panel-surface-01);
   padding: 0 8px;
-  color: #222;
+  color: var(--sd-theme-itab-calendar-calendar-opened-panel-text-01);
   font: inherit;
   font-size: 13px;
   outline: none;
@@ -1018,7 +1035,8 @@ const selectFestivalEvent = (event: CalendarFestivalEvent) => {
 }
 
 .tool-card input:focus {
-  box-shadow: inset 0 0 0 2px rgba(54, 125, 241, 0.18);
+  box-shadow: inset 0 0 0 2px
+    var(--sd-theme-itab-calendar-calendar-opened-panel-shadow-06);
 }
 
 .tool-date-row {
@@ -1036,8 +1054,8 @@ const selectFestivalEvent = (event: CalendarFestivalEvent) => {
   justify-content: center;
   border: 0;
   border-radius: 9px;
-  background: #fff;
-  color: #6c7480;
+  background: var(--sd-theme-itab-calendar-calendar-opened-panel-surface-01);
+  color: var(--sd-theme-itab-calendar-calendar-opened-panel-text-12);
 }
 
 .tool-result-row {
@@ -1045,11 +1063,11 @@ const selectFestivalEvent = (event: CalendarFestivalEvent) => {
   align-items: baseline;
   gap: 5px;
   margin-top: 16px;
-  color: #777;
+  color: var(--sd-theme-itab-calendar-calendar-opened-panel-text-13);
 }
 
 .tool-result-row strong {
-  color: rgb(54, 125, 241);
+  color: var(--sd-theme-itab-calendar-calendar-opened-panel-accent-text-03);
   font-size: 34px;
   font-weight: 500;
   line-height: 1;
@@ -1057,7 +1075,7 @@ const selectFestivalEvent = (event: CalendarFestivalEvent) => {
 
 .tool-result-row em {
   margin-left: auto;
-  color: #8c929c;
+  color: var(--sd-theme-itab-calendar-calendar-opened-panel-text-08);
   font-size: 12px;
   font-style: normal;
 }
@@ -1074,7 +1092,7 @@ const selectFestivalEvent = (event: CalendarFestivalEvent) => {
   height: 34px;
   overflow: hidden;
   border-radius: 9px;
-  background: #fff;
+  background: var(--sd-theme-itab-calendar-calendar-opened-panel-surface-01);
   padding: 2px;
 }
 
@@ -1083,13 +1101,15 @@ const selectFestivalEvent = (event: CalendarFestivalEvent) => {
   border: 0;
   border-radius: 7px;
   background: transparent;
-  color: #6c7480;
+  color: var(--sd-theme-itab-calendar-calendar-opened-panel-text-12);
   font-size: 12px;
 }
 
 .direction-segment .active {
-  background: rgb(54, 125, 241);
-  color: #fff;
+  background: var(
+    --sd-theme-itab-calendar-calendar-opened-panel-accent-surface-01
+  );
+  color: var(--sd-theme-itab-calendar-calendar-opened-panel-text-05);
 }
 
 .workday-result {
@@ -1098,14 +1118,14 @@ const selectFestivalEvent = (event: CalendarFestivalEvent) => {
   justify-content: space-between;
   margin-top: 16px;
   border-radius: 12px;
-  background: #fff;
+  background: var(--sd-theme-itab-calendar-calendar-opened-panel-surface-01);
   padding: 12px;
-  color: #30343b;
+  color: var(--sd-theme-itab-calendar-calendar-opened-panel-text-11);
   font-size: 14px;
 }
 
 .workday-result strong {
-  color: rgb(54, 125, 241);
+  color: var(--sd-theme-itab-calendar-calendar-opened-panel-accent-text-03);
   font-size: 14px;
   font-weight: 600;
 }
@@ -1126,8 +1146,8 @@ const selectFestivalEvent = (event: CalendarFestivalEvent) => {
   margin-left: auto;
   border: 0;
   border-radius: 8px;
-  background: #fff;
-  color: #6c7480;
+  background: var(--sd-theme-itab-calendar-calendar-opened-panel-surface-01);
+  color: var(--sd-theme-itab-calendar-calendar-opened-panel-text-12);
 }
 
 .festival-list {
@@ -1150,7 +1170,7 @@ const selectFestivalEvent = (event: CalendarFestivalEvent) => {
 
 .festival-list::-webkit-scrollbar-thumb {
   border-radius: 999px;
-  background: rgba(48, 52, 59, 0.18);
+  background: var(--sd-theme-itab-calendar-calendar-opened-panel-surface-11);
 }
 
 .festival-list::-webkit-scrollbar-track {
@@ -1166,19 +1186,19 @@ const selectFestivalEvent = (event: CalendarFestivalEvent) => {
   align-items: center;
   border: 0;
   border-radius: 10px;
-  background: #fff;
+  background: var(--sd-theme-itab-calendar-calendar-opened-panel-surface-01);
   padding: 8px 9px;
-  color: #30343b;
+  color: var(--sd-theme-itab-calendar-calendar-opened-panel-text-11);
   text-align: left;
 }
 
 .festival-row:hover {
-  background: #eef4ff;
+  background: var(--sd-theme-itab-calendar-calendar-opened-panel-surface-12);
 }
 
 .festival-date {
   grid-row: 1 / 3;
-  color: rgb(54, 125, 241);
+  color: var(--sd-theme-itab-calendar-calendar-opened-panel-accent-text-03);
   font-size: 12px;
   font-weight: 600;
 }
@@ -1196,7 +1216,7 @@ const selectFestivalEvent = (event: CalendarFestivalEvent) => {
 }
 
 .festival-meta {
-  color: #8c929c;
+  color: var(--sd-theme-itab-calendar-calendar-opened-panel-text-08);
   font-size: 11px;
 }
 
@@ -1204,8 +1224,8 @@ const selectFestivalEvent = (event: CalendarFestivalEvent) => {
   min-width: 0;
   overflow: hidden auto;
   padding: 34px 18px 24px 22px;
-  background: #f4f4f5;
-  color: #222;
+  background: var(--sd-theme-itab-calendar-calendar-opened-panel-surface-13);
+  color: var(--sd-theme-itab-calendar-calendar-opened-panel-text-01);
   text-align: center;
 }
 
@@ -1230,9 +1250,12 @@ const selectFestivalEvent = (event: CalendarFestivalEvent) => {
   justify-content: center;
   margin: 10px auto 8px;
   border-radius: 9px;
-  background: rgb(54, 125, 241);
-  color: #fff;
-  box-shadow: inset 0 -4px 0 rgba(0, 0, 0, 0.08);
+  background: var(
+    --sd-theme-itab-calendar-calendar-opened-panel-accent-surface-01
+  );
+  color: var(--sd-theme-itab-calendar-calendar-opened-panel-text-05);
+  box-shadow: inset 0 -4px 0
+    var(--sd-theme-itab-calendar-calendar-opened-panel-shadow-07);
 }
 
 .detail-calendar-icon strong {
@@ -1255,7 +1278,7 @@ const selectFestivalEvent = (event: CalendarFestivalEvent) => {
   width: 7px;
   height: 7px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.85);
+  background: var(--sd-theme-itab-calendar-calendar-opened-panel-surface-14);
 }
 
 .detail-lunar {
@@ -1265,14 +1288,15 @@ const selectFestivalEvent = (event: CalendarFestivalEvent) => {
 
 .detail-year,
 .detail-index {
-  color: #222;
+  color: var(--sd-theme-itab-calendar-calendar-opened-panel-text-01);
   font-size: 13px;
   line-height: 22px;
 }
 
 .detail-list {
   margin: 12px 0 0;
-  border-top: 1px solid #ddd;
+  border-top: 1px solid
+    var(--sd-theme-itab-calendar-calendar-opened-panel-border-01);
   text-align: left;
 }
 
@@ -1282,7 +1306,8 @@ const selectFestivalEvent = (event: CalendarFestivalEvent) => {
   gap: 7px;
   align-items: start;
   padding: 7px 0;
-  border-bottom: 1px solid #ddd;
+  border-bottom: 1px solid
+    var(--sd-theme-itab-calendar-calendar-opened-panel-border-01);
 }
 
 .detail-list div:last-child {
@@ -1297,7 +1322,7 @@ const selectFestivalEvent = (event: CalendarFestivalEvent) => {
 }
 
 .detail-list dd {
-  color: #777;
+  color: var(--sd-theme-itab-calendar-calendar-opened-panel-text-13);
 }
 
 .badge {
@@ -1307,31 +1332,41 @@ const selectFestivalEvent = (event: CalendarFestivalEvent) => {
   align-items: center;
   justify-content: center;
   border-radius: 5px;
-  color: #fff;
+  color: var(--sd-theme-itab-calendar-calendar-opened-panel-text-05);
 }
 
 .badge.red {
-  background: #ef5b71;
+  background: var(
+    --sd-theme-itab-calendar-calendar-opened-panel-accent-surface-05
+  );
 }
 
 .badge.pink {
-  background: #d85cc8;
+  background: var(
+    --sd-theme-itab-calendar-calendar-opened-panel-accent-surface-06
+  );
 }
 
 .badge.blue {
-  background: #3d93ef;
+  background: var(
+    --sd-theme-itab-calendar-calendar-opened-panel-accent-surface-07
+  );
 }
 
 .badge.green {
-  background: #3fbf75;
+  background: var(
+    --sd-theme-itab-calendar-calendar-opened-panel-accent-surface-08
+  );
 }
 
 .badge.rose {
-  background: #e25a61;
+  background: var(
+    --sd-theme-itab-calendar-calendar-opened-panel-accent-surface-09
+  );
 }
 
 .badge.gray {
-  background: #8a8a8a;
+  background: var(--sd-theme-itab-calendar-calendar-opened-panel-surface-15);
 }
 
 .direction-list {
@@ -1341,7 +1376,7 @@ const selectFestivalEvent = (event: CalendarFestivalEvent) => {
 
 .direction-list p {
   margin: 0;
-  color: #888;
+  color: var(--sd-theme-itab-calendar-calendar-opened-panel-text-14);
   font-size: 12px;
   line-height: 21px;
 }

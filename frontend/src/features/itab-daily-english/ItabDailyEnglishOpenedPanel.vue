@@ -109,8 +109,10 @@ onUnmounted(stopAudio);
   height: 100%;
   overflow: hidden;
   border-radius: 20px;
-  background: #000;
-  color: #fff;
+  background: var(
+    --sd-theme-itab-daily-english-daily-english-opened-panel-surface-01
+  );
+  color: var(--sd-theme-itab-daily-english-daily-english-opened-panel-text-01);
 }
 
 .opened-english-bg,
@@ -126,7 +128,9 @@ onUnmounted(stopAudio);
 }
 
 .opened-english-shade {
-  background: rgba(0, 0, 0, 0);
+  background: var(
+    --sd-theme-itab-daily-english-daily-english-opened-panel-surface-02
+  );
 }
 
 .opened-english-copy {
@@ -141,7 +145,7 @@ onUnmounted(stopAudio);
 
 .opened-english-copy p {
   margin: 0;
-  color: #fff;
+  color: var(--sd-theme-itab-daily-english-daily-english-opened-panel-text-01);
   font-family:
     Arial,
     "PingFang SC",
@@ -155,7 +159,7 @@ onUnmounted(stopAudio);
 .opened-english-copy em {
   display: block;
   margin-top: 12px;
-  color: rgba(255, 255, 255, 0.72);
+  color: var(--sd-theme-itab-daily-english-daily-english-opened-panel-text-02);
   font-size: 13px;
   font-style: normal;
   line-height: 20px;
@@ -173,8 +177,10 @@ onUnmounted(stopAudio);
   padding: 0;
   border: 0;
   border-radius: 50%;
-  background: rgb(51, 51, 51);
-  color: #fff;
+  background: var(
+    --sd-theme-itab-daily-english-daily-english-opened-panel-surface-03
+  );
+  color: var(--sd-theme-itab-daily-english-daily-english-opened-panel-text-01);
   transform: translateX(-50%);
 }
 

@@ -1345,7 +1345,7 @@ const submitCustom = async (
 
 <style scoped>
 :global(.itab-add-overlay) {
-  background: rgba(0, 0, 0, 0.22);
+  background: var(--sd-theme-add-widget-modal-surface-01);
   -webkit-backdrop-filter: blur(10px) saturate(135%) brightness(0.7);
   backdrop-filter: blur(10px) saturate(135%) brightness(0.7);
 }
@@ -1409,7 +1409,7 @@ const submitCustom = async (
   border: 0;
   border-radius: 9px;
   background: transparent;
-  color: rgb(223, 221, 221);
+  color: var(--sd-theme-add-widget-modal-text-01);
   font-size: 14px;
   font-weight: 400;
   text-align: left;
@@ -1418,14 +1418,14 @@ const submitCustom = async (
 
 .itab-add-left-tab:hover,
 .itab-add-left-tab:focus-visible {
-  background: rgba(255, 255, 255, 0.18);
+  background: var(--sd-theme-add-widget-modal-surface-02);
   outline: none;
 }
 
 .itab-add-left-tab.is-active {
   position: relative;
-  background: rgba(255, 255, 255, 0.11);
-  color: rgb(223, 221, 221);
+  background: var(--sd-theme-add-widget-modal-surface-03);
+  color: var(--sd-theme-add-widget-modal-text-01);
 }
 
 .itab-add-left-tab.is-active::before {
@@ -1436,7 +1436,7 @@ const submitCustom = async (
   left: -12px;
   width: 3px;
   border-radius: 999px;
-  background: rgb(24, 144, 255);
+  background: var(--sd-theme-add-widget-modal-accent-surface-01);
 }
 
 .itab-add-left-icon {
@@ -1445,7 +1445,7 @@ const submitCustom = async (
   height: 18px;
   flex: 0 0 auto;
   place-items: center;
-  color: rgba(223, 221, 221, 0.82);
+  color: var(--sd-theme-add-widget-modal-text-02);
 }
 
 .itab-add-left-icon svg {
@@ -1455,7 +1455,7 @@ const submitCustom = async (
 }
 
 .itab-add-left-tab.is-active .itab-add-left-icon {
-  color: rgba(223, 221, 221, 0.96);
+  color: var(--sd-theme-add-widget-modal-text-03);
 }
 
 .itab-add-main {
@@ -1485,7 +1485,7 @@ const submitCustom = async (
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  color: rgb(223, 221, 221);
+  color: var(--sd-theme-add-widget-modal-text-01);
   font-size: 12px;
   font-weight: 400;
 }
@@ -1496,7 +1496,7 @@ const submitCustom = async (
   height: 24px;
   align-items: center;
   border-radius: 14px;
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--sd-theme-add-widget-modal-surface-04);
   padding-left: 26px;
 }
 
@@ -1506,7 +1506,7 @@ const submitCustom = async (
   left: 9px;
   width: 11px;
   height: 11px;
-  border: 1.5px solid rgba(223, 221, 221, 0.55);
+  border: 1.5px solid var(--sd-theme-add-widget-modal-border-01);
   border-radius: 50%;
 }
 
@@ -1518,7 +1518,7 @@ const submitCustom = async (
   width: 6px;
   height: 1.5px;
   border-radius: 999px;
-  background: rgba(223, 221, 221, 0.55);
+  background: var(--sd-theme-add-widget-modal-surface-05);
   transform: rotate(45deg);
 }
 
@@ -1533,7 +1533,7 @@ const submitCustom = async (
   height: 24px;
   align-items: center;
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--sd-theme-add-widget-modal-surface-04);
 }
 
 .itab-add-destination-label {
@@ -1541,7 +1541,7 @@ const submitCustom = async (
   right: 23px;
   left: 11px;
   overflow: hidden;
-  color: rgb(223, 221, 221);
+  color: var(--sd-theme-add-widget-modal-text-01);
   font-size: 12px;
   line-height: 24px;
   pointer-events: none;
@@ -1556,8 +1556,8 @@ const submitCustom = async (
   right: 11px;
   width: 6px;
   height: 6px;
-  border-right: 1.5px solid rgba(223, 221, 221, 0.58);
-  border-bottom: 1.5px solid rgba(223, 221, 221, 0.58);
+  border-right: 1.5px solid var(--sd-theme-add-widget-modal-border-02);
+  border-bottom: 1.5px solid var(--sd-theme-add-widget-modal-border-02);
   pointer-events: none;
   transform: rotate(45deg);
 }
@@ -1571,7 +1571,7 @@ const submitCustom = async (
   border: 0;
   border-radius: 0;
   background: transparent;
-  color: rgb(223, 221, 221);
+  color: var(--sd-theme-add-widget-modal-text-01);
   font-size: 12px;
   outline: none;
   padding: 0;
@@ -1597,8 +1597,8 @@ const submitCustom = async (
 .itab-add-result {
   margin: 10px 18px 0;
   border-radius: 8px;
-  background: rgba(24, 144, 255, 0.1);
-  color: #075985;
+  background: var(--sd-theme-add-widget-modal-accent-surface-02);
+  color: var(--sd-theme-add-widget-modal-accent-text-01);
   font-size: 12px;
   font-weight: 700;
   padding: 8px 10px;
@@ -1634,8 +1634,8 @@ const submitCustom = async (
   height: 24px;
   border: 0;
   border-radius: 11px;
-  background: rgba(255, 255, 255, 0.12);
-  color: rgba(223, 221, 221, 0.82);
+  background: var(--sd-theme-add-widget-modal-surface-06);
+  color: var(--sd-theme-add-widget-modal-text-02);
   font-size: 12px;
   font-weight: 400;
   white-space: nowrap;
@@ -1647,8 +1647,8 @@ const submitCustom = async (
 }
 
 .itab-add-chip.is-active {
-  background: rgb(24, 144, 255);
-  color: #fff;
+  background: var(--sd-theme-add-widget-modal-accent-surface-01);
+  color: var(--sd-theme-add-widget-modal-text-04);
 }
 
 .itab-add-batch-button {
@@ -1658,7 +1658,7 @@ const submitCustom = async (
   margin-right: 25px;
   border: 0;
   background: transparent;
-  color: rgba(223, 221, 221, 0.82);
+  color: var(--sd-theme-add-widget-modal-text-02);
   font-size: 12px;
   font-weight: 400;
   line-height: 18px;
@@ -1675,7 +1675,7 @@ const submitCustom = async (
   overflow-y: auto;
   overscroll-behavior: contain;
   padding-right: 0;
-  scrollbar-color: rgba(255, 255, 255, 0.28) transparent;
+  scrollbar-color: var(--sd-theme-add-widget-modal-text-05) transparent;
   scrollbar-width: thin;
 }
 
@@ -1692,7 +1692,7 @@ const submitCustom = async (
 .itab-add-widget-grid::-webkit-scrollbar-thumb,
 .itab-add-site-grid::-webkit-scrollbar-thumb {
   border-radius: 999px;
-  background: rgba(0, 0, 0, 0.32);
+  background: var(--sd-theme-add-widget-modal-surface-07);
 }
 
 .itab-add-widget-grid {
@@ -1721,7 +1721,7 @@ const submitCustom = async (
   position: relative;
   border: 0;
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.14);
+  background: var(--sd-theme-add-widget-modal-surface-08);
   box-shadow: none;
 }
 
@@ -1739,7 +1739,7 @@ const submitCustom = async (
   grid-template-rows: 58px 190px 40px;
   gap: 0;
   overflow: hidden;
-  color: rgb(223, 221, 221);
+  color: var(--sd-theme-add-widget-modal-text-01);
 }
 
 .itab-add-site-card {
@@ -1783,7 +1783,7 @@ const submitCustom = async (
 .itab-add-replica-heading h3 {
   overflow: hidden;
   max-width: 94%;
-  color: rgba(223, 221, 221, 0.92);
+  color: var(--sd-theme-add-widget-modal-text-06);
   font-size: 14px;
   font-weight: 500;
   line-height: 20px;
@@ -1795,7 +1795,7 @@ const submitCustom = async (
   display: -webkit-box;
   overflow: hidden;
   max-width: 92%;
-  color: rgba(223, 221, 221, 0.64);
+  color: var(--sd-theme-add-widget-modal-text-07);
   font-size: 12px;
   line-height: 17px;
   -webkit-box-orient: vertical;
@@ -1811,70 +1811,98 @@ const submitCustom = async (
   background:
     radial-gradient(
       circle at 50% 40%,
-      rgba(83, 157, 255, 0.38),
+      var(--sd-theme-add-widget-modal-accent-surface-03),
       transparent 36%
     ),
-    linear-gradient(135deg, rgba(24, 144, 255, 0.32), rgba(12, 35, 64, 0.16));
+    linear-gradient(
+      135deg,
+      var(--sd-theme-add-widget-modal-accent-surface-04),
+      var(--sd-theme-add-widget-modal-accent-surface-05)
+    );
 }
 
 .itab-add-widget-card.is-tone-purple .itab-add-replica-preview {
   background:
     radial-gradient(
       circle at 50% 40%,
-      rgba(168, 85, 247, 0.36),
+      var(--sd-theme-add-widget-modal-accent-surface-06),
       transparent 36%
     ),
-    linear-gradient(135deg, rgba(93, 70, 180, 0.32), rgba(21, 18, 51, 0.18));
+    linear-gradient(
+      135deg,
+      var(--sd-theme-add-widget-modal-accent-surface-07),
+      var(--sd-theme-add-widget-modal-accent-surface-08)
+    );
 }
 
 .itab-add-widget-card.is-tone-amber .itab-add-replica-preview {
   background:
     radial-gradient(
       circle at 50% 40%,
-      rgba(245, 158, 11, 0.36),
+      var(--sd-theme-add-widget-modal-accent-surface-09),
       transparent 36%
     ),
-    linear-gradient(135deg, rgba(120, 73, 13, 0.36), rgba(38, 23, 7, 0.18));
+    linear-gradient(
+      135deg,
+      var(--sd-theme-add-widget-modal-accent-surface-10),
+      var(--sd-theme-add-widget-modal-accent-surface-11)
+    );
 }
 
 .itab-add-widget-card.is-tone-green .itab-add-replica-preview {
   background:
     radial-gradient(
       circle at 50% 40%,
-      rgba(74, 222, 128, 0.34),
+      var(--sd-theme-add-widget-modal-accent-surface-12),
       transparent 36%
     ),
-    linear-gradient(135deg, rgba(22, 101, 52, 0.3), rgba(7, 36, 20, 0.18));
+    linear-gradient(
+      135deg,
+      var(--sd-theme-add-widget-modal-accent-surface-13),
+      var(--sd-theme-add-widget-modal-accent-surface-14)
+    );
 }
 
 .itab-add-widget-card.is-tone-cyan .itab-add-replica-preview {
   background:
     radial-gradient(
       circle at 50% 40%,
-      rgba(34, 211, 238, 0.34),
+      var(--sd-theme-add-widget-modal-accent-surface-15),
       transparent 36%
     ),
-    linear-gradient(135deg, rgba(8, 145, 178, 0.28), rgba(8, 47, 73, 0.18));
+    linear-gradient(
+      135deg,
+      var(--sd-theme-add-widget-modal-accent-surface-16),
+      var(--sd-theme-add-widget-modal-accent-surface-17)
+    );
 }
 
 .itab-add-widget-card.is-tone-pink .itab-add-replica-preview {
   background:
     radial-gradient(
       circle at 50% 40%,
-      rgba(244, 114, 182, 0.34),
+      var(--sd-theme-add-widget-modal-accent-surface-18),
       transparent 36%
     ),
-    linear-gradient(135deg, rgba(190, 24, 93, 0.26), rgba(80, 7, 36, 0.18));
+    linear-gradient(
+      135deg,
+      var(--sd-theme-add-widget-modal-accent-surface-19),
+      var(--sd-theme-add-widget-modal-accent-surface-20)
+    );
 }
 
 .itab-add-widget-card.is-tone-slate .itab-add-replica-preview {
   background:
     radial-gradient(
       circle at 50% 40%,
-      rgba(203, 213, 225, 0.25),
+      var(--sd-theme-add-widget-modal-surface-09),
       transparent 36%
     ),
-    linear-gradient(135deg, rgba(71, 85, 105, 0.3), rgba(15, 23, 42, 0.2));
+    linear-gradient(
+      135deg,
+      var(--sd-theme-add-widget-modal-accent-surface-21),
+      var(--sd-theme-add-widget-modal-accent-surface-22)
+    );
 }
 
 .itab-add-widget-card.is-replica-card .itab-add-replica-preview {
@@ -1887,8 +1915,8 @@ const submitCustom = async (
   height: 150px;
   place-items: center;
   border-radius: 18px;
-  background: rgba(0, 0, 0, 0.18);
-  color: rgba(255, 255, 255, 0.92);
+  background: var(--sd-theme-add-widget-modal-surface-10);
+  color: var(--sd-theme-add-widget-modal-text-08);
   font-size: 64px;
   font-weight: 800;
 }
@@ -1909,7 +1937,7 @@ const submitCustom = async (
 }
 
 .itab-add-widget-card.is-preview-number .itab-add-replica-asset {
-  background: rgb(14, 16, 20);
+  background: var(--sd-theme-add-widget-modal-accent-surface-23);
 }
 
 .itab-add-widget-card.is-preview-number .itab-add-replica-asset {
@@ -1929,7 +1957,7 @@ const submitCustom = async (
   align-content: center;
   justify-items: center;
   border-radius: 12px;
-  background: rgba(0, 0, 0, 0.22);
+  background: var(--sd-theme-add-widget-modal-surface-01);
   color: white;
 }
 
@@ -1944,18 +1972,21 @@ const submitCustom = async (
   padding: 12px;
   border-radius: 12px;
   background:
-    linear-gradient(rgba(0, 0, 0, 0.58), rgba(0, 0, 0, 0.58)),
+    linear-gradient(
+      var(--sd-theme-add-widget-modal-surface-11),
+      var(--sd-theme-add-widget-modal-surface-11)
+    ),
     url("/api/itab-resources/itab-itab-daily-english-14-body-2x4-background-86acdbf74c")
       center/cover no-repeat,
-    #000;
-  color: #fff;
+    var(--sd-theme-add-widget-modal-surface-12);
+  color: var(--sd-theme-add-widget-modal-text-04);
 }
 
 .itab-add-english-art b {
   position: absolute;
   top: 9px;
   right: 9px;
-  color: rgba(255, 255, 255, 0.52);
+  color: var(--sd-theme-add-widget-modal-text-09);
   font-size: 10px;
   font-weight: 500;
   line-height: 1;
@@ -1973,7 +2004,7 @@ const submitCustom = async (
 
 .itab-add-english-art span {
   margin-top: 5px;
-  color: rgba(255, 255, 255, 0.72);
+  color: var(--sd-theme-add-widget-modal-text-10);
   font-size: 12px;
   line-height: 18px;
 }
@@ -1995,15 +2026,18 @@ const submitCustom = async (
 .itab-add-offwork-art span,
 .itab-add-pomodoro-art span {
   margin-top: 8px;
-  color: rgba(255, 255, 255, 0.72);
+  color: var(--sd-theme-add-widget-modal-text-10);
   font-size: 12px;
 }
 
 .itab-add-pomodoro-art {
   background:
-    linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.45)),
+    linear-gradient(
+      var(--sd-theme-add-widget-modal-surface-13),
+      var(--sd-theme-add-widget-modal-surface-14)
+    ),
     url("/itab/widget/tomato/hailang.jpg") center/cover no-repeat,
-    #1b4d47;
+    var(--sd-theme-add-widget-modal-accent-surface-24);
 }
 
 .itab-add-memo-art {
@@ -2012,37 +2046,41 @@ const submitCustom = async (
   width: 118px;
   height: 118px;
   border-radius: 18px;
-  background: #fff;
-  box-shadow: rgba(0, 0, 0, 0.16) 0 10px 22px;
+  background: var(--sd-theme-add-widget-modal-surface-15);
+  box-shadow: var(--sd-theme-add-widget-modal-shadow-01) 0 10px 22px;
 }
 
 .itab-add-memo-art strong {
   display: grid;
   height: 30px;
   place-items: center;
-  background-image: linear-gradient(0deg, rgb(255, 201, 39), rgb(255, 164, 3));
-  color: #fff;
+  background-image: linear-gradient(
+    0deg,
+    var(--sd-theme-add-widget-modal-accent-surface-25),
+    var(--sd-theme-add-widget-modal-accent-surface-26)
+  );
+  color: var(--sd-theme-add-widget-modal-text-04);
   font-size: 12px;
   line-height: 18px;
 }
 
 .itab-add-memo-art span {
   height: 29px;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  border-bottom: 1px solid var(--sd-theme-add-widget-modal-border-03);
 }
 
 .itab-add-todo-art {
   align-content: start;
   justify-items: stretch;
   padding: 10px 12px;
-  background: #fff;
-  color: rgba(0, 0, 0, 0.82);
+  background: var(--sd-theme-add-widget-modal-surface-15);
+  color: var(--sd-theme-add-widget-modal-text-11);
   text-align: left;
 }
 
 .itab-add-todo-art strong {
   margin-bottom: 6px;
-  color: rgb(52, 110, 253);
+  color: var(--sd-theme-add-widget-modal-accent-text-02);
   font-size: 12px;
   line-height: 18px;
 }
@@ -2052,7 +2090,7 @@ const submitCustom = async (
   min-width: 0;
   align-items: center;
   gap: 7px;
-  color: rgba(0, 0, 0, 0.78);
+  color: var(--sd-theme-add-widget-modal-text-12);
   font-size: 12px;
   line-height: 24px;
 }
@@ -2061,7 +2099,7 @@ const submitCustom = async (
   width: 12px;
   height: 12px;
   flex: 0 0 12px;
-  border: 2px solid rgb(147, 147, 147);
+  border: 2px solid var(--sd-theme-add-widget-modal-border-04);
   border-radius: 3px;
 }
 
@@ -2075,7 +2113,7 @@ const submitCustom = async (
 .itab-add-site-copy h3,
 .itab-add-custom-preview h3 {
   overflow: hidden;
-  color: rgb(223, 221, 221);
+  color: var(--sd-theme-add-widget-modal-text-01);
   font-size: 14px;
   font-weight: 500;
   line-height: 1.25;
@@ -2087,7 +2125,7 @@ const submitCustom = async (
 .itab-add-custom-preview p {
   display: -webkit-box;
   overflow: hidden;
-  color: rgba(223, 221, 221, 0.78);
+  color: var(--sd-theme-add-widget-modal-text-13);
   font-size: 12px;
   line-height: 1.35;
   -webkit-box-orient: vertical;
@@ -2108,8 +2146,8 @@ const submitCustom = async (
 .itab-add-card-button,
 .itab-add-site-add,
 .itab-add-primary-button {
-  background: rgb(24, 144, 255);
-  color: #fff;
+  background: var(--sd-theme-add-widget-modal-accent-surface-01);
+  color: var(--sd-theme-add-widget-modal-text-04);
 }
 
 .itab-add-card-button {
@@ -2143,8 +2181,8 @@ const submitCustom = async (
   margin: 12px 0 0 12px;
   overflow: hidden;
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.1);
-  color: rgb(223, 221, 221);
+  background: var(--sd-theme-add-widget-modal-surface-04);
+  color: var(--sd-theme-add-widget-modal-text-01);
   font-size: 13px;
   font-weight: 900;
 }
@@ -2164,7 +2202,7 @@ const submitCustom = async (
 .itab-add-site-copy span {
   display: block;
   overflow: hidden;
-  color: #94a3b8;
+  color: var(--sd-theme-add-widget-modal-text-14);
   font-size: 11px;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -2177,8 +2215,8 @@ const submitCustom = async (
   width: 48px;
   height: 24px;
   border-radius: 20px;
-  background: rgba(255, 255, 255, 0.1);
-  color: rgb(207, 211, 220);
+  background: var(--sd-theme-add-widget-modal-surface-04);
+  color: var(--sd-theme-add-widget-modal-text-15);
   font-weight: 500;
 }
 
@@ -2186,7 +2224,7 @@ const submitCustom = async (
   display: grid;
   min-height: 160px;
   place-items: center;
-  color: #64748b;
+  color: var(--sd-theme-add-widget-modal-accent-text-03);
   font-size: 13px;
   font-weight: 700;
 }
@@ -2195,17 +2233,17 @@ const submitCustom = async (
   display: grid;
   min-height: 160px;
   place-items: center;
-  border: 1px solid rgba(148, 163, 184, 0.22);
+  border: 1px solid var(--sd-theme-add-widget-modal-border-05);
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.58);
-  color: #475569;
+  background: var(--sd-theme-add-widget-modal-surface-16);
+  color: var(--sd-theme-add-widget-modal-accent-text-04);
   font-size: 13px;
   font-weight: 800;
 }
 
 .itab-add-state.is-error {
-  background: rgba(254, 226, 226, 0.72);
-  color: #991b1b;
+  background: var(--sd-theme-add-widget-modal-surface-17);
+  color: var(--sd-theme-add-widget-modal-accent-text-05);
 }
 
 .itab-add-custom-form {
@@ -2221,9 +2259,9 @@ const submitCustom = async (
   display: none;
   align-items: center;
   gap: 12px;
-  border: 1px solid rgba(148, 163, 184, 0.22);
+  border: 1px solid var(--sd-theme-add-widget-modal-border-05);
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.72);
+  background: var(--sd-theme-add-widget-modal-surface-18);
   padding: 14px;
 }
 
@@ -2233,14 +2271,14 @@ const submitCustom = async (
   place-items: center;
   overflow: hidden;
   border: 0;
-  background: #e0f2fe;
+  background: var(--sd-theme-add-widget-modal-surface-19);
 }
 
 .itab-add-custom-icon {
   width: 58px;
   height: 58px;
   border-radius: 16px;
-  color: #0369a1;
+  color: var(--sd-theme-add-widget-modal-accent-text-06);
   font-size: 24px;
   font-weight: 900;
 }
@@ -2275,9 +2313,9 @@ const submitCustom = async (
   grid-column: 2;
   width: 290px;
   height: 30px;
-  border: 1px solid rgba(148, 163, 184, 0.32);
+  border: 1px solid var(--sd-theme-add-widget-modal-border-06);
   border-radius: 6px;
-  background: rgba(255, 255, 255, 0.12);
+  background: var(--sd-theme-add-widget-modal-surface-06);
   padding: 0 10px;
 }
 
@@ -2291,7 +2329,7 @@ const submitCustom = async (
 }
 
 .itab-add-field span {
-  color: rgb(223, 221, 221);
+  color: var(--sd-theme-add-widget-modal-text-01);
   font-size: 12px;
   font-weight: 400;
 }
@@ -2308,9 +2346,9 @@ const submitCustom = async (
 
 .itab-add-custom-options .itab-add-field input {
   height: 34px;
-  border: 1px solid rgba(148, 163, 184, 0.32);
+  border: 1px solid var(--sd-theme-add-widget-modal-border-06);
   border-radius: 6px;
-  background: rgba(255, 255, 255, 0.12);
+  background: var(--sd-theme-add-widget-modal-surface-06);
   padding: 0 10px;
 }
 
@@ -2324,19 +2362,19 @@ const submitCustom = async (
   align-items: center;
   justify-content: center;
   gap: 8px;
-  border: 1px solid rgba(148, 163, 184, 0.32);
+  border: 1px solid var(--sd-theme-add-widget-modal-border-06);
   border-radius: 17px;
-  background: rgb(44, 44, 44);
-  color: rgb(223, 221, 221);
+  background: var(--sd-theme-add-widget-modal-surface-20);
+  color: var(--sd-theme-add-widget-modal-text-01);
   font-size: 12px;
   font-weight: 800;
 }
 
 .itab-add-secondary-button {
   width: 120px;
-  border: 1px solid rgba(148, 163, 184, 0.32);
-  background: rgb(44, 44, 44);
-  color: rgb(223, 221, 221);
+  border: 1px solid var(--sd-theme-add-widget-modal-border-06);
+  background: var(--sd-theme-add-widget-modal-surface-20);
+  color: var(--sd-theme-add-widget-modal-text-01);
 }
 
 .itab-add-icon-candidates {
@@ -2352,7 +2390,7 @@ const submitCustom = async (
 }
 
 .itab-add-icon-candidate.is-active {
-  box-shadow: 0 0 0 2px rgb(24, 144, 255);
+  box-shadow: 0 0 0 2px var(--sd-theme-add-widget-modal-shadow-02);
 }
 
 .itab-add-custom-actions {
@@ -2378,7 +2416,7 @@ const submitCustom = async (
     flex-direction: row;
     overflow-x: auto;
     border-right: 0;
-    border-bottom: 1px solid rgba(148, 163, 184, 0.22);
+    border-bottom: 1px solid var(--sd-theme-add-widget-modal-border-05);
     padding: 10px 12px;
   }
 

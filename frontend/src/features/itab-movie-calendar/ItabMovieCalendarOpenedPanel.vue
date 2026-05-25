@@ -90,7 +90,9 @@ onMounted(() => {
   border: 0;
   border-radius: 0;
   background: transparent;
-  color: #f9d5ad;
+  color: var(
+    --sd-theme-itab-movie-calendar-movie-calendar-opened-panel-accent-text-01
+  );
   font-family:
     "PingFang SC",
     -apple-system,
@@ -105,16 +107,25 @@ onMounted(() => {
   inset: -30px;
   z-index: 0;
   background:
-    linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 20, 0, 0.4)),
+    linear-gradient(
+      var(
+        --sd-theme-itab-movie-calendar-movie-calendar-opened-panel-surface-01
+      ),
+      var(
+        --sd-theme-itab-movie-calendar-movie-calendar-opened-panel-accent-surface-01
+      )
+    ),
     var(--movie-poster-image, none) center/cover no-repeat,
-    #000;
+    var(--sd-theme-itab-movie-calendar-movie-calendar-opened-panel-surface-02);
   filter: blur(15px);
 }
 
 .movie-calendar-panel-bg::after {
   position: absolute;
   inset: 0;
-  background: rgba(0, 0, 0, 0.38);
+  background: var(
+    --sd-theme-itab-movie-calendar-movie-calendar-opened-panel-surface-03
+  );
   content: "";
 }
 
@@ -133,9 +144,20 @@ onMounted(() => {
   overflow: hidden;
   border-radius: 6px;
   background:
-    linear-gradient(160deg, rgba(255, 255, 255, 0.16), rgba(0, 0, 0, 0.3)),
-    var(--movie-bg-color, #4c4c3f);
-  color: rgba(255, 255, 255, 0.9);
+    linear-gradient(
+      160deg,
+      var(
+        --sd-theme-itab-movie-calendar-movie-calendar-opened-panel-surface-04
+      ),
+      var(--sd-theme-itab-movie-calendar-movie-calendar-opened-panel-surface-05)
+    ),
+    var(
+      --movie-bg-color,
+      var(--sd-theme-itab-movie-calendar-movie-calendar-opened-panel-surface-06)
+    );
+  color: var(
+    --sd-theme-itab-movie-calendar-movie-calendar-opened-panel-text-01
+  );
   font-size: 38px;
   font-weight: 700;
   text-align: center;
@@ -160,7 +182,9 @@ onMounted(() => {
 .movie-calendar-panel-copy h3 {
   margin: 0;
   overflow: hidden;
-  color: #f9d5ad;
+  color: var(
+    --sd-theme-itab-movie-calendar-movie-calendar-opened-panel-accent-text-01
+  );
   font-size: 30px;
   font-weight: 400;
   line-height: 48px;
@@ -189,7 +213,9 @@ onMounted(() => {
 
 .movie-calendar-panel-rating {
   display: inline-block;
-  color: #f9d5ad;
+  color: var(
+    --sd-theme-itab-movie-calendar-movie-calendar-opened-panel-accent-text-01
+  );
   font-size: 14px;
   line-height: 22.4px;
 }
@@ -197,14 +223,18 @@ onMounted(() => {
 .movie-calendar-panel-copy p {
   max-width: none;
   margin: 0;
-  color: #f9d5ad;
+  color: var(
+    --sd-theme-itab-movie-calendar-movie-calendar-opened-panel-accent-text-01
+  );
   font-size: 14px;
   line-height: 22.4px;
 }
 
 .movie-calendar-panel-quote {
   margin-top: 20px !important;
-  color: #fff !important;
+  color: var(
+    --sd-theme-itab-movie-calendar-movie-calendar-opened-panel-text-02
+  ) !important;
   font-size: 18px !important;
   line-height: 28.8px !important;
 }
@@ -213,7 +243,9 @@ onMounted(() => {
   display: -webkit-box;
   overflow: hidden;
   margin-top: 10px !important;
-  color: #d1d0d0 !important;
+  color: var(
+    --sd-theme-itab-movie-calendar-movie-calendar-opened-panel-text-03
+  ) !important;
   font-size: 12px !important;
   line-height: 20px !important;
   -webkit-box-orient: vertical;
@@ -230,7 +262,9 @@ onMounted(() => {
   border: 0;
   border-radius: 0;
   background: transparent;
-  color: #f2cca4;
+  color: var(
+    --sd-theme-itab-movie-calendar-movie-calendar-opened-panel-accent-text-02
+  );
   font-size: 12px;
   font-weight: 400;
   line-height: 19.2px;

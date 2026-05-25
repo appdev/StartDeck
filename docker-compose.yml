@@ -18,9 +18,9 @@ services:
       - ICON_SERVER_BASE_URL=http://127.0.0.1:9002
       - ICON_SERVER_TIMEOUT_MS=5000
     volumes:
-      - ./data:/app/server/data #指定路径下新建data
-      - ./music:/app/server/music #映射播放器路径
-      - ./PC:/app/server/PC #映射背景路径
-      - ./APP:/app/server/APP #映射移动端背景路径
+      - ./Data/data:/app/Data/data #映射运行期数据
+      - ./Data/music:/app/Data/music #映射播放器路径
+      - ./Data/PC:/app/Data/PC #映射背景路径
+      - ./Data/APP:/app/Data/APP #映射移动端背景路径
       - ./icon-service-data:/app/icon-service/data #映射图标服务运行期数据
       - /var/run/docker.sock:/var/run/docker.sock #映射Docker Socket

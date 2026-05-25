@@ -122,8 +122,8 @@ watch(
 }
 
 .clock-icon-wrap {
-  background: #111;
-  color: #fff;
+  background: var(--sd-theme-itab-clock-clock-widget-surface-01);
+  color: var(--sd-theme-itab-clock-clock-widget-text-01);
   font-family: HarmonyOS_Sans, Arial, "PingFang SC", sans-serif;
 }
 
@@ -167,7 +167,7 @@ time::before {
 
 .time.countdown {
   display: inline-flex;
-  color: #fff;
+  color: var(--sd-theme-itab-clock-clock-widget-text-01);
   font-size: 44.1px;
   font-weight: 700;
   line-height: 44.1px;
@@ -190,7 +190,7 @@ time::before {
   display: inline-block;
   width: 11px;
   height: 44.1px;
-  color: #fff;
+  color: var(--sd-theme-itab-clock-clock-widget-text-01);
   font-style: normal;
   line-height: 44.1px;
   vertical-align: 0.08em;
@@ -198,7 +198,7 @@ time::before {
 
 .f16 {
   margin: 0;
-  color: #fff;
+  color: var(--sd-theme-itab-clock-clock-widget-text-01);
   font-size: 16px;
   line-height: 24px;
 }
@@ -256,7 +256,7 @@ time::before {
   align-items: center;
   justify-content: flex-start;
   padding-top: 20px;
-  color: #fff;
+  color: var(--sd-theme-itab-clock-clock-widget-text-01);
 }
 
 .clock-icon-center > .clock-vertical-digits {
@@ -267,7 +267,7 @@ time::before {
   display: block;
   width: 28px;
   height: 90px;
-  color: #fff;
+  color: var(--sd-theme-itab-clock-clock-widget-text-01);
   font-family: cursive;
   font-style: normal;
 }

@@ -166,10 +166,10 @@ const selectSize = (sizeKey: RuntimeWidgetSizeKey) => {
   overflow: hidden;
   border: 0;
   border-radius: 12px;
-  background: rgba(10, 12, 12, 0.72);
+  background: var(--sd-theme-runtime-widget-runtime-menu-surface-01);
   background-image: none;
-  color: rgba(255, 255, 255, 0.94);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  color: var(--sd-theme-runtime-widget-runtime-menu-text-01);
+  box-shadow: 0 10px 30px var(--sd-theme-runtime-widget-runtime-menu-shadow-01);
   -webkit-backdrop-filter: saturate(135%) blur(28px) brightness(0.62);
   backdrop-filter: saturate(135%) blur(28px) brightness(0.62);
 }
@@ -182,7 +182,7 @@ const selectSize = (sizeKey: RuntimeWidgetSizeKey) => {
   display: flex;
   align-items: center;
   gap: 7px;
-  color: rgba(255, 255, 255, 0.96);
+  color: var(--sd-theme-runtime-widget-runtime-menu-text-02);
   font-size: 13px;
   line-height: 30px;
 }
@@ -214,7 +214,7 @@ const selectSize = (sizeKey: RuntimeWidgetSizeKey) => {
   justify-content: center;
   border: 0;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--sd-theme-runtime-widget-runtime-menu-surface-02);
   color: inherit;
   font-size: 12px;
   line-height: 20px;
@@ -224,7 +224,7 @@ const selectSize = (sizeKey: RuntimeWidgetSizeKey) => {
 .sd-runtime-menu-size-pill:hover,
 .sd-runtime-menu-size-pill:focus-visible,
 .sd-runtime-menu-size-pill.is-active {
-  background: rgba(255, 255, 255, 0.3);
+  background: var(--sd-theme-runtime-widget-runtime-menu-surface-03);
   outline: none;
 }
 
@@ -253,7 +253,7 @@ const selectSize = (sizeKey: RuntimeWidgetSizeKey) => {
 
 .sd-runtime-menu-actions button:hover,
 .sd-runtime-menu-actions button:focus-visible {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--sd-theme-runtime-widget-runtime-menu-surface-02);
   outline: none;
 }
 </style>

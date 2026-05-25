@@ -744,10 +744,11 @@ onBeforeUnmount(() => {
   overflow: hidden;
   background: linear-gradient(
     90deg,
-    rgb(255, 255, 255) 0 374px,
-    rgb(245, 245, 245) 374px 100%
+    var(--sd-theme-itab-anniversary-anniversary-opened-panel-surface-01) 0 374px,
+    var(--sd-theme-itab-anniversary-anniversary-opened-panel-surface-02) 374px
+      100%
   );
-  color: rgb(34, 34, 34);
+  color: var(--sd-theme-itab-anniversary-anniversary-opened-panel-text-01);
   font-family:
     "PingFang SC",
     -apple-system,
@@ -760,8 +761,9 @@ onBeforeUnmount(() => {
   grid-template-columns: 70px minmax(0, 1fr);
   background: linear-gradient(
     90deg,
-    rgb(255, 255, 255) 0 70px,
-    rgb(245, 245, 245) 70px 100%
+    var(--sd-theme-itab-anniversary-anniversary-opened-panel-surface-01) 0 70px,
+    var(--sd-theme-itab-anniversary-anniversary-opened-panel-surface-02) 70px
+      100%
   );
 }
 
@@ -798,7 +800,7 @@ onBeforeUnmount(() => {
 
 .anniversary-editor-tip {
   margin: 0;
-  color: rgba(0, 0, 0, 0.42);
+  color: var(--sd-theme-itab-anniversary-anniversary-opened-panel-text-02);
   font-size: 14px;
   font-weight: 500;
   line-height: 20px;
@@ -808,7 +810,9 @@ onBeforeUnmount(() => {
   width: 300px;
   height: 1px;
   margin: 0 0 4px;
-  background: rgba(0, 0, 0, 0.1);
+  background: var(
+    --sd-theme-itab-anniversary-anniversary-opened-panel-surface-03
+  );
 }
 
 .anniversary-editor-heading {
@@ -818,7 +822,7 @@ onBeforeUnmount(() => {
 }
 
 .anniversary-editor-heading strong {
-  color: rgba(0, 0, 0, 0.55);
+  color: var(--sd-theme-itab-anniversary-anniversary-opened-panel-text-03);
   font-size: 16px;
   font-weight: 500;
   line-height: 22px;
@@ -831,7 +835,9 @@ onBeforeUnmount(() => {
   grid-template-columns: 1fr 1fr;
   overflow: hidden;
   border-radius: 14px;
-  background: rgba(0, 0, 0, 0.1);
+  background: var(
+    --sd-theme-itab-anniversary-anniversary-opened-panel-surface-03
+  );
 }
 
 .anniversary-size-row::before {
@@ -841,7 +847,9 @@ onBeforeUnmount(() => {
   left: 2px;
   width: calc(50% - 2px);
   border-radius: 14px;
-  background: rgba(0, 0, 0, 0.28);
+  background: var(
+    --sd-theme-itab-anniversary-anniversary-opened-panel-surface-04
+  );
   content: "";
   transition: transform 0.18s ease;
 }
@@ -857,13 +865,13 @@ onBeforeUnmount(() => {
   border: 0;
   border-radius: 14px;
   background: transparent;
-  color: rgba(0, 0, 0, 0.6);
+  color: var(--sd-theme-itab-anniversary-anniversary-opened-panel-text-04);
   font-size: 14px;
   line-height: 28px;
 }
 
 .anniversary-size-row button.active {
-  color: #fff;
+  color: var(--sd-theme-itab-anniversary-anniversary-opened-panel-text-05);
 }
 
 .anniversary-template-grid {
@@ -891,7 +899,7 @@ onBeforeUnmount(() => {
   padding: 0;
   border: 1px solid transparent;
   background: transparent;
-  color: rgb(34, 34, 34);
+  color: var(--sd-theme-itab-anniversary-anniversary-opened-panel-text-01);
   cursor: pointer;
   text-align: center;
 }
@@ -899,7 +907,7 @@ onBeforeUnmount(() => {
 .anniversary-template-card b {
   overflow: hidden;
   max-width: 125px;
-  color: rgb(34, 34, 34);
+  color: var(--sd-theme-itab-anniversary-anniversary-opened-panel-text-01);
   font-size: 12px;
   font-weight: 400;
   line-height: 18px;
@@ -909,9 +917,12 @@ onBeforeUnmount(() => {
 
 .anniversary-template-card.active :deep(.itab-anniversary-card) {
   box-shadow:
-    0 0 0 1px rgb(255, 255, 255),
-    0 0 0 3px rgb(24, 144, 255),
-    0 0 10px 3px rgba(0, 0, 0, 0.1);
+    0 0 0 1px
+      var(--sd-theme-itab-anniversary-anniversary-opened-panel-shadow-01),
+    0 0 0 3px
+      var(--sd-theme-itab-anniversary-anniversary-opened-panel-shadow-02),
+    0 0 10px 3px
+      var(--sd-theme-itab-anniversary-anniversary-opened-panel-shadow-03);
 }
 
 .anniversary-template-size {
@@ -956,8 +967,10 @@ onBeforeUnmount(() => {
   place-items: center;
   border: 0;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.14);
-  color: rgb(238, 238, 238);
+  background: var(
+    --sd-theme-itab-anniversary-anniversary-opened-panel-surface-05
+  );
+  color: var(--sd-theme-itab-anniversary-anniversary-opened-panel-text-06);
   font-size: 30px;
   line-height: 26px;
 }
@@ -982,18 +995,22 @@ onBeforeUnmount(() => {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: rgba(0, 0, 0, 0.16);
+  background: var(
+    --sd-theme-itab-anniversary-anniversary-opened-panel-surface-06
+  );
   cursor: pointer;
 }
 
 .anniversary-carousel-dots span.active {
-  background: rgba(0, 0, 0, 0.45);
+  background: var(
+    --sd-theme-itab-anniversary-anniversary-opened-panel-surface-07
+  );
   transform: scale(1.4);
 }
 
 .anniversary-preview-name {
   margin-top: 3px;
-  color: rgb(34, 34, 34);
+  color: var(--sd-theme-itab-anniversary-anniversary-opened-panel-text-01);
   font-size: 14px;
   font-weight: 400;
   line-height: 20px;
@@ -1009,8 +1026,10 @@ onBeforeUnmount(() => {
   padding: 0;
   border: 0;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.58);
-  color: #fff;
+  background: var(
+    --sd-theme-itab-anniversary-anniversary-opened-panel-surface-08
+  );
+  color: var(--sd-theme-itab-anniversary-anniversary-opened-panel-text-05);
   font-size: 30px;
   line-height: 26px;
   transition: left 0.18s ease;
@@ -1031,7 +1050,10 @@ onBeforeUnmount(() => {
   padding: 16px;
   border-radius: 6px;
   background: transparent;
-  scrollbar-color: rgba(0, 0, 0, 0.18) transparent;
+  scrollbar-color: var(
+      --sd-theme-itab-anniversary-anniversary-opened-panel-text-07
+    )
+    transparent;
   scrollbar-width: thin;
 }
 
@@ -1045,7 +1067,7 @@ onBeforeUnmount(() => {
 }
 
 .anniversary-field-row > span {
-  color: rgba(0, 0, 0, 0.8);
+  color: var(--sd-theme-itab-anniversary-anniversary-opened-panel-text-08);
   font-size: 14px;
   line-height: 22px;
 }
@@ -1059,8 +1081,10 @@ onBeforeUnmount(() => {
   border: 0;
   border-radius: 12px;
   outline: none;
-  background: rgb(255, 255, 255);
-  color: rgb(96, 98, 102);
+  background: var(
+    --sd-theme-itab-anniversary-anniversary-opened-panel-surface-01
+  );
+  color: var(--sd-theme-itab-anniversary-anniversary-opened-panel-text-09);
   font-size: 12px;
 }
 
@@ -1082,7 +1106,9 @@ onBeforeUnmount(() => {
   padding: 0;
   border: 0;
   background: transparent;
-  color: rgb(33, 150, 243);
+  color: var(
+    --sd-theme-itab-anniversary-anniversary-opened-panel-accent-text-01
+  );
   font-size: 12px;
   line-height: 24px;
 }
@@ -1104,7 +1130,7 @@ onBeforeUnmount(() => {
   z-index: 1;
   width: 13px;
   height: 13px;
-  fill: rgba(0, 0, 0, 0.55);
+  fill: var(--sd-theme-itab-anniversary-anniversary-opened-panel-fill-01);
   pointer-events: none;
   transform: translateY(-50%);
 }
@@ -1117,10 +1143,13 @@ onBeforeUnmount(() => {
   width: 324px;
   padding: 13px;
   border-radius: 10px;
-  background: rgb(29, 30, 31);
+  background: var(
+    --sd-theme-itab-anniversary-anniversary-opened-panel-surface-09
+  );
   box-shadow:
-    0 0 1px rgba(255, 255, 255, 0.15),
-    0 8px 24px rgba(0, 0, 0, 0.32);
+    0 0 1px var(--sd-theme-itab-anniversary-anniversary-opened-panel-shadow-04),
+    0 8px 24px
+      var(--sd-theme-itab-anniversary-anniversary-opened-panel-shadow-05);
 }
 
 .anniversary-date-popper::before {
@@ -1129,7 +1158,9 @@ onBeforeUnmount(() => {
   left: 154px;
   width: 10px;
   height: 10px;
-  background: rgb(29, 30, 31);
+  background: var(
+    --sd-theme-itab-anniversary-anniversary-opened-panel-surface-09
+  );
   content: "";
   transform: rotate(45deg);
 }
@@ -1150,7 +1181,9 @@ onBeforeUnmount(() => {
   width: 266px;
   height: 38px;
   border-radius: 6px;
-  background: rgb(44, 44, 44);
+  background: var(
+    --sd-theme-itab-anniversary-anniversary-opened-panel-surface-10
+  );
 }
 
 .anniversary-picker-mask {
@@ -1159,12 +1192,12 @@ onBeforeUnmount(() => {
   z-index: 2;
   background: linear-gradient(
     180deg,
-    rgb(29, 30, 31) 0%,
-    rgba(29, 30, 31, 0.64) 20%,
-    rgba(29, 30, 31, 0) 42%,
-    rgba(29, 30, 31, 0) 58%,
-    rgba(29, 30, 31, 0.64) 80%,
-    rgb(29, 30, 31) 100%
+    var(--sd-theme-itab-anniversary-anniversary-opened-panel-surface-09) 0%,
+    var(--sd-theme-itab-anniversary-anniversary-opened-panel-surface-11) 20%,
+    var(--sd-theme-itab-anniversary-anniversary-opened-panel-surface-12) 42%,
+    var(--sd-theme-itab-anniversary-anniversary-opened-panel-surface-12) 58%,
+    var(--sd-theme-itab-anniversary-anniversary-opened-panel-surface-11) 80%,
+    var(--sd-theme-itab-anniversary-anniversary-opened-panel-surface-09) 100%
   );
   pointer-events: none;
 }
@@ -1182,7 +1215,7 @@ onBeforeUnmount(() => {
   padding: 0;
   border: 0;
   background: transparent;
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--sd-theme-itab-anniversary-anniversary-opened-panel-text-10);
   font-size: 14px;
   font-weight: 700;
   line-height: 38px;
@@ -1206,15 +1239,20 @@ onBeforeUnmount(() => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border: 1px solid rgba(0, 0, 0, 0.18);
+  border: 1px solid
+    var(--sd-theme-itab-anniversary-anniversary-opened-panel-border-01);
   border-radius: 14px;
-  background: rgb(255, 255, 255);
-  color: rgba(0, 0, 0, 0.56);
+  background: var(
+    --sd-theme-itab-anniversary-anniversary-opened-panel-surface-01
+  );
+  color: var(--sd-theme-itab-anniversary-anniversary-opened-panel-text-11);
   cursor: pointer;
 }
 
 .anniversary-select-trigger.active {
-  border-color: rgba(0, 0, 0, 0.32);
+  border-color: var(
+    --sd-theme-itab-anniversary-anniversary-opened-panel-border-02
+  );
 }
 
 .anniversary-select-trigger i {
@@ -1233,11 +1271,15 @@ onBeforeUnmount(() => {
   min-width: 96px;
   overflow: hidden;
   padding: 6px 0;
-  border: 1px solid rgb(228, 231, 237);
+  border: 1px solid
+    var(--sd-theme-itab-anniversary-anniversary-opened-panel-border-03);
   border-radius: 4px;
-  background: #fff;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
-  color: #606266;
+  background: var(
+    --sd-theme-itab-anniversary-anniversary-opened-panel-surface-13
+  );
+  box-shadow: 0 2px 12px
+    var(--sd-theme-itab-anniversary-anniversary-opened-panel-shadow-03);
+  color: var(--sd-theme-itab-anniversary-anniversary-opened-panel-text-12);
   font-size: 14px;
   line-height: 34px;
 }
@@ -1251,8 +1293,12 @@ onBeforeUnmount(() => {
 
 .anniversary-select-popper > div:hover,
 .anniversary-select-popper > div.selected {
-  background: rgb(245, 247, 250);
-  color: rgb(33, 150, 243);
+  background: var(
+    --sd-theme-itab-anniversary-anniversary-opened-panel-surface-14
+  );
+  color: var(
+    --sd-theme-itab-anniversary-anniversary-opened-panel-accent-text-01
+  );
 }
 
 .anniversary-event-popover {
@@ -1269,11 +1315,14 @@ onBeforeUnmount(() => {
   overflow: hidden;
   padding: 41px 13px 13px;
   border-radius: 10px;
-  background: rgb(29, 30, 31);
+  background: var(
+    --sd-theme-itab-anniversary-anniversary-opened-panel-surface-09
+  );
   box-shadow:
-    0 0 1px rgba(255, 255, 255, 0.15),
-    0 8px 24px rgba(0, 0, 0, 0.32);
-  color: rgb(206, 207, 209);
+    0 0 1px var(--sd-theme-itab-anniversary-anniversary-opened-panel-shadow-04),
+    0 8px 24px
+      var(--sd-theme-itab-anniversary-anniversary-opened-panel-shadow-05);
+  color: var(--sd-theme-itab-anniversary-anniversary-opened-panel-text-13);
   font-size: 12px;
   line-height: 24px;
 }
@@ -1282,7 +1331,7 @@ onBeforeUnmount(() => {
   position: absolute;
   top: 13px;
   left: 13px;
-  color: rgb(206, 207, 209);
+  color: var(--sd-theme-itab-anniversary-anniversary-opened-panel-text-13);
   content: "常用事件";
   font-size: 12px;
   line-height: 18px;
@@ -1294,7 +1343,9 @@ onBeforeUnmount(() => {
   right: 26px;
   width: 10px;
   height: 10px;
-  background: rgb(29, 30, 31);
+  background: var(
+    --sd-theme-itab-anniversary-anniversary-opened-panel-surface-09
+  );
   content: "";
   transform: rotate(45deg);
 }
@@ -1302,18 +1353,23 @@ onBeforeUnmount(() => {
 .anniversary-event-popover > div {
   height: 24px;
   padding: 0 10px;
-  border: 1px solid rgba(255, 255, 255, 0.02);
+  border: 1px solid
+    var(--sd-theme-itab-anniversary-anniversary-opened-panel-border-04);
   border-radius: 20px;
-  background: rgba(255, 255, 255, 0.06);
-  color: rgba(255, 255, 255, 0.66);
+  background: var(
+    --sd-theme-itab-anniversary-anniversary-opened-panel-surface-15
+  );
+  color: var(--sd-theme-itab-anniversary-anniversary-opened-panel-text-14);
   cursor: pointer;
   white-space: nowrap;
 }
 
 .anniversary-event-popover > div:hover,
 .anniversary-event-popover > div.active {
-  background: rgba(255, 255, 255, 0.12);
-  color: rgba(255, 255, 255, 0.9);
+  background: var(
+    --sd-theme-itab-anniversary-anniversary-opened-panel-surface-16
+  );
+  color: var(--sd-theme-itab-anniversary-anniversary-opened-panel-text-15);
 }
 
 .anniversary-color-swatches {
@@ -1333,7 +1389,8 @@ onBeforeUnmount(() => {
   border-radius: 50%;
   background: var(--swatch-color);
   cursor: pointer;
-  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08);
+  box-shadow: 0 0 0 1px
+    var(--sd-theme-itab-anniversary-anniversary-opened-panel-shadow-06);
 }
 
 .anniversary-color-swatches span.active::after {
@@ -1342,8 +1399,10 @@ onBeforeUnmount(() => {
   display: grid;
   place-items: center;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.86);
-  color: #888;
+  background: var(
+    --sd-theme-itab-anniversary-anniversary-opened-panel-surface-17
+  );
+  color: var(--sd-theme-itab-anniversary-anniversary-opened-panel-text-16);
   content: "✓";
   font-size: 14px;
   font-weight: 700;
@@ -1352,12 +1411,12 @@ onBeforeUnmount(() => {
 .anniversary-gradient-swatch {
   background: conic-gradient(
     from 180deg,
-    #f04242,
-    #ffb322,
-    #77d24b,
-    #3aa3ff,
-    #8d4dff,
-    #f04242
+    var(--sd-theme-itab-anniversary-anniversary-opened-panel-accent-surface-01),
+    var(--sd-theme-itab-anniversary-anniversary-opened-panel-accent-surface-02),
+    var(--sd-theme-itab-anniversary-anniversary-opened-panel-accent-surface-03),
+    var(--sd-theme-itab-anniversary-anniversary-opened-panel-accent-surface-04),
+    var(--sd-theme-itab-anniversary-anniversary-opened-panel-accent-surface-05),
+    var(--sd-theme-itab-anniversary-anniversary-opened-panel-accent-surface-01)
   ) !important;
 }
 
@@ -1384,14 +1443,16 @@ onBeforeUnmount(() => {
   border: 0;
   border-radius: 4px;
   background: transparent;
-  color: rgba(0, 0, 0, 0.42);
+  color: var(--sd-theme-itab-anniversary-anniversary-opened-panel-text-02);
   font-size: 13px;
   line-height: 16px;
 }
 
 .anniversary-background-mode button.active {
-  background: rgba(0, 0, 0, 0.16);
-  color: rgba(0, 0, 0, 0.86);
+  background: var(
+    --sd-theme-itab-anniversary-anniversary-opened-panel-surface-06
+  );
+  color: var(--sd-theme-itab-anniversary-anniversary-opened-panel-text-17);
 }
 
 .anniversary-image-row {
@@ -1406,7 +1467,9 @@ onBeforeUnmount(() => {
   overflow: hidden;
   padding: 8px 16px;
   border-radius: 12px;
-  background: rgb(255, 255, 255);
+  background: var(
+    --sd-theme-itab-anniversary-anniversary-opened-panel-surface-01
+  );
 }
 
 .anniversary-image-strip-clip {
@@ -1440,7 +1503,8 @@ onBeforeUnmount(() => {
 .anniversary-image-strip button.active::after {
   position: absolute;
   inset: 0;
-  border: 2px solid rgb(33, 150, 243);
+  border: 2px solid
+    var(--sd-theme-itab-anniversary-anniversary-opened-panel-accent-border-01);
   border-radius: inherit;
   content: "";
   pointer-events: none;
@@ -1459,12 +1523,12 @@ onBeforeUnmount(() => {
   grid-template-columns: 60px minmax(0, 1fr);
   align-items: center;
   gap: 0;
-  color: rgb(34, 34, 34);
+  color: var(--sd-theme-itab-anniversary-anniversary-opened-panel-text-01);
   line-height: 24px;
 }
 
 .anniversary-mask-row > span {
-  color: rgb(34, 34, 34);
+  color: var(--sd-theme-itab-anniversary-anniversary-opened-panel-text-01);
   font-size: 14px;
   line-height: 24px;
 }
@@ -1494,23 +1558,28 @@ onBeforeUnmount(() => {
   border-radius: 999px;
   background: linear-gradient(
     to right,
-    rgb(33, 150, 243) 0 var(--anniversary-mask-progress),
-    rgba(255, 255, 255, 0.16) var(--anniversary-mask-progress) 100%
+    var(--sd-theme-itab-anniversary-anniversary-opened-panel-accent-surface-06)
+      0 var(--anniversary-mask-progress),
+    var(--sd-theme-itab-anniversary-anniversary-opened-panel-surface-18)
+      var(--anniversary-mask-progress) 100%
   );
 }
 
 .anniversary-mask-control input[type="range"]::-webkit-slider-thumb {
   width: 16px;
   height: 16px;
-  border: 3px solid rgb(33, 150, 243);
+  border: 3px solid
+    var(--sd-theme-itab-anniversary-anniversary-opened-panel-accent-border-01);
   border-radius: 50%;
   appearance: none;
-  background: #fff;
+  background: var(
+    --sd-theme-itab-anniversary-anniversary-opened-panel-surface-13
+  );
   margin-top: -6px;
 }
 
 .anniversary-mask-control output {
-  color: rgba(0, 0, 0, 0.56);
+  color: var(--sd-theme-itab-anniversary-anniversary-opened-panel-text-11);
   font-size: 12px;
   line-height: 18px;
   text-align: right;
@@ -1529,15 +1598,20 @@ onBeforeUnmount(() => {
   height: 31px;
   border: 0;
   border-radius: 16px;
-  background: rgb(33, 150, 243);
-  color: #fff;
+  background: var(
+    --sd-theme-itab-anniversary-anniversary-opened-panel-accent-surface-06
+  );
+  color: var(--sd-theme-itab-anniversary-anniversary-opened-panel-text-05);
   font-size: 14px;
   line-height: 31px;
 }
 
 .anniversary-action-row button:last-child {
-  border: 1px solid rgb(220, 223, 230);
-  background: rgb(255, 255, 255);
-  color: rgb(96, 98, 102);
+  border: 1px solid
+    var(--sd-theme-itab-anniversary-anniversary-opened-panel-border-05);
+  background: var(
+    --sd-theme-itab-anniversary-anniversary-opened-panel-surface-01
+  );
+  color: var(--sd-theme-itab-anniversary-anniversary-opened-panel-text-09);
 }
 </style>

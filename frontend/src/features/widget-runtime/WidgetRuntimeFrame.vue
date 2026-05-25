@@ -104,6 +104,6 @@ const onContextMenu = (event: MouseEvent) => {
 
 .sd-widget-runtime-frame:focus-visible {
   border-radius: 18px;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.42);
+  box-shadow: 0 0 0 3px var(--sd-theme-runtime-widget-runtime-frame-shadow-01);
 }
 </style>

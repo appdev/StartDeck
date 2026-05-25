@@ -94,7 +94,7 @@ const statusTooltip = computed(() => {
 }
 
 .indicator-badge {
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--sd-theme-network-indicator-surface-01);
   border-radius: 10px;
   padding: 1px 6px;
   font-size: 10px;
@@ -104,36 +104,36 @@ const statusTooltip = computed(() => {
 
 /* Online - Green */
 .mode--online {
-  background: rgba(34, 197, 94, 0.15);
-  color: #16a34a;
-  border: 1px solid rgba(34, 197, 94, 0.3);
+  background: var(--sd-theme-network-indicator-accent-surface-01);
+  color: var(--sd-theme-network-indicator-accent-text-01);
+  border: 1px solid var(--sd-theme-network-indicator-accent-border-01);
 }
 .mode--online .indicator-dot {
-  background: #22c55e;
-  box-shadow: 0 0 6px rgba(34, 197, 94, 0.5);
+  background: var(--sd-theme-network-indicator-accent-surface-02);
+  box-shadow: 0 0 6px var(--sd-theme-network-indicator-shadow-01);
 }
 
 /* Degraded - Yellow/Orange */
 .mode--degraded {
-  background: rgba(245, 158, 11, 0.15);
-  color: #d97706;
-  border: 1px solid rgba(245, 158, 11, 0.3);
+  background: var(--sd-theme-network-indicator-accent-surface-03);
+  color: var(--sd-theme-network-indicator-accent-text-02);
+  border: 1px solid var(--sd-theme-network-indicator-accent-border-02);
 }
 .mode--degraded .indicator-dot {
-  background: #f59e0b;
-  box-shadow: 0 0 6px rgba(245, 158, 11, 0.5);
+  background: var(--sd-theme-network-indicator-accent-surface-04);
+  box-shadow: 0 0 6px var(--sd-theme-network-indicator-shadow-02);
   animation: pulse-dot 1.5s ease-in-out infinite;
 }
 
 /* Offline - Red */
 .mode--offline {
-  background: rgba(239, 68, 68, 0.15);
-  color: #dc2626;
-  border: 1px solid rgba(239, 68, 68, 0.3);
+  background: var(--sd-theme-network-indicator-accent-surface-05);
+  color: var(--sd-theme-network-indicator-accent-text-03);
+  border: 1px solid var(--sd-theme-network-indicator-accent-border-03);
 }
 .mode--offline .indicator-dot {
-  background: #ef4444;
-  box-shadow: 0 0 6px rgba(239, 68, 68, 0.5);
+  background: var(--sd-theme-network-indicator-accent-surface-06);
+  box-shadow: 0 0 6px var(--sd-theme-network-indicator-shadow-03);
   animation: pulse-dot 1s ease-in-out infinite;
 }
 

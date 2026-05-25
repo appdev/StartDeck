@@ -76,10 +76,19 @@ const handleSubmit = async () => {
       }
     }
   } catch (e: unknown) {
-    const err = e as Error;
+    const message = e instanceof Error ? e.message : "操作失败！";
+    if (!isRegister.value && message.trim() === "password_incorrect") {
+      uiFeedback.notify({
+        title: "登录失败",
+        message: "密码错误，请重新输入。",
+        tone: "danger",
+      });
+      password.value = "";
+      return;
+    }
     void uiFeedback.alert({
       title: isRegister.value ? "注册失败" : "登录失败",
-      message: err.message || "操作失败！",
+      message,
       tone: "danger",
     });
     password.value = "";

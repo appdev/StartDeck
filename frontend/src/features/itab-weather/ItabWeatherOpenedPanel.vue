@@ -272,7 +272,7 @@ onMounted(() => {
   align-items: center;
   justify-content: space-between;
   gap: 18px;
-  color: rgba(255, 255, 255, 0.82);
+  color: var(--sd-theme-itab-weather-weather-opened-panel-text-01);
   font-size: 14px;
   line-height: 20px;
 }
@@ -295,11 +295,11 @@ onMounted(() => {
   width: 200px;
   height: 30px;
   padding: 0 12px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid var(--sd-theme-itab-weather-weather-opened-panel-border-01);
   border-radius: 4px;
   outline: none;
-  background: rgba(255, 255, 255, 0.06);
-  color: rgba(255, 255, 255, 0.78);
+  background: var(--sd-theme-itab-weather-weather-opened-panel-surface-01);
+  color: var(--sd-theme-itab-weather-weather-opened-panel-text-02);
   font-size: 14px;
 }
 
@@ -310,8 +310,8 @@ onMounted(() => {
   place-items: center;
   border: 0;
   border-radius: 4px;
-  background: rgba(255, 255, 255, 0.06);
-  color: rgba(255, 255, 255, 0.74);
+  background: var(--sd-theme-itab-weather-weather-opened-panel-surface-01);
+  color: var(--sd-theme-itab-weather-weather-opened-panel-text-03);
 }
 
 .weather-header-tools > button:disabled {
@@ -332,10 +332,11 @@ onMounted(() => {
   display: grid;
   width: 238px;
   padding: 6px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid var(--sd-theme-itab-weather-weather-opened-panel-border-02);
   border-radius: 6px;
-  background: rgba(37, 39, 43, 0.96);
-  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.28);
+  background: var(--sd-theme-itab-weather-weather-opened-panel-surface-02);
+  box-shadow: 0 10px 24px
+    var(--sd-theme-itab-weather-weather-opened-panel-shadow-01);
 }
 
 .weather-city-popover button {
@@ -348,15 +349,15 @@ onMounted(() => {
   border: 0;
   border-radius: 4px;
   background: transparent;
-  color: rgba(255, 255, 255, 0.78);
+  color: var(--sd-theme-itab-weather-weather-opened-panel-text-02);
   font-size: 12px;
   line-height: 16px;
 }
 
 .weather-city-popover button.active,
 .weather-city-popover button:hover {
-  background: rgba(255, 255, 255, 0.09);
-  color: #fff;
+  background: var(--sd-theme-itab-weather-weather-opened-panel-surface-03);
+  color: var(--sd-theme-itab-weather-weather-opened-panel-text-04);
 }
 
 .weather-city-popover button b {
@@ -366,7 +367,7 @@ onMounted(() => {
 
 .weather-runtime-error {
   margin: 10px 0 0;
-  color: rgba(255, 204, 204, 0.88);
+  color: var(--sd-theme-itab-weather-weather-opened-panel-text-05);
   font-size: 12px;
 }
 
@@ -392,7 +393,7 @@ onMounted(() => {
   flex-wrap: wrap;
   gap: 10px 18px;
   margin-top: 8px;
-  color: rgba(255, 255, 255, 0.82);
+  color: var(--sd-theme-itab-weather-weather-opened-panel-text-01);
   font-size: 14px;
   line-height: 20px;
 }
@@ -415,7 +416,7 @@ onMounted(() => {
 .opened-weather-current p {
   max-width: 295px;
   margin: 0;
-  color: rgba(255, 255, 255, 0.72);
+  color: var(--sd-theme-itab-weather-weather-opened-panel-text-06);
   font-size: 13px;
   line-height: 23px;
 }
@@ -438,12 +439,12 @@ onMounted(() => {
 }
 
 .opened-weather-metrics dt {
-  color: rgba(255, 255, 255, 0.48);
+  color: var(--sd-theme-itab-weather-weather-opened-panel-text-07);
   font-size: 12px;
 }
 
 .opened-weather-metrics dd {
-  color: rgba(255, 255, 255, 0.88);
+  color: var(--sd-theme-itab-weather-weather-opened-panel-text-08);
   font-size: 16px;
 }
 
@@ -453,7 +454,7 @@ onMounted(() => {
 .weather-location-list {
   overflow: hidden;
   border-radius: 6px;
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--sd-theme-itab-weather-weather-opened-panel-surface-04);
 }
 
 .weather-hour-card {
@@ -470,7 +471,7 @@ onMounted(() => {
   align-items: center;
   gap: 8px;
   margin: 0;
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--sd-theme-itab-weather-weather-opened-panel-text-09);
   font-size: 15px;
   font-weight: 400;
   line-height: 22px;
@@ -499,7 +500,7 @@ onMounted(() => {
   display: grid;
   justify-items: center;
   gap: 7px;
-  color: rgba(255, 255, 255, 0.74);
+  color: var(--sd-theme-itab-weather-weather-opened-panel-text-03);
   font-size: 12px;
   line-height: 16px;
 }
@@ -527,15 +528,15 @@ onMounted(() => {
 
 .weather-temp-line polyline {
   fill: none;
-  stroke: rgba(160, 201, 255, 0.88);
+  stroke: var(--sd-theme-itab-weather-weather-opened-panel-accent-01);
   stroke-linecap: round;
   stroke-linejoin: round;
   stroke-width: 2;
 }
 
 .weather-temp-line circle {
-  fill: rgb(160, 201, 255);
-  stroke: rgba(255, 255, 255, 0.85);
+  fill: var(--sd-theme-itab-weather-weather-opened-panel-accent-fill-01);
+  stroke: var(--sd-theme-itab-weather-weather-opened-panel-surface-05);
   stroke-width: 1;
 }
 
@@ -558,7 +559,7 @@ onMounted(() => {
   gap: 4px;
   padding: 9px 4px;
   border-radius: 4px;
-  color: rgba(255, 255, 255, 0.75);
+  color: var(--sd-theme-itab-weather-weather-opened-panel-text-10);
   cursor: pointer;
   font-size: 12px;
   line-height: 16px;
@@ -570,12 +571,12 @@ onMounted(() => {
 
 .weather-day-grid article:hover,
 .weather-day-grid article.active {
-  background: rgba(255, 255, 255, 0.09);
-  color: #fff;
+  background: var(--sd-theme-itab-weather-weather-opened-panel-surface-03);
+  color: var(--sd-theme-itab-weather-weather-opened-panel-text-04);
 }
 
 .weather-day-grid article:focus-visible {
-  outline: 1px solid rgba(255, 255, 255, 0.5);
+  outline: 1px solid var(--sd-theme-itab-weather-weather-opened-panel-border-03);
   outline-offset: -1px;
 }
 
@@ -620,7 +621,7 @@ onMounted(() => {
   grid-template-columns: 24px 1fr;
   gap: 2px 9px;
   align-items: center;
-  color: rgba(255, 255, 255, 0.68);
+  color: var(--sd-theme-itab-weather-weather-opened-panel-text-11);
   font-size: 12px;
 }
 
@@ -628,11 +629,11 @@ onMounted(() => {
   grid-row: span 3;
   width: 22px;
   height: 22px;
-  fill: rgba(255, 255, 255, 0.74);
+  fill: var(--sd-theme-itab-weather-weather-opened-panel-fill-01);
 }
 
 .weather-life-card article b {
-  color: rgba(255, 255, 255, 0.92);
+  color: var(--sd-theme-itab-weather-weather-opened-panel-text-12);
   font-size: 15px;
   font-weight: 400;
 }
@@ -661,8 +662,8 @@ onMounted(() => {
   padding: 10px 11px;
   border: 0;
   border-radius: 5px;
-  background: rgba(255, 255, 255, 0.08);
-  color: #fff;
+  background: var(--sd-theme-itab-weather-weather-opened-panel-surface-06);
+  color: var(--sd-theme-itab-weather-weather-opened-panel-text-04);
   text-align: left;
 }
 
@@ -670,7 +671,7 @@ onMounted(() => {
 .weather-location-list > button small {
   grid-column: 1 / 2;
   overflow: hidden;
-  color: rgba(255, 255, 255, 0.74);
+  color: var(--sd-theme-itab-weather-weather-opened-panel-text-03);
   font-size: 12px;
   line-height: 16px;
   text-overflow: ellipsis;

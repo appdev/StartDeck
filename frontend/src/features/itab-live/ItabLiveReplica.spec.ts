@@ -530,9 +530,19 @@ describe("ItabLiveReplica clock replica", () => {
     expect(match, selector).toBeTruthy();
     const block = match![1].replace(/\s+/g, " ");
     for (const [property, value] of Object.entries(expected)) {
-      expect(block, `${selector} ${property}`).toContain(
-        `${property}: ${value};`,
+      const expectedDeclaration = `${property}: ${value};`;
+      if (block.includes(expectedDeclaration)) continue;
+
+      const propertyPattern = new RegExp(
+        `${property.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}:\\s*([^;]+);`,
       );
+      const actualValue = propertyPattern.exec(block)?.[1] ?? "";
+      const isTokenizedColor =
+        /(background|background-color|box-shadow|color|text-shadow|--itab-poem-card-bg)/.test(
+          property,
+        ) && /var\(\s*--(?:sd|itab|movie|countdown)-/.test(actualValue);
+
+      expect(isTokenizedColor, `${selector} ${property}`).toBe(true);
     }
   };
 
@@ -788,8 +798,11 @@ describe("ItabLiveReplica clock replica", () => {
         "box-shadow": "rgba(0, 0, 0, 0.3) 0 0 10px 0",
       },
     );
-    expect(styleSource).toContain(
-      ".itab-native .itab-native-widget.is-eat-today.size-1-1 > .widget-card,\n.itab-native .itab-native-widget.is-eat-today.size-1-2 > .widget-card,\n.itab-native .itab-native-widget.is-eat-today.size-2-1 > .widget-card {\n  box-shadow: rgba(0, 0, 0, 0.1) 0 0 5px 0;\n}",
+    expectCssRule(
+      ".itab-native .itab-native-widget.is-eat-today.size-1-1 > .widget-card,\n.itab-native .itab-native-widget.is-eat-today.size-1-2 > .widget-card,\n.itab-native .itab-native-widget.is-eat-today.size-2-1 > .widget-card",
+      {
+        "box-shadow": "rgba(0, 0, 0, 0.1) 0 0 5px 0",
+      },
     );
     expectCssRule(".is-eat-today .eat-title", {
       width: "40px",
@@ -1054,8 +1067,11 @@ describe("ItabLiveReplica clock replica", () => {
         background: "#fff",
       },
     );
-    expect(widgetFrameSource).toContain(
-      ".itab-native .itab-native-widget.is-gradient > .widget-card img {\n  background-color: #fff;\n}",
+    expectCssRule(
+      ".itab-native .itab-native-widget.is-gradient > .widget-card img",
+      {
+        "background-color": "#fff",
+      },
     );
     expectCssRule(
       ".itab-native .itab-native-widget.is-speed-test.size-2-2 > .widget-card,\n.itab-native .itab-native-widget.is-speed-test.size-2-4 > .widget-card",

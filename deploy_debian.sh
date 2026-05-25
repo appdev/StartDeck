@@ -18,7 +18,7 @@ IFS=$'\n\t'
 #
 # 前置要求：
 #   - 确保 GitHub 仓库 (Garry-QD/StartDeck) 发布了包含 release.zip 的 Release。
-#   - release.zip 应包含 startdeck-server、startdeck-iconserver、server/public，
+#   - release.zip 应包含 startdeck-server、startdeck-iconserver、Data/public，
 #     以及 Rust crate 下的 startdeck-server/startdeck-iconserver resources 数据。
 
 MODE="${1:-install}"
@@ -36,7 +36,7 @@ BASE_DIR="$(cd "$(dirname "$0")" && pwd)"
 # 默认安装路径
 INSTALL_DIR="/opt/${APP_NAME}"
 BIN_DIR="${INSTALL_DIR}/bin"
-SERVER_DIR="${INSTALL_DIR}/server"
+SERVER_DIR="${INSTALL_DIR}/Data"
 PUBLIC_DIR="${SERVER_DIR}/public"
 CACHE_DIR="${SERVER_DIR}/cache"
 DATA_DIR="${SERVER_DIR}/data"
@@ -199,10 +199,10 @@ init_data_dir() {
   for candidate in \
     "${BASE_DIR}/rust/crates/startdeck-server/resources/${src_name}" \
     "${BASE_DIR}/startdeck-server/resources/${src_name}" \
-    "${BASE_DIR}/server/${src_name}" \
+    "${BASE_DIR}/Data/${src_name}" \
     "${source_root}/rust/crates/startdeck-server/resources/${src_name}" \
     "${source_root}/startdeck-server/resources/${src_name}" \
-    "${source_root}/server/${src_name}"; do
+    "${source_root}/Data/${src_name}"; do
     if [ -n "${candidate}" ] && [ -d "${candidate}" ]; then
       src_path="${candidate}"
       break
@@ -652,7 +652,7 @@ verify_deploy() {
     log_warn "前端首页拉取失败，未能完成产物校验"
   else
     if printf "%s" "${html}" | grep -Eq '/@vite/client|virtual:vue-devtools-path|/src/main\.(ts|js)'; then
-      fail_with_tip "检测到开发版前端（Vite）被部署到线上，请重新使用 release 包部署 server/public"
+      fail_with_tip "检测到开发版前端（Vite）被部署到线上，请重新使用 release 包部署 Data/public"
     fi
     if ! printf "%s" "${html}" | grep -q '/assets/'; then
       log_warn "前端首页未检测到 /assets/ 引用，请确认静态产物是否完整"
@@ -755,7 +755,7 @@ install_flow() {
     fail_with_tip "在下载包中未找到 startdeck-server 二进制文件"
   fi
   
-  local static_src="${source_dir}/server/public"
+  local static_src="${source_dir}/Data/public"
   local icon_binary_src
   icon_binary_src="$(find "${tmp_dir}/source" -maxdepth 3 -type f -name "${ICON_SERVICE_BINARY}" | head -n 1)"
   
@@ -768,13 +768,12 @@ install_flow() {
     fail_with_tip "未找到图标服务二进制文件: ${ICON_SERVICE_BINARY}"
   fi
   if [ ! -d "${static_src}" ]; then
-    # 兼容 release 运行时目录和 Rust crate 资源目录。
     local found_public
-    found_public="$(find "${tmp_dir}/source" -maxdepth 6 -type d \( -path "*/server/public" -o -path "*/startdeck-server/resources/public" \) | head -n 1)"
+    found_public="$(find "${tmp_dir}/source" -maxdepth 6 -type d -path "*/Data/public" | head -n 1)"
     if [ -n "${found_public}" ]; then
        static_src="${found_public}"
     else
-       fail_with_tip "未找到静态文件目录 (server/public 或 startdeck-server/resources/public)"
+       fail_with_tip "未找到前端静态目录 Data/public"
     fi
   fi
   

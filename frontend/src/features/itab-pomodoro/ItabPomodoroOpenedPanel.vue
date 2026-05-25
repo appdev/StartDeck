@@ -203,7 +203,7 @@ const runtime = useItabPomodoroRuntime(widgetRef, (data) =>
   width: 100%;
   height: 100%;
   overflow: hidden;
-  color: #e3e3e3;
+  color: var(--sd-theme-itab-pomodoro-pomodoro-opened-panel-text-01);
 }
 
 .opened-tomato-bg-stack,
@@ -229,7 +229,9 @@ const runtime = useItabPomodoroRuntime(widgetRef, (data) =>
   position: absolute;
   inset: 0;
   z-index: 1;
-  background: rgba(3, 25, 56, 0.34);
+  background: var(
+    --sd-theme-itab-pomodoro-pomodoro-opened-panel-accent-surface-01
+  );
   content: "";
 }
 
@@ -251,7 +253,7 @@ const runtime = useItabPomodoroRuntime(widgetRef, (data) =>
   align-items: center;
   justify-content: center;
   margin-bottom: 18px;
-  color: #fff;
+  color: var(--sd-theme-itab-pomodoro-pomodoro-opened-panel-text-02);
   font-family: Arial, sans-serif;
 }
 
@@ -285,7 +287,7 @@ const runtime = useItabPomodoroRuntime(widgetRef, (data) =>
   width: 360px;
   height: 360px;
   place-items: center;
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--sd-theme-itab-pomodoro-pomodoro-opened-panel-text-03);
 }
 
 .tomato-dial-ring {
@@ -293,7 +295,7 @@ const runtime = useItabPomodoroRuntime(widgetRef, (data) =>
   inset: 0;
   width: 360px;
   height: 360px;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--sd-theme-itab-pomodoro-pomodoro-opened-panel-text-04);
 }
 
 .tomato-dial-ring circle,
@@ -309,11 +311,11 @@ const runtime = useItabPomodoroRuntime(widgetRef, (data) =>
 }
 
 .tomato-dial-ring .tomato-progress-track {
-  stroke: rgba(255, 255, 255, 0.3);
+  stroke: var(--sd-theme-itab-pomodoro-pomodoro-opened-panel-surface-01);
 }
 
 .tomato-dial-ring .tomato-progress-fill {
-  stroke: rgba(255, 255, 255, 0.4);
+  stroke: var(--sd-theme-itab-pomodoro-pomodoro-opened-panel-surface-02);
   stroke-linecap: butt;
   transition:
     stroke-dashoffset 0.6s ease 0s,
@@ -329,7 +331,7 @@ const runtime = useItabPomodoroRuntime(widgetRef, (data) =>
 .tomato-dial strong {
   position: relative;
   z-index: 1;
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--sd-theme-itab-pomodoro-pomodoro-opened-panel-text-03);
   font-family: Arial, sans-serif;
   font-size: 70px;
   font-weight: 700;
@@ -352,20 +354,21 @@ const runtime = useItabPomodoroRuntime(widgetRef, (data) =>
   place-items: center;
   padding: 0;
   overflow: hidden;
-  border: 2px solid rgba(255, 255, 255, 0.18);
+  border: 2px solid
+    var(--sd-theme-itab-pomodoro-pomodoro-opened-panel-border-01);
   border-radius: 999px;
-  background: rgba(0, 0, 0, 0.14);
-  color: #fff;
+  background: var(--sd-theme-itab-pomodoro-pomodoro-opened-panel-surface-03);
+  color: var(--sd-theme-itab-pomodoro-pomodoro-opened-panel-text-02);
   backdrop-filter: blur(10px);
 }
 
 .opened-tomato-start {
-  border-color: rgba(255, 255, 255, 0.1);
-  background: rgba(255, 255, 255, 0.22);
+  border-color: var(--sd-theme-itab-pomodoro-pomodoro-opened-panel-border-02);
+  background: var(--sd-theme-itab-pomodoro-pomodoro-opened-panel-surface-04);
 }
 
 .opened-tomato-stop {
-  color: rgba(255, 255, 255, 0.58);
+  color: var(--sd-theme-itab-pomodoro-pomodoro-opened-panel-text-05);
 }
 
 .opened-tomato-control svg {
@@ -390,11 +393,11 @@ const runtime = useItabPomodoroRuntime(widgetRef, (data) =>
   padding: 0;
   border: 0;
   background: transparent;
-  color: rgba(255, 255, 255, 0.72);
+  color: var(--sd-theme-itab-pomodoro-pomodoro-opened-panel-text-06);
 }
 
 .opened-tomato-audio.active {
-  color: #fff;
+  color: var(--sd-theme-itab-pomodoro-pomodoro-opened-panel-text-02);
 }
 
 .opened-tomato-audio:not(.active) {
@@ -402,7 +405,7 @@ const runtime = useItabPomodoroRuntime(widgetRef, (data) =>
 }
 
 .opened-tomato-audio.blocked {
-  color: rgba(255, 214, 102, 0.95);
+  color: var(--sd-theme-itab-pomodoro-pomodoro-opened-panel-accent-text-01);
 }
 
 .opened-tomato-audio svg {

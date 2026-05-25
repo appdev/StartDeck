@@ -77,16 +77,24 @@ const iconDerived = computed(
   background:
     radial-gradient(
       circle at 82% 17%,
-      rgba(250, 204, 21, 0.18),
+      var(
+        --sd-theme-itab-number-uppercase-number-uppercase-widget-accent-surface-01
+      ),
       transparent 15%
     ),
     radial-gradient(
       circle at 18% 88%,
-      rgba(250, 204, 21, 0.1),
+      var(
+        --sd-theme-itab-number-uppercase-number-uppercase-widget-accent-surface-02
+      ),
       transparent 18%
     ),
-    #111827;
-  color: #facc15;
+    var(
+      --sd-theme-itab-number-uppercase-number-uppercase-widget-accent-surface-03
+    );
+  color: var(
+    --sd-theme-itab-number-uppercase-number-uppercase-widget-accent-text-01
+  );
 }
 
 .number-uppercase-card::after {
@@ -95,7 +103,14 @@ const iconDerived = computed(
   bottom: 0;
   left: 0;
   height: 2px;
-  background: linear-gradient(90deg, transparent, #eab308, transparent);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(
+      --sd-theme-itab-number-uppercase-number-uppercase-widget-accent-surface-04
+    ),
+    transparent
+  );
   content: "";
 }
 
@@ -107,7 +122,9 @@ const iconDerived = computed(
   place-items: center;
   overflow: hidden;
   border-radius: inherit;
-  background: #111827;
+  background: var(
+    --sd-theme-itab-number-uppercase-number-uppercase-widget-accent-surface-03
+  );
 }
 
 .number-uppercase-card--1x2 .number-uppercase-icon-tile {
@@ -123,7 +140,10 @@ const iconDerived = computed(
 .number-uppercase-icon-tile::before {
   position: absolute;
   inset: 8px;
-  border: 1px solid rgba(250, 204, 21, 0.16);
+  border: 1px solid
+    var(
+      --sd-theme-itab-number-uppercase-number-uppercase-widget-accent-border-01
+    );
   border-radius: 999px;
   content: "";
 }
@@ -162,17 +182,26 @@ const iconDerived = computed(
   width: 20px;
   height: 20px;
   place-items: center;
-  border: 1px solid rgba(250, 204, 21, 0.25);
+  border: 1px solid
+    var(
+      --sd-theme-itab-number-uppercase-number-uppercase-widget-accent-border-02
+    );
   border-radius: 999px;
-  background: rgba(250, 204, 21, 0.1);
-  color: rgba(250, 204, 21, 0.55);
+  background: var(
+    --sd-theme-itab-number-uppercase-number-uppercase-widget-accent-surface-02
+  );
+  color: var(
+    --sd-theme-itab-number-uppercase-number-uppercase-widget-accent-text-02
+  );
   font-size: 12px;
   font-weight: 700;
   line-height: 1;
 }
 
 .number-uppercase-cover-amount {
-  color: #facc15;
+  color: var(
+    --sd-theme-itab-number-uppercase-number-uppercase-widget-accent-text-01
+  );
   font-size: 34px;
   font-weight: 800;
   line-height: 1.1;
@@ -183,7 +212,9 @@ const iconDerived = computed(
   max-width: 100%;
   margin-top: 6px;
   overflow: hidden;
-  color: #facc15;
+  color: var(
+    --sd-theme-itab-number-uppercase-number-uppercase-widget-accent-text-01
+  );
   font-size: 15px;
   font-weight: 700;
   line-height: 1.3;
@@ -193,7 +224,9 @@ const iconDerived = computed(
 
 .number-uppercase-cover-label {
   margin-top: 8px;
-  color: #fef08a;
+  color: var(
+    --sd-theme-itab-number-uppercase-number-uppercase-widget-accent-text-03
+  );
   font-size: 12px;
   line-height: 1.2;
   opacity: 0.86;

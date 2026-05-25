@@ -94,14 +94,18 @@ describe("ItabPoemWidget", () => {
     );
 
     expect(source).toContain(
-      "background: var(--itab-poem-card-bg, var(--poem-bg, #eee))",
+      "background: var(\n    --itab-poem-card-bg,\n    var(--poem-bg, var(--sd-theme-itab-poem-poem-widget-surface-01))",
     );
     expect(source).toContain(".poem-icon-content.is-poem-size-1-1");
-    expect(source).toContain("--itab-poem-card-bg: rgb(9, 55, 68)");
     expect(source).toContain(
-      "background: var(--itab-poem-card-bg, rgb(9, 55, 68))",
+      "--itab-poem-card-bg: var(--sd-theme-itab-poem-poem-widget-accent-01)",
     );
-    expect(source).toContain("color: #333");
+    expect(source).toContain(
+      "var(--sd-theme-itab-poem-poem-widget-accent-surface-01)",
+    );
+    expect(source).toContain(
+      "color: var(--sd-theme-itab-poem-poem-widget-text-01)",
+    );
     expect(source).toContain(".is-poem-size-2-1 .poem-body p");
     expect(source).toContain("writing-mode: vertical-lr");
     expect(source).toContain('fill-opacity="0.6"');

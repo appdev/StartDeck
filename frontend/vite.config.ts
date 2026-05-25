@@ -14,16 +14,12 @@ export default defineConfig(({ mode }) => {
   const appBase = process.env.VITE_APP_BASE_PATH?.trim() || "./";
   // 注意：
   // 1. frontend/public 是静态素材源目录，图标/默认图片等应放这里维护。
-  // 2. server/public 是构建输出目录，Windows 本地构建会被 emptyOutDir 清空后重写。
-  // 3. 不要再把 server/public 当作素材源目录，否则执行构建时素材会被误覆盖。
-  const serverPublicDirAbs = fileURLToPath(
-    new URL("../server/public", import.meta.url),
+  // 2. Data/public 是本地运行时构建输出目录，会被 emptyOutDir 清空后重写。
+  // 3. 不要再把 Data/public 当作素材源目录，否则执行构建时素材会被误覆盖。
+  const runtimePublicDirAbs = fileURLToPath(
+    new URL("../Data/public", import.meta.url),
   );
-  const outDir = isDockerBuild
-    ? "dist"
-    : isWindows
-      ? serverPublicDirAbs
-      : "dist";
+  const outDir = isDockerBuild ? "dist" : runtimePublicDirAbs;
   return {
     // 默认使用相对 base，避免构建产物在子路径反代下把静态资源写死到站点根目录。
     base: appBase,
@@ -60,7 +56,7 @@ export default defineConfig(({ mode }) => {
         host: devHost,
       },
       watch: {
-        ignored: ["**/data/**", "**/server/**"],
+        ignored: ["**/data/**", "**/Data/**"],
         usePolling: isWindows,
         interval: isWindows ? 180 : undefined,
       },

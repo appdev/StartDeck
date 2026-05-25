@@ -66,8 +66,8 @@ const showCopyright = computed(
   min-width: 0;
   min-height: 0;
   overflow: hidden;
-  background: #0f172a;
-  color: #fff;
+  background: var(--sd-theme-itab-wallpaper-wallpaper-widget-accent-surface-01);
+  color: var(--sd-theme-itab-wallpaper-wallpaper-widget-text-01);
   font-family:
     "PingFang SC",
     -apple-system,
@@ -93,13 +93,14 @@ const showCopyright = computed(
   height: 40px;
   min-width: 0;
   overflow: hidden;
-  background: rgba(0, 0, 0, 0.32);
-  color: rgba(255, 255, 255, 0.94);
+  background: var(--sd-theme-itab-wallpaper-wallpaper-widget-surface-01);
+  color: var(--sd-theme-itab-wallpaper-wallpaper-widget-text-02);
   padding: 5px 10px 6px;
   font-size: 10.5px;
   font-weight: 400;
   line-height: 14px;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.38);
+  text-shadow: 0 1px 2px
+    var(--sd-theme-itab-wallpaper-wallpaper-widget-shadow-01);
   text-overflow: ellipsis;
   white-space: normal;
 }
@@ -126,6 +127,6 @@ const showCopyright = computed(
 .is-size-2x4 .wallpaper-copyright {
   width: min(62%, 210px);
   border-top-right-radius: 10px;
-  background: rgba(0, 0, 0, 0.38);
+  background: var(--sd-theme-itab-wallpaper-wallpaper-widget-surface-02);
 }
 </style>

@@ -513,6 +513,4646 @@
   --sd-shadow-button: 0 10px 20px rgba(41, 151, 255, 0.16);
 }
 
+/* STARTDECK COMPONENT THEME TOKENS START */
+/* Component-owned source colors are centralized here so Vue components consume semantic tokens. */
+:root,
+[data-sd-theme="light"] {
+  --sd-component-on-strong: #ffffff;
+  --sd-component-ink-surface: #000000;
+  --sd-home-preview-default-background: linear-gradient(
+    to top,
+    #a18cd1 0%,
+    #fbc2eb 100%
+  );
+  --sd-home-background-fallback: #f3f4f6;
+  --sd-home-preview-empire-background: radial-gradient(
+    circle at 50% 50%,
+    #2a2a2a,
+    #000000
+  );
+  --sd-home-card-icon-fill: #465975;
+  --sd-home-card-title-on-media: #ffffff;
+  --sd-home-card-title-primary: #111827;
+  --sd-home-card-title-secondary: #374151;
+  --sd-home-card-title-tertiary: #4b5563;
+  --sd-home-card-title-quaternary: #6b7280;
+  --sd-home-card-description-on-media: #e5e7eb;
+  --sd-home-card-description-muted-on-media: #d1d5db;
+  --sd-home-card-text-shadow-on-media: 0 1px 2px rgba(0, 0, 0, 0.8);
+  --sd-home-card-text-shadow-strong: 0 2px 4px rgba(0, 0, 0, 0.8);
+  --sd-home-title-text-shadow-on-media: 0 2px 8px rgba(0, 0, 0, 0.5);
+  --sd-home-card-search-shadow-on-media: 0 2px 18px rgba(0, 0, 0, 0.42);
+  --sd-home-card-search-shadow-default: 0 2px 14px rgba(15, 23, 42, 0.18);
+  --sd-home-card-outline-on-media: rgba(255, 255, 255, 0.35);
+  --sd-home-card-outline-default: rgba(15, 23, 42, 0.12);
+  --sd-home-card-hover-glow-shadow: 0 0 15px rgba(168, 85, 247, 0.5);
+  --sd-home-card-update-dot-bg: #ef4444;
+  --sd-home-card-update-dot-border: rgba(255, 255, 255, 0.4);
+  --sd-home-card-update-dot-shadow: 0 0 4px rgba(239, 68, 68, 0.8);
+  --sd-home-live-dot-bg: #22c55e;
+  --sd-home-live-dot-shadow: 0 0 8px rgba(34, 197, 94, 0.8);
+  --sd-home-offline-dot-bg: #ef4444;
+  --sd-itab-todo-empty-shadow: #e5e7eb;
+  --sd-itab-todo-empty-paper: #f2f3f5;
+  --sd-itab-todo-empty-line: #d5d9e0;
+  --sd-itab-poem-wave-back: #8ec2c6;
+  --sd-itab-poem-wave-middle: #74aaa4;
+  --sd-itab-poem-wave-front: #549087;
+  --sd-theme-add-widget-modal-accent-surface-01: rgb(24, 144, 255);
+  --sd-theme-add-widget-modal-accent-surface-02: rgba(24, 144, 255, 0.1);
+  --sd-theme-add-widget-modal-accent-surface-03: rgba(83, 157, 255, 0.38);
+  --sd-theme-add-widget-modal-accent-surface-04: rgba(24, 144, 255, 0.32);
+  --sd-theme-add-widget-modal-accent-surface-05: rgba(12, 35, 64, 0.16);
+  --sd-theme-add-widget-modal-accent-surface-06: rgba(168, 85, 247, 0.36);
+  --sd-theme-add-widget-modal-accent-surface-07: rgba(93, 70, 180, 0.32);
+  --sd-theme-add-widget-modal-accent-surface-08: rgba(21, 18, 51, 0.18);
+  --sd-theme-add-widget-modal-accent-surface-09: rgba(245, 158, 11, 0.36);
+  --sd-theme-add-widget-modal-accent-surface-10: rgba(120, 73, 13, 0.36);
+  --sd-theme-add-widget-modal-accent-surface-11: rgba(38, 23, 7, 0.18);
+  --sd-theme-add-widget-modal-accent-surface-12: rgba(74, 222, 128, 0.34);
+  --sd-theme-add-widget-modal-accent-surface-13: rgba(22, 101, 52, 0.3);
+  --sd-theme-add-widget-modal-accent-surface-14: rgba(7, 36, 20, 0.18);
+  --sd-theme-add-widget-modal-accent-surface-15: rgba(34, 211, 238, 0.34);
+  --sd-theme-add-widget-modal-accent-surface-16: rgba(8, 145, 178, 0.28);
+  --sd-theme-add-widget-modal-accent-surface-17: rgba(8, 47, 73, 0.18);
+  --sd-theme-add-widget-modal-accent-surface-18: rgba(244, 114, 182, 0.34);
+  --sd-theme-add-widget-modal-accent-surface-19: rgba(190, 24, 93, 0.26);
+  --sd-theme-add-widget-modal-accent-surface-20: rgba(80, 7, 36, 0.18);
+  --sd-theme-add-widget-modal-accent-surface-21: rgba(71, 85, 105, 0.3);
+  --sd-theme-add-widget-modal-accent-surface-22: rgba(15, 23, 42, 0.2);
+  --sd-theme-add-widget-modal-accent-surface-23: rgb(14, 16, 20);
+  --sd-theme-add-widget-modal-accent-surface-24: #1b4d47;
+  --sd-theme-add-widget-modal-accent-surface-25: rgb(255, 201, 39);
+  --sd-theme-add-widget-modal-accent-surface-26: rgb(255, 164, 3);
+  --sd-theme-add-widget-modal-accent-text-01: #075985;
+  --sd-theme-add-widget-modal-accent-text-02: rgb(52, 110, 253);
+  --sd-theme-add-widget-modal-accent-text-03: #64748b;
+  --sd-theme-add-widget-modal-accent-text-04: #475569;
+  --sd-theme-add-widget-modal-accent-text-05: #991b1b;
+  --sd-theme-add-widget-modal-accent-text-06: #0369a1;
+  --sd-theme-add-widget-modal-border-01: rgba(223, 221, 221, 0.55);
+  --sd-theme-add-widget-modal-border-02: rgba(223, 221, 221, 0.58);
+  --sd-theme-add-widget-modal-border-03: rgba(0, 0, 0, 0.08);
+  --sd-theme-add-widget-modal-border-04: rgb(147, 147, 147);
+  --sd-theme-add-widget-modal-border-05: rgba(148, 163, 184, 0.22);
+  --sd-theme-add-widget-modal-border-06: rgba(148, 163, 184, 0.32);
+  --sd-theme-add-widget-modal-shadow-01: rgba(0, 0, 0, 0.16);
+  --sd-theme-add-widget-modal-shadow-02: rgb(24, 144, 255);
+  --sd-theme-add-widget-modal-surface-01: rgba(0, 0, 0, 0.22);
+  --sd-theme-add-widget-modal-surface-02: rgba(255, 255, 255, 0.18);
+  --sd-theme-add-widget-modal-surface-03: rgba(255, 255, 255, 0.11);
+  --sd-theme-add-widget-modal-surface-04: rgba(255, 255, 255, 0.1);
+  --sd-theme-add-widget-modal-surface-05: rgba(223, 221, 221, 0.55);
+  --sd-theme-add-widget-modal-surface-06: rgba(255, 255, 255, 0.12);
+  --sd-theme-add-widget-modal-surface-07: rgba(0, 0, 0, 0.32);
+  --sd-theme-add-widget-modal-surface-08: rgba(255, 255, 255, 0.14);
+  --sd-theme-add-widget-modal-surface-09: rgba(203, 213, 225, 0.25);
+  --sd-theme-add-widget-modal-surface-10: rgba(0, 0, 0, 0.18);
+  --sd-theme-add-widget-modal-surface-11: rgba(0, 0, 0, 0.58);
+  --sd-theme-add-widget-modal-surface-12: #000;
+  --sd-theme-add-widget-modal-surface-13: rgba(0, 0, 0, 0.3);
+  --sd-theme-add-widget-modal-surface-14: rgba(0, 0, 0, 0.45);
+  --sd-theme-add-widget-modal-surface-15: #fff;
+  --sd-theme-add-widget-modal-surface-16: rgba(255, 255, 255, 0.58);
+  --sd-theme-add-widget-modal-surface-17: rgba(254, 226, 226, 0.72);
+  --sd-theme-add-widget-modal-surface-18: rgba(255, 255, 255, 0.72);
+  --sd-theme-add-widget-modal-surface-19: #e0f2fe;
+  --sd-theme-add-widget-modal-surface-20: rgb(44, 44, 44);
+  --sd-theme-add-widget-modal-text-01: rgb(223, 221, 221);
+  --sd-theme-add-widget-modal-text-02: rgba(223, 221, 221, 0.82);
+  --sd-theme-add-widget-modal-text-03: rgba(223, 221, 221, 0.96);
+  --sd-theme-add-widget-modal-text-04: #fff;
+  --sd-theme-add-widget-modal-text-05: rgba(255, 255, 255, 0.28);
+  --sd-theme-add-widget-modal-text-06: rgba(223, 221, 221, 0.92);
+  --sd-theme-add-widget-modal-text-07: rgba(223, 221, 221, 0.64);
+  --sd-theme-add-widget-modal-text-08: rgba(255, 255, 255, 0.92);
+  --sd-theme-add-widget-modal-text-09: rgba(255, 255, 255, 0.52);
+  --sd-theme-add-widget-modal-text-10: rgba(255, 255, 255, 0.72);
+  --sd-theme-add-widget-modal-text-11: rgba(0, 0, 0, 0.82);
+  --sd-theme-add-widget-modal-text-12: rgba(0, 0, 0, 0.78);
+  --sd-theme-add-widget-modal-text-13: rgba(223, 221, 221, 0.78);
+  --sd-theme-add-widget-modal-text-14: #94a3b8;
+  --sd-theme-add-widget-modal-text-15: rgb(207, 211, 220);
+  --sd-theme-custom-css-widget-accent-border-01: #2563eb;
+  --sd-theme-custom-css-widget-accent-surface-01: #2563eb;
+  --sd-theme-custom-css-widget-accent-text-01: #0f172a;
+  --sd-theme-custom-css-widget-accent-text-02: #64748b;
+  --sd-theme-custom-css-widget-accent-text-03: #0369a1;
+  --sd-theme-custom-css-widget-border-01: rgb(226 232 240);
+  --sd-theme-custom-css-widget-border-02: rgb(203 213 225);
+  --sd-theme-custom-css-widget-surface-01: #fff;
+  --sd-theme-custom-css-widget-surface-02: #f8fafc;
+  --sd-theme-custom-css-widget-surface-03: #e0f2fe;
+  --sd-theme-custom-css-widget-text-01: #fff;
+  --sd-theme-docker-widget-accent-surface-01: rgb(15 23 42 / 0.92);
+  --sd-theme-docker-widget-accent-surface-02: rgb(17 24 39);
+  --sd-theme-docker-widget-accent-surface-03: #22c55e;
+  --sd-theme-docker-widget-accent-surface-04: #ef4444;
+  --sd-theme-docker-widget-accent-surface-05: #3b82f6;
+  --sd-theme-docker-widget-accent-surface-06: rgb(245 158 11 / 0.12);
+  --sd-theme-docker-widget-accent-surface-07: rgb(239 68 68 / 0.1);
+  --sd-theme-docker-widget-accent-surface-08: #8b5cf6;
+  --sd-theme-docker-widget-accent-text-01: #0f172a;
+  --sd-theme-docker-widget-accent-text-02: #2563eb;
+  --sd-theme-docker-widget-accent-text-03: #64748b;
+  --sd-theme-docker-widget-accent-text-04: #1d4ed8;
+  --sd-theme-docker-widget-accent-text-05: #111827;
+  --sd-theme-docker-widget-accent-text-06: #ef4444;
+  --sd-theme-docker-widget-accent-text-07: #b45309;
+  --sd-theme-docker-widget-accent-text-08: #dc2626;
+  --sd-theme-docker-widget-border-01: rgb(203 213 225 / 0.9);
+  --sd-theme-docker-widget-border-02: rgb(203 213 225 / 0.8);
+  --sd-theme-docker-widget-border-03: rgb(255 255 255 / 0.12);
+  --sd-theme-docker-widget-border-04: rgb(226 232 240 / 0.78);
+  --sd-theme-docker-widget-border-05: rgb(226 232 240 / 0.7);
+  --sd-theme-docker-widget-border-06: rgb(226 232 240 / 0.68);
+  --sd-theme-docker-widget-border-07: rgb(226 232 240 / 0.8);
+  --sd-theme-docker-widget-border-08: rgb(226 232 240 / 0.76);
+  --sd-theme-docker-widget-border-09: rgb(226 232 240 / 0.86);
+  --sd-theme-docker-widget-shadow-01: rgb(15 23 42 / 0.06);
+  --sd-theme-docker-widget-shadow-02: rgb(15 23 42 / 0.16);
+  --sd-theme-docker-widget-shadow-03: rgb(34 197 94 / 0.14);
+  --sd-theme-docker-widget-surface-01: #fff;
+  --sd-theme-docker-widget-surface-02: #f2f2f5;
+  --sd-theme-docker-widget-surface-03: #f8fafc;
+  --sd-theme-docker-widget-surface-04: rgb(255 255 255);
+  --sd-theme-docker-widget-surface-05: #94a3b8;
+  --sd-theme-docker-widget-surface-06: rgb(241 245 249 / 0.74);
+  --sd-theme-docker-widget-surface-07: rgb(241 245 249 / 0.9);
+  --sd-theme-docker-widget-surface-08: rgb(248 250 252);
+  --sd-theme-docker-widget-surface-09: rgb(226 232 240 / 0.8);
+  --sd-theme-docker-widget-surface-10: #e5e7eb;
+  --sd-theme-docker-widget-surface-11: #d1d5db;
+  --sd-theme-docker-widget-text-01: #f8fafc;
+  --sd-theme-docker-widget-text-02: #94a3b8;
+  --sd-theme-edit-modal-accent-01: rgb(24, 144, 255);
+  --sd-theme-edit-modal-accent-border-01: rgba(24, 144, 255, 0.5);
+  --sd-theme-edit-modal-accent-border-02: rgba(24, 144, 255, 0.36);
+  --sd-theme-edit-modal-accent-border-03: rgba(24, 144, 255, 0.52);
+  --sd-theme-edit-modal-accent-border-04: rgba(255, 70, 82, 0.42);
+  --sd-theme-edit-modal-accent-border-05: rgba(24, 144, 255, 0.48);
+  --sd-theme-edit-modal-accent-surface-01: rgba(24, 144, 255, 0.14);
+  --sd-theme-edit-modal-accent-surface-02: rgba(255, 70, 82, 0.1);
+  --sd-theme-edit-modal-accent-surface-03: rgb(24, 144, 255);
+  --sd-theme-edit-modal-accent-text-01: rgb(255, 143, 151);
+  --sd-theme-edit-modal-border-01: rgba(255, 255, 255, 0.1);
+  --sd-theme-edit-modal-border-02: rgba(255, 255, 255, 0.18);
+  --sd-theme-edit-modal-border-03: rgba(255, 255, 255, 0.11);
+  --sd-theme-edit-modal-border-04: rgba(255, 255, 255, 0.16);
+  --sd-theme-edit-modal-shadow-01: rgba(0, 0, 0, 0.18);
+  --sd-theme-edit-modal-shadow-02: rgba(24, 144, 255, 0.16);
+  --sd-theme-edit-modal-surface-01: rgba(255, 255, 255, 0.04);
+  --sd-theme-edit-modal-surface-02: rgba(255, 255, 255, 0.24);
+  --sd-theme-edit-modal-surface-03: rgba(255, 255, 255, 0.055);
+  --sd-theme-edit-modal-surface-04: rgba(255, 255, 255, 0.1);
+  --sd-theme-edit-modal-surface-05: rgba(255, 255, 255, 0.08);
+  --sd-theme-edit-modal-surface-06: rgba(255, 255, 255, 0.14);
+  --sd-theme-edit-modal-surface-07: rgba(255, 255, 255, 0.12);
+  --sd-theme-edit-modal-surface-08: rgba(255, 255, 255, 0.075);
+  --sd-theme-edit-modal-text-01: rgb(223, 221, 221);
+  --sd-theme-edit-modal-text-02: rgba(223, 221, 221, 0.8);
+  --sd-theme-edit-modal-text-03: rgba(223, 221, 221, 0.68);
+  --sd-theme-edit-modal-text-04: rgba(223, 221, 221, 0.76);
+  --sd-theme-edit-modal-text-05: rgba(223, 221, 221, 0.4);
+  --sd-theme-edit-modal-text-06: rgba(223, 221, 221, 0.5);
+  --sd-theme-grid-panel-accent-border-01: rgba(255, 215, 0, 0.2);
+  --sd-theme-grid-panel-accent-border-02: rgba(255, 215, 0, 0.6);
+  --sd-theme-grid-panel-accent-border-03: rgba(255, 215, 0, 0.3);
+  --sd-theme-grid-panel-accent-surface-01: rgba(255, 215, 0, 0.1);
+  --sd-theme-grid-panel-accent-text-01: #ffd700;
+  --sd-theme-grid-panel-accent-text-02: #ff4500;
+  --sd-theme-grid-panel-border-01: #9ca3af;
+  --sd-theme-grid-panel-border-02: rgba(255, 255, 255, 0.36);
+  --sd-theme-grid-panel-fill-01: #ffffff;
+  --sd-theme-grid-panel-shadow-01: rgba(0, 0, 0, 0.6);
+  --sd-theme-grid-panel-shadow-02: rgba(0, 0, 0, 0.12);
+  --sd-theme-grid-panel-shadow-03: rgba(0, 0, 0, 0.42);
+  --sd-theme-grid-panel-shadow-04: rgba(0, 0, 0, 0.5);
+  --sd-theme-grid-panel-shadow-05: rgba(0, 0, 0, 0.8);
+  --sd-theme-grid-panel-shadow-06: rgba(255, 215, 0, 0.2);
+  --sd-theme-grid-panel-shadow-07: rgba(255, 215, 0, 0.3);
+  --sd-theme-grid-panel-shadow-08: rgba(255, 69, 0, 0.5);
+  --sd-theme-grid-panel-surface-01: rgba(255, 255, 255, 0.5);
+  --sd-theme-grid-panel-surface-02: rgba(239, 246, 250, 0.74);
+  --sd-theme-grid-panel-surface-03: rgba(255, 255, 255, 0.18);
+  --sd-theme-grid-panel-surface-04: rgba(11, 11, 11, 0.7);
+  --sd-theme-grid-panel-surface-05: rgba(255, 255, 255, 0.14);
+  --sd-theme-grid-panel-surface-06: rgba(255, 255, 255, 0.2);
+  --sd-theme-grid-panel-surface-07: rgba(0, 0, 0, 0.2);
+  --sd-theme-grid-panel-surface-08: #000000;
+  --sd-theme-grid-panel-surface-09: rgba(255, 255, 255, 0.05);
+  --sd-theme-grid-panel-surface-10: rgba(255, 255, 255, 0.1);
+  --sd-theme-grid-panel-text-01: #20242a;
+  --sd-theme-grid-panel-text-02: rgba(0, 0, 0, 0.58);
+  --sd-theme-grid-panel-text-03: rgba(0, 0, 0, 0.42);
+  --sd-theme-grid-panel-text-04: rgba(255, 255, 255, 0.86);
+  --sd-theme-grid-panel-text-05: rgba(255, 255, 255, 0.72);
+  --sd-theme-grid-panel-text-06: #fff;
+  --sd-theme-grid-panel-text-07: rgba(255, 255, 255, 0.55);
+  --sd-theme-grid-panel-text-08: #2a2a2a;
+  --sd-theme-grid-panel-text-09: #000000;
+  --sd-theme-group-selector-surface-01: rgba(156, 163, 175, 0.3);
+  --sd-theme-group-selector-surface-02: rgba(156, 163, 175, 0.5);
+  --sd-theme-group-settings-modal-accent-border-01: rgba(24, 144, 255, 0.42);
+  --sd-theme-group-settings-modal-accent-border-02: rgba(255, 70, 82, 0.32);
+  --sd-theme-group-settings-modal-accent-surface-01: rgba(24, 144, 255, 0.18);
+  --sd-theme-group-settings-modal-accent-surface-02: rgb(24, 144, 255);
+  --sd-theme-group-settings-modal-accent-surface-03: #3b82f6;
+  --sd-theme-group-settings-modal-accent-text-01: rgb(255, 143, 151);
+  --sd-theme-group-settings-modal-accent-text-02: rgb(118, 188, 255);
+  --sd-theme-group-settings-modal-border-01: rgba(255, 255, 255, 0.12);
+  --sd-theme-group-settings-modal-border-02: rgba(255, 255, 255, 0.1);
+  --sd-theme-group-settings-modal-border-03: rgba(255, 255, 255, 0.16);
+  --sd-theme-group-settings-modal-border-04: rgba(255, 255, 255, 0.11);
+  --sd-theme-group-settings-modal-surface-01: rgba(255, 255, 255, 0.1);
+  --sd-theme-group-settings-modal-surface-02: rgba(255, 255, 255, 0.15);
+  --sd-theme-group-settings-modal-surface-03: rgba(255, 255, 255, 0.075);
+  --sd-theme-group-settings-modal-surface-04: rgba(255, 255, 255, 0.06);
+  --sd-theme-group-settings-modal-surface-05: rgba(255, 255, 255, 0.08);
+  --sd-theme-group-settings-modal-surface-06: rgba(255, 255, 255, 0.12);
+  --sd-theme-group-settings-modal-surface-07: rgba(255, 255, 255, 0.18);
+  --sd-theme-group-settings-modal-surface-08: #e5e7eb;
+  --sd-theme-group-settings-modal-text-01: rgba(223, 221, 221, 0.48);
+  --sd-theme-group-settings-modal-text-02: rgb(223, 221, 221);
+  --sd-theme-group-settings-modal-text-03: rgba(223, 221, 221, 0.68);
+  --sd-theme-group-settings-modal-text-04: rgba(223, 221, 221, 0.86);
+  --sd-theme-group-settings-modal-text-05: rgba(223, 221, 221, 0.58);
+  --sd-theme-group-settings-modal-text-06: rgba(223, 221, 221, 0.54);
+  --sd-theme-group-settings-modal-text-07: rgba(223, 221, 221, 0.72);
+  --sd-theme-group-settings-modal-text-08: rgba(223, 221, 221, 0.62);
+  --sd-theme-group-settings-modal-text-09: rgba(223, 221, 221, 0.4);
+  --sd-theme-group-settings-modal-text-10: #ffffff;
+  --sd-theme-home-main-widget-shell-accent-surface-01: rgba(127, 29, 29, 0.9);
+  --sd-theme-home-main-widget-shell-shadow-01: rgba(0, 0, 0, 0.72);
+  --sd-theme-home-main-widget-shell-text-01: #15171c;
+  --sd-theme-home-main-widget-shell-text-02: #fff;
+  --sd-theme-icon-shape-fill-01: rgb(243 244 246);
+  --sd-theme-icon-shape-fill-02: #ffffff;
+  --sd-theme-itab-anniversary-anniversary-card-accent-surface-01: #db5c76;
+  --sd-theme-itab-anniversary-anniversary-card-accent-text-01: #db5c76;
+  --sd-theme-itab-anniversary-anniversary-card-shadow-01: rgba(0, 0, 0, 0.1);
+  --sd-theme-itab-anniversary-anniversary-card-shadow-02: rgba(0, 0, 0, 0.2);
+  --sd-theme-itab-anniversary-anniversary-card-surface-01: #fff;
+  --sd-theme-itab-anniversary-anniversary-card-text-01: #fff;
+  --sd-theme-itab-anniversary-anniversary-opened-panel-accent-border-01: rgb(
+    33,
+    150,
+    243
+  );
+  --sd-theme-itab-anniversary-anniversary-opened-panel-accent-surface-01: #f04242;
+  --sd-theme-itab-anniversary-anniversary-opened-panel-accent-surface-02: #ffb322;
+  --sd-theme-itab-anniversary-anniversary-opened-panel-accent-surface-03: #77d24b;
+  --sd-theme-itab-anniversary-anniversary-opened-panel-accent-surface-04: #3aa3ff;
+  --sd-theme-itab-anniversary-anniversary-opened-panel-accent-surface-05: #8d4dff;
+  --sd-theme-itab-anniversary-anniversary-opened-panel-accent-surface-06: rgb(
+    33,
+    150,
+    243
+  );
+  --sd-theme-itab-anniversary-anniversary-opened-panel-accent-text-01: rgb(
+    33,
+    150,
+    243
+  );
+  --sd-theme-itab-anniversary-anniversary-opened-panel-border-01: rgba(
+    0,
+    0,
+    0,
+    0.18
+  );
+  --sd-theme-itab-anniversary-anniversary-opened-panel-border-02: rgba(
+    0,
+    0,
+    0,
+    0.32
+  );
+  --sd-theme-itab-anniversary-anniversary-opened-panel-border-03: rgb(
+    228,
+    231,
+    237
+  );
+  --sd-theme-itab-anniversary-anniversary-opened-panel-border-04: rgba(
+    255,
+    255,
+    255,
+    0.02
+  );
+  --sd-theme-itab-anniversary-anniversary-opened-panel-border-05: rgb(
+    220,
+    223,
+    230
+  );
+  --sd-theme-itab-anniversary-anniversary-opened-panel-fill-01: rgba(
+    0,
+    0,
+    0,
+    0.55
+  );
+  --sd-theme-itab-anniversary-anniversary-opened-panel-shadow-01: rgb(
+    255,
+    255,
+    255
+  );
+  --sd-theme-itab-anniversary-anniversary-opened-panel-shadow-02: rgb(
+    24,
+    144,
+    255
+  );
+  --sd-theme-itab-anniversary-anniversary-opened-panel-shadow-03: rgba(
+    0,
+    0,
+    0,
+    0.1
+  );
+  --sd-theme-itab-anniversary-anniversary-opened-panel-shadow-04: rgba(
+    255,
+    255,
+    255,
+    0.15
+  );
+  --sd-theme-itab-anniversary-anniversary-opened-panel-shadow-05: rgba(
+    0,
+    0,
+    0,
+    0.32
+  );
+  --sd-theme-itab-anniversary-anniversary-opened-panel-shadow-06: rgba(
+    255,
+    255,
+    255,
+    0.08
+  );
+  --sd-theme-itab-anniversary-anniversary-opened-panel-surface-01: rgb(
+    255,
+    255,
+    255
+  );
+  --sd-theme-itab-anniversary-anniversary-opened-panel-surface-02: rgb(
+    245,
+    245,
+    245
+  );
+  --sd-theme-itab-anniversary-anniversary-opened-panel-surface-03: rgba(
+    0,
+    0,
+    0,
+    0.1
+  );
+  --sd-theme-itab-anniversary-anniversary-opened-panel-surface-04: rgba(
+    0,
+    0,
+    0,
+    0.28
+  );
+  --sd-theme-itab-anniversary-anniversary-opened-panel-surface-05: rgba(
+    255,
+    255,
+    255,
+    0.14
+  );
+  --sd-theme-itab-anniversary-anniversary-opened-panel-surface-06: rgba(
+    0,
+    0,
+    0,
+    0.16
+  );
+  --sd-theme-itab-anniversary-anniversary-opened-panel-surface-07: rgba(
+    0,
+    0,
+    0,
+    0.45
+  );
+  --sd-theme-itab-anniversary-anniversary-opened-panel-surface-08: rgba(
+    255,
+    255,
+    255,
+    0.58
+  );
+  --sd-theme-itab-anniversary-anniversary-opened-panel-surface-09: rgb(
+    29,
+    30,
+    31
+  );
+  --sd-theme-itab-anniversary-anniversary-opened-panel-surface-10: rgb(
+    44,
+    44,
+    44
+  );
+  --sd-theme-itab-anniversary-anniversary-opened-panel-surface-11: rgba(
+    29,
+    30,
+    31,
+    0.64
+  );
+  --sd-theme-itab-anniversary-anniversary-opened-panel-surface-12: rgba(
+    29,
+    30,
+    31,
+    0
+  );
+  --sd-theme-itab-anniversary-anniversary-opened-panel-surface-13: #fff;
+  --sd-theme-itab-anniversary-anniversary-opened-panel-surface-14: rgb(
+    245,
+    247,
+    250
+  );
+  --sd-theme-itab-anniversary-anniversary-opened-panel-surface-15: rgba(
+    255,
+    255,
+    255,
+    0.06
+  );
+  --sd-theme-itab-anniversary-anniversary-opened-panel-surface-16: rgba(
+    255,
+    255,
+    255,
+    0.12
+  );
+  --sd-theme-itab-anniversary-anniversary-opened-panel-surface-17: rgba(
+    255,
+    255,
+    255,
+    0.86
+  );
+  --sd-theme-itab-anniversary-anniversary-opened-panel-surface-18: rgba(
+    255,
+    255,
+    255,
+    0.16
+  );
+  --sd-theme-itab-anniversary-anniversary-opened-panel-text-01: rgb(34, 34, 34);
+  --sd-theme-itab-anniversary-anniversary-opened-panel-text-02: rgba(
+    0,
+    0,
+    0,
+    0.42
+  );
+  --sd-theme-itab-anniversary-anniversary-opened-panel-text-03: rgba(
+    0,
+    0,
+    0,
+    0.55
+  );
+  --sd-theme-itab-anniversary-anniversary-opened-panel-text-04: rgba(
+    0,
+    0,
+    0,
+    0.6
+  );
+  --sd-theme-itab-anniversary-anniversary-opened-panel-text-05: #fff;
+  --sd-theme-itab-anniversary-anniversary-opened-panel-text-06: rgb(
+    238,
+    238,
+    238
+  );
+  --sd-theme-itab-anniversary-anniversary-opened-panel-text-07: rgba(
+    0,
+    0,
+    0,
+    0.18
+  );
+  --sd-theme-itab-anniversary-anniversary-opened-panel-text-08: rgba(
+    0,
+    0,
+    0,
+    0.8
+  );
+  --sd-theme-itab-anniversary-anniversary-opened-panel-text-09: rgb(
+    96,
+    98,
+    102
+  );
+  --sd-theme-itab-anniversary-anniversary-opened-panel-text-10: rgba(
+    255,
+    255,
+    255,
+    0.8
+  );
+  --sd-theme-itab-anniversary-anniversary-opened-panel-text-11: rgba(
+    0,
+    0,
+    0,
+    0.56
+  );
+  --sd-theme-itab-anniversary-anniversary-opened-panel-text-12: #606266;
+  --sd-theme-itab-anniversary-anniversary-opened-panel-text-13: rgb(
+    206,
+    207,
+    209
+  );
+  --sd-theme-itab-anniversary-anniversary-opened-panel-text-14: rgba(
+    255,
+    255,
+    255,
+    0.66
+  );
+  --sd-theme-itab-anniversary-anniversary-opened-panel-text-15: rgba(
+    255,
+    255,
+    255,
+    0.9
+  );
+  --sd-theme-itab-anniversary-anniversary-opened-panel-text-16: #888;
+  --sd-theme-itab-anniversary-anniversary-opened-panel-text-17: rgba(
+    0,
+    0,
+    0,
+    0.86
+  );
+  --sd-theme-itab-calendar-calendar-opened-panel-accent-surface-01: rgb(
+    54,
+    125,
+    241
+  );
+  --sd-theme-itab-calendar-calendar-opened-panel-accent-surface-02: rgba(
+    255,
+    76,
+    91,
+    0.07
+  );
+  --sd-theme-itab-calendar-calendar-opened-panel-accent-surface-03: #ff4d5f;
+  --sd-theme-itab-calendar-calendar-opened-panel-accent-surface-04: #506176;
+  --sd-theme-itab-calendar-calendar-opened-panel-accent-surface-05: #ef5b71;
+  --sd-theme-itab-calendar-calendar-opened-panel-accent-surface-06: #d85cc8;
+  --sd-theme-itab-calendar-calendar-opened-panel-accent-surface-07: #3d93ef;
+  --sd-theme-itab-calendar-calendar-opened-panel-accent-surface-08: #3fbf75;
+  --sd-theme-itab-calendar-calendar-opened-panel-accent-surface-09: #e25a61;
+  --sd-theme-itab-calendar-calendar-opened-panel-accent-text-01: #d84a58;
+  --sd-theme-itab-calendar-calendar-opened-panel-accent-text-02: rgba(
+    216,
+    74,
+    88,
+    0.56
+  );
+  --sd-theme-itab-calendar-calendar-opened-panel-accent-text-03: rgb(
+    54,
+    125,
+    241
+  );
+  --sd-theme-itab-calendar-calendar-opened-panel-border-01: #ddd;
+  --sd-theme-itab-calendar-calendar-opened-panel-shadow-01: rgba(0, 0, 0, 0.16);
+  --sd-theme-itab-calendar-calendar-opened-panel-shadow-02: rgba(0, 0, 0, 0.06);
+  --sd-theme-itab-calendar-calendar-opened-panel-shadow-03: rgba(0, 0, 0, 0.18);
+  --sd-theme-itab-calendar-calendar-opened-panel-shadow-04: rgba(0, 0, 0, 0.2);
+  --sd-theme-itab-calendar-calendar-opened-panel-shadow-05: rgba(0, 0, 0, 0.04);
+  --sd-theme-itab-calendar-calendar-opened-panel-shadow-06: rgba(
+    54,
+    125,
+    241,
+    0.18
+  );
+  --sd-theme-itab-calendar-calendar-opened-panel-shadow-07: rgba(0, 0, 0, 0.08);
+  --sd-theme-itab-calendar-calendar-opened-panel-surface-01: #fff;
+  --sd-theme-itab-calendar-calendar-opened-panel-surface-02: rgb(240, 241, 244);
+  --sd-theme-itab-calendar-calendar-opened-panel-surface-03: #e7ebf3;
+  --sd-theme-itab-calendar-calendar-opened-panel-surface-04: rgba(
+    255,
+    255,
+    255,
+    0.98
+  );
+  --sd-theme-itab-calendar-calendar-opened-panel-surface-05: #e9e9ec;
+  --sd-theme-itab-calendar-calendar-opened-panel-surface-06: rgba(0, 0, 0, 0.2);
+  --sd-theme-itab-calendar-calendar-opened-panel-surface-07: #e9e9ef;
+  --sd-theme-itab-calendar-calendar-opened-panel-surface-08: rgba(
+    0,
+    0,
+    0,
+    0.04
+  );
+  --sd-theme-itab-calendar-calendar-opened-panel-surface-09: rgba(
+    0,
+    0,
+    0,
+    0.025
+  );
+  --sd-theme-itab-calendar-calendar-opened-panel-surface-10: #f5f6f8;
+  --sd-theme-itab-calendar-calendar-opened-panel-surface-11: rgba(
+    48,
+    52,
+    59,
+    0.18
+  );
+  --sd-theme-itab-calendar-calendar-opened-panel-surface-12: #eef4ff;
+  --sd-theme-itab-calendar-calendar-opened-panel-surface-13: #f4f4f5;
+  --sd-theme-itab-calendar-calendar-opened-panel-surface-14: rgba(
+    255,
+    255,
+    255,
+    0.85
+  );
+  --sd-theme-itab-calendar-calendar-opened-panel-surface-15: #8a8a8a;
+  --sd-theme-itab-calendar-calendar-opened-panel-text-01: #222;
+  --sd-theme-itab-calendar-calendar-opened-panel-text-02: #7b7f88;
+  --sd-theme-itab-calendar-calendar-opened-panel-text-03: #4d5564;
+  --sd-theme-itab-calendar-calendar-opened-panel-text-04: #444b57;
+  --sd-theme-itab-calendar-calendar-opened-panel-text-05: #fff;
+  --sd-theme-itab-calendar-calendar-opened-panel-text-06: #5b6472;
+  --sd-theme-itab-calendar-calendar-opened-panel-text-07: #555;
+  --sd-theme-itab-calendar-calendar-opened-panel-text-08: #8c929c;
+  --sd-theme-itab-calendar-calendar-opened-panel-text-09: rgba(0, 0, 0, 0.04);
+  --sd-theme-itab-calendar-calendar-opened-panel-text-10: rgba(
+    34,
+    34,
+    34,
+    0.42
+  );
+  --sd-theme-itab-calendar-calendar-opened-panel-text-11: #30343b;
+  --sd-theme-itab-calendar-calendar-opened-panel-text-12: #6c7480;
+  --sd-theme-itab-calendar-calendar-opened-panel-text-13: #777;
+  --sd-theme-itab-calendar-calendar-opened-panel-text-14: #888;
+  --sd-theme-itab-calendar-calendar-widget-accent-surface-01: #ff4d5f;
+  --sd-theme-itab-calendar-calendar-widget-accent-surface-02: #ff6571;
+  --sd-theme-itab-calendar-calendar-widget-accent-surface-03: #e9485a;
+  --sd-theme-itab-calendar-calendar-widget-accent-text-01: rgb(216, 48, 48);
+  --sd-theme-itab-calendar-calendar-widget-accent-text-02: #d84a58;
+  --sd-theme-itab-calendar-calendar-widget-surface-01: #fff;
+  --sd-theme-itab-calendar-calendar-widget-text-01: #222;
+  --sd-theme-itab-calendar-calendar-widget-text-02: #fff;
+  --sd-theme-itab-calendar-calendar-widget-text-03: #1f1f1f;
+  --sd-theme-itab-calendar-calendar-widget-text-04: #999;
+  --sd-theme-itab-calendar-calendar-widget-text-05: rgba(0, 0, 0, 0.8);
+  --sd-theme-itab-calendar-calendar-widget-text-06: #202124;
+  --sd-theme-itab-calendar-calendar-widget-text-07: rgba(34, 34, 34, 0.46);
+  --sd-theme-itab-clock-clock-opened-panel-accent-border-01: #1890ff;
+  --sd-theme-itab-clock-clock-opened-panel-accent-surface-01: #1890ff;
+  --sd-theme-itab-clock-clock-opened-panel-border-01: rgba(0, 0, 0, 0.62);
+  --sd-theme-itab-clock-clock-opened-panel-border-02: #dcdfe6;
+  --sd-theme-itab-clock-clock-opened-panel-shadow-01: rgba(0, 0, 0, 0.7);
+  --sd-theme-itab-clock-clock-opened-panel-shadow-02: rgba(255, 255, 255, 0.03);
+  --sd-theme-itab-clock-clock-opened-panel-surface-01: #000;
+  --sd-theme-itab-clock-clock-opened-panel-surface-02: #1f1f1f;
+  --sd-theme-itab-clock-clock-opened-panel-surface-03: #181818;
+  --sd-theme-itab-clock-clock-opened-panel-surface-04: #171717;
+  --sd-theme-itab-clock-clock-opened-panel-surface-05: #1d1d1d;
+  --sd-theme-itab-clock-clock-opened-panel-surface-06: rgba(0, 0, 0, 0.76);
+  --sd-theme-itab-clock-clock-opened-panel-surface-07: #dcdfe6;
+  --sd-theme-itab-clock-clock-opened-panel-surface-08: #fff;
+  --sd-theme-itab-clock-clock-opened-panel-text-01: rgba(255, 255, 255, 0.64);
+  --sd-theme-itab-clock-clock-opened-panel-text-02: #222;
+  --sd-theme-itab-clock-clock-opened-panel-text-03: #bdbdbd;
+  --sd-theme-itab-clock-clock-opened-panel-text-04: #ccc;
+  --sd-theme-itab-clock-clock-opened-panel-text-05: rgba(255, 255, 255, 0.28);
+  --sd-theme-itab-clock-clock-opened-panel-text-06: #fff;
+  --sd-theme-itab-clock-clock-widget-surface-01: #111;
+  --sd-theme-itab-clock-clock-widget-text-01: #fff;
+  --sd-theme-itab-daily-english-daily-english-opened-panel-surface-01: #000;
+  --sd-theme-itab-daily-english-daily-english-opened-panel-surface-02: rgba(
+    0,
+    0,
+    0,
+    0
+  );
+  --sd-theme-itab-daily-english-daily-english-opened-panel-surface-03: rgb(
+    51,
+    51,
+    51
+  );
+  --sd-theme-itab-daily-english-daily-english-opened-panel-text-01: #fff;
+  --sd-theme-itab-daily-english-daily-english-opened-panel-text-02: rgba(
+    255,
+    255,
+    255,
+    0.72
+  );
+  --sd-theme-itab-daily-english-daily-english-widget-surface-01: #000;
+  --sd-theme-itab-daily-english-daily-english-widget-text-01: #fff;
+  --sd-theme-itab-daily-english-daily-english-widget-text-02: rgba(
+    255,
+    255,
+    255,
+    0.5
+  );
+  --sd-theme-itab-daily-english-daily-english-widget-text-03: rgba(
+    255,
+    255,
+    255,
+    0.7
+  );
+  --sd-theme-itab-food-picker-food-picker-opened-panel-accent-border-01: rgba(
+    31,
+    41,
+    55,
+    0.16
+  );
+  --sd-theme-itab-food-picker-food-picker-opened-panel-accent-border-02: rgba(
+    243,
+    155,
+    45,
+    0.72
+  );
+  --sd-theme-itab-food-picker-food-picker-opened-panel-accent-surface-01: rgba(
+    255,
+    225,
+    142,
+    0.84
+  );
+  --sd-theme-itab-food-picker-food-picker-opened-panel-accent-surface-02: #ffbd59;
+  --sd-theme-itab-food-picker-food-picker-opened-panel-accent-surface-03: #ff8d59;
+  --sd-theme-itab-food-picker-food-picker-opened-panel-accent-surface-04: #ffd75e;
+  --sd-theme-itab-food-picker-food-picker-opened-panel-accent-surface-05: #8adf89;
+  --sd-theme-itab-food-picker-food-picker-opened-panel-accent-surface-06: #70c7ff;
+  --sd-theme-itab-food-picker-food-picker-opened-panel-accent-surface-07: #b58cff;
+  --sd-theme-itab-food-picker-food-picker-opened-panel-accent-surface-08: #f39b2d;
+  --sd-theme-itab-food-picker-food-picker-opened-panel-accent-surface-09: rgba(
+    31,
+    41,
+    55,
+    0.08
+  );
+  --sd-theme-itab-food-picker-food-picker-opened-panel-accent-text-01: #1f2937;
+  --sd-theme-itab-food-picker-food-picker-opened-panel-accent-text-02: #111827;
+  --sd-theme-itab-food-picker-food-picker-opened-panel-accent-text-03: rgba(
+    31,
+    41,
+    55,
+    0.58
+  );
+  --sd-theme-itab-food-picker-food-picker-opened-panel-shadow-01: rgba(
+    243,
+    155,
+    45,
+    0.16
+  );
+  --sd-theme-itab-food-picker-food-picker-opened-panel-surface-01: #fff;
+  --sd-theme-itab-food-picker-food-picker-opened-panel-surface-02: rgba(
+    255,
+    255,
+    255,
+    0.72
+  );
+  --sd-theme-itab-food-picker-food-picker-opened-panel-text-01: #fff;
+  --sd-theme-itab-food-picker-food-picker-widget-accent-surface-01: #f39b2d;
+  --sd-theme-itab-food-picker-food-picker-widget-accent-text-01: #1f2937;
+  --sd-theme-itab-food-picker-food-picker-widget-shadow-01: rgb(242, 178, 65);
+  --sd-theme-itab-food-picker-food-picker-widget-surface-01: #fff;
+  --sd-theme-itab-food-picker-food-picker-widget-text-01: #fff;
+  --sd-theme-itab-ip-ip-opened-panel-accent-text-01: #b56b00;
+  --sd-theme-itab-ip-ip-opened-panel-surface-01: #fff;
+  --sd-theme-itab-ip-ip-opened-panel-text-01: #141414;
+  --sd-theme-itab-ip-ip-opened-panel-text-02: #111;
+  --sd-theme-itab-ip-ip-widget-accent-surface-01: rgb(60, 102, 255);
+  --sd-theme-itab-ip-ip-widget-text-01: #fff;
+  --sd-theme-itab-ip-ip-widget-text-02: rgba(255, 255, 255, 0.92);
+  --sd-theme-itab-live-flip-card-accent-surface-01: #3a3a5a;
+  --sd-theme-itab-live-flip-card-accent-surface-02: #2a2a4a;
+  --sd-theme-itab-live-flip-card-border-01: rgba(0, 0, 0, 0.4);
+  --sd-theme-itab-live-flip-card-shadow-01: rgba(0, 0, 0, 0.3);
+  --sd-theme-itab-live-flip-card-shadow-02: rgba(255, 255, 255, 0.03);
+  --sd-theme-itab-live-flip-card-surface-01: rgba(0, 0, 0, 0.65);
+  --sd-theme-itab-live-flip-card-surface-02: rgba(255, 255, 255, 0.03);
+  --sd-theme-itab-live-flip-card-surface-03: rgba(0, 0, 0, 0.48);
+  --sd-theme-itab-live-flip-card-surface-04: rgba(0, 0, 0, 0.56);
+  --sd-theme-itab-live-flip-card-surface-05: rgba(0, 0, 0, 0);
+  --sd-theme-itab-live-flip-card-text-01: #fff;
+  --sd-theme-itab-live-live-opened-shell-accent-surface-01: #ffbf2f;
+  --sd-theme-itab-live-live-opened-shell-accent-surface-02: #1bd228;
+  --sd-theme-itab-live-live-opened-shell-accent-surface-03: #ff5c59;
+  --sd-theme-itab-live-live-opened-shell-accent-text-01: #20242c;
+  --sd-theme-itab-live-live-opened-shell-accent-text-02: #22262e;
+  --sd-theme-itab-live-live-opened-shell-border-01: rgba(255, 255, 255, 0.22);
+  --sd-theme-itab-live-live-opened-shell-border-02: rgba(255, 255, 255, 0.13);
+  --sd-theme-itab-live-live-opened-shell-border-03: rgba(0, 0, 0, 0.13);
+  --sd-theme-itab-live-live-opened-shell-border-04: rgba(255, 255, 255, 0.16);
+  --sd-theme-itab-live-live-opened-shell-border-05: rgba(255, 255, 255, 0.08);
+  --sd-theme-itab-live-live-opened-shell-border-06: rgba(255, 255, 255, 0.1);
+  --sd-theme-itab-live-live-opened-shell-shadow-01: rgba(0, 0, 0, 0.38);
+  --sd-theme-itab-live-live-opened-shell-shadow-02: rgba(0, 0, 0, 0.48);
+  --sd-theme-itab-live-live-opened-shell-surface-01: rgba(0, 0, 0, 0.5);
+  --sd-theme-itab-live-live-opened-shell-surface-02: rgba(250, 250, 250, 0.96);
+  --sd-theme-itab-live-live-opened-shell-surface-03: #eee;
+  --sd-theme-itab-live-live-opened-shell-surface-04: #fff;
+  --sd-theme-itab-live-live-opened-shell-surface-05: rgb(255, 255, 255);
+  --sd-theme-itab-live-live-opened-shell-surface-06: rgba(232, 235, 234, 0.76);
+  --sd-theme-itab-live-live-opened-shell-surface-07: rgb(33, 30, 34);
+  --sd-theme-itab-live-live-opened-shell-surface-08: rgb(56, 58, 62);
+  --sd-theme-itab-live-live-opened-shell-surface-09: rgb(21, 21, 24);
+  --sd-theme-itab-live-live-opened-shell-text-01: #333;
+  --sd-theme-itab-live-live-opened-shell-text-02: #fff;
+  --sd-theme-itab-live-live-opened-shell-text-03: #25272b;
+  --sd-theme-itab-live-live-opened-shell-text-04: rgb(34, 34, 34);
+  --sd-theme-itab-live-live-opened-shell-text-05: #25262a;
+  --sd-theme-itab-live-live-opened-shell-text-06: #222;
+  --sd-theme-itab-live-live-opened-shell-text-07: rgba(255, 255, 255, 0.86);
+  --sd-theme-itab-live-live-widget-frame-accent-01: rgb(9, 55, 68);
+  --sd-theme-itab-live-live-widget-frame-accent-surface-01: rgb(60, 102, 255);
+  --sd-theme-itab-live-live-widget-frame-accent-surface-02: rgba(
+    68,
+    20,
+    22,
+    0.96
+  );
+  --sd-theme-itab-live-live-widget-frame-accent-surface-03: rgba(
+    37,
+    41,
+    52,
+    0.93
+  );
+  --sd-theme-itab-live-live-widget-frame-accent-surface-04: rgb(29, 101, 240);
+  --sd-theme-itab-live-live-widget-frame-accent-surface-05: rgb(26, 209, 252);
+  --sd-theme-itab-live-live-widget-frame-accent-surface-06: rgba(
+    21,
+    28,
+    31,
+    0.86
+  );
+  --sd-theme-itab-live-live-widget-frame-accent-surface-07: rgb(28, 33, 50);
+  --sd-theme-itab-live-live-widget-frame-accent-surface-08: rgba(
+    13,
+    17,
+    22,
+    0.88
+  );
+  --sd-theme-itab-live-live-widget-frame-accent-text-01: #ac7452;
+  --sd-theme-itab-live-live-widget-frame-accent-text-02: #425266;
+  --sd-theme-itab-live-live-widget-frame-border-01: rgba(255, 255, 255, 0.18);
+  --sd-theme-itab-live-live-widget-frame-shadow-01: rgba(0, 0, 0, 0.21);
+  --sd-theme-itab-live-live-widget-frame-shadow-02: rgba(0, 0, 0, 0.72);
+  --sd-theme-itab-live-live-widget-frame-shadow-03: rgba(0, 0, 0, 0.1);
+  --sd-theme-itab-live-live-widget-frame-shadow-04: rgba(0, 0, 0, 0.3);
+  --sd-theme-itab-live-live-widget-frame-shadow-05: rgba(255, 92, 89, 0.48);
+  --sd-theme-itab-live-live-widget-frame-shadow-06: rgba(0, 0, 0, 0.28);
+  --sd-theme-itab-live-live-widget-frame-surface-01: rgba(255, 255, 255, 0.16);
+  --sd-theme-itab-live-live-widget-frame-surface-02: rgba(255, 255, 255, 0.92);
+  --sd-theme-itab-live-live-widget-frame-surface-03: #fff;
+  --sd-theme-itab-live-live-widget-frame-surface-04: rgba(73, 79, 91, 0.88);
+  --sd-theme-itab-live-live-widget-frame-surface-05: #4c4c3f;
+  --sd-theme-itab-live-live-widget-frame-surface-06: rgba(0, 0, 0, 0);
+  --sd-theme-itab-live-live-widget-frame-surface-07: #eee;
+  --sd-theme-itab-live-live-widget-frame-surface-08: #f4f0e9;
+  --sd-theme-itab-live-live-widget-frame-surface-09: #111;
+  --sd-theme-itab-live-live-widget-frame-surface-10: #000;
+  --sd-theme-itab-live-live-widget-frame-text-01: #fff;
+  --sd-theme-itab-live-live-widget-frame-text-02: rgba(255, 255, 255, 0.72);
+  --sd-theme-itab-live-live-widget-frame-text-03: #222;
+  --sd-theme-itab-live-live-widget-frame-text-04: rgba(255, 255, 255, 0.86);
+  --sd-theme-itab-live-live-widget-frame-text-05: #f9f9f4;
+  --sd-theme-itab-live-live-widget-frame-text-06: #666;
+  --sd-theme-itab-live-live-widget-frame-text-07: rgba(255, 255, 255, 0.76);
+  --sd-theme-itab-live-live-widget-frame-text-08: #333;
+  --sd-theme-itab-live-live-widget-frame-text-09: rgb(34, 34, 34);
+  --sd-theme-itab-live-live-widget-frame-text-10: rgba(0, 0, 0, 0.8);
+  --sd-theme-itab-live-live-widget-frame-text-11: #3f4854;
+  --sd-theme-itab-live-live-widget-frame-text-12: #9aa3ad;
+  --sd-theme-itab-memo-memo-fixed-layer-shadow-01: rgba(0, 0, 0, 0.12);
+  --sd-theme-itab-memo-memo-fixed-layer-surface-01: rgba(255, 255, 255, 0.3);
+  --sd-theme-itab-memo-memo-fixed-layer-text-01: rgba(0, 0, 0, 0.9);
+  --sd-theme-itab-memo-memo-fixed-layer-text-02: rgba(0, 0, 0, 0.36);
+  --sd-theme-itab-memo-memo-opened-panel-accent-border-01: #1890ff;
+  --sd-theme-itab-memo-memo-opened-panel-accent-border-02: rgba(
+    24,
+    144,
+    255,
+    0.48
+  );
+  --sd-theme-itab-memo-memo-opened-panel-accent-surface-01: #1890ff;
+  --sd-theme-itab-memo-memo-opened-panel-accent-text-01: rgb(52, 120, 247);
+  --sd-theme-itab-memo-memo-opened-panel-border-01: #939393;
+  --sd-theme-itab-memo-memo-opened-panel-border-02: #f2f2f2;
+  --sd-theme-itab-memo-memo-opened-panel-shadow-01: rgba(0, 0, 0, 0.12);
+  --sd-theme-itab-memo-memo-opened-panel-surface-01: #fff;
+  --sd-theme-itab-memo-memo-opened-panel-surface-02: rgba(240, 241, 244, 0.72);
+  --sd-theme-itab-memo-memo-opened-panel-surface-03: rgb(240, 241, 244);
+  --sd-theme-itab-memo-memo-opened-panel-text-01: #222;
+  --sd-theme-itab-memo-memo-opened-panel-text-02: rgb(34, 34, 34);
+  --sd-theme-itab-memo-memo-opened-panel-text-03: rgb(147, 147, 147);
+  --sd-theme-itab-memo-memo-opened-panel-text-04: #fff;
+  --sd-theme-itab-memo-memo-widget-accent-surface-01: rgb(29, 101, 240);
+  --sd-theme-itab-memo-memo-widget-accent-surface-02: rgb(26, 209, 252);
+  --sd-theme-itab-memo-memo-widget-accent-surface-03: rgb(255, 201, 39);
+  --sd-theme-itab-memo-memo-widget-accent-surface-04: rgb(255, 164, 3);
+  --sd-theme-itab-memo-memo-widget-border-01: rgba(0, 0, 0, 0.08);
+  --sd-theme-itab-memo-memo-widget-surface-01: #fff;
+  --sd-theme-itab-memo-memo-widget-text-01: #222;
+  --sd-theme-itab-memo-memo-widget-text-02: #fff;
+  --sd-theme-itab-movie-calendar-movie-calendar-opened-panel-accent-surface-01: rgba(
+    0,
+    20,
+    0,
+    0.4
+  );
+  --sd-theme-itab-movie-calendar-movie-calendar-opened-panel-accent-text-01: #f9d5ad;
+  --sd-theme-itab-movie-calendar-movie-calendar-opened-panel-accent-text-02: #f2cca4;
+  --sd-theme-itab-movie-calendar-movie-calendar-opened-panel-surface-01: rgba(
+    0,
+    0,
+    0,
+    0.5
+  );
+  --sd-theme-itab-movie-calendar-movie-calendar-opened-panel-surface-02: #000;
+  --sd-theme-itab-movie-calendar-movie-calendar-opened-panel-surface-03: rgba(
+    0,
+    0,
+    0,
+    0.38
+  );
+  --sd-theme-itab-movie-calendar-movie-calendar-opened-panel-surface-04: rgba(
+    255,
+    255,
+    255,
+    0.16
+  );
+  --sd-theme-itab-movie-calendar-movie-calendar-opened-panel-surface-05: rgba(
+    0,
+    0,
+    0,
+    0.3
+  );
+  --sd-theme-itab-movie-calendar-movie-calendar-opened-panel-surface-06: #4c4c3f;
+  --sd-theme-itab-movie-calendar-movie-calendar-opened-panel-text-01: rgba(
+    255,
+    255,
+    255,
+    0.9
+  );
+  --sd-theme-itab-movie-calendar-movie-calendar-opened-panel-text-02: #fff;
+  --sd-theme-itab-movie-calendar-movie-calendar-opened-panel-text-03: #d1d0d0;
+  --sd-theme-itab-movie-calendar-movie-calendar-widget-accent-surface-01: #ffac2d;
+  --sd-theme-itab-movie-calendar-movie-calendar-widget-accent-text-01: #4f0e03;
+  --sd-theme-itab-movie-calendar-movie-calendar-widget-shadow-01: rgba(
+    0,
+    0,
+    0,
+    0.1
+  );
+  --sd-theme-itab-movie-calendar-movie-calendar-widget-shadow-02: rgba(
+    0,
+    0,
+    0,
+    0.3
+  );
+  --sd-theme-itab-movie-calendar-movie-calendar-widget-surface-01: #3a444c;
+  --sd-theme-itab-movie-calendar-movie-calendar-widget-surface-02: rgba(
+    0,
+    0,
+    0,
+    0
+  );
+  --sd-theme-itab-movie-calendar-movie-calendar-widget-surface-03: rgba(
+    0,
+    0,
+    0,
+    0.12
+  );
+  --sd-theme-itab-movie-calendar-movie-calendar-widget-text-01: #f4f7f9;
+  --sd-theme-itab-movie-calendar-movie-calendar-widget-text-02: #fff;
+  --sd-theme-itab-movie-calendar-movie-calendar-widget-text-03: #333;
+  --sd-theme-itab-number-uppercase-number-uppercase-opened-panel-accent-border-01: #4a5568;
+  --sd-theme-itab-number-uppercase-number-uppercase-opened-panel-accent-border-02: #facc15;
+  --sd-theme-itab-number-uppercase-number-uppercase-opened-panel-accent-surface-01: #111827;
+  --sd-theme-itab-number-uppercase-number-uppercase-opened-panel-accent-surface-02: #1f2937;
+  --sd-theme-itab-number-uppercase-number-uppercase-opened-panel-accent-surface-03: #1a202c;
+  --sd-theme-itab-number-uppercase-number-uppercase-opened-panel-accent-surface-04: rgba(
+    250,
+    204,
+    21,
+    0.05
+  );
+  --sd-theme-itab-number-uppercase-number-uppercase-opened-panel-accent-surface-05: #2d3748;
+  --sd-theme-itab-number-uppercase-number-uppercase-opened-panel-accent-surface-06: #eab308;
+  --sd-theme-itab-number-uppercase-number-uppercase-opened-panel-accent-text-01: #facc15;
+  --sd-theme-itab-number-uppercase-number-uppercase-opened-panel-shadow-01: rgba(
+    250,
+    204,
+    21,
+    0.19
+  );
+  --sd-theme-itab-number-uppercase-number-uppercase-opened-panel-surface-01: #000;
+  --sd-theme-itab-number-uppercase-number-uppercase-opened-panel-text-01: #cbd5e1;
+  --sd-theme-itab-number-uppercase-number-uppercase-opened-panel-text-02: rgba(
+    203,
+    213,
+    224,
+    0.58
+  );
+  --sd-theme-itab-number-uppercase-number-uppercase-opened-panel-text-03: #a0aec0;
+  --sd-theme-itab-number-uppercase-number-uppercase-opened-panel-text-04: #cbd5e0;
+  --sd-theme-itab-number-uppercase-number-uppercase-opened-panel-text-05: #e2e8f0;
+  --sd-theme-itab-number-uppercase-number-uppercase-opened-panel-text-06: #aeb8c7;
+  --sd-theme-itab-number-uppercase-number-uppercase-widget-accent-border-01: rgba(
+    250,
+    204,
+    21,
+    0.16
+  );
+  --sd-theme-itab-number-uppercase-number-uppercase-widget-accent-border-02: rgba(
+    250,
+    204,
+    21,
+    0.25
+  );
+  --sd-theme-itab-number-uppercase-number-uppercase-widget-accent-surface-01: rgba(
+    250,
+    204,
+    21,
+    0.18
+  );
+  --sd-theme-itab-number-uppercase-number-uppercase-widget-accent-surface-02: rgba(
+    250,
+    204,
+    21,
+    0.1
+  );
+  --sd-theme-itab-number-uppercase-number-uppercase-widget-accent-surface-03: #111827;
+  --sd-theme-itab-number-uppercase-number-uppercase-widget-accent-surface-04: #eab308;
+  --sd-theme-itab-number-uppercase-number-uppercase-widget-accent-text-01: #facc15;
+  --sd-theme-itab-number-uppercase-number-uppercase-widget-accent-text-02: rgba(
+    250,
+    204,
+    21,
+    0.55
+  );
+  --sd-theme-itab-number-uppercase-number-uppercase-widget-accent-text-03: #fef08a;
+  --sd-theme-itab-poem-poem-opened-panel-border-01: rgba(0, 0, 0, 0.2);
+  --sd-theme-itab-poem-poem-opened-panel-border-02: #ebeef5;
+  --sd-theme-itab-poem-poem-opened-panel-surface-01: #eee;
+  --sd-theme-itab-poem-poem-opened-panel-surface-02: rgba(255, 255, 255, 0.1);
+  --sd-theme-itab-poem-poem-opened-panel-surface-03: rgba(255, 255, 255, 0.18);
+  --sd-theme-itab-poem-poem-opened-panel-surface-04: #fff;
+  --sd-theme-itab-poem-poem-opened-panel-text-01: #333;
+  --sd-theme-itab-poem-poem-opened-panel-text-02: #555;
+  --sd-theme-itab-poem-poem-opened-panel-text-03: #303133;
+  --sd-theme-itab-poem-poem-opened-panel-text-04: #606266;
+  --sd-theme-itab-poem-poem-opened-panel-text-05: #fff;
+  --sd-theme-itab-poem-poem-widget-accent-01: rgb(9, 55, 68);
+  --sd-theme-itab-poem-poem-widget-accent-surface-01: rgb(9, 55, 68);
+  --sd-theme-itab-poem-poem-widget-surface-01: #eee;
+  --sd-theme-itab-poem-poem-widget-text-01: #333;
+  --sd-theme-itab-pomodoro-pomodoro-opened-panel-accent-surface-01: rgba(
+    3,
+    25,
+    56,
+    0.34
+  );
+  --sd-theme-itab-pomodoro-pomodoro-opened-panel-accent-text-01: rgba(
+    255,
+    214,
+    102,
+    0.95
+  );
+  --sd-theme-itab-pomodoro-pomodoro-opened-panel-border-01: rgba(
+    255,
+    255,
+    255,
+    0.18
+  );
+  --sd-theme-itab-pomodoro-pomodoro-opened-panel-border-02: rgba(
+    255,
+    255,
+    255,
+    0.1
+  );
+  --sd-theme-itab-pomodoro-pomodoro-opened-panel-surface-01: rgba(
+    255,
+    255,
+    255,
+    0.3
+  );
+  --sd-theme-itab-pomodoro-pomodoro-opened-panel-surface-02: rgba(
+    255,
+    255,
+    255,
+    0.4
+  );
+  --sd-theme-itab-pomodoro-pomodoro-opened-panel-surface-03: rgba(
+    0,
+    0,
+    0,
+    0.14
+  );
+  --sd-theme-itab-pomodoro-pomodoro-opened-panel-surface-04: rgba(
+    255,
+    255,
+    255,
+    0.22
+  );
+  --sd-theme-itab-pomodoro-pomodoro-opened-panel-text-01: #e3e3e3;
+  --sd-theme-itab-pomodoro-pomodoro-opened-panel-text-02: #fff;
+  --sd-theme-itab-pomodoro-pomodoro-opened-panel-text-03: rgba(
+    255,
+    255,
+    255,
+    0.8
+  );
+  --sd-theme-itab-pomodoro-pomodoro-opened-panel-text-04: rgba(
+    255,
+    255,
+    255,
+    0.5
+  );
+  --sd-theme-itab-pomodoro-pomodoro-opened-panel-text-05: rgba(
+    255,
+    255,
+    255,
+    0.58
+  );
+  --sd-theme-itab-pomodoro-pomodoro-opened-panel-text-06: rgba(
+    255,
+    255,
+    255,
+    0.72
+  );
+  --sd-theme-itab-pomodoro-pomodoro-widget-accent-surface-01: rgba(
+    3,
+    25,
+    56,
+    0.6
+  );
+  --sd-theme-itab-pomodoro-pomodoro-widget-border-01: rgba(255, 255, 255, 0.4);
+  --sd-theme-itab-pomodoro-pomodoro-widget-border-02: rgba(255, 255, 255, 0.6);
+  --sd-theme-itab-pomodoro-pomodoro-widget-surface-01: #000;
+  --sd-theme-itab-pomodoro-pomodoro-widget-surface-02: rgba(255, 255, 255, 0.3);
+  --sd-theme-itab-pomodoro-pomodoro-widget-surface-03: rgba(255, 255, 255, 0.4);
+  --sd-theme-itab-pomodoro-pomodoro-widget-surface-04: rgba(255, 255, 255, 0.2);
+  --sd-theme-itab-pomodoro-pomodoro-widget-text-01: #fff;
+  --sd-theme-itab-pomodoro-pomodoro-widget-text-02: rgba(255, 255, 255, 0.5);
+  --sd-theme-itab-pomodoro-pomodoro-widget-text-03: rgba(255, 255, 255, 0.6);
+  --sd-theme-itab-todo-todo-opened-panel-accent-surface-01: rgb(24, 144, 255);
+  --sd-theme-itab-todo-todo-opened-panel-border-01: rgb(147, 147, 147);
+  --sd-theme-itab-todo-todo-opened-panel-border-02: rgba(0, 0, 0, 0.08);
+  --sd-theme-itab-todo-todo-opened-panel-surface-01: rgb(245, 245, 245);
+  --sd-theme-itab-todo-todo-opened-panel-surface-02: #fff;
+  --sd-theme-itab-todo-todo-opened-panel-surface-03: rgba(214, 216, 220, 0.72);
+  --sd-theme-itab-todo-todo-opened-panel-surface-04: rgba(204, 207, 212, 0.78);
+  --sd-theme-itab-todo-todo-opened-panel-text-01: rgb(34, 34, 34);
+  --sd-theme-itab-todo-todo-opened-panel-text-02: rgb(147, 147, 147);
+  --sd-theme-itab-todo-todo-opened-panel-text-03: #fff;
+  --sd-theme-itab-todo-todo-opened-panel-text-04: rgb(96, 98, 102);
+  --sd-theme-itab-todo-todo-widget-accent-border-01: rgb(24, 144, 255);
+  --sd-theme-itab-todo-todo-widget-accent-surface-01: rgb(32, 102, 204);
+  --sd-theme-itab-todo-todo-widget-accent-text-01: rgb(52, 110, 253);
+  --sd-theme-itab-todo-todo-widget-border-01: rgb(147, 147, 147);
+  --sd-theme-itab-todo-todo-widget-surface-01: #fff;
+  --sd-theme-itab-todo-todo-widget-surface-02: rgb(147, 147, 147);
+  --sd-theme-itab-todo-todo-widget-text-01: rgba(0, 0, 0, 0.8);
+  --sd-theme-itab-wallpaper-wallpaper-opened-panel-accent-01: rgb(24, 144, 255);
+  --sd-theme-itab-wallpaper-wallpaper-opened-panel-accent-surface-01: rgb(
+    24,
+    144,
+    255
+  );
+  --sd-theme-itab-wallpaper-wallpaper-opened-panel-accent-text-01: rgba(
+    16,
+    24,
+    40,
+    0.88
+  );
+  --sd-theme-itab-wallpaper-wallpaper-opened-panel-accent-text-02: rgb(
+    24,
+    144,
+    255
+  );
+  --sd-theme-itab-wallpaper-wallpaper-opened-panel-accent-text-03: rgba(
+    16,
+    24,
+    40,
+    0.54
+  );
+  --sd-theme-itab-wallpaper-wallpaper-opened-panel-accent-text-04: #dc2626;
+  --sd-theme-itab-wallpaper-wallpaper-opened-panel-shadow-01: rgba(
+    255,
+    255,
+    255,
+    0.72
+  );
+  --sd-theme-itab-wallpaper-wallpaper-opened-panel-shadow-02: rgba(
+    15,
+    23,
+    42,
+    0.2
+  );
+  --sd-theme-itab-wallpaper-wallpaper-opened-panel-surface-01: rgba(
+    245,
+    247,
+    250,
+    0.82
+  );
+  --sd-theme-itab-wallpaper-wallpaper-opened-panel-surface-02: rgba(
+    255,
+    255,
+    255,
+    0.88
+  );
+  --sd-theme-itab-wallpaper-wallpaper-opened-panel-surface-03: #fff;
+  --sd-theme-itab-wallpaper-wallpaper-opened-panel-surface-04: rgba(
+    255,
+    255,
+    255,
+    0.96
+  );
+  --sd-theme-itab-wallpaper-wallpaper-opened-panel-surface-05: #d7d9dc;
+  --sd-theme-itab-wallpaper-wallpaper-opened-panel-surface-06: #dfe6ee;
+  --sd-theme-itab-wallpaper-wallpaper-opened-panel-surface-07: rgba(
+    0,
+    0,
+    0,
+    0.18
+  );
+  --sd-theme-itab-wallpaper-wallpaper-opened-panel-surface-08: rgba(
+    0,
+    0,
+    0,
+    0.38
+  );
+  --sd-theme-itab-wallpaper-wallpaper-opened-panel-text-01: rgba(0, 0, 0, 0.78);
+  --sd-theme-itab-wallpaper-wallpaper-opened-panel-text-02: rgba(0, 0, 0, 0.86);
+  --sd-theme-itab-wallpaper-wallpaper-opened-panel-text-03: rgba(0, 0, 0, 0.44);
+  --sd-theme-itab-wallpaper-wallpaper-opened-panel-text-04: rgba(
+    62,
+    66,
+    72,
+    0.62
+  );
+  --sd-theme-itab-wallpaper-wallpaper-opened-panel-text-05: rgba(
+    49,
+    54,
+    60,
+    0.62
+  );
+  --sd-theme-itab-wallpaper-wallpaper-opened-panel-text-06: #fff;
+  --sd-theme-itab-wallpaper-wallpaper-widget-accent-surface-01: #0f172a;
+  --sd-theme-itab-wallpaper-wallpaper-widget-shadow-01: rgba(0, 0, 0, 0.38);
+  --sd-theme-itab-wallpaper-wallpaper-widget-surface-01: rgba(0, 0, 0, 0.32);
+  --sd-theme-itab-wallpaper-wallpaper-widget-surface-02: rgba(0, 0, 0, 0.38);
+  --sd-theme-itab-wallpaper-wallpaper-widget-text-01: #fff;
+  --sd-theme-itab-wallpaper-wallpaper-widget-text-02: rgba(255, 255, 255, 0.94);
+  --sd-theme-itab-weather-weather-opened-panel-accent-01: rgba(
+    160,
+    201,
+    255,
+    0.88
+  );
+  --sd-theme-itab-weather-weather-opened-panel-accent-fill-01: rgb(
+    160,
+    201,
+    255
+  );
+  --sd-theme-itab-weather-weather-opened-panel-border-01: rgba(
+    255,
+    255,
+    255,
+    0.2
+  );
+  --sd-theme-itab-weather-weather-opened-panel-border-02: rgba(
+    255,
+    255,
+    255,
+    0.12
+  );
+  --sd-theme-itab-weather-weather-opened-panel-border-03: rgba(
+    255,
+    255,
+    255,
+    0.5
+  );
+  --sd-theme-itab-weather-weather-opened-panel-fill-01: rgba(
+    255,
+    255,
+    255,
+    0.74
+  );
+  --sd-theme-itab-weather-weather-opened-panel-shadow-01: rgba(0, 0, 0, 0.28);
+  --sd-theme-itab-weather-weather-opened-panel-surface-01: rgba(
+    255,
+    255,
+    255,
+    0.06
+  );
+  --sd-theme-itab-weather-weather-opened-panel-surface-02: rgba(
+    37,
+    39,
+    43,
+    0.96
+  );
+  --sd-theme-itab-weather-weather-opened-panel-surface-03: rgba(
+    255,
+    255,
+    255,
+    0.09
+  );
+  --sd-theme-itab-weather-weather-opened-panel-surface-04: rgba(
+    255,
+    255,
+    255,
+    0.05
+  );
+  --sd-theme-itab-weather-weather-opened-panel-surface-05: rgba(
+    255,
+    255,
+    255,
+    0.85
+  );
+  --sd-theme-itab-weather-weather-opened-panel-surface-06: rgba(
+    255,
+    255,
+    255,
+    0.08
+  );
+  --sd-theme-itab-weather-weather-opened-panel-text-01: rgba(
+    255,
+    255,
+    255,
+    0.82
+  );
+  --sd-theme-itab-weather-weather-opened-panel-text-02: rgba(
+    255,
+    255,
+    255,
+    0.78
+  );
+  --sd-theme-itab-weather-weather-opened-panel-text-03: rgba(
+    255,
+    255,
+    255,
+    0.74
+  );
+  --sd-theme-itab-weather-weather-opened-panel-text-04: #fff;
+  --sd-theme-itab-weather-weather-opened-panel-text-05: rgba(
+    255,
+    204,
+    204,
+    0.88
+  );
+  --sd-theme-itab-weather-weather-opened-panel-text-06: rgba(
+    255,
+    255,
+    255,
+    0.72
+  );
+  --sd-theme-itab-weather-weather-opened-panel-text-07: rgba(
+    255,
+    255,
+    255,
+    0.48
+  );
+  --sd-theme-itab-weather-weather-opened-panel-text-08: rgba(
+    255,
+    255,
+    255,
+    0.88
+  );
+  --sd-theme-itab-weather-weather-opened-panel-text-09: rgba(
+    255,
+    255,
+    255,
+    0.9
+  );
+  --sd-theme-itab-weather-weather-opened-panel-text-10: rgba(
+    255,
+    255,
+    255,
+    0.75
+  );
+  --sd-theme-itab-weather-weather-opened-panel-text-11: rgba(
+    255,
+    255,
+    255,
+    0.68
+  );
+  --sd-theme-itab-weather-weather-opened-panel-text-12: rgba(
+    255,
+    255,
+    255,
+    0.92
+  );
+  --sd-theme-itab-weather-weather-widget-accent-surface-01: rgb(59, 154, 245);
+  --sd-theme-itab-weather-weather-widget-accent-surface-02: rgb(77, 189, 250);
+  --sd-theme-itab-weather-weather-widget-accent-surface-03: rgb(7, 22, 42);
+  --sd-theme-itab-weather-weather-widget-accent-surface-04: rgb(43, 67, 102);
+  --sd-theme-itab-weather-weather-widget-accent-surface-05: rgb(74, 137, 188);
+  --sd-theme-itab-weather-weather-widget-accent-surface-06: rgb(115, 165, 200);
+  --sd-theme-itab-weather-weather-widget-accent-surface-07: rgb(13, 24, 36);
+  --sd-theme-itab-weather-weather-widget-accent-surface-08: rgb(55, 67, 84);
+  --sd-theme-itab-weather-weather-widget-accent-surface-09: rgb(21, 66, 128);
+  --sd-theme-itab-weather-weather-widget-accent-surface-10: rgb(26, 39, 59);
+  --sd-theme-itab-weather-weather-widget-accent-surface-11: rgb(38, 46, 73);
+  --sd-theme-itab-weather-weather-widget-accent-surface-12: rgb(19, 21, 38);
+  --sd-theme-itab-weather-weather-widget-accent-surface-13: rgb(139, 121, 88);
+  --sd-theme-itab-weather-weather-widget-accent-surface-14: rgb(193, 171, 127);
+  --sd-theme-itab-weather-weather-widget-accent-surface-15: rgb(84, 75, 62);
+  --sd-theme-itab-weather-weather-widget-surface-01: rgb(62, 65, 70);
+  --sd-theme-itab-weather-weather-widget-surface-02: rgb(98, 101, 106);
+  --sd-theme-itab-weather-weather-widget-surface-03: rgb(33, 30, 34);
+  --sd-theme-itab-weather-weather-widget-surface-04: rgb(56, 58, 62);
+  --sd-theme-itab-weather-weather-widget-surface-05: rgb(210, 225, 235);
+  --sd-theme-itab-weather-weather-widget-surface-06: rgb(143, 151, 157);
+  --sd-theme-itab-weather-weather-widget-surface-07: rgb(190, 195, 198);
+  --sd-theme-itab-weather-weather-widget-surface-08: rgb(55, 59, 63);
+  --sd-theme-itab-weather-weather-widget-surface-09: rgb(91, 95, 99);
+  --sd-theme-itab-weather-weather-widget-surface-10: rgb(48, 42, 36);
+  --sd-theme-itab-weather-weather-widget-text-01: #fff;
+  --sd-theme-network-indicator-accent-border-01: rgba(34, 197, 94, 0.3);
+  --sd-theme-network-indicator-accent-border-02: rgba(245, 158, 11, 0.3);
+  --sd-theme-network-indicator-accent-border-03: rgba(239, 68, 68, 0.3);
+  --sd-theme-network-indicator-accent-surface-01: rgba(34, 197, 94, 0.15);
+  --sd-theme-network-indicator-accent-surface-02: #22c55e;
+  --sd-theme-network-indicator-accent-surface-03: rgba(245, 158, 11, 0.15);
+  --sd-theme-network-indicator-accent-surface-04: #f59e0b;
+  --sd-theme-network-indicator-accent-surface-05: rgba(239, 68, 68, 0.15);
+  --sd-theme-network-indicator-accent-surface-06: #ef4444;
+  --sd-theme-network-indicator-accent-text-01: #16a34a;
+  --sd-theme-network-indicator-accent-text-02: #d97706;
+  --sd-theme-network-indicator-accent-text-03: #dc2626;
+  --sd-theme-network-indicator-shadow-01: rgba(34, 197, 94, 0.5);
+  --sd-theme-network-indicator-shadow-02: rgba(245, 158, 11, 0.5);
+  --sd-theme-network-indicator-shadow-03: rgba(239, 68, 68, 0.5);
+  --sd-theme-network-indicator-surface-01: rgba(255, 255, 255, 0.2);
+  --sd-theme-runtime-widget-opened-panel-host-accent-text-01: #f9d5ad;
+  --sd-theme-runtime-widget-opened-panel-host-accent-text-02: #facc15;
+  --sd-theme-runtime-widget-opened-panel-host-border-01: rgba(
+    255,
+    255,
+    255,
+    0.13
+  );
+  --sd-theme-runtime-widget-opened-panel-host-border-02: rgba(
+    255,
+    255,
+    255,
+    0.08
+  );
+  --sd-theme-runtime-widget-opened-panel-host-shadow-01: rgba(0, 0, 0, 0.48);
+  --sd-theme-runtime-widget-opened-panel-host-shadow-02: rgb(223, 223, 223);
+  --sd-theme-runtime-widget-opened-panel-host-surface-01: #eee;
+  --sd-theme-runtime-widget-opened-panel-host-surface-02: rgb(17, 17, 21);
+  --sd-theme-runtime-widget-opened-panel-host-text-01: #fff;
+  --sd-theme-runtime-widget-opened-panel-host-text-02: #333;
+  --sd-theme-runtime-widget-runtime-frame-shadow-01: rgba(59, 130, 246, 0.42);
+  --sd-theme-runtime-widget-runtime-menu-shadow-01: rgba(0, 0, 0, 0.5);
+  --sd-theme-runtime-widget-runtime-menu-surface-01: rgba(10, 12, 12, 0.72);
+  --sd-theme-runtime-widget-runtime-menu-surface-02: rgba(255, 255, 255, 0.1);
+  --sd-theme-runtime-widget-runtime-menu-surface-03: rgba(255, 255, 255, 0.3);
+  --sd-theme-runtime-widget-runtime-menu-text-01: rgba(255, 255, 255, 0.94);
+  --sd-theme-runtime-widget-runtime-menu-text-02: rgba(255, 255, 255, 0.96);
+  --sd-theme-settings-modal-accent-border-01: rgba(15, 23, 42, 0.32);
+  --sd-theme-settings-modal-accent-border-02: rgba(24, 144, 255, 0.4);
+  --sd-theme-settings-modal-accent-surface-01: rgba(15, 23, 42, 0.16);
+  --sd-theme-settings-modal-accent-surface-02: rgba(15, 23, 42, 0.32);
+  --sd-theme-settings-modal-accent-surface-03: rgba(15, 23, 42, 0.08);
+  --sd-theme-settings-modal-accent-surface-04: rgba(24, 144, 255, 0.18);
+  --sd-theme-settings-modal-accent-text-01: rgba(15, 23, 42, 0.52);
+  --sd-theme-settings-modal-accent-text-02: rgba(15, 23, 42, 0.72);
+  --sd-theme-settings-modal-accent-text-03: rgb(255, 143, 151);
+  --sd-theme-settings-modal-border-01: rgba(255, 255, 255, 0.18);
+  --sd-theme-settings-modal-border-02: rgba(255, 255, 255, 0.34);
+  --sd-theme-settings-modal-border-03: rgba(255, 255, 255, 0.11);
+  --sd-theme-settings-modal-border-04: rgba(255, 255, 255, 0.1);
+  --sd-theme-settings-modal-border-05: rgba(255, 255, 255, 0.12);
+  --sd-theme-settings-modal-shadow-01: rgba(15, 23, 42, 0.45);
+  --sd-theme-settings-modal-shadow-02: rgba(15, 23, 42, 0.18);
+  --sd-theme-settings-modal-shadow-03: rgba(15, 23, 42, 0.32);
+  --sd-theme-settings-modal-surface-01: rgba(255, 255, 255, 0.16);
+  --sd-theme-settings-modal-surface-02: rgba(255, 255, 255, 0.14);
+  --sd-theme-settings-modal-surface-03: rgba(255, 255, 255, 0.82);
+  --sd-theme-settings-modal-surface-04: rgba(255, 255, 255, 0.06);
+  --sd-theme-settings-modal-surface-05: rgba(255, 255, 255, 0.065);
+  --sd-theme-settings-modal-surface-06: rgba(255, 255, 255, 0.08);
+  --sd-theme-settings-modal-surface-07: rgba(255, 255, 255, 0.075);
+  --sd-theme-settings-modal-surface-08: rgba(255, 255, 255, 0.1);
+  --sd-theme-settings-modal-surface-09: rgba(255, 255, 255, 0.055);
+  --sd-theme-settings-modal-text-01: rgba(223, 221, 221, 0.58);
+  --sd-theme-settings-modal-text-02: rgba(255, 255, 255, 0.92);
+  --sd-theme-settings-modal-text-03: #ffffff;
+  --sd-theme-settings-modal-text-04: rgba(255, 255, 255, 0.86);
+  --sd-theme-settings-modal-text-05: rgb(223, 221, 221);
+  --sd-theme-settings-modal-text-06: rgba(223, 221, 221, 0.62);
+  --sd-theme-settings-modal-text-07: rgba(223, 221, 221, 0.5);
+  --sd-theme-settings-modal-text-08: rgba(223, 221, 221, 0.68);
+  --sd-theme-settings-modal-text-09: rgba(223, 221, 221, 0.52);
+  --sd-theme-settings-modal-text-10: rgba(223, 221, 221, 0.4);
+  --sd-theme-settings-modal-text-11: rgba(223, 221, 221, 0.54);
+  --sd-theme-settings-modal-text-12: rgba(223, 221, 221, 0.56);
+  --sd-theme-settings-modal-text-13: rgba(223, 221, 221, 0.74);
+  --sd-theme-settings-modal-text-14: rgba(223, 221, 221, 0.64);
+  --sd-theme-settings-modal-text-15: rgba(223, 221, 221, 0.78);
+  --sd-theme-system-status-widget-accent-surface-01: #3b82f6;
+  --sd-theme-system-status-widget-accent-surface-02: #8b5cf6;
+  --sd-theme-system-status-widget-accent-surface-03: #22c55e;
+  --sd-theme-system-status-widget-accent-surface-04: #06b6d4;
+  --sd-theme-system-status-widget-accent-surface-05: rgb(17 24 39);
+  --sd-theme-system-status-widget-accent-text-01: #0f172a;
+  --sd-theme-system-status-widget-accent-text-02: #2563eb;
+  --sd-theme-system-status-widget-accent-text-03: #64748b;
+  --sd-theme-system-status-widget-accent-text-04: #111827;
+  --sd-theme-system-status-widget-border-01: rgb(203 213 225 / 0.8);
+  --sd-theme-system-status-widget-border-02: rgb(255 255 255 / 0.12);
+  --sd-theme-system-status-widget-border-03: rgb(226 232 240 / 0.7);
+  --sd-theme-system-status-widget-shadow-01: rgb(15 23 42 / 0.06);
+  --sd-theme-system-status-widget-shadow-02: rgb(15 23 42 / 0.14);
+  --sd-theme-system-status-widget-surface-01: #f8fafc;
+  --sd-theme-system-status-widget-surface-02: rgb(226 232 240 / 0.8);
+  --sd-theme-system-status-widget-surface-03: rgb(255 255 255);
+  --sd-theme-system-status-widget-surface-04: rgb(248 250 252);
+  --sd-theme-system-status-widget-surface-05: rgb(241 245 249 / 0.76);
+  --sd-theme-system-status-widget-surface-06: #e5e7eb;
+  --sd-theme-system-status-widget-surface-07: #d1d5db;
+  --sd-theme-system-status-widget-text-01: #94a3b8;
+}
+
+[data-sd-theme="dark"] {
+  --sd-component-on-strong: #ffffff;
+  --sd-component-ink-surface: #000000;
+  --sd-home-preview-default-background: linear-gradient(
+    to top,
+    var(--sd-color-surface-muted) 0%,
+    var(--sd-color-surface) 100%
+  );
+  --sd-home-background-fallback: var(--sd-color-canvas);
+  --sd-home-preview-empire-background: radial-gradient(
+    circle at 50% 50%,
+    #2a2a2a,
+    #000000
+  );
+  --sd-home-card-icon-fill: var(--sd-component-text-tertiary);
+  --sd-home-card-title-on-media: #ffffff;
+  --sd-home-card-title-primary: var(--sd-component-text-primary);
+  --sd-home-card-title-secondary: var(--sd-component-text-secondary);
+  --sd-home-card-title-tertiary: var(--sd-component-text-secondary);
+  --sd-home-card-title-quaternary: var(--sd-component-text-tertiary);
+  --sd-home-card-description-on-media: color-mix(
+    in srgb,
+    var(--sd-component-on-strong) 90%,
+    transparent
+  );
+  --sd-home-card-description-muted-on-media: color-mix(
+    in srgb,
+    var(--sd-component-on-strong) 82%,
+    transparent
+  );
+  --sd-home-card-text-shadow-on-media: 0 1px 2px rgba(0, 0, 0, 0.8);
+  --sd-home-card-text-shadow-strong: 0 2px 4px rgba(0, 0, 0, 0.8);
+  --sd-home-title-text-shadow-on-media: 0 2px 8px rgba(0, 0, 0, 0.5);
+  --sd-home-card-search-shadow-on-media: 0 2px 18px rgba(0, 0, 0, 0.42);
+  --sd-home-card-search-shadow-default: var(--sd-shadow-popover);
+  --sd-home-card-outline-on-media: color-mix(
+    in srgb,
+    var(--sd-component-on-strong) 35%,
+    transparent
+  );
+  --sd-home-card-outline-default: var(--sd-component-border);
+  --sd-home-card-hover-glow-shadow: 0 0 16px
+    color-mix(in srgb, var(--sd-state-info) 46%, transparent);
+  --sd-home-card-update-dot-bg: var(--sd-state-danger);
+  --sd-home-card-update-dot-border: color-mix(
+    in srgb,
+    var(--sd-component-on-strong) 42%,
+    transparent
+  );
+  --sd-home-card-update-dot-shadow: 0 0 5px
+    color-mix(in srgb, var(--sd-state-danger) 72%, transparent);
+  --sd-home-live-dot-bg: var(--sd-state-success);
+  --sd-home-live-dot-shadow: 0 0 8px
+    color-mix(in srgb, var(--sd-state-success) 72%, transparent);
+  --sd-home-offline-dot-bg: var(--sd-state-danger);
+  --sd-itab-todo-empty-shadow: var(--sd-component-surface-muted);
+  --sd-itab-todo-empty-paper: var(--sd-component-surface-raised);
+  --sd-itab-todo-empty-line: var(--sd-component-border);
+  --sd-itab-poem-wave-back: color-mix(
+    in srgb,
+    var(--sd-state-info) 52%,
+    var(--sd-component-surface) 48%
+  );
+  --sd-itab-poem-wave-middle: color-mix(
+    in srgb,
+    var(--sd-state-info) 46%,
+    var(--sd-component-surface) 54%
+  );
+  --sd-itab-poem-wave-front: color-mix(
+    in srgb,
+    var(--sd-state-info) 38%,
+    var(--sd-component-surface) 62%
+  );
+  --sd-theme-add-widget-modal-accent-surface-01: color-mix(
+    in srgb,
+    var(--sd-state-info) 18%,
+    transparent
+  );
+  --sd-theme-add-widget-modal-accent-surface-02: color-mix(
+    in srgb,
+    var(--sd-state-info) 10%,
+    transparent
+  );
+  --sd-theme-add-widget-modal-accent-surface-03: color-mix(
+    in srgb,
+    var(--sd-state-info) 38%,
+    transparent
+  );
+  --sd-theme-add-widget-modal-accent-surface-04: color-mix(
+    in srgb,
+    var(--sd-state-info) 32%,
+    transparent
+  );
+  --sd-theme-add-widget-modal-accent-surface-05: color-mix(
+    in srgb,
+    var(--sd-state-info) 16%,
+    transparent
+  );
+  --sd-theme-add-widget-modal-accent-surface-06: color-mix(
+    in srgb,
+    var(--sd-state-danger) 36%,
+    transparent
+  );
+  --sd-theme-add-widget-modal-accent-surface-07: color-mix(
+    in srgb,
+    var(--sd-state-info) 32%,
+    transparent
+  );
+  --sd-theme-add-widget-modal-accent-surface-08: color-mix(
+    in srgb,
+    var(--sd-state-info) 18%,
+    transparent
+  );
+  --sd-theme-add-widget-modal-accent-surface-09: color-mix(
+    in srgb,
+    var(--sd-state-warning) 36%,
+    transparent
+  );
+  --sd-theme-add-widget-modal-accent-surface-10: color-mix(
+    in srgb,
+    var(--sd-state-warning) 36%,
+    transparent
+  );
+  --sd-theme-add-widget-modal-accent-surface-11: color-mix(
+    in srgb,
+    var(--sd-state-warning) 18%,
+    transparent
+  );
+  --sd-theme-add-widget-modal-accent-surface-12: color-mix(
+    in srgb,
+    var(--sd-state-success) 34%,
+    transparent
+  );
+  --sd-theme-add-widget-modal-accent-surface-13: color-mix(
+    in srgb,
+    var(--sd-state-success) 30%,
+    transparent
+  );
+  --sd-theme-add-widget-modal-accent-surface-14: color-mix(
+    in srgb,
+    var(--sd-state-info) 18%,
+    transparent
+  );
+  --sd-theme-add-widget-modal-accent-surface-15: color-mix(
+    in srgb,
+    var(--sd-state-info) 34%,
+    transparent
+  );
+  --sd-theme-add-widget-modal-accent-surface-16: color-mix(
+    in srgb,
+    var(--sd-state-info) 28%,
+    transparent
+  );
+  --sd-theme-add-widget-modal-accent-surface-17: color-mix(
+    in srgb,
+    var(--sd-state-info) 18%,
+    transparent
+  );
+  --sd-theme-add-widget-modal-accent-surface-18: color-mix(
+    in srgb,
+    var(--sd-state-danger) 34%,
+    transparent
+  );
+  --sd-theme-add-widget-modal-accent-surface-19: color-mix(
+    in srgb,
+    var(--sd-state-danger) 26%,
+    transparent
+  );
+  --sd-theme-add-widget-modal-accent-surface-20: color-mix(
+    in srgb,
+    var(--sd-state-danger) 18%,
+    transparent
+  );
+  --sd-theme-add-widget-modal-accent-surface-21: color-mix(
+    in srgb,
+    var(--sd-state-info) 30%,
+    transparent
+  );
+  --sd-theme-add-widget-modal-accent-surface-22: color-mix(
+    in srgb,
+    var(--sd-state-info) 20%,
+    transparent
+  );
+  --sd-theme-add-widget-modal-accent-surface-23: color-mix(
+    in srgb,
+    var(--sd-state-info) 18%,
+    transparent
+  );
+  --sd-theme-add-widget-modal-accent-surface-24: color-mix(
+    in srgb,
+    var(--sd-state-info) 18%,
+    transparent
+  );
+  --sd-theme-add-widget-modal-accent-surface-25: color-mix(
+    in srgb,
+    var(--sd-state-warning) 18%,
+    transparent
+  );
+  --sd-theme-add-widget-modal-accent-surface-26: color-mix(
+    in srgb,
+    var(--sd-state-warning) 18%,
+    transparent
+  );
+  --sd-theme-add-widget-modal-accent-text-01: var(--sd-state-info);
+  --sd-theme-add-widget-modal-accent-text-02: var(--sd-state-info);
+  --sd-theme-add-widget-modal-accent-text-03: var(--sd-state-info);
+  --sd-theme-add-widget-modal-accent-text-04: var(--sd-state-info);
+  --sd-theme-add-widget-modal-accent-text-05: var(--sd-state-danger);
+  --sd-theme-add-widget-modal-accent-text-06: var(--sd-state-info);
+  --sd-theme-add-widget-modal-border-01: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 42%,
+    transparent
+  );
+  --sd-theme-add-widget-modal-border-02: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 42%,
+    transparent
+  );
+  --sd-theme-add-widget-modal-border-03: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 8%,
+    transparent
+  );
+  --sd-theme-add-widget-modal-border-04: var(--sd-color-border-strong);
+  --sd-theme-add-widget-modal-border-05: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 22%,
+    transparent
+  );
+  --sd-theme-add-widget-modal-border-06: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 32%,
+    transparent
+  );
+  --sd-theme-add-widget-modal-shadow-01: rgba(0, 0, 0, 0.2);
+  --sd-theme-add-widget-modal-shadow-02: rgba(0, 0, 0, 0.42);
+  --sd-theme-add-widget-modal-surface-01: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 22%,
+    transparent
+  );
+  --sd-theme-add-widget-modal-surface-02: color-mix(
+    in srgb,
+    var(--sd-component-surface) 18%,
+    transparent
+  );
+  --sd-theme-add-widget-modal-surface-03: color-mix(
+    in srgb,
+    var(--sd-component-surface) 11%,
+    transparent
+  );
+  --sd-theme-add-widget-modal-surface-04: color-mix(
+    in srgb,
+    var(--sd-component-surface) 10%,
+    transparent
+  );
+  --sd-theme-add-widget-modal-surface-05: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 55%,
+    transparent
+  );
+  --sd-theme-add-widget-modal-surface-06: color-mix(
+    in srgb,
+    var(--sd-component-surface) 12%,
+    transparent
+  );
+  --sd-theme-add-widget-modal-surface-07: color-mix(
+    in srgb,
+    #000000 32%,
+    transparent
+  );
+  --sd-theme-add-widget-modal-surface-08: color-mix(
+    in srgb,
+    var(--sd-component-surface) 14%,
+    transparent
+  );
+  --sd-theme-add-widget-modal-surface-09: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 25%,
+    transparent
+  );
+  --sd-theme-add-widget-modal-surface-10: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 18%,
+    transparent
+  );
+  --sd-theme-add-widget-modal-surface-11: color-mix(
+    in srgb,
+    #000000 58%,
+    transparent
+  );
+  --sd-theme-add-widget-modal-surface-12: var(--sd-component-ink-surface);
+  --sd-theme-add-widget-modal-surface-13: color-mix(
+    in srgb,
+    #000000 30%,
+    transparent
+  );
+  --sd-theme-add-widget-modal-surface-14: color-mix(
+    in srgb,
+    #000000 45%,
+    transparent
+  );
+  --sd-theme-add-widget-modal-surface-15: var(--sd-component-surface);
+  --sd-theme-add-widget-modal-surface-16: color-mix(
+    in srgb,
+    var(--sd-component-surface) 58%,
+    transparent
+  );
+  --sd-theme-add-widget-modal-surface-17: color-mix(
+    in srgb,
+    var(--sd-component-surface) 72%,
+    transparent
+  );
+  --sd-theme-add-widget-modal-surface-18: color-mix(
+    in srgb,
+    var(--sd-component-surface) 72%,
+    transparent
+  );
+  --sd-theme-add-widget-modal-surface-19: var(--sd-component-surface-muted);
+  --sd-theme-add-widget-modal-surface-20: var(--sd-component-ink-surface);
+  --sd-theme-add-widget-modal-text-01: var(--sd-component-text-tertiary);
+  --sd-theme-add-widget-modal-text-02: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 82%,
+    transparent
+  );
+  --sd-theme-add-widget-modal-text-03: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 92%,
+    transparent
+  );
+  --sd-theme-add-widget-modal-text-04: var(--sd-component-on-strong);
+  --sd-theme-add-widget-modal-text-05: color-mix(
+    in srgb,
+    var(--sd-component-on-strong) 28%,
+    transparent
+  );
+  --sd-theme-add-widget-modal-text-06: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 92%,
+    transparent
+  );
+  --sd-theme-add-widget-modal-text-07: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 64%,
+    transparent
+  );
+  --sd-theme-add-widget-modal-text-08: color-mix(
+    in srgb,
+    var(--sd-component-on-strong) 92%,
+    transparent
+  );
+  --sd-theme-add-widget-modal-text-09: color-mix(
+    in srgb,
+    var(--sd-component-on-strong) 52%,
+    transparent
+  );
+  --sd-theme-add-widget-modal-text-10: color-mix(
+    in srgb,
+    var(--sd-component-on-strong) 72%,
+    transparent
+  );
+  --sd-theme-add-widget-modal-text-11: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 82%,
+    transparent
+  );
+  --sd-theme-add-widget-modal-text-12: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 78%,
+    transparent
+  );
+  --sd-theme-add-widget-modal-text-13: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 78%,
+    transparent
+  );
+  --sd-theme-add-widget-modal-text-14: var(--sd-component-text-secondary);
+  --sd-theme-add-widget-modal-text-15: var(--sd-component-text-tertiary);
+  --sd-theme-custom-css-widget-accent-border-01: color-mix(
+    in srgb,
+    var(--sd-state-info) 38%,
+    transparent
+  );
+  --sd-theme-custom-css-widget-accent-surface-01: color-mix(
+    in srgb,
+    var(--sd-state-info) 18%,
+    transparent
+  );
+  --sd-theme-custom-css-widget-accent-text-01: var(--sd-state-info);
+  --sd-theme-custom-css-widget-accent-text-02: var(--sd-state-info);
+  --sd-theme-custom-css-widget-accent-text-03: var(--sd-state-info);
+  --sd-theme-custom-css-widget-border-01: var(--sd-color-border-strong);
+  --sd-theme-custom-css-widget-border-02: var(--sd-color-border-strong);
+  --sd-theme-custom-css-widget-surface-01: var(--sd-component-surface);
+  --sd-theme-custom-css-widget-surface-02: var(--sd-component-surface);
+  --sd-theme-custom-css-widget-surface-03: var(--sd-component-surface-muted);
+  --sd-theme-custom-css-widget-text-01: var(--sd-component-on-strong);
+  --sd-theme-docker-widget-accent-surface-01: color-mix(
+    in srgb,
+    var(--sd-state-info) 72%,
+    transparent
+  );
+  --sd-theme-docker-widget-accent-surface-02: color-mix(
+    in srgb,
+    var(--sd-state-info) 18%,
+    transparent
+  );
+  --sd-theme-docker-widget-accent-surface-03: color-mix(
+    in srgb,
+    var(--sd-state-success) 18%,
+    transparent
+  );
+  --sd-theme-docker-widget-accent-surface-04: color-mix(
+    in srgb,
+    var(--sd-state-danger) 18%,
+    transparent
+  );
+  --sd-theme-docker-widget-accent-surface-05: color-mix(
+    in srgb,
+    var(--sd-state-info) 18%,
+    transparent
+  );
+  --sd-theme-docker-widget-accent-surface-06: color-mix(
+    in srgb,
+    var(--sd-state-warning) 12%,
+    transparent
+  );
+  --sd-theme-docker-widget-accent-surface-07: color-mix(
+    in srgb,
+    var(--sd-state-danger) 10%,
+    transparent
+  );
+  --sd-theme-docker-widget-accent-surface-08: color-mix(
+    in srgb,
+    var(--sd-state-info) 18%,
+    transparent
+  );
+  --sd-theme-docker-widget-accent-text-01: var(--sd-state-info);
+  --sd-theme-docker-widget-accent-text-02: var(--sd-state-info);
+  --sd-theme-docker-widget-accent-text-03: var(--sd-state-info);
+  --sd-theme-docker-widget-accent-text-04: var(--sd-state-info);
+  --sd-theme-docker-widget-accent-text-05: var(--sd-state-info);
+  --sd-theme-docker-widget-accent-text-06: var(--sd-state-danger);
+  --sd-theme-docker-widget-accent-text-07: var(--sd-state-warning);
+  --sd-theme-docker-widget-accent-text-08: var(--sd-state-danger);
+  --sd-theme-docker-widget-border-01: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 42%,
+    transparent
+  );
+  --sd-theme-docker-widget-border-02: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 42%,
+    transparent
+  );
+  --sd-theme-docker-widget-border-03: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 12%,
+    transparent
+  );
+  --sd-theme-docker-widget-border-04: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 42%,
+    transparent
+  );
+  --sd-theme-docker-widget-border-05: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 42%,
+    transparent
+  );
+  --sd-theme-docker-widget-border-06: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 42%,
+    transparent
+  );
+  --sd-theme-docker-widget-border-07: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 42%,
+    transparent
+  );
+  --sd-theme-docker-widget-border-08: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 42%,
+    transparent
+  );
+  --sd-theme-docker-widget-border-09: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 42%,
+    transparent
+  );
+  --sd-theme-docker-widget-shadow-01: rgba(0, 0, 0, 0.07);
+  --sd-theme-docker-widget-shadow-02: rgba(0, 0, 0, 0.2);
+  --sd-theme-docker-widget-shadow-03: rgba(0, 0, 0, 0.18);
+  --sd-theme-docker-widget-surface-01: var(--sd-component-surface);
+  --sd-theme-docker-widget-surface-02: var(--sd-component-surface-muted);
+  --sd-theme-docker-widget-surface-03: var(--sd-component-surface);
+  --sd-theme-docker-widget-surface-04: var(--sd-component-surface);
+  --sd-theme-docker-widget-surface-05: var(--sd-component-surface-raised);
+  --sd-theme-docker-widget-surface-06: color-mix(
+    in srgb,
+    var(--sd-component-surface) 74%,
+    transparent
+  );
+  --sd-theme-docker-widget-surface-07: color-mix(
+    in srgb,
+    var(--sd-component-surface) 86%,
+    transparent
+  );
+  --sd-theme-docker-widget-surface-08: var(--sd-component-surface);
+  --sd-theme-docker-widget-surface-09: color-mix(
+    in srgb,
+    var(--sd-component-surface) 80%,
+    transparent
+  );
+  --sd-theme-docker-widget-surface-10: var(--sd-component-surface-muted);
+  --sd-theme-docker-widget-surface-11: var(--sd-component-surface-raised);
+  --sd-theme-docker-widget-text-01: var(--sd-component-on-strong);
+  --sd-theme-docker-widget-text-02: var(--sd-component-text-secondary);
+  --sd-theme-edit-modal-accent-01: var(--sd-state-info);
+  --sd-theme-edit-modal-accent-border-01: color-mix(
+    in srgb,
+    var(--sd-state-info) 50%,
+    transparent
+  );
+  --sd-theme-edit-modal-accent-border-02: color-mix(
+    in srgb,
+    var(--sd-state-info) 36%,
+    transparent
+  );
+  --sd-theme-edit-modal-accent-border-03: color-mix(
+    in srgb,
+    var(--sd-state-info) 52%,
+    transparent
+  );
+  --sd-theme-edit-modal-accent-border-04: color-mix(
+    in srgb,
+    var(--sd-state-danger) 42%,
+    transparent
+  );
+  --sd-theme-edit-modal-accent-border-05: color-mix(
+    in srgb,
+    var(--sd-state-info) 48%,
+    transparent
+  );
+  --sd-theme-edit-modal-accent-surface-01: color-mix(
+    in srgb,
+    var(--sd-state-info) 14%,
+    transparent
+  );
+  --sd-theme-edit-modal-accent-surface-02: color-mix(
+    in srgb,
+    var(--sd-state-danger) 10%,
+    transparent
+  );
+  --sd-theme-edit-modal-accent-surface-03: color-mix(
+    in srgb,
+    var(--sd-state-info) 18%,
+    transparent
+  );
+  --sd-theme-edit-modal-accent-text-01: var(--sd-state-danger);
+  --sd-theme-edit-modal-border-01: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 10%,
+    transparent
+  );
+  --sd-theme-edit-modal-border-02: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 18%,
+    transparent
+  );
+  --sd-theme-edit-modal-border-03: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 11%,
+    transparent
+  );
+  --sd-theme-edit-modal-border-04: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 16%,
+    transparent
+  );
+  --sd-theme-edit-modal-shadow-01: rgba(0, 0, 0, 0.22);
+  --sd-theme-edit-modal-shadow-02: rgba(0, 0, 0, 0.2);
+  --sd-theme-edit-modal-surface-01: color-mix(
+    in srgb,
+    var(--sd-component-surface) 8%,
+    transparent
+  );
+  --sd-theme-edit-modal-surface-02: color-mix(
+    in srgb,
+    var(--sd-component-surface) 24%,
+    transparent
+  );
+  --sd-theme-edit-modal-surface-03: color-mix(
+    in srgb,
+    var(--sd-component-surface) 8%,
+    transparent
+  );
+  --sd-theme-edit-modal-surface-04: color-mix(
+    in srgb,
+    var(--sd-component-surface) 10%,
+    transparent
+  );
+  --sd-theme-edit-modal-surface-05: color-mix(
+    in srgb,
+    var(--sd-component-surface) 8%,
+    transparent
+  );
+  --sd-theme-edit-modal-surface-06: color-mix(
+    in srgb,
+    var(--sd-component-surface) 14%,
+    transparent
+  );
+  --sd-theme-edit-modal-surface-07: color-mix(
+    in srgb,
+    var(--sd-component-surface) 12%,
+    transparent
+  );
+  --sd-theme-edit-modal-surface-08: color-mix(
+    in srgb,
+    var(--sd-component-surface) 8%,
+    transparent
+  );
+  --sd-theme-edit-modal-text-01: var(--sd-component-text-tertiary);
+  --sd-theme-edit-modal-text-02: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 80%,
+    transparent
+  );
+  --sd-theme-edit-modal-text-03: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 68%,
+    transparent
+  );
+  --sd-theme-edit-modal-text-04: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 76%,
+    transparent
+  );
+  --sd-theme-edit-modal-text-05: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 40%,
+    transparent
+  );
+  --sd-theme-edit-modal-text-06: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 50%,
+    transparent
+  );
+  --sd-theme-grid-panel-accent-border-01: color-mix(
+    in srgb,
+    var(--sd-state-warning) 20%,
+    transparent
+  );
+  --sd-theme-grid-panel-accent-border-02: color-mix(
+    in srgb,
+    var(--sd-state-warning) 60%,
+    transparent
+  );
+  --sd-theme-grid-panel-accent-border-03: color-mix(
+    in srgb,
+    var(--sd-state-warning) 30%,
+    transparent
+  );
+  --sd-theme-grid-panel-accent-surface-01: color-mix(
+    in srgb,
+    var(--sd-state-warning) 10%,
+    transparent
+  );
+  --sd-theme-grid-panel-accent-text-01: var(--sd-state-warning);
+  --sd-theme-grid-panel-accent-text-02: var(--sd-state-danger);
+  --sd-theme-grid-panel-border-01: var(--sd-color-border-strong);
+  --sd-theme-grid-panel-border-02: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 36%,
+    transparent
+  );
+  --sd-theme-grid-panel-fill-01: var(--sd-component-on-strong);
+  --sd-theme-grid-panel-shadow-01: rgba(0, 0, 0, 0.62);
+  --sd-theme-grid-panel-shadow-02: rgba(0, 0, 0, 0.15);
+  --sd-theme-grid-panel-shadow-03: rgba(0, 0, 0, 0.53);
+  --sd-theme-grid-panel-shadow-04: rgba(0, 0, 0, 0.62);
+  --sd-theme-grid-panel-shadow-05: rgba(0, 0, 0, 0.62);
+  --sd-theme-grid-panel-shadow-06: rgba(0, 0, 0, 0.25);
+  --sd-theme-grid-panel-shadow-07: rgba(0, 0, 0, 0.38);
+  --sd-theme-grid-panel-shadow-08: rgba(0, 0, 0, 0.62);
+  --sd-theme-grid-panel-surface-01: color-mix(
+    in srgb,
+    var(--sd-component-surface) 50%,
+    transparent
+  );
+  --sd-theme-grid-panel-surface-02: color-mix(
+    in srgb,
+    var(--sd-component-surface) 74%,
+    transparent
+  );
+  --sd-theme-grid-panel-surface-03: color-mix(
+    in srgb,
+    var(--sd-component-surface) 18%,
+    transparent
+  );
+  --sd-theme-grid-panel-surface-04: color-mix(
+    in srgb,
+    #000000 70%,
+    transparent
+  );
+  --sd-theme-grid-panel-surface-05: color-mix(
+    in srgb,
+    var(--sd-component-surface) 14%,
+    transparent
+  );
+  --sd-theme-grid-panel-surface-06: color-mix(
+    in srgb,
+    var(--sd-component-surface) 20%,
+    transparent
+  );
+  --sd-theme-grid-panel-surface-07: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 20%,
+    transparent
+  );
+  --sd-theme-grid-panel-surface-08: var(--sd-component-ink-surface);
+  --sd-theme-grid-panel-surface-09: color-mix(
+    in srgb,
+    var(--sd-component-surface) 8%,
+    transparent
+  );
+  --sd-theme-grid-panel-surface-10: color-mix(
+    in srgb,
+    var(--sd-component-surface) 10%,
+    transparent
+  );
+  --sd-theme-grid-panel-text-01: var(--sd-component-text-primary);
+  --sd-theme-grid-panel-text-02: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 58%,
+    transparent
+  );
+  --sd-theme-grid-panel-text-03: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 42%,
+    transparent
+  );
+  --sd-theme-grid-panel-text-04: color-mix(
+    in srgb,
+    var(--sd-component-on-strong) 86%,
+    transparent
+  );
+  --sd-theme-grid-panel-text-05: color-mix(
+    in srgb,
+    var(--sd-component-on-strong) 72%,
+    transparent
+  );
+  --sd-theme-grid-panel-text-06: var(--sd-component-on-strong);
+  --sd-theme-grid-panel-text-07: color-mix(
+    in srgb,
+    var(--sd-component-on-strong) 55%,
+    transparent
+  );
+  --sd-theme-grid-panel-text-08: var(--sd-component-text-primary);
+  --sd-theme-grid-panel-text-09: var(--sd-component-text-primary);
+  --sd-theme-group-selector-surface-01: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 30%,
+    transparent
+  );
+  --sd-theme-group-selector-surface-02: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 50%,
+    transparent
+  );
+  --sd-theme-group-settings-modal-accent-border-01: color-mix(
+    in srgb,
+    var(--sd-state-info) 42%,
+    transparent
+  );
+  --sd-theme-group-settings-modal-accent-border-02: color-mix(
+    in srgb,
+    var(--sd-state-danger) 32%,
+    transparent
+  );
+  --sd-theme-group-settings-modal-accent-surface-01: color-mix(
+    in srgb,
+    var(--sd-state-info) 18%,
+    transparent
+  );
+  --sd-theme-group-settings-modal-accent-surface-02: color-mix(
+    in srgb,
+    var(--sd-state-info) 18%,
+    transparent
+  );
+  --sd-theme-group-settings-modal-accent-surface-03: color-mix(
+    in srgb,
+    var(--sd-state-info) 18%,
+    transparent
+  );
+  --sd-theme-group-settings-modal-accent-text-01: var(--sd-state-danger);
+  --sd-theme-group-settings-modal-accent-text-02: var(--sd-state-info);
+  --sd-theme-group-settings-modal-border-01: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 12%,
+    transparent
+  );
+  --sd-theme-group-settings-modal-border-02: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 10%,
+    transparent
+  );
+  --sd-theme-group-settings-modal-border-03: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 16%,
+    transparent
+  );
+  --sd-theme-group-settings-modal-border-04: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 11%,
+    transparent
+  );
+  --sd-theme-group-settings-modal-surface-01: color-mix(
+    in srgb,
+    var(--sd-component-surface) 10%,
+    transparent
+  );
+  --sd-theme-group-settings-modal-surface-02: color-mix(
+    in srgb,
+    var(--sd-component-surface) 15%,
+    transparent
+  );
+  --sd-theme-group-settings-modal-surface-03: color-mix(
+    in srgb,
+    var(--sd-component-surface) 8%,
+    transparent
+  );
+  --sd-theme-group-settings-modal-surface-04: color-mix(
+    in srgb,
+    var(--sd-component-surface) 8%,
+    transparent
+  );
+  --sd-theme-group-settings-modal-surface-05: color-mix(
+    in srgb,
+    var(--sd-component-surface) 8%,
+    transparent
+  );
+  --sd-theme-group-settings-modal-surface-06: color-mix(
+    in srgb,
+    var(--sd-component-surface) 12%,
+    transparent
+  );
+  --sd-theme-group-settings-modal-surface-07: color-mix(
+    in srgb,
+    var(--sd-component-surface) 18%,
+    transparent
+  );
+  --sd-theme-group-settings-modal-surface-08: var(--sd-component-surface-muted);
+  --sd-theme-group-settings-modal-text-01: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 48%,
+    transparent
+  );
+  --sd-theme-group-settings-modal-text-02: var(--sd-component-text-tertiary);
+  --sd-theme-group-settings-modal-text-03: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 68%,
+    transparent
+  );
+  --sd-theme-group-settings-modal-text-04: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 86%,
+    transparent
+  );
+  --sd-theme-group-settings-modal-text-05: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 58%,
+    transparent
+  );
+  --sd-theme-group-settings-modal-text-06: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 54%,
+    transparent
+  );
+  --sd-theme-group-settings-modal-text-07: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 72%,
+    transparent
+  );
+  --sd-theme-group-settings-modal-text-08: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 62%,
+    transparent
+  );
+  --sd-theme-group-settings-modal-text-09: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 40%,
+    transparent
+  );
+  --sd-theme-group-settings-modal-text-10: var(--sd-component-on-strong);
+  --sd-theme-home-main-widget-shell-accent-surface-01: color-mix(
+    in srgb,
+    var(--sd-state-danger) 72%,
+    transparent
+  );
+  --sd-theme-home-main-widget-shell-shadow-01: rgba(0, 0, 0, 0.62);
+  --sd-theme-home-main-widget-shell-text-01: var(--sd-state-info);
+  --sd-theme-home-main-widget-shell-text-02: var(--sd-component-on-strong);
+  --sd-theme-icon-shape-fill-01: var(--sd-component-on-strong);
+  --sd-theme-icon-shape-fill-02: var(--sd-component-on-strong);
+  --sd-theme-itab-anniversary-anniversary-card-accent-surface-01: color-mix(
+    in srgb,
+    var(--sd-state-danger) 18%,
+    transparent
+  );
+  --sd-theme-itab-anniversary-anniversary-card-accent-text-01: var(
+    --sd-state-danger
+  );
+  --sd-theme-itab-anniversary-anniversary-card-shadow-01: rgba(0, 0, 0, 0.13);
+  --sd-theme-itab-anniversary-anniversary-card-shadow-02: rgba(0, 0, 0, 0.25);
+  --sd-theme-itab-anniversary-anniversary-card-surface-01: var(
+    --sd-component-surface
+  );
+  --sd-theme-itab-anniversary-anniversary-card-text-01: var(
+    --sd-component-on-strong
+  );
+  --sd-theme-itab-anniversary-anniversary-opened-panel-accent-border-01: color-mix(
+    in srgb,
+    var(--sd-state-info) 38%,
+    transparent
+  );
+  --sd-theme-itab-anniversary-anniversary-opened-panel-accent-surface-01: color-mix(
+    in srgb,
+    var(--sd-state-danger) 18%,
+    transparent
+  );
+  --sd-theme-itab-anniversary-anniversary-opened-panel-accent-surface-02: color-mix(
+    in srgb,
+    var(--sd-state-warning) 18%,
+    transparent
+  );
+  --sd-theme-itab-anniversary-anniversary-opened-panel-accent-surface-03: color-mix(
+    in srgb,
+    var(--sd-state-success) 18%,
+    transparent
+  );
+  --sd-theme-itab-anniversary-anniversary-opened-panel-accent-surface-04: color-mix(
+    in srgb,
+    var(--sd-state-info) 18%,
+    transparent
+  );
+  --sd-theme-itab-anniversary-anniversary-opened-panel-accent-surface-05: color-mix(
+    in srgb,
+    var(--sd-state-danger) 18%,
+    transparent
+  );
+  --sd-theme-itab-anniversary-anniversary-opened-panel-accent-surface-06: color-mix(
+    in srgb,
+    var(--sd-state-info) 18%,
+    transparent
+  );
+  --sd-theme-itab-anniversary-anniversary-opened-panel-accent-text-01: var(
+    --sd-state-info
+  );
+  --sd-theme-itab-anniversary-anniversary-opened-panel-border-01: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 18%,
+    transparent
+  );
+  --sd-theme-itab-anniversary-anniversary-opened-panel-border-02: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 32%,
+    transparent
+  );
+  --sd-theme-itab-anniversary-anniversary-opened-panel-border-03: var(
+    --sd-color-border-strong
+  );
+  --sd-theme-itab-anniversary-anniversary-opened-panel-border-04: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 8%,
+    transparent
+  );
+  --sd-theme-itab-anniversary-anniversary-opened-panel-border-05: var(
+    --sd-color-border-strong
+  );
+  --sd-theme-itab-anniversary-anniversary-opened-panel-fill-01: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 55%,
+    transparent
+  );
+  --sd-theme-itab-anniversary-anniversary-opened-panel-shadow-01: rgba(
+    0,
+    0,
+    0,
+    0.42
+  );
+  --sd-theme-itab-anniversary-anniversary-opened-panel-shadow-02: rgba(
+    0,
+    0,
+    0,
+    0.42
+  );
+  --sd-theme-itab-anniversary-anniversary-opened-panel-shadow-03: rgba(
+    0,
+    0,
+    0,
+    0.13
+  );
+  --sd-theme-itab-anniversary-anniversary-opened-panel-shadow-04: rgba(
+    0,
+    0,
+    0,
+    0.19
+  );
+  --sd-theme-itab-anniversary-anniversary-opened-panel-shadow-05: rgba(
+    0,
+    0,
+    0,
+    0.4
+  );
+  --sd-theme-itab-anniversary-anniversary-opened-panel-shadow-06: rgba(
+    0,
+    0,
+    0,
+    0.1
+  );
+  --sd-theme-itab-anniversary-anniversary-opened-panel-surface-01: var(
+    --sd-component-surface
+  );
+  --sd-theme-itab-anniversary-anniversary-opened-panel-surface-02: var(
+    --sd-component-surface-muted
+  );
+  --sd-theme-itab-anniversary-anniversary-opened-panel-surface-03: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 10%,
+    transparent
+  );
+  --sd-theme-itab-anniversary-anniversary-opened-panel-surface-04: color-mix(
+    in srgb,
+    #000000 28%,
+    transparent
+  );
+  --sd-theme-itab-anniversary-anniversary-opened-panel-surface-05: color-mix(
+    in srgb,
+    var(--sd-component-surface) 14%,
+    transparent
+  );
+  --sd-theme-itab-anniversary-anniversary-opened-panel-surface-06: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 16%,
+    transparent
+  );
+  --sd-theme-itab-anniversary-anniversary-opened-panel-surface-07: color-mix(
+    in srgb,
+    #000000 45%,
+    transparent
+  );
+  --sd-theme-itab-anniversary-anniversary-opened-panel-surface-08: color-mix(
+    in srgb,
+    var(--sd-component-surface) 58%,
+    transparent
+  );
+  --sd-theme-itab-anniversary-anniversary-opened-panel-surface-09: var(
+    --sd-component-ink-surface
+  );
+  --sd-theme-itab-anniversary-anniversary-opened-panel-surface-10: var(
+    --sd-component-ink-surface
+  );
+  --sd-theme-itab-anniversary-anniversary-opened-panel-surface-11: color-mix(
+    in srgb,
+    #000000 64%,
+    transparent
+  );
+  --sd-theme-itab-anniversary-anniversary-opened-panel-surface-12: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 8%,
+    transparent
+  );
+  --sd-theme-itab-anniversary-anniversary-opened-panel-surface-13: var(
+    --sd-component-surface
+  );
+  --sd-theme-itab-anniversary-anniversary-opened-panel-surface-14: var(
+    --sd-component-surface-muted
+  );
+  --sd-theme-itab-anniversary-anniversary-opened-panel-surface-15: color-mix(
+    in srgb,
+    var(--sd-component-surface) 8%,
+    transparent
+  );
+  --sd-theme-itab-anniversary-anniversary-opened-panel-surface-16: color-mix(
+    in srgb,
+    var(--sd-component-surface) 12%,
+    transparent
+  );
+  --sd-theme-itab-anniversary-anniversary-opened-panel-surface-17: color-mix(
+    in srgb,
+    var(--sd-component-surface) 86%,
+    transparent
+  );
+  --sd-theme-itab-anniversary-anniversary-opened-panel-surface-18: color-mix(
+    in srgb,
+    var(--sd-component-surface) 16%,
+    transparent
+  );
+  --sd-theme-itab-anniversary-anniversary-opened-panel-text-01: var(
+    --sd-component-text-primary
+  );
+  --sd-theme-itab-anniversary-anniversary-opened-panel-text-02: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 42%,
+    transparent
+  );
+  --sd-theme-itab-anniversary-anniversary-opened-panel-text-03: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 55%,
+    transparent
+  );
+  --sd-theme-itab-anniversary-anniversary-opened-panel-text-04: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 60%,
+    transparent
+  );
+  --sd-theme-itab-anniversary-anniversary-opened-panel-text-05: var(
+    --sd-component-on-strong
+  );
+  --sd-theme-itab-anniversary-anniversary-opened-panel-text-06: var(
+    --sd-component-text-tertiary
+  );
+  --sd-theme-itab-anniversary-anniversary-opened-panel-text-07: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 28%,
+    transparent
+  );
+  --sd-theme-itab-anniversary-anniversary-opened-panel-text-08: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 80%,
+    transparent
+  );
+  --sd-theme-itab-anniversary-anniversary-opened-panel-text-09: var(
+    --sd-component-text-primary
+  );
+  --sd-theme-itab-anniversary-anniversary-opened-panel-text-10: color-mix(
+    in srgb,
+    var(--sd-component-on-strong) 80%,
+    transparent
+  );
+  --sd-theme-itab-anniversary-anniversary-opened-panel-text-11: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 56%,
+    transparent
+  );
+  --sd-theme-itab-anniversary-anniversary-opened-panel-text-12: var(
+    --sd-component-text-primary
+  );
+  --sd-theme-itab-anniversary-anniversary-opened-panel-text-13: var(
+    --sd-component-text-tertiary
+  );
+  --sd-theme-itab-anniversary-anniversary-opened-panel-text-14: color-mix(
+    in srgb,
+    var(--sd-component-on-strong) 66%,
+    transparent
+  );
+  --sd-theme-itab-anniversary-anniversary-opened-panel-text-15: color-mix(
+    in srgb,
+    var(--sd-component-on-strong) 90%,
+    transparent
+  );
+  --sd-theme-itab-anniversary-anniversary-opened-panel-text-16: var(
+    --sd-component-text-secondary
+  );
+  --sd-theme-itab-anniversary-anniversary-opened-panel-text-17: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 86%,
+    transparent
+  );
+  --sd-theme-itab-calendar-calendar-opened-panel-accent-surface-01: color-mix(
+    in srgb,
+    var(--sd-state-info) 18%,
+    transparent
+  );
+  --sd-theme-itab-calendar-calendar-opened-panel-accent-surface-02: color-mix(
+    in srgb,
+    var(--sd-state-danger) 8%,
+    transparent
+  );
+  --sd-theme-itab-calendar-calendar-opened-panel-accent-surface-03: color-mix(
+    in srgb,
+    var(--sd-state-danger) 18%,
+    transparent
+  );
+  --sd-theme-itab-calendar-calendar-opened-panel-accent-surface-04: color-mix(
+    in srgb,
+    var(--sd-state-info) 18%,
+    transparent
+  );
+  --sd-theme-itab-calendar-calendar-opened-panel-accent-surface-05: color-mix(
+    in srgb,
+    var(--sd-state-danger) 18%,
+    transparent
+  );
+  --sd-theme-itab-calendar-calendar-opened-panel-accent-surface-06: color-mix(
+    in srgb,
+    var(--sd-state-danger) 18%,
+    transparent
+  );
+  --sd-theme-itab-calendar-calendar-opened-panel-accent-surface-07: color-mix(
+    in srgb,
+    var(--sd-state-info) 18%,
+    transparent
+  );
+  --sd-theme-itab-calendar-calendar-opened-panel-accent-surface-08: color-mix(
+    in srgb,
+    var(--sd-state-info) 18%,
+    transparent
+  );
+  --sd-theme-itab-calendar-calendar-opened-panel-accent-surface-09: color-mix(
+    in srgb,
+    var(--sd-state-danger) 18%,
+    transparent
+  );
+  --sd-theme-itab-calendar-calendar-opened-panel-accent-text-01: var(
+    --sd-state-danger
+  );
+  --sd-theme-itab-calendar-calendar-opened-panel-accent-text-02: color-mix(
+    in srgb,
+    var(--sd-state-danger) 56%,
+    transparent
+  );
+  --sd-theme-itab-calendar-calendar-opened-panel-accent-text-03: var(
+    --sd-state-info
+  );
+  --sd-theme-itab-calendar-calendar-opened-panel-border-01: var(
+    --sd-color-border-strong
+  );
+  --sd-theme-itab-calendar-calendar-opened-panel-shadow-01: rgba(0, 0, 0, 0.2);
+  --sd-theme-itab-calendar-calendar-opened-panel-shadow-02: rgba(0, 0, 0, 0.07);
+  --sd-theme-itab-calendar-calendar-opened-panel-shadow-03: rgba(0, 0, 0, 0.22);
+  --sd-theme-itab-calendar-calendar-opened-panel-shadow-04: rgba(0, 0, 0, 0.25);
+  --sd-theme-itab-calendar-calendar-opened-panel-shadow-05: rgba(0, 0, 0, 0.05);
+  --sd-theme-itab-calendar-calendar-opened-panel-shadow-06: rgba(0, 0, 0, 0.22);
+  --sd-theme-itab-calendar-calendar-opened-panel-shadow-07: rgba(0, 0, 0, 0.1);
+  --sd-theme-itab-calendar-calendar-opened-panel-surface-01: var(
+    --sd-component-surface
+  );
+  --sd-theme-itab-calendar-calendar-opened-panel-surface-02: var(
+    --sd-component-surface-muted
+  );
+  --sd-theme-itab-calendar-calendar-opened-panel-surface-03: var(
+    --sd-component-surface-muted
+  );
+  --sd-theme-itab-calendar-calendar-opened-panel-surface-04: color-mix(
+    in srgb,
+    var(--sd-component-surface) 86%,
+    transparent
+  );
+  --sd-theme-itab-calendar-calendar-opened-panel-surface-05: var(
+    --sd-component-surface-muted
+  );
+  --sd-theme-itab-calendar-calendar-opened-panel-surface-06: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 20%,
+    transparent
+  );
+  --sd-theme-itab-calendar-calendar-opened-panel-surface-07: var(
+    --sd-component-surface-muted
+  );
+  --sd-theme-itab-calendar-calendar-opened-panel-surface-08: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 8%,
+    transparent
+  );
+  --sd-theme-itab-calendar-calendar-opened-panel-surface-09: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 8%,
+    transparent
+  );
+  --sd-theme-itab-calendar-calendar-opened-panel-surface-10: var(
+    --sd-component-surface-muted
+  );
+  --sd-theme-itab-calendar-calendar-opened-panel-surface-11: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 18%,
+    transparent
+  );
+  --sd-theme-itab-calendar-calendar-opened-panel-surface-12: var(
+    --sd-component-surface-muted
+  );
+  --sd-theme-itab-calendar-calendar-opened-panel-surface-13: var(
+    --sd-component-surface-muted
+  );
+  --sd-theme-itab-calendar-calendar-opened-panel-surface-14: color-mix(
+    in srgb,
+    var(--sd-component-surface) 85%,
+    transparent
+  );
+  --sd-theme-itab-calendar-calendar-opened-panel-surface-15: var(
+    --sd-component-surface-raised
+  );
+  --sd-theme-itab-calendar-calendar-opened-panel-text-01: var(
+    --sd-component-text-primary
+  );
+  --sd-theme-itab-calendar-calendar-opened-panel-text-02: var(
+    --sd-component-text-primary
+  );
+  --sd-theme-itab-calendar-calendar-opened-panel-text-03: var(
+    --sd-component-text-primary
+  );
+  --sd-theme-itab-calendar-calendar-opened-panel-text-04: var(
+    --sd-component-text-primary
+  );
+  --sd-theme-itab-calendar-calendar-opened-panel-text-05: var(
+    --sd-component-on-strong
+  );
+  --sd-theme-itab-calendar-calendar-opened-panel-text-06: var(
+    --sd-component-text-primary
+  );
+  --sd-theme-itab-calendar-calendar-opened-panel-text-07: var(
+    --sd-component-text-primary
+  );
+  --sd-theme-itab-calendar-calendar-opened-panel-text-08: var(
+    --sd-component-text-secondary
+  );
+  --sd-theme-itab-calendar-calendar-opened-panel-text-09: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 28%,
+    transparent
+  );
+  --sd-theme-itab-calendar-calendar-opened-panel-text-10: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 42%,
+    transparent
+  );
+  --sd-theme-itab-calendar-calendar-opened-panel-text-11: var(
+    --sd-component-text-primary
+  );
+  --sd-theme-itab-calendar-calendar-opened-panel-text-12: var(
+    --sd-component-text-primary
+  );
+  --sd-theme-itab-calendar-calendar-opened-panel-text-13: var(
+    --sd-component-text-primary
+  );
+  --sd-theme-itab-calendar-calendar-opened-panel-text-14: var(
+    --sd-component-text-secondary
+  );
+  --sd-theme-itab-calendar-calendar-widget-accent-surface-01: color-mix(
+    in srgb,
+    var(--sd-state-danger) 18%,
+    transparent
+  );
+  --sd-theme-itab-calendar-calendar-widget-accent-surface-02: color-mix(
+    in srgb,
+    var(--sd-state-danger) 18%,
+    transparent
+  );
+  --sd-theme-itab-calendar-calendar-widget-accent-surface-03: color-mix(
+    in srgb,
+    var(--sd-state-danger) 18%,
+    transparent
+  );
+  --sd-theme-itab-calendar-calendar-widget-accent-text-01: var(
+    --sd-state-danger
+  );
+  --sd-theme-itab-calendar-calendar-widget-accent-text-02: var(
+    --sd-state-danger
+  );
+  --sd-theme-itab-calendar-calendar-widget-surface-01: var(
+    --sd-component-surface
+  );
+  --sd-theme-itab-calendar-calendar-widget-text-01: var(
+    --sd-component-text-primary
+  );
+  --sd-theme-itab-calendar-calendar-widget-text-02: var(
+    --sd-component-on-strong
+  );
+  --sd-theme-itab-calendar-calendar-widget-text-03: var(
+    --sd-component-text-primary
+  );
+  --sd-theme-itab-calendar-calendar-widget-text-04: var(
+    --sd-component-text-secondary
+  );
+  --sd-theme-itab-calendar-calendar-widget-text-05: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 80%,
+    transparent
+  );
+  --sd-theme-itab-calendar-calendar-widget-text-06: var(
+    --sd-component-text-primary
+  );
+  --sd-theme-itab-calendar-calendar-widget-text-07: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 46%,
+    transparent
+  );
+  --sd-theme-itab-clock-clock-opened-panel-accent-border-01: color-mix(
+    in srgb,
+    var(--sd-state-info) 38%,
+    transparent
+  );
+  --sd-theme-itab-clock-clock-opened-panel-accent-surface-01: color-mix(
+    in srgb,
+    var(--sd-state-info) 18%,
+    transparent
+  );
+  --sd-theme-itab-clock-clock-opened-panel-border-01: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 42%,
+    transparent
+  );
+  --sd-theme-itab-clock-clock-opened-panel-border-02: var(
+    --sd-color-border-strong
+  );
+  --sd-theme-itab-clock-clock-opened-panel-shadow-01: rgba(0, 0, 0, 0.62);
+  --sd-theme-itab-clock-clock-opened-panel-shadow-02: rgba(0, 0, 0, 0.04);
+  --sd-theme-itab-clock-clock-opened-panel-surface-01: var(
+    --sd-component-ink-surface
+  );
+  --sd-theme-itab-clock-clock-opened-panel-surface-02: var(
+    --sd-component-ink-surface
+  );
+  --sd-theme-itab-clock-clock-opened-panel-surface-03: var(
+    --sd-component-ink-surface
+  );
+  --sd-theme-itab-clock-clock-opened-panel-surface-04: var(
+    --sd-component-ink-surface
+  );
+  --sd-theme-itab-clock-clock-opened-panel-surface-05: var(
+    --sd-component-ink-surface
+  );
+  --sd-theme-itab-clock-clock-opened-panel-surface-06: color-mix(
+    in srgb,
+    #000000 76%,
+    transparent
+  );
+  --sd-theme-itab-clock-clock-opened-panel-surface-07: var(
+    --sd-component-surface-raised
+  );
+  --sd-theme-itab-clock-clock-opened-panel-surface-08: var(
+    --sd-component-surface
+  );
+  --sd-theme-itab-clock-clock-opened-panel-text-01: color-mix(
+    in srgb,
+    var(--sd-component-on-strong) 64%,
+    transparent
+  );
+  --sd-theme-itab-clock-clock-opened-panel-text-02: var(
+    --sd-component-text-primary
+  );
+  --sd-theme-itab-clock-clock-opened-panel-text-03: var(
+    --sd-component-text-secondary
+  );
+  --sd-theme-itab-clock-clock-opened-panel-text-04: var(
+    --sd-component-text-tertiary
+  );
+  --sd-theme-itab-clock-clock-opened-panel-text-05: color-mix(
+    in srgb,
+    var(--sd-component-on-strong) 28%,
+    transparent
+  );
+  --sd-theme-itab-clock-clock-opened-panel-text-06: var(
+    --sd-component-on-strong
+  );
+  --sd-theme-itab-clock-clock-widget-surface-01: var(
+    --sd-component-ink-surface
+  );
+  --sd-theme-itab-clock-clock-widget-text-01: var(--sd-component-on-strong);
+  --sd-theme-itab-daily-english-daily-english-opened-panel-surface-01: var(
+    --sd-component-ink-surface
+  );
+  --sd-theme-itab-daily-english-daily-english-opened-panel-surface-02: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 8%,
+    transparent
+  );
+  --sd-theme-itab-daily-english-daily-english-opened-panel-surface-03: var(
+    --sd-component-ink-surface
+  );
+  --sd-theme-itab-daily-english-daily-english-opened-panel-text-01: var(
+    --sd-component-on-strong
+  );
+  --sd-theme-itab-daily-english-daily-english-opened-panel-text-02: color-mix(
+    in srgb,
+    var(--sd-component-on-strong) 72%,
+    transparent
+  );
+  --sd-theme-itab-daily-english-daily-english-widget-surface-01: var(
+    --sd-component-ink-surface
+  );
+  --sd-theme-itab-daily-english-daily-english-widget-text-01: var(
+    --sd-component-on-strong
+  );
+  --sd-theme-itab-daily-english-daily-english-widget-text-02: color-mix(
+    in srgb,
+    var(--sd-component-on-strong) 50%,
+    transparent
+  );
+  --sd-theme-itab-daily-english-daily-english-widget-text-03: color-mix(
+    in srgb,
+    var(--sd-component-on-strong) 70%,
+    transparent
+  );
+  --sd-theme-itab-food-picker-food-picker-opened-panel-accent-border-01: color-mix(
+    in srgb,
+    var(--sd-state-info) 16%,
+    transparent
+  );
+  --sd-theme-itab-food-picker-food-picker-opened-panel-accent-border-02: color-mix(
+    in srgb,
+    var(--sd-state-warning) 72%,
+    transparent
+  );
+  --sd-theme-itab-food-picker-food-picker-opened-panel-accent-surface-01: color-mix(
+    in srgb,
+    var(--sd-state-warning) 72%,
+    transparent
+  );
+  --sd-theme-itab-food-picker-food-picker-opened-panel-accent-surface-02: color-mix(
+    in srgb,
+    var(--sd-state-warning) 18%,
+    transparent
+  );
+  --sd-theme-itab-food-picker-food-picker-opened-panel-accent-surface-03: color-mix(
+    in srgb,
+    var(--sd-state-warning) 18%,
+    transparent
+  );
+  --sd-theme-itab-food-picker-food-picker-opened-panel-accent-surface-04: color-mix(
+    in srgb,
+    var(--sd-state-warning) 18%,
+    transparent
+  );
+  --sd-theme-itab-food-picker-food-picker-opened-panel-accent-surface-05: color-mix(
+    in srgb,
+    var(--sd-state-success) 18%,
+    transparent
+  );
+  --sd-theme-itab-food-picker-food-picker-opened-panel-accent-surface-06: color-mix(
+    in srgb,
+    var(--sd-state-info) 18%,
+    transparent
+  );
+  --sd-theme-itab-food-picker-food-picker-opened-panel-accent-surface-07: color-mix(
+    in srgb,
+    var(--sd-state-danger) 18%,
+    transparent
+  );
+  --sd-theme-itab-food-picker-food-picker-opened-panel-accent-surface-08: color-mix(
+    in srgb,
+    var(--sd-state-warning) 18%,
+    transparent
+  );
+  --sd-theme-itab-food-picker-food-picker-opened-panel-accent-surface-09: color-mix(
+    in srgb,
+    var(--sd-state-info) 8%,
+    transparent
+  );
+  --sd-theme-itab-food-picker-food-picker-opened-panel-accent-text-01: var(
+    --sd-state-info
+  );
+  --sd-theme-itab-food-picker-food-picker-opened-panel-accent-text-02: var(
+    --sd-state-info
+  );
+  --sd-theme-itab-food-picker-food-picker-opened-panel-accent-text-03: color-mix(
+    in srgb,
+    var(--sd-state-info) 58%,
+    transparent
+  );
+  --sd-theme-itab-food-picker-food-picker-opened-panel-shadow-01: rgba(
+    0,
+    0,
+    0,
+    0.2
+  );
+  --sd-theme-itab-food-picker-food-picker-opened-panel-surface-01: var(
+    --sd-component-surface
+  );
+  --sd-theme-itab-food-picker-food-picker-opened-panel-surface-02: color-mix(
+    in srgb,
+    var(--sd-component-surface) 72%,
+    transparent
+  );
+  --sd-theme-itab-food-picker-food-picker-opened-panel-text-01: var(
+    --sd-component-on-strong
+  );
+  --sd-theme-itab-food-picker-food-picker-widget-accent-surface-01: color-mix(
+    in srgb,
+    var(--sd-state-warning) 18%,
+    transparent
+  );
+  --sd-theme-itab-food-picker-food-picker-widget-accent-text-01: var(
+    --sd-state-info
+  );
+  --sd-theme-itab-food-picker-food-picker-widget-shadow-01: rgba(0, 0, 0, 0.42);
+  --sd-theme-itab-food-picker-food-picker-widget-surface-01: var(
+    --sd-component-surface
+  );
+  --sd-theme-itab-food-picker-food-picker-widget-text-01: var(
+    --sd-component-on-strong
+  );
+  --sd-theme-itab-ip-ip-opened-panel-accent-text-01: var(--sd-state-warning);
+  --sd-theme-itab-ip-ip-opened-panel-surface-01: var(--sd-component-surface);
+  --sd-theme-itab-ip-ip-opened-panel-text-01: var(--sd-component-text-primary);
+  --sd-theme-itab-ip-ip-opened-panel-text-02: var(--sd-component-text-primary);
+  --sd-theme-itab-ip-ip-widget-accent-surface-01: color-mix(
+    in srgb,
+    var(--sd-state-info) 18%,
+    transparent
+  );
+  --sd-theme-itab-ip-ip-widget-text-01: var(--sd-component-on-strong);
+  --sd-theme-itab-ip-ip-widget-text-02: color-mix(
+    in srgb,
+    var(--sd-component-on-strong) 92%,
+    transparent
+  );
+  --sd-theme-itab-live-flip-card-accent-surface-01: color-mix(
+    in srgb,
+    var(--sd-state-info) 18%,
+    transparent
+  );
+  --sd-theme-itab-live-flip-card-accent-surface-02: color-mix(
+    in srgb,
+    var(--sd-state-info) 18%,
+    transparent
+  );
+  --sd-theme-itab-live-flip-card-border-01: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 40%,
+    transparent
+  );
+  --sd-theme-itab-live-flip-card-shadow-01: rgba(0, 0, 0, 0.38);
+  --sd-theme-itab-live-flip-card-shadow-02: rgba(0, 0, 0, 0.04);
+  --sd-theme-itab-live-flip-card-surface-01: color-mix(
+    in srgb,
+    #000000 65%,
+    transparent
+  );
+  --sd-theme-itab-live-flip-card-surface-02: color-mix(
+    in srgb,
+    var(--sd-component-surface) 8%,
+    transparent
+  );
+  --sd-theme-itab-live-flip-card-surface-03: color-mix(
+    in srgb,
+    #000000 48%,
+    transparent
+  );
+  --sd-theme-itab-live-flip-card-surface-04: color-mix(
+    in srgb,
+    #000000 56%,
+    transparent
+  );
+  --sd-theme-itab-live-flip-card-surface-05: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 8%,
+    transparent
+  );
+  --sd-theme-itab-live-flip-card-text-01: var(--sd-component-on-strong);
+  --sd-theme-itab-live-live-opened-shell-accent-surface-01: color-mix(
+    in srgb,
+    var(--sd-state-warning) 18%,
+    transparent
+  );
+  --sd-theme-itab-live-live-opened-shell-accent-surface-02: color-mix(
+    in srgb,
+    var(--sd-state-success) 18%,
+    transparent
+  );
+  --sd-theme-itab-live-live-opened-shell-accent-surface-03: color-mix(
+    in srgb,
+    var(--sd-state-danger) 18%,
+    transparent
+  );
+  --sd-theme-itab-live-live-opened-shell-accent-text-01: var(--sd-state-info);
+  --sd-theme-itab-live-live-opened-shell-accent-text-02: var(--sd-state-info);
+  --sd-theme-itab-live-live-opened-shell-border-01: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 22%,
+    transparent
+  );
+  --sd-theme-itab-live-live-opened-shell-border-02: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 13%,
+    transparent
+  );
+  --sd-theme-itab-live-live-opened-shell-border-03: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 13%,
+    transparent
+  );
+  --sd-theme-itab-live-live-opened-shell-border-04: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 16%,
+    transparent
+  );
+  --sd-theme-itab-live-live-opened-shell-border-05: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 8%,
+    transparent
+  );
+  --sd-theme-itab-live-live-opened-shell-border-06: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 10%,
+    transparent
+  );
+  --sd-theme-itab-live-live-opened-shell-shadow-01: rgba(0, 0, 0, 0.47);
+  --sd-theme-itab-live-live-opened-shell-shadow-02: rgba(0, 0, 0, 0.6);
+  --sd-theme-itab-live-live-opened-shell-surface-01: color-mix(
+    in srgb,
+    #000000 50%,
+    transparent
+  );
+  --sd-theme-itab-live-live-opened-shell-surface-02: color-mix(
+    in srgb,
+    var(--sd-component-surface) 86%,
+    transparent
+  );
+  --sd-theme-itab-live-live-opened-shell-surface-03: var(
+    --sd-component-surface-muted
+  );
+  --sd-theme-itab-live-live-opened-shell-surface-04: var(
+    --sd-component-surface
+  );
+  --sd-theme-itab-live-live-opened-shell-surface-05: var(
+    --sd-component-surface
+  );
+  --sd-theme-itab-live-live-opened-shell-surface-06: color-mix(
+    in srgb,
+    var(--sd-component-surface) 76%,
+    transparent
+  );
+  --sd-theme-itab-live-live-opened-shell-surface-07: var(
+    --sd-component-ink-surface
+  );
+  --sd-theme-itab-live-live-opened-shell-surface-08: var(
+    --sd-component-ink-surface
+  );
+  --sd-theme-itab-live-live-opened-shell-surface-09: var(
+    --sd-component-ink-surface
+  );
+  --sd-theme-itab-live-live-opened-shell-text-01: var(
+    --sd-component-text-primary
+  );
+  --sd-theme-itab-live-live-opened-shell-text-02: var(--sd-component-on-strong);
+  --sd-theme-itab-live-live-opened-shell-text-03: var(
+    --sd-component-text-primary
+  );
+  --sd-theme-itab-live-live-opened-shell-text-04: var(
+    --sd-component-text-primary
+  );
+  --sd-theme-itab-live-live-opened-shell-text-05: var(
+    --sd-component-text-primary
+  );
+  --sd-theme-itab-live-live-opened-shell-text-06: var(
+    --sd-component-text-primary
+  );
+  --sd-theme-itab-live-live-opened-shell-text-07: color-mix(
+    in srgb,
+    var(--sd-component-on-strong) 86%,
+    transparent
+  );
+  --sd-theme-itab-live-live-widget-frame-accent-01: var(--sd-state-info);
+  --sd-theme-itab-live-live-widget-frame-accent-surface-01: color-mix(
+    in srgb,
+    var(--sd-state-info) 18%,
+    transparent
+  );
+  --sd-theme-itab-live-live-widget-frame-accent-surface-02: color-mix(
+    in srgb,
+    var(--sd-state-danger) 72%,
+    transparent
+  );
+  --sd-theme-itab-live-live-widget-frame-accent-surface-03: color-mix(
+    in srgb,
+    var(--sd-state-info) 72%,
+    transparent
+  );
+  --sd-theme-itab-live-live-widget-frame-accent-surface-04: color-mix(
+    in srgb,
+    var(--sd-state-info) 18%,
+    transparent
+  );
+  --sd-theme-itab-live-live-widget-frame-accent-surface-05: color-mix(
+    in srgb,
+    var(--sd-state-info) 18%,
+    transparent
+  );
+  --sd-theme-itab-live-live-widget-frame-accent-surface-06: color-mix(
+    in srgb,
+    var(--sd-state-info) 72%,
+    transparent
+  );
+  --sd-theme-itab-live-live-widget-frame-accent-surface-07: color-mix(
+    in srgb,
+    var(--sd-state-info) 18%,
+    transparent
+  );
+  --sd-theme-itab-live-live-widget-frame-accent-surface-08: color-mix(
+    in srgb,
+    var(--sd-state-info) 72%,
+    transparent
+  );
+  --sd-theme-itab-live-live-widget-frame-accent-text-01: var(
+    --sd-state-warning
+  );
+  --sd-theme-itab-live-live-widget-frame-accent-text-02: var(--sd-state-info);
+  --sd-theme-itab-live-live-widget-frame-border-01: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 18%,
+    transparent
+  );
+  --sd-theme-itab-live-live-widget-frame-shadow-01: rgba(0, 0, 0, 0.26);
+  --sd-theme-itab-live-live-widget-frame-shadow-02: rgba(0, 0, 0, 0.62);
+  --sd-theme-itab-live-live-widget-frame-shadow-03: rgba(0, 0, 0, 0.13);
+  --sd-theme-itab-live-live-widget-frame-shadow-04: rgba(0, 0, 0, 0.38);
+  --sd-theme-itab-live-live-widget-frame-shadow-05: rgba(0, 0, 0, 0.6);
+  --sd-theme-itab-live-live-widget-frame-shadow-06: rgba(0, 0, 0, 0.35);
+  --sd-theme-itab-live-live-widget-frame-surface-01: color-mix(
+    in srgb,
+    var(--sd-component-surface) 16%,
+    transparent
+  );
+  --sd-theme-itab-live-live-widget-frame-surface-02: color-mix(
+    in srgb,
+    var(--sd-component-surface) 86%,
+    transparent
+  );
+  --sd-theme-itab-live-live-widget-frame-surface-03: var(
+    --sd-component-surface
+  );
+  --sd-theme-itab-live-live-widget-frame-surface-04: color-mix(
+    in srgb,
+    #000000 86%,
+    transparent
+  );
+  --sd-theme-itab-live-live-widget-frame-surface-05: var(
+    --sd-component-ink-surface
+  );
+  --sd-theme-itab-live-live-widget-frame-surface-06: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 8%,
+    transparent
+  );
+  --sd-theme-itab-live-live-widget-frame-surface-07: var(
+    --sd-component-surface-muted
+  );
+  --sd-theme-itab-live-live-widget-frame-surface-08: var(
+    --sd-component-surface-muted
+  );
+  --sd-theme-itab-live-live-widget-frame-surface-09: var(
+    --sd-component-ink-surface
+  );
+  --sd-theme-itab-live-live-widget-frame-surface-10: var(
+    --sd-component-ink-surface
+  );
+  --sd-theme-itab-live-live-widget-frame-text-01: var(--sd-component-on-strong);
+  --sd-theme-itab-live-live-widget-frame-text-02: color-mix(
+    in srgb,
+    var(--sd-component-on-strong) 72%,
+    transparent
+  );
+  --sd-theme-itab-live-live-widget-frame-text-03: var(
+    --sd-component-text-primary
+  );
+  --sd-theme-itab-live-live-widget-frame-text-04: color-mix(
+    in srgb,
+    var(--sd-component-on-strong) 86%,
+    transparent
+  );
+  --sd-theme-itab-live-live-widget-frame-text-05: var(--sd-component-on-strong);
+  --sd-theme-itab-live-live-widget-frame-text-06: var(
+    --sd-component-text-primary
+  );
+  --sd-theme-itab-live-live-widget-frame-text-07: color-mix(
+    in srgb,
+    var(--sd-component-on-strong) 76%,
+    transparent
+  );
+  --sd-theme-itab-live-live-widget-frame-text-08: var(
+    --sd-component-text-primary
+  );
+  --sd-theme-itab-live-live-widget-frame-text-09: var(
+    --sd-component-text-primary
+  );
+  --sd-theme-itab-live-live-widget-frame-text-10: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 80%,
+    transparent
+  );
+  --sd-theme-itab-live-live-widget-frame-text-11: var(
+    --sd-component-text-primary
+  );
+  --sd-theme-itab-live-live-widget-frame-text-12: var(
+    --sd-component-text-secondary
+  );
+  --sd-theme-itab-memo-memo-fixed-layer-shadow-01: rgba(0, 0, 0, 0.15);
+  --sd-theme-itab-memo-memo-fixed-layer-surface-01: color-mix(
+    in srgb,
+    var(--sd-component-surface) 30%,
+    transparent
+  );
+  --sd-theme-itab-memo-memo-fixed-layer-text-01: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 90%,
+    transparent
+  );
+  --sd-theme-itab-memo-memo-fixed-layer-text-02: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 36%,
+    transparent
+  );
+  --sd-theme-itab-memo-memo-opened-panel-accent-border-01: color-mix(
+    in srgb,
+    var(--sd-state-info) 38%,
+    transparent
+  );
+  --sd-theme-itab-memo-memo-opened-panel-accent-border-02: color-mix(
+    in srgb,
+    var(--sd-state-info) 48%,
+    transparent
+  );
+  --sd-theme-itab-memo-memo-opened-panel-accent-surface-01: color-mix(
+    in srgb,
+    var(--sd-state-info) 18%,
+    transparent
+  );
+  --sd-theme-itab-memo-memo-opened-panel-accent-text-01: var(--sd-state-info);
+  --sd-theme-itab-memo-memo-opened-panel-border-01: var(
+    --sd-color-border-strong
+  );
+  --sd-theme-itab-memo-memo-opened-panel-border-02: var(--sd-component-border);
+  --sd-theme-itab-memo-memo-opened-panel-shadow-01: rgba(0, 0, 0, 0.15);
+  --sd-theme-itab-memo-memo-opened-panel-surface-01: var(
+    --sd-component-surface
+  );
+  --sd-theme-itab-memo-memo-opened-panel-surface-02: color-mix(
+    in srgb,
+    var(--sd-component-surface) 72%,
+    transparent
+  );
+  --sd-theme-itab-memo-memo-opened-panel-surface-03: var(
+    --sd-component-surface-muted
+  );
+  --sd-theme-itab-memo-memo-opened-panel-text-01: var(
+    --sd-component-text-primary
+  );
+  --sd-theme-itab-memo-memo-opened-panel-text-02: var(
+    --sd-component-text-primary
+  );
+  --sd-theme-itab-memo-memo-opened-panel-text-03: var(
+    --sd-component-text-secondary
+  );
+  --sd-theme-itab-memo-memo-opened-panel-text-04: var(--sd-component-on-strong);
+  --sd-theme-itab-memo-memo-widget-accent-surface-01: color-mix(
+    in srgb,
+    var(--sd-state-info) 18%,
+    transparent
+  );
+  --sd-theme-itab-memo-memo-widget-accent-surface-02: color-mix(
+    in srgb,
+    var(--sd-state-info) 18%,
+    transparent
+  );
+  --sd-theme-itab-memo-memo-widget-accent-surface-03: color-mix(
+    in srgb,
+    var(--sd-state-warning) 18%,
+    transparent
+  );
+  --sd-theme-itab-memo-memo-widget-accent-surface-04: color-mix(
+    in srgb,
+    var(--sd-state-warning) 18%,
+    transparent
+  );
+  --sd-theme-itab-memo-memo-widget-border-01: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 8%,
+    transparent
+  );
+  --sd-theme-itab-memo-memo-widget-surface-01: var(--sd-component-surface);
+  --sd-theme-itab-memo-memo-widget-text-01: var(--sd-component-text-primary);
+  --sd-theme-itab-memo-memo-widget-text-02: var(--sd-component-on-strong);
+  --sd-theme-itab-movie-calendar-movie-calendar-opened-panel-accent-surface-01: color-mix(
+    in srgb,
+    var(--sd-state-success) 40%,
+    transparent
+  );
+  --sd-theme-itab-movie-calendar-movie-calendar-opened-panel-accent-text-01: var(
+    --sd-state-warning
+  );
+  --sd-theme-itab-movie-calendar-movie-calendar-opened-panel-accent-text-02: var(
+    --sd-state-warning
+  );
+  --sd-theme-itab-movie-calendar-movie-calendar-opened-panel-surface-01: color-mix(
+    in srgb,
+    #000000 50%,
+    transparent
+  );
+  --sd-theme-itab-movie-calendar-movie-calendar-opened-panel-surface-02: var(
+    --sd-component-ink-surface
+  );
+  --sd-theme-itab-movie-calendar-movie-calendar-opened-panel-surface-03: color-mix(
+    in srgb,
+    #000000 38%,
+    transparent
+  );
+  --sd-theme-itab-movie-calendar-movie-calendar-opened-panel-surface-04: color-mix(
+    in srgb,
+    var(--sd-component-surface) 16%,
+    transparent
+  );
+  --sd-theme-itab-movie-calendar-movie-calendar-opened-panel-surface-05: color-mix(
+    in srgb,
+    #000000 30%,
+    transparent
+  );
+  --sd-theme-itab-movie-calendar-movie-calendar-opened-panel-surface-06: var(
+    --sd-component-ink-surface
+  );
+  --sd-theme-itab-movie-calendar-movie-calendar-opened-panel-text-01: color-mix(
+    in srgb,
+    var(--sd-component-on-strong) 90%,
+    transparent
+  );
+  --sd-theme-itab-movie-calendar-movie-calendar-opened-panel-text-02: var(
+    --sd-component-on-strong
+  );
+  --sd-theme-itab-movie-calendar-movie-calendar-opened-panel-text-03: var(
+    --sd-component-text-tertiary
+  );
+  --sd-theme-itab-movie-calendar-movie-calendar-widget-accent-surface-01: color-mix(
+    in srgb,
+    var(--sd-state-warning) 18%,
+    transparent
+  );
+  --sd-theme-itab-movie-calendar-movie-calendar-widget-accent-text-01: var(
+    --sd-state-danger
+  );
+  --sd-theme-itab-movie-calendar-movie-calendar-widget-shadow-01: rgba(
+    0,
+    0,
+    0,
+    0.13
+  );
+  --sd-theme-itab-movie-calendar-movie-calendar-widget-shadow-02: rgba(
+    0,
+    0,
+    0,
+    0.38
+  );
+  --sd-theme-itab-movie-calendar-movie-calendar-widget-surface-01: var(
+    --sd-component-ink-surface
+  );
+  --sd-theme-itab-movie-calendar-movie-calendar-widget-surface-02: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 8%,
+    transparent
+  );
+  --sd-theme-itab-movie-calendar-movie-calendar-widget-surface-03: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 12%,
+    transparent
+  );
+  --sd-theme-itab-movie-calendar-movie-calendar-widget-text-01: var(
+    --sd-component-on-strong
+  );
+  --sd-theme-itab-movie-calendar-movie-calendar-widget-text-02: var(
+    --sd-component-on-strong
+  );
+  --sd-theme-itab-movie-calendar-movie-calendar-widget-text-03: var(
+    --sd-component-text-primary
+  );
+  --sd-theme-itab-number-uppercase-number-uppercase-opened-panel-accent-border-01: color-mix(
+    in srgb,
+    var(--sd-state-info) 38%,
+    transparent
+  );
+  --sd-theme-itab-number-uppercase-number-uppercase-opened-panel-accent-border-02: color-mix(
+    in srgb,
+    var(--sd-state-warning) 38%,
+    transparent
+  );
+  --sd-theme-itab-number-uppercase-number-uppercase-opened-panel-accent-surface-01: color-mix(
+    in srgb,
+    var(--sd-state-info) 18%,
+    transparent
+  );
+  --sd-theme-itab-number-uppercase-number-uppercase-opened-panel-accent-surface-02: color-mix(
+    in srgb,
+    var(--sd-state-info) 18%,
+    transparent
+  );
+  --sd-theme-itab-number-uppercase-number-uppercase-opened-panel-accent-surface-03: color-mix(
+    in srgb,
+    var(--sd-state-info) 18%,
+    transparent
+  );
+  --sd-theme-itab-number-uppercase-number-uppercase-opened-panel-accent-surface-04: color-mix(
+    in srgb,
+    var(--sd-state-warning) 8%,
+    transparent
+  );
+  --sd-theme-itab-number-uppercase-number-uppercase-opened-panel-accent-surface-05: color-mix(
+    in srgb,
+    var(--sd-state-info) 18%,
+    transparent
+  );
+  --sd-theme-itab-number-uppercase-number-uppercase-opened-panel-accent-surface-06: color-mix(
+    in srgb,
+    var(--sd-state-warning) 18%,
+    transparent
+  );
+  --sd-theme-itab-number-uppercase-number-uppercase-opened-panel-accent-text-01: var(
+    --sd-state-warning
+  );
+  --sd-theme-itab-number-uppercase-number-uppercase-opened-panel-shadow-01: rgba(
+    0,
+    0,
+    0,
+    0.24
+  );
+  --sd-theme-itab-number-uppercase-number-uppercase-opened-panel-surface-01: var(
+    --sd-component-ink-surface
+  );
+  --sd-theme-itab-number-uppercase-number-uppercase-opened-panel-text-01: var(
+    --sd-component-text-tertiary
+  );
+  --sd-theme-itab-number-uppercase-number-uppercase-opened-panel-text-02: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 58%,
+    transparent
+  );
+  --sd-theme-itab-number-uppercase-number-uppercase-opened-panel-text-03: var(
+    --sd-component-text-secondary
+  );
+  --sd-theme-itab-number-uppercase-number-uppercase-opened-panel-text-04: var(
+    --sd-component-text-tertiary
+  );
+  --sd-theme-itab-number-uppercase-number-uppercase-opened-panel-text-05: var(
+    --sd-component-text-tertiary
+  );
+  --sd-theme-itab-number-uppercase-number-uppercase-opened-panel-text-06: var(
+    --sd-component-text-secondary
+  );
+  --sd-theme-itab-number-uppercase-number-uppercase-widget-accent-border-01: color-mix(
+    in srgb,
+    var(--sd-state-warning) 16%,
+    transparent
+  );
+  --sd-theme-itab-number-uppercase-number-uppercase-widget-accent-border-02: color-mix(
+    in srgb,
+    var(--sd-state-warning) 25%,
+    transparent
+  );
+  --sd-theme-itab-number-uppercase-number-uppercase-widget-accent-surface-01: color-mix(
+    in srgb,
+    var(--sd-state-warning) 18%,
+    transparent
+  );
+  --sd-theme-itab-number-uppercase-number-uppercase-widget-accent-surface-02: color-mix(
+    in srgb,
+    var(--sd-state-warning) 10%,
+    transparent
+  );
+  --sd-theme-itab-number-uppercase-number-uppercase-widget-accent-surface-03: color-mix(
+    in srgb,
+    var(--sd-state-info) 18%,
+    transparent
+  );
+  --sd-theme-itab-number-uppercase-number-uppercase-widget-accent-surface-04: color-mix(
+    in srgb,
+    var(--sd-state-warning) 18%,
+    transparent
+  );
+  --sd-theme-itab-number-uppercase-number-uppercase-widget-accent-text-01: var(
+    --sd-state-warning
+  );
+  --sd-theme-itab-number-uppercase-number-uppercase-widget-accent-text-02: color-mix(
+    in srgb,
+    var(--sd-state-warning) 55%,
+    transparent
+  );
+  --sd-theme-itab-number-uppercase-number-uppercase-widget-accent-text-03: var(
+    --sd-state-warning
+  );
+  --sd-theme-itab-poem-poem-opened-panel-border-01: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 20%,
+    transparent
+  );
+  --sd-theme-itab-poem-poem-opened-panel-border-02: var(--sd-component-border);
+  --sd-theme-itab-poem-poem-opened-panel-surface-01: var(
+    --sd-component-surface-muted
+  );
+  --sd-theme-itab-poem-poem-opened-panel-surface-02: color-mix(
+    in srgb,
+    var(--sd-component-surface) 10%,
+    transparent
+  );
+  --sd-theme-itab-poem-poem-opened-panel-surface-03: color-mix(
+    in srgb,
+    var(--sd-component-surface) 18%,
+    transparent
+  );
+  --sd-theme-itab-poem-poem-opened-panel-surface-04: var(
+    --sd-component-surface
+  );
+  --sd-theme-itab-poem-poem-opened-panel-text-01: var(
+    --sd-component-text-primary
+  );
+  --sd-theme-itab-poem-poem-opened-panel-text-02: var(
+    --sd-component-text-primary
+  );
+  --sd-theme-itab-poem-poem-opened-panel-text-03: var(
+    --sd-component-text-primary
+  );
+  --sd-theme-itab-poem-poem-opened-panel-text-04: var(
+    --sd-component-text-primary
+  );
+  --sd-theme-itab-poem-poem-opened-panel-text-05: var(--sd-component-on-strong);
+  --sd-theme-itab-poem-poem-widget-accent-01: var(--sd-state-info);
+  --sd-theme-itab-poem-poem-widget-accent-surface-01: color-mix(
+    in srgb,
+    var(--sd-state-info) 18%,
+    transparent
+  );
+  --sd-theme-itab-poem-poem-widget-surface-01: var(
+    --sd-component-surface-muted
+  );
+  --sd-theme-itab-poem-poem-widget-text-01: var(--sd-component-text-primary);
+  --sd-theme-itab-pomodoro-pomodoro-opened-panel-accent-surface-01: color-mix(
+    in srgb,
+    var(--sd-state-info) 34%,
+    transparent
+  );
+  --sd-theme-itab-pomodoro-pomodoro-opened-panel-accent-text-01: color-mix(
+    in srgb,
+    var(--sd-state-warning) 72%,
+    transparent
+  );
+  --sd-theme-itab-pomodoro-pomodoro-opened-panel-border-01: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 18%,
+    transparent
+  );
+  --sd-theme-itab-pomodoro-pomodoro-opened-panel-border-02: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 10%,
+    transparent
+  );
+  --sd-theme-itab-pomodoro-pomodoro-opened-panel-surface-01: color-mix(
+    in srgb,
+    var(--sd-component-surface) 30%,
+    transparent
+  );
+  --sd-theme-itab-pomodoro-pomodoro-opened-panel-surface-02: color-mix(
+    in srgb,
+    var(--sd-component-surface) 40%,
+    transparent
+  );
+  --sd-theme-itab-pomodoro-pomodoro-opened-panel-surface-03: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 14%,
+    transparent
+  );
+  --sd-theme-itab-pomodoro-pomodoro-opened-panel-surface-04: color-mix(
+    in srgb,
+    var(--sd-component-surface) 22%,
+    transparent
+  );
+  --sd-theme-itab-pomodoro-pomodoro-opened-panel-text-01: var(
+    --sd-component-text-tertiary
+  );
+  --sd-theme-itab-pomodoro-pomodoro-opened-panel-text-02: var(
+    --sd-component-on-strong
+  );
+  --sd-theme-itab-pomodoro-pomodoro-opened-panel-text-03: color-mix(
+    in srgb,
+    var(--sd-component-on-strong) 80%,
+    transparent
+  );
+  --sd-theme-itab-pomodoro-pomodoro-opened-panel-text-04: color-mix(
+    in srgb,
+    var(--sd-component-on-strong) 50%,
+    transparent
+  );
+  --sd-theme-itab-pomodoro-pomodoro-opened-panel-text-05: color-mix(
+    in srgb,
+    var(--sd-component-on-strong) 58%,
+    transparent
+  );
+  --sd-theme-itab-pomodoro-pomodoro-opened-panel-text-06: color-mix(
+    in srgb,
+    var(--sd-component-on-strong) 72%,
+    transparent
+  );
+  --sd-theme-itab-pomodoro-pomodoro-widget-accent-surface-01: color-mix(
+    in srgb,
+    var(--sd-state-info) 60%,
+    transparent
+  );
+  --sd-theme-itab-pomodoro-pomodoro-widget-border-01: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 40%,
+    transparent
+  );
+  --sd-theme-itab-pomodoro-pomodoro-widget-border-02: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 42%,
+    transparent
+  );
+  --sd-theme-itab-pomodoro-pomodoro-widget-surface-01: var(
+    --sd-component-ink-surface
+  );
+  --sd-theme-itab-pomodoro-pomodoro-widget-surface-02: color-mix(
+    in srgb,
+    var(--sd-component-surface) 30%,
+    transparent
+  );
+  --sd-theme-itab-pomodoro-pomodoro-widget-surface-03: color-mix(
+    in srgb,
+    var(--sd-component-surface) 40%,
+    transparent
+  );
+  --sd-theme-itab-pomodoro-pomodoro-widget-surface-04: color-mix(
+    in srgb,
+    var(--sd-component-surface) 20%,
+    transparent
+  );
+  --sd-theme-itab-pomodoro-pomodoro-widget-text-01: var(
+    --sd-component-on-strong
+  );
+  --sd-theme-itab-pomodoro-pomodoro-widget-text-02: color-mix(
+    in srgb,
+    var(--sd-component-on-strong) 50%,
+    transparent
+  );
+  --sd-theme-itab-pomodoro-pomodoro-widget-text-03: color-mix(
+    in srgb,
+    var(--sd-component-on-strong) 60%,
+    transparent
+  );
+  --sd-theme-itab-todo-todo-opened-panel-accent-surface-01: color-mix(
+    in srgb,
+    var(--sd-state-info) 18%,
+    transparent
+  );
+  --sd-theme-itab-todo-todo-opened-panel-border-01: var(
+    --sd-color-border-strong
+  );
+  --sd-theme-itab-todo-todo-opened-panel-border-02: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 8%,
+    transparent
+  );
+  --sd-theme-itab-todo-todo-opened-panel-surface-01: var(
+    --sd-component-surface-muted
+  );
+  --sd-theme-itab-todo-todo-opened-panel-surface-02: var(
+    --sd-component-surface
+  );
+  --sd-theme-itab-todo-todo-opened-panel-surface-03: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 72%,
+    transparent
+  );
+  --sd-theme-itab-todo-todo-opened-panel-surface-04: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 78%,
+    transparent
+  );
+  --sd-theme-itab-todo-todo-opened-panel-text-01: var(
+    --sd-component-text-primary
+  );
+  --sd-theme-itab-todo-todo-opened-panel-text-02: var(
+    --sd-component-text-secondary
+  );
+  --sd-theme-itab-todo-todo-opened-panel-text-03: var(--sd-component-on-strong);
+  --sd-theme-itab-todo-todo-opened-panel-text-04: var(
+    --sd-component-text-primary
+  );
+  --sd-theme-itab-todo-todo-widget-accent-border-01: color-mix(
+    in srgb,
+    var(--sd-state-info) 38%,
+    transparent
+  );
+  --sd-theme-itab-todo-todo-widget-accent-surface-01: color-mix(
+    in srgb,
+    var(--sd-state-info) 18%,
+    transparent
+  );
+  --sd-theme-itab-todo-todo-widget-accent-text-01: var(--sd-state-info);
+  --sd-theme-itab-todo-todo-widget-border-01: var(--sd-color-border-strong);
+  --sd-theme-itab-todo-todo-widget-surface-01: var(--sd-component-surface);
+  --sd-theme-itab-todo-todo-widget-surface-02: var(
+    --sd-component-surface-raised
+  );
+  --sd-theme-itab-todo-todo-widget-text-01: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 80%,
+    transparent
+  );
+  --sd-theme-itab-wallpaper-wallpaper-opened-panel-accent-01: var(
+    --sd-state-info
+  );
+  --sd-theme-itab-wallpaper-wallpaper-opened-panel-accent-surface-01: color-mix(
+    in srgb,
+    var(--sd-state-info) 18%,
+    transparent
+  );
+  --sd-theme-itab-wallpaper-wallpaper-opened-panel-accent-text-01: color-mix(
+    in srgb,
+    var(--sd-state-info) 72%,
+    transparent
+  );
+  --sd-theme-itab-wallpaper-wallpaper-opened-panel-accent-text-02: var(
+    --sd-state-info
+  );
+  --sd-theme-itab-wallpaper-wallpaper-opened-panel-accent-text-03: color-mix(
+    in srgb,
+    var(--sd-state-info) 54%,
+    transparent
+  );
+  --sd-theme-itab-wallpaper-wallpaper-opened-panel-accent-text-04: var(
+    --sd-state-danger
+  );
+  --sd-theme-itab-wallpaper-wallpaper-opened-panel-shadow-01: rgba(
+    0,
+    0,
+    0,
+    0.62
+  );
+  --sd-theme-itab-wallpaper-wallpaper-opened-panel-shadow-02: rgba(
+    0,
+    0,
+    0,
+    0.25
+  );
+  --sd-theme-itab-wallpaper-wallpaper-opened-panel-surface-01: color-mix(
+    in srgb,
+    var(--sd-component-surface) 82%,
+    transparent
+  );
+  --sd-theme-itab-wallpaper-wallpaper-opened-panel-surface-02: color-mix(
+    in srgb,
+    var(--sd-component-surface) 86%,
+    transparent
+  );
+  --sd-theme-itab-wallpaper-wallpaper-opened-panel-surface-03: var(
+    --sd-component-surface
+  );
+  --sd-theme-itab-wallpaper-wallpaper-opened-panel-surface-04: color-mix(
+    in srgb,
+    var(--sd-component-surface) 86%,
+    transparent
+  );
+  --sd-theme-itab-wallpaper-wallpaper-opened-panel-surface-05: var(
+    --sd-component-surface-raised
+  );
+  --sd-theme-itab-wallpaper-wallpaper-opened-panel-surface-06: var(
+    --sd-component-surface-muted
+  );
+  --sd-theme-itab-wallpaper-wallpaper-opened-panel-surface-07: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 18%,
+    transparent
+  );
+  --sd-theme-itab-wallpaper-wallpaper-opened-panel-surface-08: color-mix(
+    in srgb,
+    #000000 38%,
+    transparent
+  );
+  --sd-theme-itab-wallpaper-wallpaper-opened-panel-text-01: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 78%,
+    transparent
+  );
+  --sd-theme-itab-wallpaper-wallpaper-opened-panel-text-02: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 86%,
+    transparent
+  );
+  --sd-theme-itab-wallpaper-wallpaper-opened-panel-text-03: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 44%,
+    transparent
+  );
+  --sd-theme-itab-wallpaper-wallpaper-opened-panel-text-04: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 62%,
+    transparent
+  );
+  --sd-theme-itab-wallpaper-wallpaper-opened-panel-text-05: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 62%,
+    transparent
+  );
+  --sd-theme-itab-wallpaper-wallpaper-opened-panel-text-06: var(
+    --sd-component-on-strong
+  );
+  --sd-theme-itab-wallpaper-wallpaper-widget-accent-surface-01: color-mix(
+    in srgb,
+    var(--sd-state-info) 18%,
+    transparent
+  );
+  --sd-theme-itab-wallpaper-wallpaper-widget-shadow-01: rgba(0, 0, 0, 0.47);
+  --sd-theme-itab-wallpaper-wallpaper-widget-surface-01: color-mix(
+    in srgb,
+    #000000 32%,
+    transparent
+  );
+  --sd-theme-itab-wallpaper-wallpaper-widget-surface-02: color-mix(
+    in srgb,
+    #000000 38%,
+    transparent
+  );
+  --sd-theme-itab-wallpaper-wallpaper-widget-text-01: var(
+    --sd-component-on-strong
+  );
+  --sd-theme-itab-wallpaper-wallpaper-widget-text-02: color-mix(
+    in srgb,
+    var(--sd-component-on-strong) 92%,
+    transparent
+  );
+  --sd-theme-itab-weather-weather-opened-panel-accent-01: color-mix(
+    in srgb,
+    var(--sd-state-info) 72%,
+    transparent
+  );
+  --sd-theme-itab-weather-weather-opened-panel-accent-fill-01: var(
+    --sd-state-info
+  );
+  --sd-theme-itab-weather-weather-opened-panel-border-01: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 20%,
+    transparent
+  );
+  --sd-theme-itab-weather-weather-opened-panel-border-02: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 12%,
+    transparent
+  );
+  --sd-theme-itab-weather-weather-opened-panel-border-03: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 42%,
+    transparent
+  );
+  --sd-theme-itab-weather-weather-opened-panel-fill-01: color-mix(
+    in srgb,
+    var(--sd-component-on-strong) 74%,
+    transparent
+  );
+  --sd-theme-itab-weather-weather-opened-panel-shadow-01: rgba(0, 0, 0, 0.35);
+  --sd-theme-itab-weather-weather-opened-panel-surface-01: color-mix(
+    in srgb,
+    var(--sd-component-surface) 8%,
+    transparent
+  );
+  --sd-theme-itab-weather-weather-opened-panel-surface-02: color-mix(
+    in srgb,
+    #000000 86%,
+    transparent
+  );
+  --sd-theme-itab-weather-weather-opened-panel-surface-03: color-mix(
+    in srgb,
+    var(--sd-component-surface) 9%,
+    transparent
+  );
+  --sd-theme-itab-weather-weather-opened-panel-surface-04: color-mix(
+    in srgb,
+    var(--sd-component-surface) 8%,
+    transparent
+  );
+  --sd-theme-itab-weather-weather-opened-panel-surface-05: color-mix(
+    in srgb,
+    var(--sd-component-surface) 85%,
+    transparent
+  );
+  --sd-theme-itab-weather-weather-opened-panel-surface-06: color-mix(
+    in srgb,
+    var(--sd-component-surface) 8%,
+    transparent
+  );
+  --sd-theme-itab-weather-weather-opened-panel-text-01: color-mix(
+    in srgb,
+    var(--sd-component-on-strong) 82%,
+    transparent
+  );
+  --sd-theme-itab-weather-weather-opened-panel-text-02: color-mix(
+    in srgb,
+    var(--sd-component-on-strong) 78%,
+    transparent
+  );
+  --sd-theme-itab-weather-weather-opened-panel-text-03: color-mix(
+    in srgb,
+    var(--sd-component-on-strong) 74%,
+    transparent
+  );
+  --sd-theme-itab-weather-weather-opened-panel-text-04: var(
+    --sd-component-on-strong
+  );
+  --sd-theme-itab-weather-weather-opened-panel-text-05: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 88%,
+    transparent
+  );
+  --sd-theme-itab-weather-weather-opened-panel-text-06: color-mix(
+    in srgb,
+    var(--sd-component-on-strong) 72%,
+    transparent
+  );
+  --sd-theme-itab-weather-weather-opened-panel-text-07: color-mix(
+    in srgb,
+    var(--sd-component-on-strong) 48%,
+    transparent
+  );
+  --sd-theme-itab-weather-weather-opened-panel-text-08: color-mix(
+    in srgb,
+    var(--sd-component-on-strong) 88%,
+    transparent
+  );
+  --sd-theme-itab-weather-weather-opened-panel-text-09: color-mix(
+    in srgb,
+    var(--sd-component-on-strong) 90%,
+    transparent
+  );
+  --sd-theme-itab-weather-weather-opened-panel-text-10: color-mix(
+    in srgb,
+    var(--sd-component-on-strong) 75%,
+    transparent
+  );
+  --sd-theme-itab-weather-weather-opened-panel-text-11: color-mix(
+    in srgb,
+    var(--sd-component-on-strong) 68%,
+    transparent
+  );
+  --sd-theme-itab-weather-weather-opened-panel-text-12: color-mix(
+    in srgb,
+    var(--sd-component-on-strong) 92%,
+    transparent
+  );
+  --sd-theme-itab-weather-weather-widget-accent-surface-01: color-mix(
+    in srgb,
+    var(--sd-state-info) 18%,
+    transparent
+  );
+  --sd-theme-itab-weather-weather-widget-accent-surface-02: color-mix(
+    in srgb,
+    var(--sd-state-info) 18%,
+    transparent
+  );
+  --sd-theme-itab-weather-weather-widget-accent-surface-03: color-mix(
+    in srgb,
+    var(--sd-state-info) 18%,
+    transparent
+  );
+  --sd-theme-itab-weather-weather-widget-accent-surface-04: color-mix(
+    in srgb,
+    var(--sd-state-info) 18%,
+    transparent
+  );
+  --sd-theme-itab-weather-weather-widget-accent-surface-05: color-mix(
+    in srgb,
+    var(--sd-state-info) 18%,
+    transparent
+  );
+  --sd-theme-itab-weather-weather-widget-accent-surface-06: color-mix(
+    in srgb,
+    var(--sd-state-info) 18%,
+    transparent
+  );
+  --sd-theme-itab-weather-weather-widget-accent-surface-07: color-mix(
+    in srgb,
+    var(--sd-state-info) 18%,
+    transparent
+  );
+  --sd-theme-itab-weather-weather-widget-accent-surface-08: color-mix(
+    in srgb,
+    var(--sd-state-info) 18%,
+    transparent
+  );
+  --sd-theme-itab-weather-weather-widget-accent-surface-09: color-mix(
+    in srgb,
+    var(--sd-state-info) 18%,
+    transparent
+  );
+  --sd-theme-itab-weather-weather-widget-accent-surface-10: color-mix(
+    in srgb,
+    var(--sd-state-info) 18%,
+    transparent
+  );
+  --sd-theme-itab-weather-weather-widget-accent-surface-11: color-mix(
+    in srgb,
+    var(--sd-state-info) 18%,
+    transparent
+  );
+  --sd-theme-itab-weather-weather-widget-accent-surface-12: color-mix(
+    in srgb,
+    var(--sd-state-info) 18%,
+    transparent
+  );
+  --sd-theme-itab-weather-weather-widget-accent-surface-13: color-mix(
+    in srgb,
+    var(--sd-state-warning) 18%,
+    transparent
+  );
+  --sd-theme-itab-weather-weather-widget-accent-surface-14: color-mix(
+    in srgb,
+    var(--sd-state-warning) 18%,
+    transparent
+  );
+  --sd-theme-itab-weather-weather-widget-accent-surface-15: color-mix(
+    in srgb,
+    var(--sd-state-warning) 18%,
+    transparent
+  );
+  --sd-theme-itab-weather-weather-widget-surface-01: var(
+    --sd-component-ink-surface
+  );
+  --sd-theme-itab-weather-weather-widget-surface-02: var(
+    --sd-component-surface-raised
+  );
+  --sd-theme-itab-weather-weather-widget-surface-03: var(
+    --sd-component-ink-surface
+  );
+  --sd-theme-itab-weather-weather-widget-surface-04: var(
+    --sd-component-ink-surface
+  );
+  --sd-theme-itab-weather-weather-widget-surface-05: var(
+    --sd-component-surface-raised
+  );
+  --sd-theme-itab-weather-weather-widget-surface-06: var(
+    --sd-component-surface-raised
+  );
+  --sd-theme-itab-weather-weather-widget-surface-07: var(
+    --sd-component-surface-raised
+  );
+  --sd-theme-itab-weather-weather-widget-surface-08: var(
+    --sd-component-ink-surface
+  );
+  --sd-theme-itab-weather-weather-widget-surface-09: var(
+    --sd-component-surface-raised
+  );
+  --sd-theme-itab-weather-weather-widget-surface-10: color-mix(
+    in srgb,
+    var(--sd-state-warning) 18%,
+    transparent
+  );
+  --sd-theme-itab-weather-weather-widget-text-01: var(--sd-component-on-strong);
+  --sd-theme-network-indicator-accent-border-01: color-mix(
+    in srgb,
+    var(--sd-state-success) 30%,
+    transparent
+  );
+  --sd-theme-network-indicator-accent-border-02: color-mix(
+    in srgb,
+    var(--sd-state-warning) 30%,
+    transparent
+  );
+  --sd-theme-network-indicator-accent-border-03: color-mix(
+    in srgb,
+    var(--sd-state-danger) 30%,
+    transparent
+  );
+  --sd-theme-network-indicator-accent-surface-01: color-mix(
+    in srgb,
+    var(--sd-state-success) 15%,
+    transparent
+  );
+  --sd-theme-network-indicator-accent-surface-02: color-mix(
+    in srgb,
+    var(--sd-state-success) 18%,
+    transparent
+  );
+  --sd-theme-network-indicator-accent-surface-03: color-mix(
+    in srgb,
+    var(--sd-state-warning) 15%,
+    transparent
+  );
+  --sd-theme-network-indicator-accent-surface-04: color-mix(
+    in srgb,
+    var(--sd-state-warning) 18%,
+    transparent
+  );
+  --sd-theme-network-indicator-accent-surface-05: color-mix(
+    in srgb,
+    var(--sd-state-danger) 15%,
+    transparent
+  );
+  --sd-theme-network-indicator-accent-surface-06: color-mix(
+    in srgb,
+    var(--sd-state-danger) 18%,
+    transparent
+  );
+  --sd-theme-network-indicator-accent-text-01: var(--sd-state-success);
+  --sd-theme-network-indicator-accent-text-02: var(--sd-state-warning);
+  --sd-theme-network-indicator-accent-text-03: var(--sd-state-danger);
+  --sd-theme-network-indicator-shadow-01: rgba(0, 0, 0, 0.62);
+  --sd-theme-network-indicator-shadow-02: rgba(0, 0, 0, 0.62);
+  --sd-theme-network-indicator-shadow-03: rgba(0, 0, 0, 0.62);
+  --sd-theme-network-indicator-surface-01: color-mix(
+    in srgb,
+    var(--sd-component-surface) 20%,
+    transparent
+  );
+  --sd-theme-runtime-widget-opened-panel-host-accent-text-01: var(
+    --sd-state-warning
+  );
+  --sd-theme-runtime-widget-opened-panel-host-accent-text-02: var(
+    --sd-state-warning
+  );
+  --sd-theme-runtime-widget-opened-panel-host-border-01: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 13%,
+    transparent
+  );
+  --sd-theme-runtime-widget-opened-panel-host-border-02: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 8%,
+    transparent
+  );
+  --sd-theme-runtime-widget-opened-panel-host-shadow-01: rgba(0, 0, 0, 0.6);
+  --sd-theme-runtime-widget-opened-panel-host-shadow-02: rgba(0, 0, 0, 0.42);
+  --sd-theme-runtime-widget-opened-panel-host-surface-01: var(
+    --sd-component-surface-muted
+  );
+  --sd-theme-runtime-widget-opened-panel-host-surface-02: var(
+    --sd-component-ink-surface
+  );
+  --sd-theme-runtime-widget-opened-panel-host-text-01: var(
+    --sd-component-on-strong
+  );
+  --sd-theme-runtime-widget-opened-panel-host-text-02: var(
+    --sd-component-text-primary
+  );
+  --sd-theme-runtime-widget-runtime-frame-shadow-01: rgba(0, 0, 0, 0.53);
+  --sd-theme-runtime-widget-runtime-menu-shadow-01: rgba(0, 0, 0, 0.62);
+  --sd-theme-runtime-widget-runtime-menu-surface-01: color-mix(
+    in srgb,
+    #000000 72%,
+    transparent
+  );
+  --sd-theme-runtime-widget-runtime-menu-surface-02: color-mix(
+    in srgb,
+    var(--sd-component-surface) 10%,
+    transparent
+  );
+  --sd-theme-runtime-widget-runtime-menu-surface-03: color-mix(
+    in srgb,
+    var(--sd-component-surface) 30%,
+    transparent
+  );
+  --sd-theme-runtime-widget-runtime-menu-text-01: color-mix(
+    in srgb,
+    var(--sd-component-on-strong) 92%,
+    transparent
+  );
+  --sd-theme-runtime-widget-runtime-menu-text-02: color-mix(
+    in srgb,
+    var(--sd-component-on-strong) 92%,
+    transparent
+  );
+  --sd-theme-settings-modal-accent-border-01: color-mix(
+    in srgb,
+    var(--sd-state-info) 32%,
+    transparent
+  );
+  --sd-theme-settings-modal-accent-border-02: color-mix(
+    in srgb,
+    var(--sd-state-info) 40%,
+    transparent
+  );
+  --sd-theme-settings-modal-accent-surface-01: color-mix(
+    in srgb,
+    var(--sd-state-info) 16%,
+    transparent
+  );
+  --sd-theme-settings-modal-accent-surface-02: color-mix(
+    in srgb,
+    var(--sd-state-info) 32%,
+    transparent
+  );
+  --sd-theme-settings-modal-accent-surface-03: color-mix(
+    in srgb,
+    var(--sd-state-info) 8%,
+    transparent
+  );
+  --sd-theme-settings-modal-accent-surface-04: color-mix(
+    in srgb,
+    var(--sd-state-info) 18%,
+    transparent
+  );
+  --sd-theme-settings-modal-accent-text-01: color-mix(
+    in srgb,
+    var(--sd-state-info) 52%,
+    transparent
+  );
+  --sd-theme-settings-modal-accent-text-02: color-mix(
+    in srgb,
+    var(--sd-state-info) 72%,
+    transparent
+  );
+  --sd-theme-settings-modal-accent-text-03: var(--sd-state-danger);
+  --sd-theme-settings-modal-border-01: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 18%,
+    transparent
+  );
+  --sd-theme-settings-modal-border-02: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 34%,
+    transparent
+  );
+  --sd-theme-settings-modal-border-03: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 11%,
+    transparent
+  );
+  --sd-theme-settings-modal-border-04: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 10%,
+    transparent
+  );
+  --sd-theme-settings-modal-border-05: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 12%,
+    transparent
+  );
+  --sd-theme-settings-modal-shadow-01: rgba(0, 0, 0, 0.56);
+  --sd-theme-settings-modal-shadow-02: rgba(0, 0, 0, 0.22);
+  --sd-theme-settings-modal-shadow-03: rgba(0, 0, 0, 0.4);
+  --sd-theme-settings-modal-surface-01: color-mix(
+    in srgb,
+    var(--sd-component-surface) 16%,
+    transparent
+  );
+  --sd-theme-settings-modal-surface-02: color-mix(
+    in srgb,
+    var(--sd-component-surface) 14%,
+    transparent
+  );
+  --sd-theme-settings-modal-surface-03: color-mix(
+    in srgb,
+    var(--sd-component-surface) 82%,
+    transparent
+  );
+  --sd-theme-settings-modal-surface-04: color-mix(
+    in srgb,
+    var(--sd-component-surface) 8%,
+    transparent
+  );
+  --sd-theme-settings-modal-surface-05: color-mix(
+    in srgb,
+    var(--sd-component-surface) 8%,
+    transparent
+  );
+  --sd-theme-settings-modal-surface-06: color-mix(
+    in srgb,
+    var(--sd-component-surface) 8%,
+    transparent
+  );
+  --sd-theme-settings-modal-surface-07: color-mix(
+    in srgb,
+    var(--sd-component-surface) 8%,
+    transparent
+  );
+  --sd-theme-settings-modal-surface-08: color-mix(
+    in srgb,
+    var(--sd-component-surface) 10%,
+    transparent
+  );
+  --sd-theme-settings-modal-surface-09: color-mix(
+    in srgb,
+    var(--sd-component-surface) 8%,
+    transparent
+  );
+  --sd-theme-settings-modal-text-01: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 58%,
+    transparent
+  );
+  --sd-theme-settings-modal-text-02: color-mix(
+    in srgb,
+    var(--sd-component-on-strong) 92%,
+    transparent
+  );
+  --sd-theme-settings-modal-text-03: var(--sd-component-on-strong);
+  --sd-theme-settings-modal-text-04: color-mix(
+    in srgb,
+    var(--sd-component-on-strong) 86%,
+    transparent
+  );
+  --sd-theme-settings-modal-text-05: var(--sd-component-text-tertiary);
+  --sd-theme-settings-modal-text-06: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 62%,
+    transparent
+  );
+  --sd-theme-settings-modal-text-07: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 50%,
+    transparent
+  );
+  --sd-theme-settings-modal-text-08: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 68%,
+    transparent
+  );
+  --sd-theme-settings-modal-text-09: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 52%,
+    transparent
+  );
+  --sd-theme-settings-modal-text-10: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 40%,
+    transparent
+  );
+  --sd-theme-settings-modal-text-11: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 54%,
+    transparent
+  );
+  --sd-theme-settings-modal-text-12: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 56%,
+    transparent
+  );
+  --sd-theme-settings-modal-text-13: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 74%,
+    transparent
+  );
+  --sd-theme-settings-modal-text-14: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 64%,
+    transparent
+  );
+  --sd-theme-settings-modal-text-15: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 78%,
+    transparent
+  );
+  --sd-theme-system-status-widget-accent-surface-01: color-mix(
+    in srgb,
+    var(--sd-state-info) 18%,
+    transparent
+  );
+  --sd-theme-system-status-widget-accent-surface-02: color-mix(
+    in srgb,
+    var(--sd-state-info) 18%,
+    transparent
+  );
+  --sd-theme-system-status-widget-accent-surface-03: color-mix(
+    in srgb,
+    var(--sd-state-success) 18%,
+    transparent
+  );
+  --sd-theme-system-status-widget-accent-surface-04: color-mix(
+    in srgb,
+    var(--sd-state-info) 18%,
+    transparent
+  );
+  --sd-theme-system-status-widget-accent-surface-05: color-mix(
+    in srgb,
+    var(--sd-state-info) 18%,
+    transparent
+  );
+  --sd-theme-system-status-widget-accent-text-01: var(--sd-state-info);
+  --sd-theme-system-status-widget-accent-text-02: var(--sd-state-info);
+  --sd-theme-system-status-widget-accent-text-03: var(--sd-state-info);
+  --sd-theme-system-status-widget-accent-text-04: var(--sd-state-info);
+  --sd-theme-system-status-widget-border-01: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 42%,
+    transparent
+  );
+  --sd-theme-system-status-widget-border-02: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 12%,
+    transparent
+  );
+  --sd-theme-system-status-widget-border-03: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 42%,
+    transparent
+  );
+  --sd-theme-system-status-widget-shadow-01: rgba(0, 0, 0, 0.07);
+  --sd-theme-system-status-widget-shadow-02: rgba(0, 0, 0, 0.18);
+  --sd-theme-system-status-widget-surface-01: var(--sd-component-surface);
+  --sd-theme-system-status-widget-surface-02: color-mix(
+    in srgb,
+    var(--sd-component-surface) 80%,
+    transparent
+  );
+  --sd-theme-system-status-widget-surface-03: var(--sd-component-surface);
+  --sd-theme-system-status-widget-surface-04: var(--sd-component-surface);
+  --sd-theme-system-status-widget-surface-05: color-mix(
+    in srgb,
+    var(--sd-component-surface) 76%,
+    transparent
+  );
+  --sd-theme-system-status-widget-surface-06: var(--sd-component-surface-muted);
+  --sd-theme-system-status-widget-surface-07: var(
+    --sd-component-surface-raised
+  );
+  --sd-theme-system-status-widget-text-01: var(--sd-component-text-secondary);
+}
+/* STARTDECK COMPONENT THEME TOKENS END */
+
 .overlay-motion-root {
   isolation: isolate;
 }

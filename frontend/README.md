@@ -144,10 +144,10 @@ StartDeck 后端集成了智能网络环境识别功能，能够根据用户的�
    ```bash
    docker run -d \
      -p 9001:9001 \
-     -v $(pwd)/server/data:/app/server/data \
-     -v $(pwd)/server/music:/app/server/music \
-     -v $(pwd)/server/PC:/app/server/PC \
-     -v $(pwd)/server/APP:/app/server/APP \
+     -v $(pwd)/Data/data:/app/Data/data \
+     -v $(pwd)/Data/music:/app/Data/music \
+     -v $(pwd)/Data/PC:/app/Data/PC \
+     -v $(pwd)/Data/APP:/app/Data/APP \
      -v $(pwd)/icon-service-data:/app/icon-service/data \
      -e PORT=9001 \
      -e ICON_SERVICE_PORT=9002 \
@@ -159,7 +159,7 @@ StartDeck 后端集成了智能网络环境识别功能，能够根据用户的�
      qdnas/startdeck
    ```
 
-   > **注意**: 建议挂载 `data`、`music`、`PC`、`APP` 和 `icon-service-data` 目录，以确保配置数据、媒体文件、自定义壁纸和图标服务缓存不会丢失。若需要使用 Docker 管理功能，必须挂载 `/var/run/docker.sock`。
+   > **注意**: 建议挂载 `Data/data`、`Data/music`、`Data/PC`、`Data/APP` 和 `icon-service-data` 目录，以确保配置数据、媒体文件、自定义壁纸和图标服务缓存不会丢失。若需要使用 Docker 管理功能，必须挂载 `/var/run/docker.sock`。
 
 3. **docker-compose**
 
@@ -175,17 +175,17 @@ StartDeck 后端集成了智能网络环境识别功能，能够根据用户的�
          - '9001:9001'
        environment:
          - PORT=9001
-        - STARTDECK_ADMIN_PASSWORD=violet
-        - ICON_SERVICE_PORT=9002
-        - ICON_SERVICE_DATA_DIR=/app/icon-service/data
-        - ICON_SERVER_BASE_URL=http://127.0.0.1:9002
+         - STARTDECK_ADMIN_PASSWORD=violet
+         - ICON_SERVICE_PORT=9002
+         - ICON_SERVICE_DATA_DIR=/app/icon-service/data
+         - ICON_SERVER_BASE_URL=http://127.0.0.1:9002
          - ICON_SERVER_TIMEOUT_MS=5000
        volumes:
-         - ./data:/app/server/data #指定路径下新建data
-         - ./music:/app/server/music #映射播放器路径
-         - ./PC:/app/server/PC #映射PC端壁纸路径
-         - ./APP:/app/server/APP #映射移动端壁纸路径
-        - ./icon-service-data:/app/icon-service/data #映射图标服务运行期数据
+         - ./Data/data:/app/Data/data #映射运行期数据
+         - ./Data/music:/app/Data/music #映射播放器路径
+         - ./Data/PC:/app/Data/PC #映射PC端壁纸路径
+         - ./Data/APP:/app/Data/APP #映射移动端壁纸路径
+         - ./icon-service-data:/app/icon-service/data #映射图标服务运行期数据
          - /var/run/docker.sock:/var/run/docker.sock #映射Docker Socket
    ```
 
@@ -214,8 +214,8 @@ sudo ./deploy.sh install
 ## ⚙️ 配置说明
 
 - **默认密码**: 系统初始密码为 `admin`。Docker 部署可设置 `STARTDECK_ADMIN_PASSWORD`，容器启动时会同步 admin 密码；未设置时请登录后在设置中及时修改。
-- **数据文件**: 所有配置（布局、组件、书签等）均存储在 `server/data/startdeck.sqlite3` 中，二进制资源仍保存在 `server/` 下的对应目录。
-- **音乐文件**: 将 MP3 文件放入 `server/music` 目录，刷新页面后即可在播放器中看到。
+- **数据文件**: 所有配置（布局、组件、书签等）均存储在 `Data/data/startdeck.sqlite3` 中，二进制资源保存在 `Data/` 下的对应目录。
+- **音乐文件**: 将 MP3 文件放入 `Data/music` 目录，刷新页面后即可在播放器中看到。
 - **站点图标数据**: Rust crate 下的 `rust/crates/startdeck-iconserver/resources/data` 保存默认种子图标；运行期缓存和站点 metadata 写入 Docker `/app/icon-service/data` 或 Debian `/opt/startdeck/icon-service/data`。
 - **Docker 自动升级镜像**:
   - 入口：设置 → Docker 管理 → 自动升级镜像(每2小时)。
@@ -364,8 +364,8 @@ export default {
 
 如果您希望子应用能与 StartDeck 深度交互（如读取 Store 数据），可以将子应用构建为库 (Library)。
 
-1. **放置资源**: StartDeck 运行时会通过 `PUBLIC_DIR` 暴露公共静态目录，默认安装路径为 `server/public`。
-   - 在运行时 `server` 目录下新建 `public` 文件夹（如果没有）。
+1. **放置资源**: StartDeck 运行时会通过 `PUBLIC_DIR` 暴露公共静态目录，默认安装路径为 `Data/public`。
+   - 在运行时 `Data` 目录下新建 `public` 文件夹（如果没有）。
    - 将您的子项目构建产物（如 `my-widget.js`, `style.css`）放入其中。
    - 访问路径为: `/public/my-widget.js`。
 

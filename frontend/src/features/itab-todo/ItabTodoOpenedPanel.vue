@@ -176,15 +176,15 @@ onUnmounted(() => {
                 cy="81.333"
                 rx="39.5"
                 ry="4.667"
-                fill="#e5e7eb"
+                fill="var(--sd-itab-todo-empty-shadow)"
               />
               <path
                 d="M18 8h38a6 6 0 0 1 6 6v45a6 6 0 0 1-6 6H18a6 6 0 0 1-6-6V14a6 6 0 0 1 6-6z"
-                fill="#f2f3f5"
+                fill="var(--sd-itab-todo-empty-paper)"
               />
               <path
                 d="M24 25h26M24 38h31M24 51h20"
-                stroke="#d5d9e0"
+                stroke="var(--sd-itab-todo-empty-line)"
                 stroke-width="4"
                 stroke-linecap="round"
               />
@@ -198,15 +198,15 @@ onUnmounted(() => {
                 cy="81.333"
                 rx="39.5"
                 ry="4.667"
-                fill="#e5e7eb"
+                fill="var(--sd-itab-todo-empty-shadow)"
               />
               <path
                 d="M18 8h38a6 6 0 0 1 6 6v45a6 6 0 0 1-6 6H18a6 6 0 0 1-6-6V14a6 6 0 0 1 6-6z"
-                fill="#f2f3f5"
+                fill="var(--sd-itab-todo-empty-paper)"
               />
               <path
                 d="M24 25h26M24 38h31M24 51h20"
-                stroke="#d5d9e0"
+                stroke="var(--sd-itab-todo-empty-line)"
                 stroke-width="4"
                 stroke-linecap="round"
               />
@@ -319,8 +319,8 @@ onUnmounted(() => {
   display: block;
   width: 998px;
   height: 600px;
-  background: rgb(245, 245, 245);
-  color: rgb(34, 34, 34);
+  background: var(--sd-theme-itab-todo-todo-opened-panel-surface-01);
+  color: var(--sd-theme-itab-todo-todo-opened-panel-text-01);
   overflow: hidden;
 }
 
@@ -331,8 +331,8 @@ onUnmounted(() => {
   height: 600px;
   flex-direction: column;
   padding: 28px 22px;
-  background: rgb(245, 245, 245);
-  color: rgb(34, 34, 34);
+  background: var(--sd-theme-itab-todo-todo-opened-panel-surface-01);
+  color: var(--sd-theme-itab-todo-todo-opened-panel-text-01);
   overflow: hidden;
 }
 
@@ -341,7 +341,7 @@ onUnmounted(() => {
   width: 954px;
   height: 34px;
   margin: 0 0 12px;
-  color: rgb(34, 34, 34);
+  color: var(--sd-theme-itab-todo-todo-opened-panel-text-01);
   font-size: 22px;
   font-weight: 700;
   line-height: 34px;
@@ -354,7 +354,7 @@ onUnmounted(() => {
   min-height: 42px;
   margin: 0 0 12px;
   border-radius: 8px;
-  background: #fff;
+  background: var(--sd-theme-itab-todo-todo-opened-panel-surface-02);
 }
 
 .todo-add > i {
@@ -366,7 +366,7 @@ onUnmounted(() => {
   height: 16px;
   align-items: center;
   justify-content: center;
-  color: rgb(147, 147, 147);
+  color: var(--sd-theme-itab-todo-todo-opened-panel-text-02);
 }
 
 .todo-add > i svg {
@@ -384,7 +384,7 @@ onUnmounted(() => {
   border: 0;
   outline: 0;
   background: transparent;
-  color: rgb(34, 34, 34);
+  color: var(--sd-theme-itab-todo-todo-opened-panel-text-01);
   font: inherit;
   font-size: 14px;
   line-height: 21px;
@@ -418,7 +418,7 @@ onUnmounted(() => {
   width: 7px;
   min-height: 42px;
   border-radius: 999px;
-  background: rgba(214, 216, 220, 0.72);
+  background: var(--sd-theme-itab-todo-todo-opened-panel-surface-03);
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.18s ease;
@@ -430,7 +430,7 @@ onUnmounted(() => {
 }
 
 .todo-content-frame:hover .todo-scrollbar-thumb {
-  background: rgba(204, 207, 212, 0.78);
+  background: var(--sd-theme-itab-todo-todo-opened-panel-surface-04);
 }
 
 .todo-content-ul {
@@ -438,7 +438,7 @@ onUnmounted(() => {
   width: 954px;
   margin: 0;
   padding: 0;
-  color: rgb(147, 147, 147);
+  color: var(--sd-theme-itab-todo-todo-opened-panel-text-02);
   list-style: none;
 }
 
@@ -452,8 +452,8 @@ onUnmounted(() => {
   margin-bottom: 8px;
   padding: 8px 0 8px 12px;
   border-radius: 8px;
-  background: #fff;
-  color: rgb(147, 147, 147);
+  background: var(--sd-theme-itab-todo-todo-opened-panel-surface-02);
+  color: var(--sd-theme-itab-todo-todo-opened-panel-text-02);
   line-height: 21px;
 }
 
@@ -474,7 +474,7 @@ onUnmounted(() => {
   width: 16px;
   height: 16px;
   padding: 0;
-  border: 2px solid rgb(147, 147, 147);
+  border: 2px solid var(--sd-theme-itab-todo-todo-opened-panel-border-01);
   border-radius: 4px;
   background: transparent;
 }
@@ -487,9 +487,9 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 2px solid rgba(0, 0, 0, 0.08);
-  background: rgb(24, 144, 255);
-  color: #fff;
+  border: 2px solid var(--sd-theme-itab-todo-todo-opened-panel-border-02);
+  background: var(--sd-theme-itab-todo-todo-opened-panel-accent-surface-01);
+  color: var(--sd-theme-itab-todo-todo-opened-panel-text-03);
 }
 
 .todo-check svg {
@@ -517,7 +517,7 @@ onUnmounted(() => {
   border-radius: 12px;
   outline: 0;
   background: transparent;
-  color: rgb(96, 98, 102);
+  color: var(--sd-theme-itab-todo-todo-opened-panel-text-04);
   font: inherit;
   font-size: 14px;
   line-height: 21px;
@@ -545,7 +545,7 @@ onUnmounted(() => {
   padding: 0;
   border: 0;
   background: transparent;
-  color: rgb(147, 147, 147);
+  color: var(--sd-theme-itab-todo-todo-opened-panel-text-02);
   transform: translateY(-50%);
 }
 
@@ -562,7 +562,7 @@ onUnmounted(() => {
 .todo-done-label {
   height: 28px;
   padding: 0 0 0 40px;
-  color: rgb(147, 147, 147);
+  color: var(--sd-theme-itab-todo-todo-opened-panel-text-02);
   font-size: 12px;
   line-height: 28px;
   list-style: none;
@@ -576,7 +576,7 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   padding: 40px 0;
-  color: rgb(34, 34, 34);
+  color: var(--sd-theme-itab-todo-todo-opened-panel-text-01);
   font-size: 12px;
   line-height: 16px;
 }

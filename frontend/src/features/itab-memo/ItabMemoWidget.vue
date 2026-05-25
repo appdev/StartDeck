@@ -81,8 +81,12 @@ watch(
   min-width: 0;
   min-height: 0;
   overflow: hidden;
-  background: linear-gradient(135deg, rgb(29, 101, 240), rgb(26, 209, 252));
-  color: #222;
+  background: linear-gradient(
+    135deg,
+    var(--sd-theme-itab-memo-memo-widget-accent-surface-01),
+    var(--sd-theme-itab-memo-memo-widget-accent-surface-02)
+  );
+  color: var(--sd-theme-itab-memo-memo-widget-text-01);
 }
 
 .memo-widget-top {
@@ -91,8 +95,12 @@ watch(
   height: 25%;
   align-items: center;
   justify-content: center;
-  background-image: linear-gradient(0deg, rgb(255, 201, 39), rgb(255, 164, 3));
-  color: #fff;
+  background-image: linear-gradient(
+    0deg,
+    var(--sd-theme-itab-memo-memo-widget-accent-surface-03),
+    var(--sd-theme-itab-memo-memo-widget-accent-surface-04)
+  );
+  color: var(--sd-theme-itab-memo-memo-widget-text-02);
   font-size: 12px;
   line-height: 1.5;
   text-align: center;
@@ -110,7 +118,7 @@ watch(
   margin: 0;
   padding: 0;
   overflow: hidden;
-  background-color: #fff;
+  background-color: var(--sd-theme-itab-memo-memo-widget-surface-01);
   list-style: none;
 }
 
@@ -125,7 +133,7 @@ watch(
   min-height: 0;
   align-items: center;
   padding: 0 6.51px;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  border-bottom: 1px solid var(--sd-theme-itab-memo-memo-widget-border-01);
   font-size: 12px;
   line-height: 18px;
 }

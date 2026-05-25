@@ -96,18 +96,18 @@ const requestClose = () => {
   z-index: 70;
   display: grid;
   place-items: center;
-  background: rgba(0, 0, 0, 0.5);
+  background: var(--sd-theme-itab-live-live-opened-shell-surface-01);
   backdrop-filter: blur(10px);
 }
 
 .opened-window {
   position: relative;
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.22);
+  border: 1px solid var(--sd-theme-itab-live-live-opened-shell-border-01);
   border-radius: 16px;
-  background: rgba(250, 250, 250, 0.96);
-  color: #20242c;
-  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.38);
+  background: var(--sd-theme-itab-live-live-opened-shell-surface-02);
+  color: var(--sd-theme-itab-live-live-opened-shell-accent-text-01);
+  box-shadow: 0 30px 80px var(--sd-theme-itab-live-live-opened-shell-shadow-01);
   backdrop-filter: blur(26px);
 }
 
@@ -129,34 +129,36 @@ const requestClose = () => {
 }
 
 .traffic .yellow {
-  background: #ffbf2f;
+  background: var(--sd-theme-itab-live-live-opened-shell-accent-surface-01);
 }
 
 .traffic .green {
-  background: #1bd228;
+  background: var(--sd-theme-itab-live-live-opened-shell-accent-surface-02);
 }
 
 .traffic .red {
-  background: #ff5c59;
+  background: var(--sd-theme-itab-live-live-opened-shell-accent-surface-03);
 }
 
 .opened-window.opened-poem {
-  border: 1px solid rgba(255, 255, 255, 0.13);
+  border: 1px solid var(--sd-theme-itab-live-live-opened-shell-border-02);
   border-radius: 20px;
-  background: #eee;
-  color: #333;
-  box-shadow: rgba(0, 0, 0, 0.48) 0 12px 32px 0;
+  background: var(--sd-theme-itab-live-live-opened-shell-surface-03);
+  color: var(--sd-theme-itab-live-live-opened-shell-text-01);
+  box-shadow: var(--sd-theme-itab-live-live-opened-shell-shadow-02) 0 12px 32px
+    0;
   backdrop-filter: none;
   overflow: auto;
 }
 
 .opened-window.opened-movie {
   box-sizing: border-box;
-  border: 1px solid rgba(255, 255, 255, 0.13);
+  border: 1px solid var(--sd-theme-itab-live-live-opened-shell-border-02);
   border-radius: 20px;
   background: transparent;
-  color: #fff;
-  box-shadow: rgba(0, 0, 0, 0.48) 0 12px 32px 0;
+  color: var(--sd-theme-itab-live-live-opened-shell-text-02);
+  box-shadow: var(--sd-theme-itab-live-live-opened-shell-shadow-02) 0 12px 32px
+    0;
   backdrop-filter: none;
 }
 
@@ -164,47 +166,52 @@ const requestClose = () => {
   box-sizing: border-box;
   width: min(860px, calc(100vw - 42px));
   height: min(552px, calc(100vh - 64px));
-  border: 1px solid rgba(255, 255, 255, 0.13);
+  border: 1px solid var(--sd-theme-itab-live-live-opened-shell-border-02);
   border-radius: 20px;
   background: transparent;
-  color: #fff;
-  box-shadow: rgba(0, 0, 0, 0.48) 0 12px 32px 0;
+  color: var(--sd-theme-itab-live-live-opened-shell-text-02);
+  box-shadow: var(--sd-theme-itab-live-live-opened-shell-shadow-02) 0 12px 32px
+    0;
   backdrop-filter: none;
 }
 
 .opened-window.opened-converter {
-  border: 1px solid rgba(0, 0, 0, 0.13);
+  border: 1px solid var(--sd-theme-itab-live-live-opened-shell-border-03);
   border-radius: 20px;
-  background: #fff;
-  color: #25272b;
-  box-shadow: rgba(0, 0, 0, 0.48) 0 12px 32px 0;
+  background: var(--sd-theme-itab-live-live-opened-shell-surface-04);
+  color: var(--sd-theme-itab-live-live-opened-shell-text-03);
+  box-shadow: var(--sd-theme-itab-live-live-opened-shell-shadow-02) 0 12px 32px
+    0;
   backdrop-filter: none;
 }
 
 .opened-window.opened-eat-today {
   border: 0;
   border-radius: 20px;
-  background: rgb(255, 255, 255);
-  color: rgb(34, 34, 34);
-  box-shadow: rgba(0, 0, 0, 0.48) 0 12px 32px 0;
+  background: var(--sd-theme-itab-live-live-opened-shell-surface-05);
+  color: var(--sd-theme-itab-live-live-opened-shell-text-04);
+  box-shadow: var(--sd-theme-itab-live-live-opened-shell-shadow-02) 0 12px 32px
+    0;
   backdrop-filter: none;
 }
 
 .opened-window.opened-widget-ip-30 {
   border: 0;
   border-radius: 20px;
-  background: #fff;
-  color: #25272b;
-  box-shadow: rgba(0, 0, 0, 0.48) 0 12px 32px 0;
+  background: var(--sd-theme-itab-live-live-opened-shell-surface-04);
+  color: var(--sd-theme-itab-live-live-opened-shell-text-03);
+  box-shadow: var(--sd-theme-itab-live-live-opened-shell-shadow-02) 0 12px 32px
+    0;
   backdrop-filter: none;
 }
 
 .opened-window.opened-wallpaper {
-  border: 1px solid rgba(255, 255, 255, 0.16);
+  border: 1px solid var(--sd-theme-itab-live-live-opened-shell-border-04);
   border-radius: 20px;
-  background: rgba(232, 235, 234, 0.76);
-  color: #25262a;
-  box-shadow: rgba(0, 0, 0, 0.48) 0 12px 32px 0;
+  background: var(--sd-theme-itab-live-live-opened-shell-surface-06);
+  color: var(--sd-theme-itab-live-live-opened-shell-text-05);
+  box-shadow: var(--sd-theme-itab-live-live-opened-shell-shadow-02) 0 12px 32px
+    0;
   backdrop-filter: blur(28px);
 }
 
@@ -246,19 +253,25 @@ const requestClose = () => {
 
 .opened-weather {
   border-radius: 20px;
-  background: linear-gradient(45deg, rgb(33, 30, 34) 20%, rgb(56, 58, 62));
-  color: #fff;
-  box-shadow: rgba(0, 0, 0, 0.48) 0 12px 32px 0;
+  background: linear-gradient(
+    45deg,
+    var(--sd-theme-itab-live-live-opened-shell-surface-07) 20%,
+    var(--sd-theme-itab-live-live-opened-shell-surface-08)
+  );
+  color: var(--sd-theme-itab-live-live-opened-shell-text-02);
+  box-shadow: var(--sd-theme-itab-live-live-opened-shell-shadow-02) 0 12px 32px
+    0;
   backdrop-filter: none;
 }
 
 .opened-window.opened-tomato {
   box-sizing: border-box;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--sd-theme-itab-live-live-opened-shell-border-05);
   border-radius: 20px;
   background: transparent;
-  color: #fff;
-  box-shadow: rgba(0, 0, 0, 0.48) 0 12px 32px 0;
+  color: var(--sd-theme-itab-live-live-opened-shell-text-02);
+  box-shadow: var(--sd-theme-itab-live-live-opened-shell-shadow-02) 0 12px 32px
+    0;
   backdrop-filter: none;
 }
 
@@ -277,10 +290,10 @@ const requestClose = () => {
 .opened-window.opened-calendar,
 .opened-window.opened-memo,
 .opened-window.opened-todo {
-  border: 1px solid rgba(0, 0, 0, 0.13);
+  border: 1px solid var(--sd-theme-itab-live-live-opened-shell-border-03);
   border-radius: 20px;
-  color: #222;
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.48);
+  color: var(--sd-theme-itab-live-live-opened-shell-text-06);
+  box-shadow: 0 12px 32px var(--sd-theme-itab-live-live-opened-shell-shadow-02);
   backdrop-filter: none;
   overflow: auto;
 }
@@ -293,12 +306,12 @@ const requestClose = () => {
 .opened-window.opened-calendar,
 .opened-window.opened-memo,
 .opened-window.opened-todo {
-  background: #fff;
+  background: var(--sd-theme-itab-live-live-opened-shell-surface-04);
 }
 
 .opened-window.opened-calendar,
 .opened-window.opened-todo {
-  color: #22262e;
+  color: var(--sd-theme-itab-live-live-opened-shell-accent-text-02);
 }
 
 .opened-window.opened-memo,
@@ -308,11 +321,11 @@ const requestClose = () => {
 }
 
 .opened-window.opened-countdown {
-  border: 1px solid rgba(0, 0, 0, 0.13);
+  border: 1px solid var(--sd-theme-itab-live-live-opened-shell-border-03);
   border-radius: 20px;
-  background: #fff;
-  color: #222;
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.48);
+  background: var(--sd-theme-itab-live-live-opened-shell-surface-04);
+  color: var(--sd-theme-itab-live-live-opened-shell-text-06);
+  box-shadow: 0 12px 32px var(--sd-theme-itab-live-live-opened-shell-shadow-02);
   backdrop-filter: none;
   overflow: auto;
   font-size: 14px;
@@ -326,11 +339,11 @@ const requestClose = () => {
 
 .opened-window.opened-anniversary,
 .opened-window.opened-anniversary-day {
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--sd-theme-itab-live-live-opened-shell-border-06);
   border-radius: 20px;
-  background: rgb(21, 21, 24);
-  color: rgba(255, 255, 255, 0.86);
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.48);
+  background: var(--sd-theme-itab-live-live-opened-shell-surface-09);
+  color: var(--sd-theme-itab-live-live-opened-shell-text-07);
+  box-shadow: 0 12px 32px var(--sd-theme-itab-live-live-opened-shell-shadow-02);
   backdrop-filter: none;
 }
 
@@ -338,8 +351,9 @@ const requestClose = () => {
   border: 0;
   border-radius: 20px;
   background: transparent;
-  color: #fff;
-  box-shadow: rgba(0, 0, 0, 0.48) 0 12px 32px 0;
+  color: var(--sd-theme-itab-live-live-opened-shell-text-02);
+  box-shadow: var(--sd-theme-itab-live-live-opened-shell-shadow-02) 0 12px 32px
+    0;
   backdrop-filter: none;
 }
 

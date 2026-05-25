@@ -142,7 +142,7 @@ onBeforeUnmount(() => {
   display: block;
   overflow: hidden;
   border-radius: 18px;
-  box-shadow: 0 12px 26px rgba(0, 0, 0, 0.21);
+  box-shadow: 0 12px 26px var(--sd-theme-itab-live-live-widget-frame-shadow-01);
 }
 
 .itab-native .itab-native-widget > .widget-title {
@@ -151,11 +151,11 @@ onBeforeUnmount(() => {
   left: 50%;
   width: max(88px, 100%);
   overflow: hidden;
-  color: #fff;
+  color: var(--sd-theme-itab-live-live-widget-frame-text-01);
   font-size: 12px;
   line-height: 15px;
   text-overflow: ellipsis;
-  text-shadow: 0 1px 7px rgba(0, 0, 0, 0.72);
+  text-shadow: 0 1px 7px var(--sd-theme-itab-live-live-widget-frame-shadow-02);
   transform: translateX(-50%);
   white-space: nowrap;
 }
@@ -163,14 +163,14 @@ onBeforeUnmount(() => {
 .itab-native .itab-native-widget.size-1-1 > .widget-card {
   display: grid;
   place-items: center;
-  background: rgba(255, 255, 255, 0.16);
+  background: var(--sd-theme-itab-live-live-widget-frame-surface-01);
   backdrop-filter: blur(8px);
 }
 
 .itab-native .itab-native-widget.is-tool-icon > .widget-card {
   display: grid;
   place-items: center;
-  background: rgba(255, 255, 255, 0.92);
+  background: var(--sd-theme-itab-live-live-widget-frame-surface-02);
 }
 
 .itab-native .itab-native-widget.is-tool-icon > .widget-card img {
@@ -182,25 +182,25 @@ onBeforeUnmount(() => {
 .itab-native .itab-native-widget.widget-ip-30 > .widget-card {
   display: block;
   background: transparent;
-  box-shadow: rgba(0, 0, 0, 0.1) 0 0 5px 0;
+  box-shadow: var(--sd-theme-itab-live-live-widget-frame-shadow-03) 0 0 5px 0;
   backdrop-filter: none;
 }
 
 .itab-native .itab-native-widget.widget-ip-30.size-2-2 > .widget-card {
-  background: rgb(60, 102, 255);
-  box-shadow: rgba(0, 0, 0, 0.3) 0 0 10px 0;
+  background: var(--sd-theme-itab-live-live-widget-frame-accent-surface-01);
+  box-shadow: var(--sd-theme-itab-live-live-widget-frame-shadow-04) 0 0 10px 0;
 }
 
 .itab-native .itab-native-widget.widget-ip-30.size-2-4 > .widget-card {
-  background: rgb(60, 102, 255);
-  box-shadow: rgba(0, 0, 0, 0.3) 0 0 10px 0;
+  background: var(--sd-theme-itab-live-live-widget-frame-accent-surface-01);
+  box-shadow: var(--sd-theme-itab-live-live-widget-frame-shadow-04) 0 0 10px 0;
 }
 
 .itab-native .itab-native-widget.widget-ip-30 > .widget-card img {
   display: block;
   width: 100%;
   height: 100%;
-  background: rgb(60, 102, 255);
+  background: var(--sd-theme-itab-live-live-widget-frame-accent-surface-01);
   object-fit: contain;
 }
 
@@ -208,11 +208,11 @@ onBeforeUnmount(() => {
   display: grid;
   place-items: center;
   padding: 10px;
-  background: rgba(68, 20, 22, 0.96);
-  color: #fff;
+  background: var(--sd-theme-itab-live-live-widget-frame-accent-surface-02);
+  color: var(--sd-theme-itab-live-live-widget-frame-text-01);
   box-shadow:
-    0 0 0 1px rgba(255, 92, 89, 0.48),
-    0 12px 26px rgba(0, 0, 0, 0.28);
+    0 0 0 1px var(--sd-theme-itab-live-live-widget-frame-shadow-05),
+    0 12px 26px var(--sd-theme-itab-live-live-widget-frame-shadow-06);
   text-align: center;
 }
 
@@ -245,7 +245,7 @@ onBeforeUnmount(() => {
 }
 
 .widget-contract-error small {
-  color: rgba(255, 255, 255, 0.72);
+  color: var(--sd-theme-itab-live-live-widget-frame-text-02);
   font-size: 10px;
   line-height: 13px;
 }
@@ -253,13 +253,13 @@ onBeforeUnmount(() => {
 .itab-native .itab-native-widget.is-weather > .widget-card {
   border-radius: 18px;
   background: transparent;
-  color: #fff;
-  box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+  color: var(--sd-theme-itab-live-live-widget-frame-text-01);
+  box-shadow: 0 0 5px var(--sd-theme-itab-live-live-widget-frame-shadow-03);
   text-align: left;
 }
 
 .itab-native .itab-native-widget.is-weather:hover > .widget-card {
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 0 10px var(--sd-theme-itab-live-live-widget-frame-shadow-04);
 }
 
 .itab-native .itab-native-widget.is-weather > .widget-title {
@@ -283,8 +283,8 @@ onBeforeUnmount(() => {
 
 .itab-native .itab-native-widget.is-calendar > .widget-card {
   display: block;
-  background: #fff;
-  color: #222;
+  background: var(--sd-theme-itab-live-live-widget-frame-surface-03);
+  color: var(--sd-theme-itab-live-live-widget-frame-text-03);
   font-family:
     "HarmonyOS_Sans",
     "PingFang SC",
@@ -297,12 +297,12 @@ onBeforeUnmount(() => {
 .itab-native .itab-native-widget.is-calendar.size-1-1 > .widget-card,
 .itab-native .itab-native-widget.is-calendar.size-1-2 > .widget-card,
 .itab-native .itab-native-widget.is-calendar.size-2-1 > .widget-card {
-  box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 0 5px var(--sd-theme-itab-live-live-widget-frame-shadow-03);
 }
 
 .itab-native .itab-native-widget.is-calendar.size-2-2 > .widget-card,
 .itab-native .itab-native-widget.is-calendar.size-2-4 > .widget-card {
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 0 10px var(--sd-theme-itab-live-live-widget-frame-shadow-04);
 }
 
 .itab-native .itab-native-widget.is-calendar > .widget-title {
@@ -322,10 +322,10 @@ onBeforeUnmount(() => {
   padding: 10px 12px;
   background: linear-gradient(
     135deg,
-    rgba(37, 41, 52, 0.93),
-    rgba(73, 79, 91, 0.88)
+    var(--sd-theme-itab-live-live-widget-frame-accent-surface-03),
+    var(--sd-theme-itab-live-live-widget-frame-surface-04)
   );
-  color: rgba(255, 255, 255, 0.86);
+  color: var(--sd-theme-itab-live-live-widget-frame-text-04);
   text-align: left;
 }
 
@@ -365,12 +365,16 @@ onBeforeUnmount(() => {
 
 .itab-native .itab-native-widget.is-memo > .widget-card {
   display: block;
-  background: linear-gradient(135deg, rgb(29, 101, 240), rgb(26, 209, 252))
+  background: linear-gradient(
+      135deg,
+      var(--sd-theme-itab-live-live-widget-frame-accent-surface-04),
+      var(--sd-theme-itab-live-live-widget-frame-accent-surface-05)
+    )
     center / cover;
-  color: #fff;
+  color: var(--sd-theme-itab-live-live-widget-frame-text-01);
   font-size: 21px;
   line-height: 1.5;
-  box-shadow: rgba(0, 0, 0, 0.1) 0 0 5px 0;
+  box-shadow: var(--sd-theme-itab-live-live-widget-frame-shadow-03) 0 0 5px 0;
   text-align: left;
 }
 
@@ -383,30 +387,49 @@ onBeforeUnmount(() => {
 
 .itab-native .itab-native-widget.is-movie > .widget-card {
   display: block;
-  background: var(--movie-bg-color, #4c4c3f);
-  color: var(--movie-text-color, #f9f9f4);
-  box-shadow: rgba(0, 0, 0, 0.1) 0 0 5px 0;
+  background: var(
+    --movie-bg-color,
+    var(--sd-theme-itab-live-live-widget-frame-surface-05)
+  );
+  color: var(
+    --movie-text-color,
+    var(--sd-theme-itab-live-live-widget-frame-text-05)
+  );
+  box-shadow: var(--sd-theme-itab-live-live-widget-frame-shadow-03) 0 0 5px 0;
   text-align: left;
 }
 
 .itab-native .itab-native-widget.is-movie.size-2-2 > .widget-card {
-  box-shadow: rgba(0, 0, 0, 0.3) 0 0 10px 0;
+  box-shadow: var(--sd-theme-itab-live-live-widget-frame-shadow-04) 0 0 10px 0;
 }
 
 .itab-native .itab-native-widget.is-movie > .widget-card::before {
   position: absolute;
   inset: 0;
   background:
-    linear-gradient(0deg, var(--movie-bg-color, #4c4c3f), rgba(0, 0, 0, 0)),
+    linear-gradient(
+      0deg,
+      var(
+        --movie-bg-color,
+        var(--sd-theme-itab-live-live-widget-frame-surface-05)
+      ),
+      var(--sd-theme-itab-live-live-widget-frame-surface-06)
+    ),
     var(--movie-cover-image) center/cover;
   content: "";
 }
 
 .itab-native .itab-native-widget.is-countdown > .widget-card {
   padding: 0;
-  background: var(--countdown-bg-color, #fff);
-  color: var(--countdown-text-color, #666);
-  box-shadow: rgba(0, 0, 0, 0.1) 0 0 5px 0;
+  background: var(
+    --countdown-bg-color,
+    var(--sd-theme-itab-live-live-widget-frame-surface-03)
+  );
+  color: var(
+    --countdown-text-color,
+    var(--sd-theme-itab-live-live-widget-frame-text-06)
+  );
+  box-shadow: var(--sd-theme-itab-live-live-widget-frame-shadow-03) 0 0 5px 0;
   font-family:
     "HarmonyOS_Sans",
     "HarmonyOS Sans",
@@ -424,8 +447,8 @@ onBeforeUnmount(() => {
 
 .itab-native .itab-native-widget.is-next-holiday > .widget-card {
   padding: 13px;
-  background: rgba(21, 28, 31, 0.86);
-  color: rgba(255, 255, 255, 0.76);
+  background: var(--sd-theme-itab-live-live-widget-frame-accent-surface-06);
+  color: var(--sd-theme-itab-live-live-widget-frame-text-07);
   text-align: left;
 }
 
@@ -433,22 +456,22 @@ onBeforeUnmount(() => {
   position: absolute;
   inset: 13px;
   content: "";
-  border: 1px dashed rgba(255, 255, 255, 0.18);
+  border: 1px dashed var(--sd-theme-itab-live-live-widget-frame-border-01);
   border-radius: 10px;
 }
 
 .itab-native .itab-native-widget.is-daily-quote > .widget-card {
   display: block;
   background: transparent;
-  color: #fff;
-  box-shadow: rgba(0, 0, 0, 0.1) 0 0 5px 0;
+  color: var(--sd-theme-itab-live-live-widget-frame-text-01);
+  box-shadow: var(--sd-theme-itab-live-live-widget-frame-shadow-03) 0 0 5px 0;
   text-align: center;
   backdrop-filter: none;
 }
 
 .itab-native .itab-native-widget.is-daily-quote.size-2-2 > .widget-card,
 .itab-native .itab-native-widget.is-daily-quote.size-2-4 > .widget-card {
-  box-shadow: rgba(0, 0, 0, 0.3) 0 0 10px 0;
+  box-shadow: var(--sd-theme-itab-live-live-widget-frame-shadow-04) 0 0 10px 0;
 }
 
 .itab-native .itab-native-widget.is-daily-quote > .widget-title {
@@ -474,21 +497,21 @@ onBeforeUnmount(() => {
 }
 
 .itab-native .itab-native-widget.is-poem > .widget-card {
-  --itab-poem-card-bg: #eee;
+  --itab-poem-card-bg: var(--sd-theme-itab-live-live-widget-frame-surface-07);
 
   background: var(--itab-poem-card-bg);
-  color: #333;
-  box-shadow: rgba(0, 0, 0, 0.1) 0 0 5px 0;
+  color: var(--sd-theme-itab-live-live-widget-frame-text-08);
+  box-shadow: var(--sd-theme-itab-live-live-widget-frame-shadow-03) 0 0 5px 0;
   text-align: left;
 }
 
 .itab-native .itab-native-widget.is-poem.size-1-1 > .widget-card {
-  --itab-poem-card-bg: rgb(9, 55, 68);
+  --itab-poem-card-bg: var(--sd-theme-itab-live-live-widget-frame-accent-01);
 }
 
 .itab-native .itab-native-widget.is-poem.size-2-2 > .widget-card,
 .itab-native .itab-native-widget.is-poem.size-2-4 > .widget-card {
-  box-shadow: rgba(0, 0, 0, 0.3) 0 0 10px 0;
+  box-shadow: var(--sd-theme-itab-live-live-widget-frame-shadow-04) 0 0 10px 0;
 }
 
 .itab-native .itab-native-widget.is-poem > .widget-title {
@@ -506,17 +529,17 @@ onBeforeUnmount(() => {
 
 .itab-native .itab-native-widget.is-wooden-fish > .widget-card {
   padding: 17px 12px;
-  background: #f4f0e9;
-  color: #ac7452;
+  background: var(--sd-theme-itab-live-live-widget-frame-surface-08);
+  color: var(--sd-theme-itab-live-live-widget-frame-accent-text-01);
   text-align: left;
 }
 
 .itab-native .itab-native-widget.is-clock > .widget-card {
   display: block;
-  background: #111;
-  color: #fff;
+  background: var(--sd-theme-itab-live-live-widget-frame-surface-09);
+  color: var(--sd-theme-itab-live-live-widget-frame-text-01);
   font-size: 21px;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 0 10px var(--sd-theme-itab-live-live-widget-frame-shadow-04);
   font-family:
     HarmonyOS_Sans,
     "PingFang SC",
@@ -528,7 +551,7 @@ onBeforeUnmount(() => {
 .itab-native .itab-native-widget.is-clock.size-1-1 > .widget-card,
 .itab-native .itab-native-widget.is-clock.size-1-2 > .widget-card,
 .itab-native .itab-native-widget.is-clock.size-2-1 > .widget-card {
-  box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 0 5px var(--sd-theme-itab-live-live-widget-frame-shadow-03);
 }
 
 .itab-native .itab-native-widget.is-clock > .widget-title {
@@ -538,7 +561,7 @@ onBeforeUnmount(() => {
 
 .itab-native .itab-native-widget.is-speed-test > .widget-card {
   display: block;
-  background: rgb(28, 33, 50);
+  background: var(--sd-theme-itab-live-live-widget-frame-accent-surface-07);
 }
 
 .itab-native .itab-native-widget.is-speed-test > .widget-card img,
@@ -546,49 +569,51 @@ onBeforeUnmount(() => {
   display: block;
   width: 100%;
   height: 100%;
-  background-color: #fff;
+  background-color: var(--sd-theme-itab-live-live-widget-frame-surface-03);
   object-fit: contain;
 }
 
 .itab-native .itab-native-widget.is-speed-test > .widget-card img {
-  background-color: rgb(28, 33, 50);
+  background-color: var(
+    --sd-theme-itab-live-live-widget-frame-accent-surface-07
+  );
 }
 
 .itab-native .itab-native-widget.is-speed-test.size-1-1 > .widget-card,
 .itab-native .itab-native-widget.is-speed-test.size-1-2 > .widget-card,
 .itab-native .itab-native-widget.is-speed-test.size-2-1 > .widget-card {
-  box-shadow: rgba(0, 0, 0, 0.1) 0 0 5px 0;
+  box-shadow: var(--sd-theme-itab-live-live-widget-frame-shadow-03) 0 0 5px 0;
 }
 
 .itab-native .itab-native-widget.is-speed-test.size-2-2 > .widget-card,
 .itab-native .itab-native-widget.is-speed-test.size-2-4 > .widget-card {
-  box-shadow: rgba(0, 0, 0, 0.3) 0 0 10px 0;
+  box-shadow: var(--sd-theme-itab-live-live-widget-frame-shadow-04) 0 0 10px 0;
 }
 
 .itab-native .itab-native-widget.is-today-english > .widget-card {
   padding: 0;
-  background: #000;
-  box-shadow: rgba(0, 0, 0, 0.3) 0 0 10px 0;
+  background: var(--sd-theme-itab-live-live-widget-frame-surface-10);
+  box-shadow: var(--sd-theme-itab-live-live-widget-frame-shadow-04) 0 0 10px 0;
   text-align: left;
 }
 
 .itab-native .itab-native-widget.is-today-english.size-1-1 > .widget-card,
 .itab-native .itab-native-widget.is-today-english.size-1-2 > .widget-card,
 .itab-native .itab-native-widget.is-today-english.size-2-1 > .widget-card {
-  box-shadow: rgba(0, 0, 0, 0.1) 0 0 5px 0;
+  box-shadow: var(--sd-theme-itab-live-live-widget-frame-shadow-03) 0 0 5px 0;
 }
 
 .itab-native .itab-native-widget.is-eat-today > .widget-card {
   display: block;
-  background: #fff;
-  box-shadow: rgba(0, 0, 0, 0.3) 0 0 10px 0;
-  color: rgb(34, 34, 34);
+  background: var(--sd-theme-itab-live-live-widget-frame-surface-03);
+  box-shadow: var(--sd-theme-itab-live-live-widget-frame-shadow-04) 0 0 10px 0;
+  color: var(--sd-theme-itab-live-live-widget-frame-text-09);
 }
 
 .itab-native .itab-native-widget.is-eat-today.size-1-1 > .widget-card,
 .itab-native .itab-native-widget.is-eat-today.size-1-2 > .widget-card,
 .itab-native .itab-native-widget.is-eat-today.size-2-1 > .widget-card {
-  box-shadow: rgba(0, 0, 0, 0.1) 0 0 5px 0;
+  box-shadow: var(--sd-theme-itab-live-live-widget-frame-shadow-03) 0 0 5px 0;
 }
 
 .itab-native .itab-native-widget.is-wallpaper > .widget-card {
@@ -601,22 +626,22 @@ onBeforeUnmount(() => {
   background-position: center;
   background-repeat: no-repeat;
   background-size: cover;
-  box-shadow: rgba(0, 0, 0, 0.3) 0 0 10px 0;
-  color: #fff;
+  box-shadow: var(--sd-theme-itab-live-live-widget-frame-shadow-04) 0 0 10px 0;
+  color: var(--sd-theme-itab-live-live-widget-frame-text-01);
   text-align: left;
 }
 
 .itab-native .itab-native-widget.is-wallpaper.size-1-1 > .widget-card,
 .itab-native .itab-native-widget.is-wallpaper.size-1-2 > .widget-card,
 .itab-native .itab-native-widget.is-wallpaper.size-2-1 > .widget-card {
-  box-shadow: rgba(0, 0, 0, 0.1) 0 0 5px 0;
+  box-shadow: var(--sd-theme-itab-live-live-widget-frame-shadow-03) 0 0 5px 0;
 }
 
 .itab-native .itab-native-widget.is-todo > .widget-card {
   display: block;
   padding: 0;
-  background: #fff;
-  color: rgba(0, 0, 0, 0.8);
+  background: var(--sd-theme-itab-live-live-widget-frame-surface-03);
+  color: var(--sd-theme-itab-live-live-widget-frame-text-10);
   font-size: 21px;
   line-height: 31.5px;
   text-align: left;
@@ -626,18 +651,18 @@ onBeforeUnmount(() => {
 .itab-native .itab-native-widget.is-todo.size-1-2 > .widget-card,
 .itab-native .itab-native-widget.is-todo.size-2-1 > .widget-card,
 .itab-native .itab-native-widget.is-todo.size-2-4 > .widget-card {
-  box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 0 5px var(--sd-theme-itab-live-live-widget-frame-shadow-03);
 }
 
 .itab-native .itab-native-widget.is-todo.size-2-2 > .widget-card {
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 0 10px var(--sd-theme-itab-live-live-widget-frame-shadow-04);
 }
 
 .itab-native .itab-native-widget.is-stock > .widget-card,
 .itab-native .itab-native-widget.is-exchange-rate > .widget-card {
   padding: 13px;
-  background: #fff;
-  color: #3f4854;
+  background: var(--sd-theme-itab-live-live-widget-frame-surface-03);
+  color: var(--sd-theme-itab-live-live-widget-frame-text-11);
   text-align: left;
 }
 
@@ -645,64 +670,64 @@ onBeforeUnmount(() => {
   display: flex;
   justify-content: space-between;
   margin-bottom: 8px;
-  color: #9aa3ad;
+  color: var(--sd-theme-itab-live-live-widget-frame-text-12);
   font-size: 11px;
 }
 
 .itab-native .itab-native-widget.is-gradient > .widget-card {
-  background: #fff;
+  background: var(--sd-theme-itab-live-live-widget-frame-surface-03);
 }
 
 .itab-native .itab-native-widget.is-gradient > .widget-card img {
-  background-color: #fff;
+  background-color: var(--sd-theme-itab-live-live-widget-frame-surface-03);
 }
 
 .itab-native .itab-native-widget.is-gradient.size-1-1 > .widget-card,
 .itab-native .itab-native-widget.is-gradient.size-1-2 > .widget-card,
 .itab-native .itab-native-widget.is-gradient.size-2-1 > .widget-card,
 .itab-native .itab-native-widget.is-gradient.size-2-4 > .widget-card {
-  box-shadow: rgba(0, 0, 0, 0.1) 0 0 5px 0;
+  box-shadow: var(--sd-theme-itab-live-live-widget-frame-shadow-03) 0 0 5px 0;
 }
 
 .itab-native .itab-native-widget.is-gradient.size-2-2 > .widget-card {
-  box-shadow: rgba(0, 0, 0, 0.3) 0 0 10px 0;
+  box-shadow: var(--sd-theme-itab-live-live-widget-frame-shadow-04) 0 0 10px 0;
 }
 
 .itab-native .itab-native-widget.is-habit > .widget-card {
   padding: 16px;
-  background: #fff;
-  color: #425266;
+  background: var(--sd-theme-itab-live-live-widget-frame-surface-03);
+  color: var(--sd-theme-itab-live-live-widget-frame-accent-text-02);
   text-align: left;
 }
 
 .itab-native .itab-native-widget.is-tomato > .widget-card {
   display: block;
-  background: #000;
+  background: var(--sd-theme-itab-live-live-widget-frame-surface-10);
 }
 
 .itab-native .itab-native-widget.is-tomato.size-1-1 > .widget-card,
 .itab-native .itab-native-widget.is-tomato.size-1-2 > .widget-card,
 .itab-native .itab-native-widget.is-tomato.size-2-1 > .widget-card {
-  box-shadow: rgba(0, 0, 0, 0.1) 0 0 5px 0;
+  box-shadow: var(--sd-theme-itab-live-live-widget-frame-shadow-03) 0 0 5px 0;
 }
 
 .itab-native .itab-native-widget.is-tomato.size-2-2 > .widget-card,
 .itab-native .itab-native-widget.is-tomato.size-2-4 > .widget-card {
-  box-shadow: rgba(0, 0, 0, 0.3) 0 0 10px 0;
+  box-shadow: var(--sd-theme-itab-live-live-widget-frame-shadow-04) 0 0 10px 0;
 }
 
 .itab-native .itab-native-widget.is-world-clock > .widget-card {
   padding: 13px 15px;
-  background: rgba(13, 17, 22, 0.88);
+  background: var(--sd-theme-itab-live-live-widget-frame-accent-surface-08);
   text-align: left;
 }
 
 .itab-native .itab-native-widget.is-converter > .widget-card {
   display: block;
   padding: 0;
-  background: #000 url("https://go.itab.link/assets/bg-CJNxJb1Y.jpg")
-    center/cover no-repeat;
-  color: #fff;
+  background: var(--sd-theme-itab-live-live-widget-frame-surface-10)
+    url("https://go.itab.link/assets/bg-CJNxJb1Y.jpg") center/cover no-repeat;
+  color: var(--sd-theme-itab-live-live-widget-frame-text-01);
   font-family:
     "PingFang SC",
     -apple-system,
@@ -715,11 +740,11 @@ onBeforeUnmount(() => {
 .itab-native .itab-native-widget.is-converter.size-1-1 > .widget-card,
 .itab-native .itab-native-widget.is-converter.size-1-2 > .widget-card,
 .itab-native .itab-native-widget.is-converter.size-2-1 > .widget-card {
-  box-shadow: rgba(0, 0, 0, 0.1) 0 0 5px 0;
+  box-shadow: var(--sd-theme-itab-live-live-widget-frame-shadow-03) 0 0 5px 0;
 }
 
 .itab-native .itab-native-widget.is-converter.size-2-2 > .widget-card,
 .itab-native .itab-native-widget.is-converter.size-2-4 > .widget-card {
-  box-shadow: rgba(0, 0, 0, 0.3) 0 0 10px 0;
+  box-shadow: var(--sd-theme-itab-live-live-widget-frame-shadow-04) 0 0 10px 0;
 }
 </style>
