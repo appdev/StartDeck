@@ -1677,3 +1677,27 @@ Verified:
 
 Limitations:
 - Full `npm --prefix frontend test -- --run` still has one unrelated existing failure in `src/stores/cache.spec.ts`, where the test expects the old clock guest-cache default.
+
+## 2026-05-26 - go.itab.link Palette Correction
+
+Status: pass with one unrelated full-suite residual.
+
+Implemented:
+- Rechecked `https://go.itab.link/` in light and dark modes and corrected the StartDeck theme contract accordingly.
+- Kept migrated iTab runtime component palettes aligned with source widget visuals across light/dark instead of repainting them into the graphite dark palette.
+- Kept StartDeck theme adaptation on shell, Settings, AddWidget, modal, widget host, and non-source component surfaces.
+
+Verified:
+- Static Vue style color scan passed with `TOTAL_STYLE_COLOR_VALUES 0` for product component style blocks.
+- Focused theme/widget Vitest passed, 11 files / 88 tests.
+- `npm --prefix frontend run type-check` passed.
+- Browser QA at `http://127.0.0.1:9003/` captured:
+  - `/tmp/startdeck-theme-light-settings-final.png`
+  - `/tmp/startdeck-theme-dark-settings-final.png`
+  - `/tmp/startdeck-theme-light-add-widget.png`
+  - `/tmp/startdeck-theme-dark-add-widget.png`
+- Full `npm --prefix frontend test -- --run` passed 91 files / 467 tests and failed 1 unrelated existing cache-store assertion in `src/stores/cache.spec.ts`.
+
+Limitations:
+- The reference-site correction used sampled source behavior and representative rendered QA, not an exhaustive pixel audit of every iTab widget state.
+- Browser console warnings during mocked local QA were unrelated auth/resource/API warnings.
