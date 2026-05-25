@@ -203,27 +203,7 @@ LOG.md
 /package-lock.json
 
 # Codex local verification artifacts
-**/.codex/
-**/.codex/testing.md
-**/.codex/test-results/
-**/.codex/**/test-results/
-**/.codex/tests/
-**/.codex/**/tests/
-**/.codex/screenshots/
-**/.codex/**/screenshots/
-**/.codex/**/screenshot*/
-**/.codex/artifacts/
-**/.codex/**/artifacts/
-**/.codex/**/*.test.*
-**/.codex/**/*.spec.*
-**/.codex/**/*.png
-**/.codex/**/*.jpg
-**/.codex/**/*.jpeg
-**/.codex/**/*.webp
-**/.codex/**/*.gif
-**/.codex/**/*.mp4
-**/.codex/**/*.webm
-**/.codex/**/*.har
+**/.codex/*
 
 # Root-level local QA artifacts. Keep durable evidence under .codex/.
 /current-page.png

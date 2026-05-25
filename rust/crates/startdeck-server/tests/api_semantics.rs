@@ -46,7 +46,7 @@ async fn test_app_with_widget_cache(include_poem_cache: bool) -> axum::Router {
                     }
                 },
                 "itab_bing_wallpaper": {
-                    "bing:zh-CN:recent:v1": {
+                    "timelessq:large:page:1:pageSize:24:v1": {
                         "data": {
                             "entries": [
                                 {
@@ -58,7 +58,32 @@ async fn test_app_with_widget_cache(include_poem_cache: bool) -> axum::Router {
                                     "downloadUrl": "https://www.bing.com/th?id=OHR.Test_ZH-CN_1920x1080.jpg"
                                 }
                             ],
-                            "updatedAt": "2026-05-26T00:00:00Z"
+                            "updatedAt": "2026-05-26T00:00:00Z",
+                            "count": 3,
+                            "totalPages": 1,
+                            "pageSize": 24,
+                            "currentPage": 1
+                        },
+                        "sourceStatus": "fixture",
+                        "updatedAt": 1779700000000_i64
+                    },
+                    "timelessq:large:page:2:pageSize:2:v1": {
+                        "data": {
+                            "entries": [
+                                {
+                                    "id": "fixture-wallpaper-page2",
+                                    "title": "后端缓存壁纸第二页",
+                                    "location": "测试地点二",
+                                    "credit": "Bing",
+                                    "thumbnailUrl": "https://www.bing.com/th?id=OHR.Test2_ZH-CN_1920x1080.jpg&w=360&h=202",
+                                    "downloadUrl": "https://www.bing.com/th?id=OHR.Test2_ZH-CN_1920x1080.jpg"
+                                }
+                            ],
+                            "updatedAt": "2026-05-26T00:00:00Z",
+                            "count": 3,
+                            "totalPages": 2,
+                            "pageSize": 2,
+                            "currentPage": 2
                         },
                         "sourceStatus": "fixture",
                         "updatedAt": 1779700000000_i64
@@ -496,6 +521,20 @@ async fn route_surface_smoke_covers_auth_and_runtime_semantics() {
     assert_eq!(status, StatusCode::OK);
     assert_eq!(body["data"]["sourceStatus"], "fixture");
     assert_eq!(body["data"]["entries"][0]["id"], "fixture-wallpaper");
+
+    let (status, body) = json_call(
+        &app,
+        "GET",
+        "/api/itab/bing-wallpapers?page=2&pageSize=2",
+        None,
+        None,
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(body["data"]["sourceStatus"], "fixture");
+    assert_eq!(body["data"]["currentPage"], 2);
+    assert_eq!(body["data"]["totalPages"], 2);
+    assert_eq!(body["data"]["entries"][0]["id"], "fixture-wallpaper-page2");
 
     let (status, body) = json_call(
         &app,

@@ -38,7 +38,7 @@ class MockAudioElement {
 
 const audioInstances: MockAudioElement[] = [];
 
-const mockBingWallpaperEntries = Array.from({ length: 15 }, (_, index) => ({
+const mockBingWallpaperEntries = Array.from({ length: 36 }, (_, index) => ({
   id: `backend-wallpaper-${index + 1}`,
   title: index === 0 ? "后端壁纸一" : `后端壁纸 ${index + 1}`,
   location: index === 0 ? "后端地点一" : `后端地点 ${index + 1}`,
@@ -51,18 +51,23 @@ const defaultMockFetch = async (input: RequestInfo | URL) => {
   const url = String(input);
 
   if (url.includes("/api/itab/bing-wallpapers")) {
+    const requestUrl = new URL(url, "http://localhost");
+    const page = Number(requestUrl.searchParams.get("page") || "1");
+    const pageSize = Number(requestUrl.searchParams.get("pageSize") || "24");
+    const start = (page - 1) * pageSize;
+    const entries = mockBingWallpaperEntries.slice(start, start + pageSize);
     return {
       ok: true,
       json: async () => ({
         success: true,
         data: {
-          entries: mockBingWallpaperEntries,
+          entries,
           sourceStatus: "ok",
           updatedAt: "2026-05-26T00:00:00Z",
           count: mockBingWallpaperEntries.length,
-          totalPages: 1,
-          pageSize: 24,
-          currentPage: 1,
+          totalPages: Math.ceil(mockBingWallpaperEntries.length / pageSize),
+          pageSize,
+          currentPage: page,
         },
       }),
     } as Response;
@@ -2597,13 +2602,29 @@ describe("ItabLiveReplica clock replica", () => {
     });
     await panel.trigger("scroll");
     await nextTick();
-    expect(panel.findAll(".wallpaper-bing-grid article")).toHaveLength(15);
+    expect(panel.findAll(".wallpaper-bing-grid article")).toHaveLength(20);
     expect(panel.find(".wallpaper-panel-actions button").text()).toBe(
-      "已全部加载",
+      "加载更多",
     );
     expect(
       panel.find(".wallpaper-panel-actions button").attributes("disabled"),
-    ).toBeDefined();
+    ).toBeUndefined();
+
+    await panel.trigger("scroll");
+    await flushReplicaAsync();
+    expect(panel.findAll(".wallpaper-bing-grid article")).toHaveLength(28);
+    expect(panel.findAll(".wallpaper-thumb")[24].attributes("aria-label")).toBe(
+      "选中 后端壁纸 25",
+    );
+    expect(
+      mockFetch.mock.calls.some(([input]) => {
+        const requestUrl = new URL(String(input), "http://localhost");
+        return (
+          requestUrl.pathname.endsWith("/api/itab/bing-wallpapers") &&
+          requestUrl.searchParams.get("page") === "2"
+        );
+      }),
+    ).toBe(true);
 
     expectCssRule(".wallpaper-copyright", {
       position: "absolute",

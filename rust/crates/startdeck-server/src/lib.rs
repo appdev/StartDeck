@@ -1,4 +1,4 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::io::Read;
 use std::net::IpAddr;
 use std::path::Path;
@@ -222,30 +222,42 @@ struct Claims {
     exp: i64,
 }
 
-#[derive(Debug, Deserialize)]
-struct BingArchiveResponse {
-    #[serde(default)]
-    images: Vec<BingArchiveImage>,
-}
-
-#[derive(Debug, Deserialize)]
-struct BingArchiveImage {
-    startdate: Option<String>,
-    enddate: Option<String>,
-    url: Option<String>,
-    urlbase: Option<String>,
-    copyright: Option<String>,
-    copyrightlink: Option<String>,
-    title: Option<String>,
-    hsh: Option<String>,
-}
-
 const ITAB_BING_WALLPAPER_KIND: &str = "itab_bing_wallpaper";
 const ITAB_BING_WALLPAPER_CACHE_TTL_MS: i64 = 6 * 60 * 60 * 1000;
 const ITAB_BING_WALLPAPER_DEFAULT_PAGE_SIZE: usize = 24;
 const ITAB_BING_WALLPAPER_MAX_PAGE_SIZE: usize = 24;
-const ITAB_BING_WALLPAPER_SOURCE_PAGE_SIZE: usize = 8;
-const ITAB_BING_WALLPAPER_SOURCE_IDXS: [usize; 2] = [0, 8];
+const ITAB_BING_WALLPAPER_DEFAULT_SIZE: &str = "large";
+
+#[derive(Debug, Deserialize)]
+struct TimelessqBingListResponse {
+    errno: i64,
+    errmsg: String,
+    data: Option<TimelessqBingListData>,
+}
+
+#[derive(Debug, Deserialize)]
+struct TimelessqBingListData {
+    count: usize,
+    #[serde(rename = "totalPages")]
+    total_pages: usize,
+    #[serde(rename = "pageSize")]
+    page_size: usize,
+    #[serde(rename = "currentPage")]
+    current_page: usize,
+    #[serde(default)]
+    data: Vec<TimelessqBingImage>,
+}
+
+#[derive(Debug, Deserialize)]
+struct TimelessqBingImage {
+    #[serde(rename = "_id")]
+    id: String,
+    copyright: String,
+    time: String,
+    title: String,
+    url: String,
+    urlbase: String,
+}
 
 async fn healthz() -> Json<Value> {
     Json(json!({"ok": true, "service": "startdeck-server"}))
@@ -1115,12 +1127,17 @@ async fn bing_wallpaper_data(
         1,
         ITAB_BING_WALLPAPER_MAX_PAGE_SIZE,
     );
-    let mkt = sanitize_bing_market(query.get("mkt").map(String::as_str).unwrap_or("zh-CN"));
+    let size = sanitize_bing_image_size(
+        query
+            .get("size")
+            .map(String::as_str)
+            .unwrap_or(ITAB_BING_WALLPAPER_DEFAULT_SIZE),
+    );
     let refresh = query
         .get("refresh")
         .map(|value| value == "1" || value.eq_ignore_ascii_case("true"))
         .unwrap_or(false);
-    let cache_key = format!("bing:{mkt}:recent:v1");
+    let cache_key = format!("timelessq:{size}:page:{page}:pageSize:{page_size}:v1");
     let now = Utc::now().timestamp_millis();
     let cached = sqlx::query(
         "SELECT value_json, source_status, expires_at FROM runtime_cache WHERE kind = ? AND cache_key = ?",
@@ -1135,13 +1152,11 @@ async fn bing_wallpaper_data(
         if !refresh && expires_at.map(|value| value > now).unwrap_or(true) {
             let data = parse_json(row.get::<String, _>("value_json"));
             let status = row.get::<String, _>("source_status");
-            return Ok(Json(shape_bing_wallpaper_response(
-                data, &status, page, page_size,
-            )));
+            return Ok(Json(bing_wallpaper_response(data, &status)));
         }
     }
 
-    match fetch_bing_wallpaper_catalog(&state.http, &mkt).await {
+    match fetch_bing_wallpaper_page(&state.http, page, page_size, &size).await {
         Ok(data) => {
             sqlx::query(
                 r#"INSERT OR REPLACE INTO runtime_cache(kind, cache_key, value_json, expires_at, source_status, updated_at)
@@ -1154,16 +1169,12 @@ async fn bing_wallpaper_data(
             .bind(now)
             .execute(&state.pool)
             .await?;
-            Ok(Json(shape_bing_wallpaper_response(
-                data, "ok", page, page_size,
-            )))
+            Ok(Json(bing_wallpaper_response(data, "ok")))
         }
         Err(source_error) => {
             if let Some(row) = cached {
                 let data = parse_json(row.get::<String, _>("value_json"));
-                return Ok(Json(shape_bing_wallpaper_response(
-                    data, "stale", page, page_size,
-                )));
+                return Ok(Json(bing_wallpaper_response(data, "stale")));
             }
             Err(ApiError::bad_gateway(format!(
                 "bing_wallpaper_source_unavailable: {source_error}"
@@ -1186,101 +1197,88 @@ fn query_usize(
         .clamp(min, max)
 }
 
-fn sanitize_bing_market(value: &str) -> String {
+fn sanitize_bing_image_size(value: &str) -> String {
     let trimmed = value.trim();
-    if trimmed.is_empty()
-        || !trimmed
-            .chars()
-            .all(|character| character.is_ascii_alphanumeric() || character == '-')
-    {
-        "zh-CN".to_string()
-    } else {
-        trimmed.to_string()
+    match trimmed {
+        "default" | "mini" | "small" | "middle" | "large" | "mobile-mini" | "mobile-small"
+        | "mobile-middle" | "mobile-default" => trimmed.to_string(),
+        _ => ITAB_BING_WALLPAPER_DEFAULT_SIZE.to_string(),
     }
 }
 
-async fn fetch_bing_wallpaper_catalog(client: &Client, mkt: &str) -> Result<Value, String> {
-    let mut entries = Vec::new();
-    let mut seen = HashSet::new();
-    for idx in ITAB_BING_WALLPAPER_SOURCE_IDXS {
-        let url = format!(
-            "https://www.bing.com/HPImageArchive.aspx?format=js&idx={idx}&n={}&mkt={mkt}",
-            ITAB_BING_WALLPAPER_SOURCE_PAGE_SIZE
-        );
-        let response = client
-            .get(url)
-            .send()
-            .await
-            .map_err(|err| err.to_string())?;
-        let status = response.status();
-        if !status.is_success() {
-            return Err(format!("source_status_{status}"));
-        }
-        let archive = response
-            .json::<BingArchiveResponse>()
-            .await
-            .map_err(|err| err.to_string())?;
-        for image in archive.images {
-            if let Some(entry) = normalize_bing_wallpaper_entry(image) {
-                let id = entry
-                    .get("id")
-                    .and_then(Value::as_str)
-                    .unwrap_or_default()
-                    .to_string();
-                if seen.insert(id) {
-                    entries.push(entry);
-                }
-            }
-        }
+async fn fetch_bing_wallpaper_page(
+    client: &Client,
+    page: usize,
+    page_size: usize,
+    size: &str,
+) -> Result<Value, String> {
+    let response = client
+        .get("https://api.timelessq.com/bing/list")
+        .query(&[
+            ("page", page.to_string()),
+            ("pageSize", page_size.to_string()),
+            ("size", size.to_string()),
+        ])
+        .send()
+        .await
+        .map_err(|err| err.to_string())?;
+    let status = response.status();
+    if !status.is_success() {
+        return Err(format!("source_status_{status}"));
     }
-    if entries.is_empty() {
-        return Err("empty_source_response".to_string());
+    let payload = response
+        .json::<TimelessqBingListResponse>()
+        .await
+        .map_err(|err| err.to_string())?;
+    if payload.errno != 0 {
+        return Err(if payload.errmsg.is_empty() {
+            format!("source_errno_{}", payload.errno)
+        } else {
+            payload.errmsg
+        });
     }
+    let Some(data) = payload.data else {
+        return Err("missing_source_data".to_string());
+    };
+    let entries: Vec<Value> = data
+        .data
+        .into_iter()
+        .map(normalize_bing_wallpaper_entry)
+        .collect();
 
     Ok(json!({
         "entries": entries,
         "updatedAt": Utc::now().to_rfc3339(),
+        "count": data.count,
+        "totalPages": data.total_pages.max(1),
+        "pageSize": data.page_size,
+        "currentPage": data.current_page,
         "sourceStatus": "ok"
     }))
 }
 
-fn normalize_bing_wallpaper_entry(image: BingArchiveImage) -> Option<Value> {
-    let raw_url = image
-        .url
-        .as_deref()
-        .map(str::trim)
-        .filter(|value| !value.is_empty())?;
-    let download_url = absolute_bing_url(raw_url);
+fn normalize_bing_wallpaper_entry(image: TimelessqBingImage) -> Value {
+    let download_url = absolute_bing_url(image.url.trim());
     let thumbnail_url = thumbnail_bing_url(&download_url);
-    let copyright = image.copyright.unwrap_or_default();
-    let (location, credit) = split_bing_copyright(&copyright);
-    let title = image
-        .title
-        .as_deref()
-        .map(str::trim)
-        .filter(|value| !value.is_empty())
-        .map(ToOwned::to_owned)
-        .unwrap_or_else(|| location.clone());
-    let id_seed = image
-        .hsh
-        .as_deref()
-        .or(image.startdate.as_deref())
-        .or(image.urlbase.as_deref())
-        .unwrap_or(raw_url);
+    let (location, credit) = split_bing_copyright(&image.copyright);
+    let id_seed = if image.id.trim().is_empty() {
+        image.urlbase.trim()
+    } else {
+        image.id.trim()
+    };
 
-    Some(json!({
+    json!({
         "id": format!("bing-{}", sanitize_wallpaper_id(id_seed)),
-        "title": title,
+        "title": image.title.trim(),
         "location": location,
         "credit": if credit.is_empty() { "Bing".to_string() } else { credit },
         "thumbnailUrl": thumbnail_url,
         "downloadUrl": download_url,
-        "sourceUrl": image.copyrightlink.map(|value| absolute_bing_url(&value)),
-        "bingTitle": image.title,
-        "startDate": image.startdate,
-        "endDate": image.enddate,
-        "copyrightText": copyright
-    }))
+        "sourceUrl": absolute_bing_url(image.urlbase.trim()),
+        "bingTitle": image.title.trim(),
+        "startDate": image.time,
+        "copyrightText": image.copyright
+    })
 }
 
 fn absolute_bing_url(raw: &str) -> String {
@@ -1327,37 +1325,8 @@ fn sanitize_wallpaper_id(seed: &str) -> String {
     }
 }
 
-fn shape_bing_wallpaper_response(
-    mut data: Value,
-    status: &str,
-    page: usize,
-    page_size: usize,
-) -> Value {
-    let all_entries = data
-        .get("entries")
-        .and_then(Value::as_array)
-        .cloned()
-        .unwrap_or_default();
-    let total_count = all_entries.len();
-    let total_pages = if total_count == 0 {
-        1
-    } else {
-        total_count.div_ceil(page_size)
-    };
-    let current_page = page.min(total_pages).max(1);
-    let start = (current_page - 1) * page_size;
-    let entries: Vec<Value> = all_entries
-        .into_iter()
-        .skip(start)
-        .take(page_size)
-        .collect();
-
+fn bing_wallpaper_response(mut data: Value, status: &str) -> Value {
     if let Value::Object(ref mut object) = data {
-        object.insert("entries".to_string(), Value::Array(entries));
-        object.insert("count".to_string(), json!(total_count));
-        object.insert("totalPages".to_string(), json!(total_pages));
-        object.insert("pageSize".to_string(), json!(page_size));
-        object.insert("currentPage".to_string(), json!(current_page));
         object.insert("sourceStatus".to_string(), json!(status));
     }
     cached_widget_response(data, status)
