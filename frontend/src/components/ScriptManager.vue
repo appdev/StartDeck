@@ -56,7 +56,8 @@ const handleFileDrop = async (e: DragEvent) => {
     if (!file) continue;
     try {
       const content = await readFileContent(file);
-      const id = Date.now().toString() + Math.random().toString(36).substring(2, 5);
+      const id =
+        Date.now().toString() + Math.random().toString(36).substring(2, 5);
 
       list.value.push({
         id,
@@ -126,7 +127,11 @@ const toggleProxy = (item: CustomScript) => {
     @drop.prevent="handleFileDrop"
   >
     <div
-      v-if="dragState.active && dragState.isFiles && dragState.scope === 'script-manager'"
+      v-if="
+        dragState.active &&
+        dragState.isFiles &&
+        dragState.scope === 'script-manager'
+      "
       class="fixed z-50 bg-blue-50 bg-opacity-90 border-2 border-dashed border-blue-500 rounded-xl flex flex-col items-center justify-center text-blue-500 pointer-events-none transition-all -translate-x-1/2 -translate-y-1/2 px-6 py-4"
       :style="{ left: `${dragState.point.x}px`, top: `${dragState.point.y}px` }"
     >
@@ -159,14 +164,18 @@ const toggleProxy = (item: CustomScript) => {
           v-for="element in list"
           :key="element.id"
           class="border border-gray-200 rounded-xl bg-white overflow-hidden transition-all"
-          :class="{ 'ring-2 ring-blue-500 ring-opacity-50': activeId === element.id }"
+          :class="{
+            'ring-2 ring-blue-500 ring-opacity-50': activeId === element.id,
+          }"
         >
           <!-- Header -->
           <div
             class="flex items-center p-3 gap-3 bg-gray-50 hover:bg-gray-100 cursor-pointer select-none"
             @click="activeId = activeId === element.id ? null : element.id"
           >
-            <div class="drag-handle cursor-move text-gray-400 hover:text-gray-600">
+            <div
+              class="drag-handle cursor-move text-gray-400 hover:text-gray-600"
+            >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 class="h-5 w-5"
@@ -202,7 +211,9 @@ const toggleProxy = (item: CustomScript) => {
                 <div
                   class="w-7 h-4 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-purple-500"
                 ></div>
-                <span class="ml-1 text-xs text-gray-500 font-medium">通过本地网络</span>
+                <span class="ml-1 text-xs text-gray-500 font-medium"
+                  >通过本地网络</span
+                >
               </label>
 
               <!-- Enable Switch -->
@@ -227,7 +238,9 @@ const toggleProxy = (item: CustomScript) => {
                     ? 'bg-red-500 text-white w-20 justify-center'
                     : 'text-gray-400 hover:text-red-500 hover:bg-red-50 w-8 justify-center'
                 "
-                :title="deleteConfirmId === element.id ? '点击确认删除' : '删除'"
+                :title="
+                  deleteConfirmId === element.id ? '点击确认删除' : '删除'
+                "
               >
                 <span
                   v-if="deleteConfirmId === element.id"
@@ -272,9 +285,14 @@ const toggleProxy = (item: CustomScript) => {
           </div>
 
           <!-- Editor Body -->
-          <div v-if="activeId === element.id" class="p-4 border-t border-gray-100 space-y-3">
+          <div
+            v-if="activeId === element.id"
+            class="p-4 border-t border-gray-100 space-y-3"
+          >
             <div>
-              <label class="text-xs font-bold text-gray-500 mb-1 block">名称</label>
+              <label class="text-xs font-bold text-gray-500 mb-1 block"
+                >名称</label
+              >
               <input
                 v-model="element.name"
                 @change="updateList"
@@ -283,7 +301,9 @@ const toggleProxy = (item: CustomScript) => {
               />
             </div>
             <div>
-              <label class="text-xs font-bold text-gray-500 mb-1 block">代码内容</label>
+              <label class="text-xs font-bold text-gray-500 mb-1 block"
+                >代码内容</label
+              >
               <textarea
                 v-model="element.content"
                 @change="updateList"

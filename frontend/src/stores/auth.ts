@@ -8,7 +8,9 @@ export const useAuthStore = defineStore("auth", () => {
   const password = ref("");
 
   const getHeaders = (): Record<string, string> => {
-    const headers: Record<string, string> = { "Content-Type": "application/json" };
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+    };
     if (token.value) {
       headers["Authorization"] = `Bearer ${token.value}`;
     }
@@ -82,7 +84,9 @@ export const useAuthStore = defineStore("auth", () => {
 
   const addUser = async (usr: string, pwd: string): Promise<boolean> => {
     try {
-      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+      };
       if (token.value) headers["Authorization"] = `Bearer ${token.value}`;
       const res = await fetch("/api/admin/users", {
         method: "POST",
@@ -101,7 +105,10 @@ export const useAuthStore = defineStore("auth", () => {
     try {
       const headers: Record<string, string> = {};
       if (token.value) headers["Authorization"] = `Bearer ${token.value}`;
-      const res = await fetch(`/api/admin/users/${usr}`, { method: "DELETE", headers });
+      const res = await fetch(`/api/admin/users/${usr}`, {
+        method: "DELETE",
+        headers,
+      });
       if (res.ok) return true;
       throw new Error("Delete failed");
     } catch (e) {
@@ -111,7 +118,9 @@ export const useAuthStore = defineStore("auth", () => {
 
   const uploadLicense = async (key: string): Promise<boolean> => {
     try {
-      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+      };
       if (token.value) headers["Authorization"] = `Bearer ${token.value}`;
       const res = await fetch("/api/admin/license", {
         method: "POST",

@@ -80,12 +80,6 @@ export const useMainStore = defineStore("main", () => {
       configStore.effectiveIsLan = v;
     },
   });
-  const ipFetchStatus = computed({
-    get: () => configStore.ipFetchStatus,
-    set: (v) => {
-      configStore.ipFetchStatus = v;
-    },
-  });
   const currentVersion = computed(() => configStore.currentVersion);
   const latestVersion = computed(() => configStore.latestVersion);
   const hasUpdate = computed(() => configStore.hasUpdate);
@@ -191,18 +185,6 @@ export const useMainStore = defineStore("main", () => {
   const status = computed(() => sync.status);
   const dataVersion = computed(() => sync.dataVersion);
   const pendingServerVersion = computed(() => sync.pendingServerVersion);
-  const rssFeeds = computed({
-    get: () => sync.rssFeeds,
-    set: (v) => {
-      sync.rssFeeds = v;
-    },
-  });
-  const rssCategories = computed({
-    get: () => sync.rssCategories,
-    set: (v) => {
-      sync.rssCategories = v;
-    },
-  });
   const luckyStunData = computed(() => sync.luckyStunData);
   const fetchLuckyStunData = sync.fetchLuckyStunData;
   const init = sync.init;
@@ -307,7 +289,6 @@ export const useMainStore = defineStore("main", () => {
     isLanMode,
     networkLatency,
     effectiveIsLan,
-    ipFetchStatus,
     currentVersion,
     latestVersion,
     hasUpdate,
@@ -342,8 +323,6 @@ export const useMainStore = defineStore("main", () => {
     status,
     dataVersion,
     pendingServerVersion,
-    rssFeeds,
-    rssCategories,
     luckyStunData,
     fetchLuckyStunData,
     init,

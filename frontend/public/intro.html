@@ -1,0 +1,979 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    />
+    <meta
+      name="description"
+      content="StartDeck 是面向 NAS、家庭服务器和个人工作流的轻量级导航页与仪表盘系统。"
+    />
+    <meta name="theme-color" content="#111827" />
+    <meta property="og:title" content="StartDeck 即将发布" />
+    <meta
+      property="og:description"
+      content="把内网服务、常用网站、Docker 管理和个人组件聚合成每天打开的第一屏。"
+    />
+    <meta property="og:type" content="website" />
+    <link rel="icon" href="./favicon.ico" />
+    <title>StartDeck | 发布介绍</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --ink: #111827;
+        --muted: #5f6775;
+        --line: #d9dee7;
+        --paper: #f7f8fb;
+        --surface: #ffffff;
+        --surface-soft: #eef3f7;
+        --green: #16a34a;
+        --blue: #2563eb;
+        --amber: #d97706;
+        --red: #dc2626;
+        --cyan: #0891b2;
+        --shadow: 0 24px 70px rgba(15, 23, 42, 0.16);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html {
+        scroll-behavior: smooth;
+      }
+
+      body {
+        margin: 0;
+        background: var(--paper);
+        color: var(--ink);
+        font-family:
+          Inter,
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          "PingFang SC",
+          "Microsoft YaHei",
+          sans-serif;
+        line-height: 1.65;
+        text-rendering: optimizeLegibility;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      img {
+        max-width: 100%;
+        display: block;
+      }
+
+      a {
+        color: inherit;
+        text-decoration: none;
+      }
+
+      code,
+      pre {
+        font-family:
+          "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+      }
+
+      .site-header {
+        position: absolute;
+        top: 0;
+        left: 0;
+        z-index: 10;
+        width: 100%;
+        padding: 22px max(24px, env(safe-area-inset-right)) 0
+          max(24px, env(safe-area-inset-left));
+      }
+
+      .nav-shell {
+        max-width: 1180px;
+        margin: 0 auto;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 18px;
+        color: #fff;
+      }
+
+      .brand {
+        display: inline-flex;
+        align-items: center;
+        gap: 12px;
+        font-size: 1.05rem;
+        font-weight: 800;
+      }
+
+      .brand img {
+        width: 36px;
+        height: 36px;
+        border-radius: 8px;
+      }
+
+      .nav-links {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px;
+        border: 1px solid rgba(255, 255, 255, 0.22);
+        border-radius: 8px;
+        background: rgba(17, 24, 39, 0.36);
+        backdrop-filter: blur(18px);
+      }
+
+      .nav-links a {
+        padding: 8px 12px;
+        border-radius: 6px;
+        color: rgba(255, 255, 255, 0.82);
+        font-size: 0.92rem;
+        font-weight: 700;
+      }
+
+      .nav-links a:hover,
+      .nav-links a:focus-visible {
+        background: rgba(255, 255, 255, 0.12);
+        color: #fff;
+        outline: none;
+      }
+
+      .hero {
+        position: relative;
+        min-height: 82svh;
+        display: flex;
+        align-items: center;
+        overflow: hidden;
+        color: #fff;
+        background:
+          linear-gradient(
+            90deg,
+            rgba(5, 10, 20, 0.92) 0%,
+            rgba(12, 18, 31, 0.76) 46%,
+            rgba(12, 18, 31, 0.34) 100%
+          ),
+          url("./intro-assets/hero-dashboard.png") center / cover no-repeat;
+      }
+
+      .hero::after {
+        content: "";
+        position: absolute;
+        inset: auto 0 0;
+        height: 160px;
+        background: linear-gradient(
+          180deg,
+          rgba(247, 248, 251, 0),
+          var(--paper)
+        );
+        pointer-events: none;
+      }
+
+      .hero-content {
+        position: relative;
+        z-index: 1;
+        width: min(1180px, calc(100% - 48px));
+        margin: 0 auto;
+        padding: 104px 0 72px;
+      }
+
+      .eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 24px;
+        color: rgba(255, 255, 255, 0.9);
+        font-size: 0.95rem;
+        font-weight: 800;
+      }
+
+      .eyebrow::before {
+        content: "";
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: var(--green);
+        box-shadow: 0 0 0 5px rgba(22, 163, 74, 0.18);
+      }
+
+      h1,
+      h2,
+      h3,
+      p {
+        margin: 0;
+      }
+
+      h1 {
+        max-width: 760px;
+        padding-bottom: 4px;
+        font-size: 3.75rem;
+        line-height: 1.05;
+        font-weight: 900;
+        overflow-wrap: break-word;
+      }
+
+      .hero-copy {
+        max-width: 720px;
+        margin-top: 22px;
+        color: rgba(255, 255, 255, 0.82);
+        font-size: 1.14rem;
+      }
+
+      .hero-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-top: 34px;
+      }
+
+      .button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 46px;
+        padding: 0 18px;
+        border: 1px solid transparent;
+        border-radius: 8px;
+        font-weight: 800;
+        transition:
+          transform 160ms ease,
+          border-color 160ms ease,
+          background 160ms ease;
+      }
+
+      .button:hover,
+      .button:focus-visible {
+        transform: translateY(-1px);
+        outline: none;
+      }
+
+      .button.primary {
+        background: #fff;
+        color: #111827;
+      }
+
+      .button.secondary {
+        border-color: rgba(255, 255, 255, 0.3);
+        background: rgba(255, 255, 255, 0.1);
+        color: #fff;
+        backdrop-filter: blur(14px);
+      }
+
+      .hero-stats {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 10px;
+        max-width: 780px;
+        margin: 44px 0 0;
+        padding: 0;
+        list-style: none;
+      }
+
+      .hero-stats li {
+        min-height: 96px;
+        padding: 18px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 8px;
+        background: rgba(17, 24, 39, 0.38);
+        backdrop-filter: blur(16px);
+      }
+
+      .hero-stats strong {
+        display: block;
+        color: #fff;
+        font-size: 1.28rem;
+        font-weight: 900;
+      }
+
+      .hero-stats span {
+        display: block;
+        margin-top: 4px;
+        color: rgba(255, 255, 255, 0.72);
+        font-size: 0.9rem;
+      }
+
+      .section {
+        padding: 84px 24px;
+      }
+
+      .section.white {
+        background: var(--surface);
+      }
+
+      .section.tint {
+        background: #eef3f7;
+      }
+
+      .container {
+        width: min(1180px, 100%);
+        margin: 0 auto;
+      }
+
+      .section-head {
+        display: grid;
+        grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+        gap: 36px;
+        align-items: end;
+        margin-bottom: 36px;
+      }
+
+      .section-kicker {
+        color: var(--green);
+        font-size: 0.86rem;
+        font-weight: 900;
+        text-transform: uppercase;
+      }
+
+      h2 {
+        margin-top: 10px;
+        font-size: 2.25rem;
+        line-height: 1.15;
+        font-weight: 900;
+      }
+
+      .section-head p {
+        color: var(--muted);
+        font-size: 1.02rem;
+      }
+
+      .feature-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 14px;
+      }
+
+      .feature-card {
+        min-height: 222px;
+        padding: 22px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--surface);
+        box-shadow: 0 12px 36px rgba(15, 23, 42, 0.05);
+      }
+
+      .feature-card .mark {
+        width: 42px;
+        height: 42px;
+        display: grid;
+        place-items: center;
+        margin-bottom: 18px;
+        border-radius: 8px;
+        color: #fff;
+        font-weight: 900;
+      }
+
+      .mark.green {
+        background: var(--green);
+      }
+
+      .mark.blue {
+        background: var(--blue);
+      }
+
+      .mark.amber {
+        background: var(--amber);
+      }
+
+      .mark.red {
+        background: var(--red);
+      }
+
+      .mark.cyan {
+        background: var(--cyan);
+      }
+
+      .mark.dark {
+        background: #111827;
+      }
+
+      .feature-card h3 {
+        font-size: 1.12rem;
+        font-weight: 900;
+      }
+
+      .feature-card p {
+        margin-top: 10px;
+        color: var(--muted);
+      }
+
+      .showcase {
+        display: grid;
+        grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+        gap: 34px;
+        align-items: center;
+      }
+
+      .preview-image {
+        width: 100%;
+        aspect-ratio: 930 / 340;
+        object-fit: cover;
+        border: 1px solid rgba(255, 255, 255, 0.7);
+        border-radius: 8px;
+        box-shadow: var(--shadow);
+      }
+
+      .showcase-list {
+        display: grid;
+        gap: 14px;
+      }
+
+      .showcase-item {
+        display: grid;
+        grid-template-columns: 52px minmax(0, 1fr);
+        gap: 16px;
+        align-items: start;
+      }
+
+      .showcase-item img {
+        width: 52px;
+        height: 52px;
+        border-radius: 8px;
+        background: #fff;
+        box-shadow: 0 10px 30px rgba(15, 23, 42, 0.12);
+      }
+
+      .showcase-item h3 {
+        font-size: 1.06rem;
+        font-weight: 900;
+      }
+
+      .showcase-item p {
+        margin-top: 4px;
+        color: var(--muted);
+      }
+
+      .audience-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 14px;
+      }
+
+      .audience {
+        padding: 26px;
+        min-height: 220px;
+        border-radius: 8px;
+        color: #fff;
+        overflow: hidden;
+      }
+
+      .audience.nas {
+        background: #14532d;
+      }
+
+      .audience.dev {
+        background: #1f2937;
+      }
+
+      .audience.home {
+        background: #7c2d12;
+      }
+
+      .audience h3 {
+        font-size: 1.2rem;
+        font-weight: 900;
+      }
+
+      .audience p {
+        margin-top: 12px;
+        color: rgba(255, 255, 255, 0.82);
+      }
+
+      .deploy-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 14px;
+      }
+
+      .command-panel {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--surface);
+        overflow: hidden;
+      }
+
+      .command-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 18px 18px 0;
+      }
+
+      .command-head h3 {
+        font-size: 1rem;
+        font-weight: 900;
+      }
+
+      .copy-button {
+        min-height: 34px;
+        padding: 0 12px;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        background: #fff;
+        color: var(--ink);
+        cursor: pointer;
+        font-weight: 800;
+      }
+
+      .copy-button:hover,
+      .copy-button:focus-visible {
+        border-color: var(--blue);
+        outline: none;
+      }
+
+      pre {
+        margin: 0;
+        padding: 18px;
+        overflow: auto;
+        color: #e5edf8;
+        background: #101827;
+        font-size: 0.88rem;
+        line-height: 1.6;
+      }
+
+      .final-cta {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 24px;
+        align-items: center;
+        padding: 32px;
+        border-radius: 8px;
+        background: #111827;
+        color: #fff;
+      }
+
+      .final-cta h2 {
+        margin: 0;
+        font-size: 2rem;
+      }
+
+      .final-cta p {
+        margin-top: 10px;
+        color: rgba(255, 255, 255, 0.72);
+      }
+
+      footer {
+        padding: 34px 24px;
+        color: var(--muted);
+        background: #fff;
+      }
+
+      .footer-inner {
+        width: min(1180px, 100%);
+        margin: 0 auto;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 14px;
+        font-size: 0.92rem;
+      }
+
+      .footer-links {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+      }
+
+      .footer-links a {
+        color: #374151;
+        font-weight: 800;
+      }
+
+      @media (max-width: 900px) {
+        .nav-links {
+          display: none;
+        }
+
+        .hero {
+          min-height: 84svh;
+          background-position: center top;
+        }
+
+        h1 {
+          font-size: 2.55rem;
+        }
+
+        .hero-copy {
+          font-size: 1rem;
+        }
+
+        .hero-stats,
+        .feature-grid,
+        .audience-grid,
+        .deploy-grid,
+        .showcase,
+        .section-head,
+        .final-cta {
+          grid-template-columns: 1fr;
+        }
+
+        .hero-stats li {
+          min-height: auto;
+        }
+
+        .section {
+          padding: 62px 20px;
+        }
+
+        h2 {
+          font-size: 1.85rem;
+        }
+
+        .final-cta {
+          padding: 24px;
+        }
+      }
+
+      @media (max-width: 520px) {
+        .site-header {
+          padding-top: 16px;
+        }
+
+        .hero-content {
+          width: min(100% - 36px, 1180px);
+          padding: 88px 0 56px;
+        }
+
+        h1 {
+          font-size: 2.25rem;
+        }
+
+        .button {
+          width: 100%;
+        }
+
+        .hero-stats {
+          display: none;
+        }
+
+        .feature-card,
+        .audience {
+          min-height: auto;
+        }
+
+        .command-head {
+          align-items: flex-start;
+          flex-direction: column;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="site-header" aria-label="StartDeck 发布页导航">
+      <div class="nav-shell">
+        <a class="brand" href="#top" aria-label="StartDeck 首页">
+          <img src="./ICON.PNG" alt="" />
+          <span>StartDeck</span>
+        </a>
+        <nav class="nav-links" aria-label="页面导航">
+          <a href="#features">功能</a>
+          <a href="#scenes">场景</a>
+          <a href="#deploy">部署</a>
+          <a
+            href="https://github.com/Garry-QD/StartDeck"
+            target="_blank"
+            rel="noreferrer"
+            >GitHub</a
+          >
+        </nav>
+      </div>
+    </header>
+
+    <main id="top">
+      <section class="hero" aria-label="StartDeck 发布介绍">
+        <div class="hero-content">
+          <div class="eyebrow">StartDeck 即将发布</div>
+          <h1>把你的 NAS 和日常服务整理成第一屏。</h1>
+          <p class="hero-copy">
+            StartDeck 是一个轻量级、可自定义的个人导航页与仪表盘系统。
+            它把内网服务、常用网站、Docker 管理、天气、RSS
+            和个人组件放在同一个高效入口。
+          </p>
+          <div class="hero-actions" aria-label="主要操作">
+            <a class="button primary" href="#deploy">查看部署方式</a>
+            <a class="button secondary" href="#features">浏览发布亮点</a>
+          </div>
+          <ul class="hero-stats" aria-label="核心亮点">
+            <li>
+              <strong>轻量运行</strong>
+              <span>面向 NAS 与家庭服务器，资源占用低</span>
+            </li>
+            <li>
+              <strong>60,000+ 图标</strong>
+              <span>内置图标库与站点元数据服务</span>
+            </li>
+            <li>
+              <strong>一屏管理</strong>
+              <span>书签、组件、Docker 状态集中展示</span>
+            </li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="section white" id="features">
+        <div class="container">
+          <div class="section-head">
+            <div>
+              <div class="section-kicker">Release Highlights</div>
+              <h2>为自托管用户准备的完整起始页。</h2>
+            </div>
+            <p>
+              这不是一个只放链接的书签页。StartDeck
+              提供可拖拽布局、实用组件、本地数据存储和 Go
+              后端能力，让浏览器首页真正连接你的服务、文件和设备。
+            </p>
+          </div>
+
+          <div class="feature-grid">
+            <article class="feature-card">
+              <div class="mark green">01</div>
+              <h3>自由布局与分组</h3>
+              <p>
+                用网格拖拽组织卡片、组件和书签。常用服务、收藏夹、Docker、PT、影音等场景可以独立分组。
+              </p>
+            </article>
+            <article class="feature-card">
+              <div class="mark blue">02</div>
+              <h3>内外网智能切换</h3>
+              <p>
+                结合访问来源、域名和延迟判断网络环境，优先跳转到更适合当前设备的内网或公网地址。
+              </p>
+            </article>
+            <article class="feature-card">
+              <div class="mark amber">03</div>
+              <h3>组件化工作台</h3>
+              <p>
+                内置天气、RSS、热榜、系统状态和自定义组件，把日常信息整理到稳定入口。
+              </p>
+            </article>
+            <article class="feature-card">
+              <div class="mark red">04</div>
+              <h3>Docker 管理组件</h3>
+              <p>
+                查看容器状态，执行启动、停止、重启和镜像升级。常见服务维护可以直接在仪表盘完成。
+              </p>
+            </article>
+            <article class="feature-card">
+              <div class="mark cyan">05</div>
+              <h3>丰富组件生态</h3>
+              <p>
+                天气、日历、待办、RSS、热搜、计算器、音乐播放器、系统监控和自定义
+                HTML 组件开箱可用。
+              </p>
+            </article>
+            <article class="feature-card">
+              <div class="mark dark">06</div>
+              <h3>数据自己掌握</h3>
+              <p>
+                配置与运行数据保存在本地目录，支持备份、迁移和版本保存；Docker
+                部署也可以挂载持久目录。
+              </p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="section tint" id="scenes">
+        <div class="container showcase">
+          <img
+            class="preview-image"
+            src="./intro-assets/hero-widgets.png"
+            alt="StartDeck 组件预览：待办、热搜与计算器等组件"
+          />
+          <div class="showcase-list">
+            <div class="showcase-item">
+              <img src="./icons/CasaOS_B+CasaOS.png" alt="" />
+              <div>
+                <h3>家庭服务器入口</h3>
+                <p>
+                  把 CasaOS、群晖、飞牛、OpenWRT、qBittorrent、Emby
+                  等服务放进统一桌面。
+                </p>
+              </div>
+            </div>
+            <div class="showcase-item">
+              <img src="./icons/NginxProxyManager_A+NPM反向代理.png" alt="" />
+              <div>
+                <h3>复杂网络可读可管</h3>
+                <p>
+                  适配
+                  DDNS、反代、内网穿透、子路径部署等环境，减少“能不能打开”的手动判断。
+                </p>
+              </div>
+            </div>
+            <div class="showcase-item">
+              <img src="./icons/ChatGPT_A+ChatGPT.png" alt="" />
+              <div>
+                <h3>工作流一屏聚合</h3>
+                <p>
+                  把 AI
+                  工具、文档、监控、文件临时传输和待办事项放在同一个可定制工作面板。
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section white">
+        <div class="container">
+          <div class="section-head">
+            <div>
+              <div class="section-kicker">Who It Fits</div>
+              <h2>适合把服务长期跑在自己机器上的人。</h2>
+            </div>
+            <p>
+              StartDeck
+              的重点是实际使用效率：打开浏览器就能看到服务状态、入口、任务和需要处理的内容。
+            </p>
+          </div>
+          <div class="audience-grid">
+            <article class="audience nas">
+              <h3>NAS 用户</h3>
+              <p>统一整理内网应用、影音服务、下载器、面板和路由器入口。</p>
+            </article>
+            <article class="audience dev">
+              <h3>开发者与极客</h3>
+              <p>
+                把本地服务、测试环境、监控、脚本组件和常用工具收束到一个稳定首页。
+              </p>
+            </article>
+            <article class="audience home">
+              <h3>家庭服务器玩家</h3>
+              <p>
+                用 Docker
+                管理、网络识别和自定义组件，让家庭服务不再散落在多个标签页里。
+              </p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="section tint" id="deploy">
+        <div class="container">
+          <div class="section-head">
+            <div>
+              <div class="section-kicker">Deploy</div>
+              <h2>Docker 或 Debian 脚本，按你的环境上线。</h2>
+            </div>
+            <p>
+              发布包提供 Docker 镜像与 Debian/Ubuntu
+              部署脚本。数据目录、音乐目录、文件目录和图标服务数据都可以持久化。
+            </p>
+          </div>
+
+          <div class="deploy-grid">
+            <article class="command-panel">
+              <div class="command-head">
+                <h3>Docker CLI</h3>
+                <button
+                  class="copy-button"
+                  type="button"
+                  data-copy="docker-command"
+                >
+                  复制
+                </button>
+              </div>
+              <pre id="docker-command"><code>docker run -d \
+  -p 23000:3000 \
+  -v $(pwd)/data:/app/server/data \
+  -v $(pwd)/music:/app/server/music \
+  -v $(pwd)/icon-service-data:/app/icon-service/data \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  -e STARTDECK_ADMIN_PASSWORD=admin \
+  --name startdeck \
+  qdnas/startdeck:latest</code></pre>
+            </article>
+
+            <article class="command-panel">
+              <div class="command-head">
+                <h3>Debian / Ubuntu</h3>
+                <button
+                  class="copy-button"
+                  type="button"
+                  data-copy="debian-command"
+                >
+                  复制
+                </button>
+              </div>
+              <pre id="debian-command"><code>wget -O deploy_debian.sh \
+  https://raw.githubusercontent.com/Garry-QD/StartDeck/main/deploy_debian.sh
+chmod +x deploy_debian.sh
+sudo ./deploy_debian.sh</code></pre>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="section white">
+        <div class="container final-cta">
+          <div>
+            <h2>准备把 StartDeck 放到你的首页。</h2>
+            <p>
+              开源、可自托管、可迁移。发布后可通过 GitHub、Gitee 或 Docker
+              镜像获取最新版本。
+            </p>
+          </div>
+          <a
+            class="button primary"
+            href="https://github.com/Garry-QD/StartDeck"
+            target="_blank"
+            rel="noreferrer"
+            >查看项目</a
+          >
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <div class="footer-inner">
+        <span>StartDeck · AGPLv3 · 交流群 QQ 613835409</span>
+        <div class="footer-links">
+          <a
+            href="https://github.com/Garry-QD/StartDeck"
+            target="_blank"
+            rel="noreferrer"
+            >GitHub</a
+          >
+          <a
+            href="https://gitee.com/gjx0808/StartDeck"
+            target="_blank"
+            rel="noreferrer"
+            >Gitee</a
+          >
+          <a
+            href="https://hub.docker.com/r/qdnas/startdeck"
+            target="_blank"
+            rel="noreferrer"
+            >Docker</a
+          >
+        </div>
+      </div>
+    </footer>
+
+    <script>
+      const copyButtons = document.querySelectorAll("[data-copy]");
+
+      copyButtons.forEach((button) => {
+        button.addEventListener("click", async () => {
+          const target = document.getElementById(button.dataset.copy);
+          const text = target ? target.innerText.trim() : "";
+          if (!text) return;
+
+          try {
+            await navigator.clipboard.writeText(text);
+            const original = button.textContent;
+            button.textContent = "已复制";
+            window.setTimeout(() => {
+              button.textContent = original;
+            }, 1600);
+          } catch {
+            button.textContent = "复制失败";
+            window.setTimeout(() => {
+              button.textContent = "复制";
+            }, 1600);
+          }
+        });
+      });
+    </script>
+  </body>
+</html>

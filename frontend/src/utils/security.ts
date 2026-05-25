@@ -7,7 +7,10 @@ export const internalWhitelist = [
   // Note: 172.16.0.0/12 is covered by regex in function
 ];
 
-export const isInternalDomain = (urlStr: string, customWhitelist: string = "") => {
+export const isInternalDomain = (
+  urlStr: string,
+  customWhitelist: string = "",
+) => {
   try {
     // Handle URLs without protocol for parsing
     const u = new URL(urlStr.startsWith("http") ? urlStr : `https://${urlStr}`);

@@ -1,14 +1,8 @@
 import { ref, computed, watch } from "vue";
 import { defineStore } from "pinia";
 import { useWebSocket } from "@vueuse/core";
-import { normalizeVersion } from "@/utils/storeHelpers";
-import type {
-  LuckyStunData,
-  NavGroup,
-  RssCategory,
-  RssFeed,
-  WidgetConfig,
-} from "@/types";
+import { normalizeVersion, stripForceNetworkMode } from "@/utils/storeHelpers";
+import type { LuckyStunData, NavGroup, WidgetConfig } from "@/types";
 import { useAuthStore } from "./auth";
 import { useWidgetsStore } from "./widgets";
 import { useGroupsStore } from "./groups";
@@ -16,11 +10,6 @@ import { useConfigStore } from "./config";
 import { useCacheStore } from "./cache";
 import { useSaveStore } from "./save";
 import { useNetworkStore } from "./network";
-import { useUiFeedbackStore } from "./uiFeedback";
-import {
-  createDefaultSearchEngines,
-  hydrateSearchEngineIcons,
-} from "@/utils/searchEngines";
 import { toWsUrl } from "@/utils/runtimeUrls";
 
 export const useSyncStore = defineStore("sync", () => {
@@ -31,7 +20,6 @@ export const useSyncStore = defineStore("sync", () => {
   const cacheStore = useCacheStore();
   const saveStore = useSaveStore();
   const networkStore = useNetworkStore();
-  const uiFeedback = useUiFeedbackStore();
 
   // ---- WebSocket ----
   const lastWsUrl = ref("");
@@ -39,7 +27,7 @@ export const useSyncStore = defineStore("sync", () => {
     if (typeof window === "undefined") return "";
     // In dev mode, connect directly to backend WS port to avoid Vite proxy issues
     if (import.meta.env.DEV) {
-      const backend = import.meta.env.VITE_BACKEND || "http://127.0.0.1:3000";
+      const backend = import.meta.env.VITE_BACKEND || "http://127.0.0.1:9001";
       const url = new URL(backend);
       const wsProtocol = url.protocol === "https:" ? "wss:" : "ws:";
       const port = url.port || (url.protocol === "https:" ? "443" : "80");
@@ -123,7 +111,6 @@ export const useSyncStore = defineStore("sync", () => {
     if (!auth.isLogged) return;
     const currentUrl = wsUrl.value;
     if (!currentUrl) return;
-    console.log(`[WS] Force reconnect: currentUrl=${currentUrl}`);
     lastWsUrl.value = currentUrl;
     stopWsHealthCheck();
     networkStore.markStale();
@@ -145,8 +132,6 @@ export const useSyncStore = defineStore("sync", () => {
   // ---- Data state ----
   const dataVersion = ref(0);
   const pendingServerVersion = ref(0);
-  const rssFeeds = ref<RssFeed[]>([]);
-  const rssCategories = ref<RssCategory[]>([]);
   const luckyStunData = ref<LuckyStunData | null>(null);
 
   // ---- State flags ----
@@ -163,9 +148,6 @@ export const useSyncStore = defineStore("sync", () => {
   const isHttpPollingActiveRef = computed(() => isHttpPollingActive);
   let httpPollTimer: ReturnType<typeof setInterval> | null = null;
   let activePollAbortController: AbortController | null = null;
-  let searchEngineIconHydrateTimer: ReturnType<typeof setTimeout> | null = null;
-  let searchEngineIconHydrateInFlight: Promise<void> | null = null;
-  let lastSearchEngineIconHydrateFingerprint = "";
 
   let logoutInProgress = false;
 
@@ -242,7 +224,6 @@ export const useSyncStore = defineStore("sync", () => {
       activePollAbortController.abort();
       activePollAbortController = null;
     }
-    console.log("[HTTP polling] Stopped");
   };
 
   const buildCacheSnapshot = (data: Record<string, unknown>) => ({
@@ -250,67 +231,11 @@ export const useSyncStore = defineStore("sync", () => {
     groups: groupsStore.groups,
     widgets: widgetsStore.widgets,
     appConfig: configStore.appConfig,
-    rssFeeds: rssFeeds.value,
-    rssCategories: rssCategories.value,
     systemConfig: data.systemConfig ?? configStore.systemConfig,
     username: typeof data.username === "string" ? data.username : auth.username,
     version:
       typeof data.version !== "undefined" ? data.version : dataVersion.value,
   });
-
-  const getSearchEngineIconHydrateFingerprint = () =>
-    (configStore.appConfig.searchEngines || [])
-      .map((engine) =>
-        [
-          engine.key,
-          engine.urlTemplate,
-          engine.iconSourceUrl || "",
-          engine.icon || "",
-          engine.iconBackgroundMode || "",
-          engine.iconAutoBackgroundColor || "",
-          engine.iconCustomBackgroundColor || "",
-        ].join("\u0001"),
-      )
-      .join("\u0002");
-
-  const hydrateConfiguredSearchEngineIcons = async () => {
-    if (typeof window === "undefined") return;
-    const engines = configStore.appConfig.searchEngines;
-    if (!Array.isArray(engines) || engines.length === 0) return;
-    const fingerprint = getSearchEngineIconHydrateFingerprint();
-    if (searchEngineIconHydrateInFlight) return searchEngineIconHydrateInFlight;
-    if (fingerprint && fingerprint === lastSearchEngineIconHydrateFingerprint)
-      return;
-
-    searchEngineIconHydrateInFlight = (async () => {
-      const changed = await hydrateSearchEngineIcons(engines);
-      if (!changed) return;
-      cacheStore.saveToCache(buildCacheSnapshot({}));
-      if (auth.isLogged) {
-        await saveData(true);
-      }
-    })()
-      .catch((e) => {
-        console.warn("Search engine icon hydration failed", e);
-      })
-      .finally(() => {
-        searchEngineIconHydrateInFlight = null;
-        lastSearchEngineIconHydrateFingerprint =
-          getSearchEngineIconHydrateFingerprint();
-      });
-
-    return searchEngineIconHydrateInFlight;
-  };
-
-  const scheduleSearchEngineIconHydration = () => {
-    if (typeof window === "undefined") return;
-    if (searchEngineIconHydrateTimer)
-      clearTimeout(searchEngineIconHydrateTimer);
-    searchEngineIconHydrateTimer = setTimeout(() => {
-      searchEngineIconHydrateTimer = null;
-      void hydrateConfiguredSearchEngineIcons();
-    }, 0);
-  };
 
   const resetActiveStateForGuest = () => {
     isApplyingServerData = true;
@@ -319,8 +244,6 @@ export const useSyncStore = defineStore("sync", () => {
     widgetsStore.uiStateMap = {};
     widgetsStore.serverLayoutMap = {};
     widgetsStore.serverLayoutSignature = "";
-    rssFeeds.value = [];
-    rssCategories.value = [];
     luckyStunData.value = null;
     dataVersion.value = 0;
     pendingServerVersion.value = 0;
@@ -348,7 +271,6 @@ export const useSyncStore = defineStore("sync", () => {
   const startHttpPolling = () => {
     if (isHttpPollingActive || status.value === "OPEN") return;
     isHttpPollingActive = true;
-    console.log("[HTTP polling] Started (15s interval)");
     httpPollTimer = setInterval(async () => {
       if (!isHttpPollingActive || document.visibilityState === "hidden") return;
       try {
@@ -407,8 +329,9 @@ export const useSyncStore = defineStore("sync", () => {
         ...configStore.appConfig,
         ...incomingConfig,
       } as Record<string, unknown>;
-      delete (mergedConfig as Record<string, unknown>).forceNetworkMode;
-      configStore.appConfig = mergedConfig as typeof configStore.appConfig;
+      configStore.appConfig = stripForceNetworkMode(
+        mergedConfig,
+      ) as typeof configStore.appConfig;
     }
     if (
       !configStore.appConfig.marketplaceListUrl ||
@@ -466,29 +389,6 @@ export const useSyncStore = defineStore("sync", () => {
         configStore.appConfig.mobileBackground,
       ) as string;
     }
-    if (!configStore.appConfig.searchEngines?.length) {
-      configStore.appConfig.searchEngines = createDefaultSearchEngines();
-    }
-    if (!configStore.appConfig.defaultSearchEngine)
-      configStore.appConfig.defaultSearchEngine = "google";
-    if (typeof configStore.appConfig.rememberLastEngine !== "boolean")
-      configStore.appConfig.rememberLastEngine = true;
-    if (typeof configStore.appConfig.widgetAreaCols !== "number") {
-      configStore.appConfig.widgetAreaCols =
-        typeof configStore.appConfig.widgetAreaSize === "number"
-          ? configStore.appConfig.widgetAreaSize
-          : 4;
-    }
-    if (typeof configStore.appConfig.widgetAreaRows !== "number") {
-      configStore.appConfig.widgetAreaRows =
-        typeof configStore.appConfig.widgetAreaSize === "number"
-          ? configStore.appConfig.widgetAreaSize
-          : 4;
-    }
-    if (data.rssFeeds) rssFeeds.value = data.rssFeeds as RssFeed[];
-    if (data.rssCategories)
-      rssCategories.value = data.rssCategories as RssCategory[];
-
     networkStore.fetchCustomScripts();
     widgetsStore.updateLastSavedLayout();
     cacheStore.saveToCache({
@@ -497,7 +397,6 @@ export const useSyncStore = defineStore("sync", () => {
     });
     saveStore.hasUnsavedChanges = false;
     isApplyingServerData = false;
-    scheduleSearchEngineIconHydration();
   };
 
   // ---- fetchAndProcessData ----
@@ -510,18 +409,13 @@ export const useSyncStore = defineStore("sync", () => {
       const res = await fetch(`/api/data`, { headers });
       if (!res.ok) return;
       const data = await res.json();
-      if (configStore.isServerSyncLocked && saveStore.hasUnsavedChanges) return;
-      if (saveStore.saveTimer !== null || saveStore.isSaving) return;
-      if (widgetsStore.layoutDirty) {
-        const confirmed = await uiFeedback.confirm({
-          title: "云端配置已更新",
-          message:
-            "检测到云端数据更新，但您当前有未保存的布局修改。\n是否放弃本地修改并使用云端版本覆盖？",
-          confirmLabel: "使用云端版本",
-          cancelLabel: "保留本地修改",
-          tone: "danger",
-        });
-        if (!confirmed) return;
+      if (
+        saveStore.hasUnsavedChanges ||
+        saveStore.saveTimer !== null ||
+        saveStore.isSaving ||
+        widgetsStore.layoutDirty
+      ) {
+        return;
       }
       handleDataUpdate(data);
       widgetsStore.updateLastSavedLayout();
@@ -535,10 +429,50 @@ export const useSyncStore = defineStore("sync", () => {
     }
   };
 
+  const OFFLINE_QUEUE_REPLAY_INTERVAL_MS = 30000;
+  let offlineQueueReplayTimer: ReturnType<typeof setInterval> | null = null;
+  let offlineQueueReplayInProgress = false;
+
+  const replayOfflineQueueIfNeeded = async () => {
+    if (!auth.isLogged) return;
+    if (saveStore.isSaving || offlineQueueReplayInProgress) return;
+    if (saveStore.offlineQueueConflictState.show) return;
+    if (
+      typeof document !== "undefined" &&
+      document.visibilityState === "hidden"
+    )
+      return;
+
+    offlineQueueReplayInProgress = true;
+    try {
+      await saveStore.triggerOfflineQueueReplay(
+        fetchVersionOnly,
+        dataVersion,
+        networkStore.getHeaders,
+      );
+    } catch (error) {
+      console.warn("[OfflineQueue] Periodic replay failed", error);
+    } finally {
+      offlineQueueReplayInProgress = false;
+    }
+  };
+
+  const startOfflineQueueReplayTimer = () => {
+    if (offlineQueueReplayTimer) return;
+    offlineQueueReplayTimer = setInterval(() => {
+      void replayOfflineQueueIfNeeded();
+    }, OFFLINE_QUEUE_REPLAY_INTERVAL_MS);
+  };
+
+  const stopOfflineQueueReplayTimer = () => {
+    if (!offlineQueueReplayTimer) return;
+    clearInterval(offlineQueueReplayTimer);
+    offlineQueueReplayTimer = null;
+  };
+
   // ---- WebSocket connect watch ----
   watch(status, async (newStatus) => {
     if (newStatus === "OPEN") {
-      console.log("WS connected");
       stopHttpPolling();
       wsContinuousFailures = 0;
       const isReconnect = wsWasConnectedBefore;
@@ -591,7 +525,6 @@ export const useSyncStore = defineStore("sync", () => {
       }
     } else if (newStatus === "CLOSED") {
       if (newStatus === "CLOSED") {
-        console.log("WS disconnected");
         wsContinuousFailures++;
       }
       networkStore.stopNetworkHeartbeat();
@@ -685,11 +618,7 @@ export const useSyncStore = defineStore("sync", () => {
     cacheStore.cacheLoadedAt = null;
     cacheStore.deferredSaveRequested = false;
 
-    const cacheLoaded = cacheStore.loadFromCache(
-      rssFeeds,
-      rssCategories,
-      dataVersion,
-    );
+    const cacheLoaded = cacheStore.loadFromCache(dataVersion);
     if (cacheLoaded) cacheStore.cacheLoadedAt = Date.now();
 
     try {
@@ -717,7 +646,7 @@ export const useSyncStore = defineStore("sync", () => {
       }
       if (!serverSnapshotLoaded) {
         if (lastError) console.error("Init failed", lastError);
-        cacheStore.loadFromCache(rssFeeds, rssCategories, dataVersion);
+        cacheStore.loadFromCache(dataVersion);
         if (cacheStore.cacheLoadedAt === null)
           cacheStore.cacheLoadedAt = Date.now();
         if (!cacheStore.serverSnapshotRetryTimer) {
@@ -739,21 +668,23 @@ export const useSyncStore = defineStore("sync", () => {
     } finally {
       isInitializing = false;
       initCompleted.value = true;
-      scheduleSearchEngineIconHydration();
       if (!wsMessageHandlerBound) {
         wsMessageHandlerBound = true;
         if (typeof document !== "undefined" && !visibilityVersionCheckBound) {
           visibilityVersionCheckBound = true;
           document.addEventListener("visibilitychange", () => {
-            if (document.visibilityState === "visible")
+            if (document.visibilityState === "visible") {
               saveStore.checkVersionAfterActivation(
                 auth.isLogged,
                 dataVersion.value,
                 fetchVersionOnly,
               );
+              void replayOfflineQueueIfNeeded();
+            }
           });
         }
       }
+      if (auth.isLogged) startOfflineQueueReplayTimer();
     }
   };
 
@@ -763,6 +694,7 @@ export const useSyncStore = defineStore("sync", () => {
     logoutInProgress = true;
     // Explicitly close WS to stop reconnect storms
     try {
+      stopOfflineQueueReplayTimer();
       if (status.value === "OPEN") wsClose();
       networkStore.stopNetworkHeartbeat();
       stopHttpPolling();
@@ -778,14 +710,7 @@ export const useSyncStore = defineStore("sync", () => {
 
   // ---- saveData wrapper ----
   const saveData = (immediate = false, force = false) =>
-    saveStore.saveData(
-      immediate,
-      force,
-      dataVersion,
-      rssFeeds,
-      rssCategories,
-      fetchAndProcessData,
-    );
+    saveStore.saveData(immediate, force, dataVersion, fetchAndProcessData);
 
   const resolveConflict = (action: "remote" | "local") =>
     saveStore.resolveConflict(action, fetchAndProcessData, saveData);
@@ -855,8 +780,11 @@ export const useSyncStore = defineStore("sync", () => {
       if (logged) {
         if (typeof window !== "undefined" && status.value !== "OPEN") wsOpen();
         stopHttpPolling();
+        startOfflineQueueReplayTimer();
+        void replayOfflineQueueIfNeeded();
       } else {
         // Guest mode: stop WS, polling, and ping checks to avoid reconnect storms
+        stopOfflineQueueReplayTimer();
         if (status.value === "OPEN") wsClose();
         stopHttpPolling();
         stopPingCheck();
@@ -873,12 +801,11 @@ export const useSyncStore = defineStore("sync", () => {
   watch(configStore.appConfig, markDirtyIfActive, { deep: true });
   watch(groupsStore.groups, markDirtyIfActive, { deep: true });
   watch(widgetsStore.widgets, markDirtyIfActive, { deep: true });
-  watch(rssFeeds, markDirtyIfActive, { deep: true });
-  watch(rssCategories, markDirtyIfActive, { deep: true });
   watch(status, (newStatus) => {
     if (newStatus === "OPEN") {
       networkStore.lastPingAt = Date.now();
       startPingCheck();
+      void replayOfflineQueueIfNeeded();
     } else {
       stopPingCheck();
       stopWsHealthCheck();
@@ -889,9 +816,6 @@ export const useSyncStore = defineStore("sync", () => {
     if (!newUrl || !oldUrl || newUrl === oldUrl) return;
     if (!auth.isLogged) return;
     const wasConnected = status.value === "OPEN";
-    console.log(
-      `[WS] URL changed: ${oldUrl} -> ${newUrl}, wasConnected=${wasConnected}`,
-    );
     if (wasConnected) {
       forceWsReconnect();
     }
@@ -907,8 +831,6 @@ export const useSyncStore = defineStore("sync", () => {
     forceWsReconnect,
     dataVersion,
     pendingServerVersion,
-    rssFeeds,
-    rssCategories,
     luckyStunData,
     isSaving: saveStore.isSaving,
     hasPendingSave: saveStore.hasPendingSave,

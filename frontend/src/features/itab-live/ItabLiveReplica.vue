@@ -8,6 +8,11 @@ import {
   ref,
   watch,
 } from "vue";
+import {
+  Copy as CopyIcon,
+  Heart as HeartIcon,
+  Scan as ScanIcon,
+} from "@lucide/vue";
 import { HolidayUtil, Lunar, Solar } from "lunar-javascript";
 import {
   createItabReplicaSizeMenuOptions,
@@ -47,9 +52,12 @@ import {
 } from "@/features/itab-poem/itabPoemModel";
 import type { ItabPoemWidgetData } from "@/features/itab-poem/itabPoemTypes";
 import { ITAB_POEM_FALLBACK_ENTRIES } from "@/features/itab-poem/useItabPoemRuntime";
+import { useItabWallpaperRuntime } from "@/features/itab-wallpaper/useItabWallpaperRuntime";
+import type { ItabWallpaperEntry } from "@/features/itab-wallpaper/itabWallpaperTypes";
 import ItabFlipCard from "./ItabFlipCard.vue";
 import ItabLiveOpenedShell from "./ItabLiveOpenedShell.vue";
 import ItabLiveWidgetFrame from "./ItabLiveWidgetFrame.vue";
+import { blurActiveElementMatching } from "@/utils/focus";
 
 type WidgetSize = ItabReplicaWidgetSize;
 type WidgetKind = ItabReplicaWidgetKind;
@@ -141,6 +149,23 @@ type DailyEnglishEntry = {
   dateline: string;
 };
 
+type DailyQuoteEntry = {
+  id: string;
+  date: string;
+  dateLabel: string;
+  timeLabel: string;
+  quote: string;
+  author: string;
+  source: string;
+  like: number;
+  share: number;
+  picUrl: string;
+  thumbUrl: string;
+  sourceStatus: "loading" | "direct" | "fallback" | "error";
+};
+
+type DailyQuoteAction = "share" | "fullscreen" | "like";
+
 type MovieCalendarEntry = {
   date: string;
   day: string;
@@ -160,6 +185,22 @@ type MovieCalendarEntry = {
   bgColor: string;
   textColor: string;
   sourceStatus: string;
+};
+
+type IpLookupStatus = "idle" | "loading" | "success" | "error";
+type IpLookupResult = {
+  ip: string;
+  location: string;
+  country: string;
+  region: string;
+  city: string;
+  isp: string;
+  queryIp: string;
+  clientIp: string;
+  clientIpSource: string;
+  latitude: string;
+  longitude: string;
+  updatedAt: string;
 };
 
 type OffworkCountdownMetric = {
@@ -259,8 +300,6 @@ const sourceAssets = {
   countdownOnwork: countdownOnworkImageUrl,
   english:
     "https://staticedu-wps-cache.iciba.com/image/fa0ba1a3b8cc0bc45195b87a9e7dc82f.png",
-  wallpaper:
-    "https://cn.bing.com//th?id=OHR.SichuanTea_ZH-CN6703437873_1920x1080.jpg&rf=LaDigue_1920x1080.jpg&pid=hp&w=300&h=168",
   muyu: "/itab-live-assets/muyu.webp",
   speedtest: "/itab-live-assets/speedtest.svg",
   game2048: "/itab-live-assets/2048.svg",
@@ -1102,9 +1141,18 @@ const converterToolConfigs: Record<string, ConverterToolConfig> = {
   },
 };
 
-const dailyEnglishApiUrl = "https://base.itab.link/itab/todayEnglish";
-const dailyEnglishProviderReferenceUrl = "https://open.iciba.com/dsapi/";
+const dailyEnglishApiUrl = "https://api.timelessq.com/english-sentence";
+const dailyEnglishProviderReferenceUrl = "https://api.timelessq.com";
+const dailyQuoteApiUrl = "https://base.itab.link/yiyan/info";
+const dailyQuoteLikeApiUrl = "https://base.itab.link/yiyan/like";
+const dailyQuoteShareApiUrl = "https://base.itab.link/yiyan/share";
+const dailyQuoteMinimumDate = "20220706";
+const dailyQuoteSourceIconUrl = "https://files.codelife.cc/icons/yiyan.svg";
+const dailyQuoteIconUrl = "/itab-live-assets/yiyan.svg";
+const dailyQuoteTideLogoUrl = "https://go.itab.link/tide.png";
 const movieCalendarApiPath = "/api/itab/movie-calendar";
+const movieCalendarSourceApiUrl =
+  "https://api.codelife.cc/itab/todayMovie?version=v2";
 const props = defineProps<{
   openedShellOverride?: ItabReplicaOpenedShellOverride;
 }>();
@@ -1116,6 +1164,22 @@ const dailyEnglishFallback: DailyEnglishEntry = {
   imageUrl: sourceAssets.english,
   audioUrl: "",
   dateline: "2026-05-20",
+};
+const dailyQuoteFallback: DailyQuoteEntry = {
+  id: "source-fallback",
+  date: "20260520",
+  dateLabel: "2026.05.20 星期三",
+  timeLabel: "23:40",
+  quote: "当一个人不能拥有的时候，他唯一能做的便是不要忘记。",
+  author: "维克多·弗兰克尔",
+  source: "作家",
+  like: 84,
+  share: 113,
+  picUrl:
+    "https://pics.tide.moreless.io/dailypics/Fgr5WYBfdHIlr4uYZbpWKA8_1q4K?imageView2/1/w/1366/h/768/format/webp",
+  thumbUrl:
+    "https://pics.tide.moreless.io/dailypics/Fgr5WYBfdHIlr4uYZbpWKA8_1q4K?imageView2/1/w/1366/h/768/format/webp?imageView2/1/w/300/h/300/format/webp",
+  sourceStatus: "fallback",
 };
 const movieCalendarFallback: MovieCalendarEntry = {
   date: "2026-05-21",
@@ -1139,18 +1203,112 @@ const movieCalendarFallback: MovieCalendarEntry = {
   textColor: "f9f9f4",
   sourceStatus: "fallback",
 };
+const movieCalendarLoading: MovieCalendarEntry = {
+  date: "",
+  day: "--",
+  monthLabel: "",
+  weekday: "",
+  movieTitle: "电影日历",
+  rating: "--",
+  quote: "正在加载今日电影",
+  posterUrl: "",
+  coverUrl: "",
+  sourceUrl: "",
+  year: "",
+  area: "",
+  director: "",
+  intro: "",
+  genres: [],
+  bgColor: movieCalendarFallback.bgColor,
+  textColor: movieCalendarFallback.textColor,
+  sourceStatus: "loading",
+};
+const movieCalendarErrorEntry: MovieCalendarEntry = {
+  ...movieCalendarLoading,
+  movieTitle: "电影日历加载失败",
+  quote: "请检查电影日历接口连接",
+  sourceStatus: "error",
+};
 const dailyEnglish = ref<DailyEnglishEntry>(dailyEnglishFallback);
-const movieCalendar = ref<MovieCalendarEntry>(movieCalendarFallback);
+const dailyQuote = ref<DailyQuoteEntry>({
+  ...dailyQuoteFallback,
+  sourceStatus: "loading",
+});
+const dailyQuoteLiked = ref(false);
+const dailyQuoteFullscreen = ref(false);
+const dailyQuotePanelRef = ref<HTMLElement | null>(null);
+const dailyQuoteActionAnimating = reactive<Record<DailyQuoteAction, boolean>>({
+  share: false,
+  fullscreen: false,
+  like: false,
+});
+const dailyQuoteActionAnimationTimers: Partial<
+  Record<DailyQuoteAction, number>
+> = {};
+const movieCalendar = ref<MovieCalendarEntry>(movieCalendarLoading);
 const movieCalendarError = ref("");
 const dailyEnglishStyle = computed<Record<string, string>>(() => ({
   "--daily-english-image": `url("${dailyEnglish.value.imageUrl}")`,
 }));
+const dailyQuoteOuterStyle = computed<Record<string, string>>(() => ({
+  "--daily-quote-bg-image": `url("${
+    dailyQuote.value.thumbUrl || dailyQuote.value.picUrl
+  }")`,
+}));
+const dailyQuoteOpenedStyle = computed<Record<string, string>>(() => ({
+  "--daily-quote-opened-bg-image": `url("${
+    dailyQuote.value.picUrl || dailyQuote.value.thumbUrl
+  }")`,
+}));
+const dailyQuoteAttributionText = computed(() =>
+  [dailyQuote.value.source, dailyQuote.value.author].filter(Boolean).join("，"),
+);
 const movieCalendarOuterStyle = computed<Record<string, string>>(() => ({
-  "--movie-cover-image": `url("${movieCalendar.value.coverUrl || movieCalendarFallback.coverUrl}")`,
-  "--movie-poster-image": `url("${movieCalendar.value.posterUrl || movieCalendarFallback.posterUrl}")`,
+  "--movie-cover-image": movieCalendar.value.coverUrl
+    ? `url("${movieCalendar.value.coverUrl}")`
+    : "none",
+  "--movie-poster-image": movieCalendar.value.posterUrl
+    ? `url("${movieCalendar.value.posterUrl}")`
+    : "none",
   "--movie-bg-color": `#${movieCalendar.value.bgColor || movieCalendarFallback.bgColor}`,
   "--movie-text-color": `#${movieCalendar.value.textColor || movieCalendarFallback.textColor}`,
 }));
+const wallpaperRuntimeWidget = ref<WidgetConfig | null>(null);
+const wallpaperRuntime = useItabWallpaperRuntime(wallpaperRuntimeWidget);
+const wallpaperPanelElement = ref<HTMLElement | null>(null);
+const wallpaperLoadMoreSentinelElement = ref<HTMLElement | null>(null);
+const wallpaperSettingsOpen = ref(false);
+const wallpaperSettings = reactive({
+  dailyAutoUpdate: true,
+  dimWallpaper: false,
+  blurLevel: 0,
+});
+const activeWallpaper = computed(() => wallpaperRuntime.activeWallpaper.value);
+const featuredWallpaper = computed(
+  () => wallpaperRuntime.featuredWallpaper.value,
+);
+const visibleBingWallpapers = computed(
+  () => wallpaperRuntime.visibleBingWallpapers.value,
+);
+const hasMoreWallpapers = computed(
+  () => wallpaperRuntime.hasMoreWallpapers.value,
+);
+const wallpaperCardStyle = computed<Record<string, string>>(() => ({
+  "--wallpaper-image": activeWallpaper.value
+    ? `url("${activeWallpaper.value.thumbnailUrl}")`
+    : "none",
+}));
+const wallpaperDescription = (entry: ItabWallpaperEntry | null) =>
+  entry
+    ? [entry.title, entry.location, `© ${entry.credit}`]
+        .filter(Boolean)
+        .join(" ")
+    : "";
+const wallpaperCopyrightVisibleSizes = new Set<WidgetSize>([
+  "1x2",
+  "2x2",
+  "2x4",
+]);
 const dailyEnglishAudioElement = ref<HTMLAudioElement | null>(null);
 const dailyEnglishPlaying = ref(false);
 
@@ -1250,6 +1408,35 @@ const showAddModal = ref(false);
 const addTab = ref<"widget" | "site" | "custom">("widget");
 const showGroupMenu = ref(false);
 const openedWidgetId = ref("");
+const eatTodayMenuItems = [
+  "牛肉粉",
+  "砂锅粥",
+  "肠粉",
+  "咖喱饭",
+  "云吞面",
+  "麻辣烫",
+  "寿司",
+  "沙拉",
+];
+const eatTodaySelectedItem = ref("");
+const eatTodayAnimatedItem = ref("");
+const eatTodayRunning = ref(false);
+const ipLookupStatus = ref<IpLookupStatus>("idle");
+const ipLookupError = ref("");
+const ipLookupResult = ref<IpLookupResult>({
+  ip: "163.125.214.27",
+  location: "中国 广东 深圳 中国联通",
+  country: "中国",
+  region: "广东",
+  city: "深圳",
+  isp: "中国联通",
+  queryIp: "163.125.214.27",
+  clientIp: "",
+  clientIpSource: "",
+  latitude: "22.696667",
+  longitude: "114.045422",
+  updatedAt: "",
+});
 const activeConverterToolLabel = ref("计算器");
 const converterDisplay = ref("0");
 const converterExpression = ref("");
@@ -1294,6 +1481,11 @@ let tomatoAudioPlayToken = 0;
 let updateViewportHandler: (() => void) | null = null;
 let visibilityChangeHandler: (() => void) | null = null;
 let movieCalendarAbortController: AbortController | null = null;
+let ipLookupAbortController: AbortController | null = null;
+let ipLookupRefreshTimer: number | null = null;
+let dailyQuoteClockTimer: number | null = null;
+let eatTodayPickTimer: number | null = null;
+let eatTodayAnimationTimer: number | null = null;
 
 const groups = [
   { name: "主页", icon: "⌂" },
@@ -1304,7 +1496,7 @@ const groups = [
   { name: "摸鱼", icon: "▣" },
 ];
 
-const searchEngines = ["综合搜索", "百度", "必应", "Google", "秘塔AI", "添加"];
+const searchEngines = ["百度", "谷歌", "Bing", "添加"];
 const sizeOptions = ITAB_REPLICA_WIDGET_SIZE_OPTIONS;
 const anniversaryEditorSizes: Array<Extract<WidgetSize, "2x2" | "2x4">> = [
   "2x2",
@@ -1467,6 +1659,7 @@ const anniversaryEditor = reactive({
 });
 
 let dailyEnglishAbortController: AbortController | null = null;
+let dailyQuoteAbortController: AbortController | null = null;
 
 const widgets = reactive<WidgetItem[]>([
   {
@@ -1531,6 +1724,14 @@ const widgets = reactive<WidgetItem[]>([
     title: "下一个假期",
     size: "2x2",
     col: 5,
+    row: 3,
+  },
+  {
+    id: "daily-quote-09",
+    kind: "daily-quote",
+    title: "每日一言",
+    size: "2x2",
+    col: 9,
     row: 3,
   },
   {
@@ -1660,11 +1861,17 @@ const widgets = reactive<WidgetItem[]>([
   {
     id: "ip-30",
     kind: "tool-icon",
-    title: "IP查询",
+    title: "本机IP",
     size: "2x2",
     col: 9,
     row: 9,
     icon: sourceAssets.ip,
+    openedShell: {
+      width: 1000,
+      height: 602,
+      maxWidthInset: 42,
+      maxHeightInset: 64,
+    },
   },
   {
     id: "world-clock-31",
@@ -2812,6 +3019,22 @@ const widgetSizeMenuOptions = computed(() =>
 const openedWidget = computed(() =>
   allWidgets.value.find((item) => item.id === openedWidgetId.value),
 );
+const eatTodayDisplayItem = computed(() =>
+  eatTodayRunning.value
+    ? eatTodayAnimatedItem.value
+    : eatTodaySelectedItem.value,
+);
+const eatTodayOuterButtonText = computed(() => {
+  if (eatTodayRunning.value) return eatTodayAnimatedItem.value || "选择中";
+  return eatTodaySelectedItem.value || "开始";
+});
+const eatTodayOpenedTitle = computed(
+  () => eatTodayDisplayItem.value || "今天吃什么",
+);
+const eatTodayOpenedStartText = computed(() => {
+  if (eatTodayRunning.value) return "选择中";
+  return eatTodaySelectedItem.value ? "换一个" : "开始";
+});
 const activeConverterTool = computed(
   () =>
     converterTools.find(
@@ -4093,43 +4316,378 @@ const normalizeStringArray = (value: unknown) =>
     ? value.map((item) => normalizeString(item)).filter(Boolean)
     : [];
 
+const normalizeFiniteNumber = (value: unknown, fallback = 0) => {
+  const number =
+    typeof value === "number"
+      ? value
+      : typeof value === "string"
+        ? Number.parseFloat(value)
+        : Number.NaN;
+  return Number.isFinite(number) ? number : fallback;
+};
+
+const parseDailyQuoteDateParts = (value: string) => {
+  const match = normalizeString(value).match(/^(\d{4})(\d{2})(\d{2})$/);
+  if (!match) return null;
+  const [, year, month, day] = match;
+  const parsed = new Date(
+    Number(year),
+    Math.max(0, Number(month) - 1),
+    Number(day),
+  );
+  return { year, month, day, parsed };
+};
+
+const dailyQuoteWeekdayLabel = (date: Date) => {
+  const weekdays = [
+    "星期日",
+    "星期一",
+    "星期二",
+    "星期三",
+    "星期四",
+    "星期五",
+    "星期六",
+  ];
+  return weekdays[date.getDay()] || "";
+};
+
+const normalizeDailyQuoteDateLabel = (value: string, historical = false) => {
+  const parts = parseDailyQuoteDateParts(value);
+  if (!parts) return dailyQuoteFallback.dateLabel;
+  const weekday = dailyQuoteWeekdayLabel(parts.parsed);
+  return historical
+    ? `${parts.year}.${parts.month} ${weekday}`.trim()
+    : `${parts.year}.${parts.month}.${parts.day} ${weekday}`.trim();
+};
+
+const normalizeDailyQuoteDayLabel = (value: string, historical = false) => {
+  const parts = parseDailyQuoteDateParts(value);
+  return historical && parts ? parts.day : normalizeDailyQuoteTimeLabel();
+};
+
+const normalizeDailyQuoteTimeLabel = (withSeconds = false) =>
+  new Date().toLocaleTimeString("zh-CN", {
+    hour12: false,
+    hour: "2-digit",
+    minute: "2-digit",
+    ...(withSeconds ? { second: "2-digit" as const } : {}),
+  });
+
+const getDailyQuoteTodayKey = () => {
+  const now = new Date();
+  const year = String(now.getFullYear());
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  return `${year}${month}${day}`;
+};
+
+const shiftDailyQuoteDate = (date: string, days: number): string | null => {
+  const parts = parseDailyQuoteDateParts(date);
+  if (!parts) return null;
+  const shifted = new Date(parts.parsed);
+  shifted.setDate(shifted.getDate() + days);
+  const year = String(shifted.getFullYear());
+  const month = String(shifted.getMonth() + 1).padStart(2, "0");
+  const day = String(shifted.getDate()).padStart(2, "0");
+  return `${year}${month}${day}`;
+};
+
+const normalizeDailyQuoteResponse = (
+  payload: unknown,
+  historical = false,
+): DailyQuoteEntry | null => {
+  if (!isObjectRecord(payload)) return null;
+  if (
+    typeof payload.code === "number" &&
+    payload.code !== 200 &&
+    payload.code !== 0
+  ) {
+    return null;
+  }
+
+  const data = isObjectRecord(payload.data) ? payload.data : payload;
+  const quote =
+    normalizeString(data.content) ||
+    normalizeString(data.quote) ||
+    normalizeString(data.hitokoto);
+  const picUrl =
+    normalizeString(data.pic_url) ||
+    normalizeString(data.picUrl) ||
+    normalizeString(data.picture);
+  const thumbUrl =
+    normalizeString(data.thumb) || normalizeString(data.thumbnail) || picUrl;
+  const date = normalizeString(data.date) || dailyQuoteFallback.date;
+
+  if (!quote || !picUrl) return null;
+
+  return {
+    id:
+      normalizeString(data._id) ||
+      normalizeString(data.id) ||
+      `daily-quote-${date}`,
+    date,
+    dateLabel: normalizeDailyQuoteDateLabel(date, historical),
+    timeLabel: normalizeDailyQuoteDayLabel(date, historical),
+    quote,
+    author:
+      normalizeString(data.author) ||
+      normalizeString(data.creator) ||
+      dailyQuoteFallback.author,
+    source:
+      normalizeString(data.from) ||
+      normalizeString(data.source) ||
+      dailyQuoteFallback.source,
+    like: normalizeFiniteNumber(data.like, dailyQuoteFallback.like),
+    share: normalizeFiniteNumber(data.share, dailyQuoteFallback.share),
+    picUrl,
+    thumbUrl,
+    sourceStatus: "direct",
+  };
+};
+
+const normalizeMovieCalendarDateParts = (value: string) => {
+  const trimmed = normalizeString(value);
+  const match =
+    trimmed.match(/^(\d{4})(\d{2})(\d{2})$/) ||
+    trimmed.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) {
+    return {
+      date: "",
+      day: "",
+      monthLabel: "",
+      weekday: "",
+    };
+  }
+  const [, year, month, day] = match;
+  const parsed = new Date(
+    Number(year),
+    Math.max(0, Number(month) - 1),
+    Number(day),
+  );
+  const weekdays = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"];
+  return {
+    date: `${year}-${month}-${day}`,
+    day: String(Number(day)),
+    monthLabel: `${Number(month)}月`,
+    weekday: weekdays[parsed.getDay()] || "",
+  };
+};
+
+const normalizeIpLookupResponse = (payload: unknown): IpLookupResult | null => {
+  if (!isObjectRecord(payload)) return null;
+  const data = isObjectRecord(payload.data) ? payload.data : payload;
+  const ip =
+    normalizeString(data.queryIp) ||
+    normalizeString(data.ip) ||
+    normalizeString(data.clientIp);
+  if (!ip) return null;
+
+  return {
+    ip,
+    location: normalizeString(data.location),
+    country: normalizeString(data.country),
+    region: normalizeString(data.region),
+    city: normalizeString(data.city),
+    isp: normalizeString(data.isp) || normalizeString(data.network),
+    queryIp: normalizeString(data.queryIp) || ip,
+    clientIp: normalizeString(data.clientIp),
+    clientIpSource: normalizeString(data.clientIpSource),
+    latitude:
+      normalizeString(data.latitude) ||
+      normalizeString(data.lat) ||
+      normalizeString(data.y),
+    longitude:
+      normalizeString(data.longitude) ||
+      normalizeString(data.lon) ||
+      normalizeString(data.lng) ||
+      normalizeString(data.x),
+    updatedAt: new Date().toLocaleString("zh-CN", {
+      hour12: false,
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+    }),
+  };
+};
+
+const ipLookupResolvedIp = computed(
+  () => ipLookupResult.value.queryIp || ipLookupResult.value.ip || "加载中",
+);
+
+const ipLookupOuterAddress = computed(() => {
+  const value = ipLookupResolvedIp.value.trim();
+  return value || "加载中";
+});
+
+const ipLookupArea = computed(() => {
+  const { country, region, city, location } = ipLookupResult.value;
+  const parts = [country, region, city].filter(Boolean);
+  if (parts.length) return parts.join("-");
+  const locationParts = location.split(/\s+/).filter(Boolean);
+  if (locationParts.length >= 3) return locationParts.slice(0, 3).join("-");
+  return location || "未知";
+});
+
+const ipLookupOuterLocation = computed(() => {
+  const value = ipLookupArea.value.trim();
+  return value && value !== "未知" ? value : "定位中";
+});
+
+const ipLookupOuterAddressClass = computed(() => ({
+  "is-long-address": ipLookupOuterAddress.value.length > 18,
+}));
+
+const ipLookupNetwork = computed(() => {
+  if (ipLookupResult.value.isp) return ipLookupResult.value.isp;
+  const match = ipLookupResult.value.location.match(
+    /(中国电信|中国联通|中国移动|电信|联通|移动|铁通|网通|教育网|Cable|Telecom|Unicom|Mobile|ISP)/i,
+  );
+  return match?.[0] || "未知";
+});
+
+const ipLookupCoordinate = computed(() => {
+  const { longitude, latitude } = ipLookupResult.value;
+  if (!longitude || !latitude) return "暂无";
+  return `${longitude},${latitude}`;
+});
+
+const ipLookupHeading = computed(() => "本机IP地址信息");
+
+const fetchIpLookup = async (query = "", refresh = false) => {
+  if (typeof window === "undefined") return false;
+  ipLookupAbortController?.abort();
+  const controller = new AbortController();
+  ipLookupAbortController = controller;
+  const timeoutId = window.setTimeout(() => controller.abort(), 8000);
+  ipLookupStatus.value = "loading";
+  ipLookupError.value = "";
+
+  try {
+    const url = new URL(toApiUrl("/api/ip"), window.location.origin);
+    url.searchParams.set("ts", String(Date.now()));
+    if (refresh) url.searchParams.set("refresh", "1");
+    const trimmedQuery = query.trim();
+    if (trimmedQuery) {
+      url.searchParams.set("query", trimmedQuery);
+      url.searchParams.set("ip", trimmedQuery);
+    }
+
+    const response = await fetch(url.toString(), {
+      cache: "no-store",
+      credentials: "omit",
+      headers: { accept: "application/json" },
+      signal: controller.signal,
+    });
+    const payload = await response.json().catch(() => null);
+    const normalized = normalizeIpLookupResponse(payload);
+    if (!response.ok || !normalized) {
+      throw new Error("ip lookup request failed");
+    }
+
+    ipLookupResult.value = normalized;
+    ipLookupStatus.value =
+      isObjectRecord(payload) && payload.success === false
+        ? "error"
+        : "success";
+    if (ipLookupStatus.value === "error") {
+      ipLookupError.value = "查询服务暂不可用，已显示可识别的本机地址";
+    }
+    return ipLookupStatus.value === "success";
+  } catch (error) {
+    if (!controller.signal.aborted) {
+      ipLookupStatus.value = "error";
+      ipLookupError.value =
+        error instanceof DOMException && error.name === "AbortError"
+          ? "查询超时，请稍后重试"
+          : "查询失败，请稍后重试";
+    }
+    return false;
+  } finally {
+    window.clearTimeout(timeoutId);
+    if (ipLookupAbortController === controller) {
+      ipLookupAbortController = null;
+    }
+  }
+};
+
 const normalizeMovieCalendarResponse = (
   payload: unknown,
+  sourceStatusOverride = "",
 ): MovieCalendarEntry | null => {
   if (!isObjectRecord(payload)) return null;
   if (payload.success === false) return null;
   const data = isObjectRecord(payload.data) ? payload.data : payload;
-  const movieTitle = normalizeString(data.movieTitle);
-  const day = normalizeString(data.day);
-  const monthLabel = normalizeString(data.monthLabel);
-  const weekday = normalizeString(data.weekday);
-  const quote = normalizeString(data.quote);
+  const movieTitle =
+    normalizeString(data.movieTitle) || normalizeString(data.mov_title);
+  const dateParts = normalizeMovieCalendarDateParts(normalizeString(data.date));
+  const day = normalizeString(data.day) || dateParts.day;
+  const monthLabel = normalizeString(data.monthLabel) || dateParts.monthLabel;
+  const weekday = normalizeString(data.weekday) || dateParts.weekday;
+  const quote =
+    normalizeString(data.quote) ||
+    normalizeString(data.mov_text) ||
+    normalizeString(data.mov_intro);
   if (!movieTitle || !day || !monthLabel || !weekday || !quote) return null;
 
   return {
-    date: normalizeString(data.date) || movieCalendarFallback.date,
+    date:
+      dateParts.date ||
+      normalizeString(data.date) ||
+      movieCalendarFallback.date,
     day,
     monthLabel,
     weekday,
     movieTitle,
-    rating: normalizeString(data.rating) || "--",
+    rating:
+      normalizeString(data.rating) || normalizeString(data.mov_rating) || "--",
     quote,
     posterUrl:
-      normalizeString(data.posterUrl) || movieCalendarFallback.posterUrl,
-    coverUrl: normalizeString(data.coverUrl) || movieCalendarFallback.coverUrl,
+      normalizeString(data.posterUrl) || normalizeString(data.poster_url),
+    coverUrl: normalizeString(data.coverUrl) || normalizeString(data.mov_pic),
     sourceUrl:
-      normalizeString(data.sourceUrl) || movieCalendarFallback.sourceUrl,
-    year: normalizeString(data.year),
-    area: normalizeString(data.area),
-    director: normalizeString(data.director),
-    intro: normalizeString(data.intro),
-    genres: normalizeStringArray(data.genres),
+      normalizeString(data.sourceUrl) || normalizeString(data.mov_link),
+    year: normalizeString(data.year) || normalizeString(data.mov_year),
+    area: normalizeString(data.area) || normalizeString(data.mov_area),
+    director:
+      normalizeString(data.director) || normalizeString(data.mov_director),
+    intro: normalizeString(data.intro) || normalizeString(data.mov_intro),
+    genres: normalizeStringArray(data.genres).length
+      ? normalizeStringArray(data.genres)
+      : normalizeStringArray(data.mov_type),
     bgColor: normalizeString(data.bgColor) || movieCalendarFallback.bgColor,
     textColor:
-      normalizeString(data.textColor) || movieCalendarFallback.textColor,
+      normalizeString(data.textColor) ||
+      normalizeString(data.color) ||
+      movieCalendarFallback.textColor,
     sourceStatus:
-      normalizeString(data.sourceStatus) || movieCalendarFallback.sourceStatus,
+      sourceStatusOverride || normalizeString(data.sourceStatus) || "ok",
   };
+};
+
+const requestMovieCalendar = async (
+  url: string,
+  controller: AbortController,
+  sourceStatusOverride = "",
+) => {
+  const response = await fetch(url, {
+    cache: "no-store",
+    credentials: "omit",
+    headers: { accept: "application/json" },
+    signal: controller.signal,
+  });
+  if (!response.ok) {
+    throw new Error(`movie calendar request failed: ${response.status}`);
+  }
+
+  const normalized = normalizeMovieCalendarResponse(
+    await response.json(),
+    sourceStatusOverride,
+  );
+  if (!normalized) {
+    throw new Error("movie calendar response rejected");
+  }
+  return normalized;
 };
 
 const fetchMovieCalendar = async () => {
@@ -4139,22 +4697,27 @@ const fetchMovieCalendar = async () => {
   const timeoutId = window.setTimeout(() => controller.abort(), 5500);
 
   try {
-    const response = await fetch(toApiUrl(movieCalendarApiPath), {
-      cache: "no-store",
-      credentials: "omit",
-      headers: { accept: "application/json" },
-      signal: controller.signal,
-    });
-    if (!response.ok) return false;
-
-    const normalized = normalizeMovieCalendarResponse(await response.json());
-    if (!normalized) return false;
+    let normalized: MovieCalendarEntry;
+    try {
+      normalized = await requestMovieCalendar(
+        toApiUrl(movieCalendarApiPath),
+        controller,
+      );
+    } catch (proxyError) {
+      normalized = await requestMovieCalendar(
+        movieCalendarSourceApiUrl,
+        controller,
+        "direct",
+      );
+      movieCalendarError.value =
+        proxyError instanceof Error ? proxyError.message : "";
+    }
 
     movieCalendar.value = normalized;
-    movieCalendarError.value = "";
     return true;
   } catch (error) {
     if (!controller.signal.aborted) {
+      movieCalendar.value = movieCalendarErrorEntry;
       movieCalendarError.value =
         error instanceof Error
           ? error.message
@@ -4174,14 +4737,6 @@ const normalizeDailyEnglishResponse = (
 ): DailyEnglishEntry | null => {
   if (!isObjectRecord(payload)) return null;
 
-  if (
-    typeof payload.code === "number" &&
-    payload.code !== 200 &&
-    payload.code !== 0
-  ) {
-    return null;
-  }
-
   if (typeof payload.errno === "number" && payload.errno !== 0) {
     return null;
   }
@@ -4190,9 +4745,7 @@ const normalizeDailyEnglishResponse = (
   const sentence = normalizeString(data.content);
   const translation = normalizeString(data.note);
   const imageUrl =
-    normalizeString(data.picture2) ||
-    normalizeString(data.picture) ||
-    dailyEnglishFallback.imageUrl;
+    normalizeString(data.middlePicture) || dailyEnglishFallback.imageUrl;
 
   if (!sentence || !translation || !imageUrl) return null;
 
@@ -4203,7 +4756,7 @@ const normalizeDailyEnglishResponse = (
     progressLabel: "00:00",
     imageUrl,
     audioUrl: normalizeString(data.tts),
-    dateline: normalizeString(data.dateline),
+    dateline: normalizeString(data.date),
   };
 };
 
@@ -4213,7 +4766,6 @@ const fetchDailyEnglish = async () => {
   dailyEnglishAbortController = controller;
   const timeoutId = window.setTimeout(() => controller.abort(), 5500);
   const url = new URL(dailyEnglishApiUrl);
-  url.searchParams.set("lang", "cn");
 
   try {
     const response = await fetch(url.toString(), {
@@ -4235,6 +4787,95 @@ const fetchDailyEnglish = async () => {
     window.clearTimeout(timeoutId);
     if (dailyEnglishAbortController === controller) {
       dailyEnglishAbortController = null;
+    }
+  }
+};
+
+const buildDailyQuoteUrl = (
+  baseUrl: string,
+  params: Record<string, string> = {},
+) => {
+  const url = new URL(baseUrl);
+  Object.entries(params).forEach(([key, value]) => {
+    if (value) url.searchParams.set(key, value);
+  });
+  return url.toString();
+};
+
+const requestDailyQuoteCounter = async (
+  baseUrl: string,
+  id: string,
+  field: "like" | "share",
+) => {
+  if (!id) return false;
+
+  try {
+    const response = await fetch(buildDailyQuoteUrl(baseUrl, { _id: id }), {
+      cache: "no-store",
+      credentials: "omit",
+      headers: { accept: "application/json" },
+    });
+    if (!response.ok) return false;
+    const payload = await response.json();
+    const data =
+      isObjectRecord(payload) && isObjectRecord(payload.data)
+        ? payload.data
+        : payload;
+    if (!isObjectRecord(data)) return false;
+    const nextValue = normalizeFiniteNumber(data[field], Number.NaN);
+    if (!Number.isFinite(nextValue)) return false;
+    dailyQuote.value = {
+      ...dailyQuote.value,
+      [field]: nextValue,
+    };
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+const fetchDailyQuote = async (date?: string) => {
+  dailyQuoteAbortController?.abort();
+  const controller = new AbortController();
+  dailyQuoteAbortController = controller;
+  const timeoutId = window.setTimeout(() => controller.abort(), 5500);
+  const historical = Boolean(date);
+
+  try {
+    const response = await fetch(
+      buildDailyQuoteUrl(dailyQuoteApiUrl, date ? { date } : {}),
+      {
+        cache: "no-store",
+        credentials: "omit",
+        headers: { accept: "application/json" },
+        signal: controller.signal,
+      },
+    );
+    if (!response.ok) {
+      dailyQuote.value = { ...dailyQuoteFallback, sourceStatus: "error" };
+      return false;
+    }
+
+    const normalized = normalizeDailyQuoteResponse(
+      await response.json(),
+      historical,
+    );
+    if (!normalized) {
+      dailyQuote.value = { ...dailyQuoteFallback, sourceStatus: "error" };
+      return false;
+    }
+
+    dailyQuote.value = normalized;
+    dailyQuoteLiked.value = false;
+    return true;
+  } catch {
+    if (controller.signal.aborted) return false;
+    dailyQuote.value = { ...dailyQuoteFallback, sourceStatus: "error" };
+    return false;
+  } finally {
+    window.clearTimeout(timeoutId);
+    if (dailyQuoteAbortController === controller) {
+      dailyQuoteAbortController = null;
     }
   }
 };
@@ -4336,9 +4977,29 @@ const closeMenus = () => {
   showGroupMenu.value = false;
 };
 
+const exitFullscreenSafely = (element: Element | null) => {
+  if (
+    typeof document === "undefined" ||
+    document.fullscreenElement !== element
+  ) {
+    return;
+  }
+  try {
+    const exitPromise = document.exitFullscreen?.();
+    if (exitPromise) void exitPromise.catch(() => undefined);
+  } catch {
+    // Ignore browser fullscreen race conditions while closing a widget panel.
+  }
+};
+
 const closeOpenedWidget = () => {
+  blurActiveElementMatching(".itab-native-widget");
+  exitFullscreenSafely(dailyQuotePanelRef.value);
+  dailyQuoteFullscreen.value = false;
   openedWidgetId.value = "";
   stopDailyEnglishAudio();
+  ipLookupAbortController?.abort();
+  wallpaperSettingsOpen.value = false;
 };
 
 const closePanels = () => {
@@ -4355,6 +5016,227 @@ const showToast = (message: string) => {
     toastMessage.value = "";
     toastTimer = null;
   }, 2200);
+};
+
+const clearEatTodayAnimation = () => {
+  if (eatTodayAnimationTimer) {
+    window.clearInterval(eatTodayAnimationTimer);
+    eatTodayAnimationTimer = null;
+  }
+  if (eatTodayPickTimer) {
+    window.clearTimeout(eatTodayPickTimer);
+    eatTodayPickTimer = null;
+  }
+};
+
+const pickEatToday = () => {
+  clearEatTodayAnimation();
+
+  const itemCount = eatTodayMenuItems.length;
+  if (itemCount === 0) return;
+
+  const startIndex = Math.floor(Math.random() * itemCount);
+  const finalIndex = Math.floor(Math.random() * itemCount);
+  const nextItem =
+    itemCount > 1 &&
+    eatTodayMenuItems[finalIndex] === eatTodaySelectedItem.value
+      ? eatTodayMenuItems[(finalIndex + 1) % itemCount]
+      : eatTodayMenuItems[finalIndex];
+  let animationIndex = startIndex;
+
+  eatTodayRunning.value = true;
+  eatTodayAnimatedItem.value = eatTodayMenuItems[animationIndex] || "";
+
+  eatTodayAnimationTimer = window.setInterval(() => {
+    animationIndex = (animationIndex + 1) % itemCount;
+    eatTodayAnimatedItem.value = eatTodayMenuItems[animationIndex] || "";
+  }, 70);
+
+  eatTodayPickTimer = window.setTimeout(() => {
+    if (eatTodayAnimationTimer) {
+      window.clearInterval(eatTodayAnimationTimer);
+      eatTodayAnimationTimer = null;
+    }
+    eatTodaySelectedItem.value = nextItem || eatTodayMenuItems[0] || "";
+    eatTodayAnimatedItem.value = "";
+    eatTodayRunning.value = false;
+    eatTodayPickTimer = null;
+  }, 780);
+};
+
+const triggerDailyQuoteActionAnimation = (action: DailyQuoteAction) => {
+  dailyQuoteActionAnimating[action] = false;
+  if (dailyQuoteActionAnimationTimers[action]) {
+    window.clearTimeout(dailyQuoteActionAnimationTimers[action]);
+  }
+  void nextTick(() => {
+    dailyQuoteActionAnimating[action] = true;
+    dailyQuoteActionAnimationTimers[action] = window.setTimeout(() => {
+      dailyQuoteActionAnimating[action] = false;
+      dailyQuoteActionAnimationTimers[action] = undefined;
+    }, 360);
+  });
+};
+
+const copyDailyQuote = async () => {
+  triggerDailyQuoteActionAnimation("share");
+  try {
+    await navigator.clipboard?.writeText(dailyQuote.value.quote);
+    void requestDailyQuoteCounter(
+      dailyQuoteShareApiUrl,
+      dailyQuote.value.id,
+      "share",
+    );
+    showToast("已复制到剪贴板");
+  } catch {
+    showToast("复制失败");
+  }
+};
+
+const navigateDailyQuote = (direction: "prev" | "next") => {
+  const nextDate = shiftDailyQuoteDate(
+    dailyQuote.value.date,
+    direction === "next" ? 1 : -1,
+  );
+  if (!nextDate) return;
+  const today = getDailyQuoteTodayKey();
+  if (nextDate > today) {
+    showToast("明天怎么翻也翻不过去");
+    return;
+  }
+  if (nextDate < dailyQuoteMinimumDate) {
+    showToast("不能再往前查看了");
+    return;
+  }
+
+  dailyQuoteLiked.value = false;
+  void fetchDailyQuote(nextDate);
+};
+
+const syncDailyQuoteFullscreenState = () => {
+  if (typeof document === "undefined") return;
+  dailyQuoteFullscreen.value =
+    document.fullscreenElement === dailyQuotePanelRef.value;
+};
+
+const toggleDailyQuoteFullscreen = () => {
+  triggerDailyQuoteActionAnimation("fullscreen");
+  const element = dailyQuotePanelRef.value;
+  if (typeof document === "undefined" || !element) {
+    dailyQuoteFullscreen.value = !dailyQuoteFullscreen.value;
+    return;
+  }
+  if (document.fullscreenElement === element) {
+    exitFullscreenSafely(element);
+    dailyQuoteFullscreen.value = false;
+    return;
+  }
+  if (element.requestFullscreen) {
+    void element.requestFullscreen().catch(() => {
+      dailyQuoteFullscreen.value = true;
+    });
+    return;
+  }
+  dailyQuoteFullscreen.value = !dailyQuoteFullscreen.value;
+};
+
+const updateDailyQuoteClock = () => {
+  const today = getDailyQuoteTodayKey();
+  if (dailyQuoteFullscreen.value) {
+    dailyQuote.value = {
+      ...dailyQuote.value,
+      dateLabel: normalizeDailyQuoteDateLabel(today),
+      timeLabel: normalizeDailyQuoteTimeLabel(true),
+    };
+    return;
+  }
+  if (dailyQuote.value.date === today) {
+    dailyQuote.value = {
+      ...dailyQuote.value,
+      dateLabel: normalizeDailyQuoteDateLabel(today),
+      timeLabel: normalizeDailyQuoteTimeLabel(),
+    };
+  }
+};
+
+const toggleDailyQuoteLike = () => {
+  triggerDailyQuoteActionAnimation("like");
+  dailyQuoteLiked.value = !dailyQuoteLiked.value;
+  if (dailyQuoteLiked.value) {
+    void requestDailyQuoteCounter(
+      dailyQuoteLikeApiUrl,
+      dailyQuote.value.id,
+      "like",
+    );
+  }
+};
+
+const selectWallpaper = (wallpaper: ItabWallpaperEntry) => {
+  wallpaperRuntime.selectWallpaper(wallpaper);
+  showToast(`已切换为 ${wallpaper.title}`);
+};
+
+const loadMoreWallpapers = () => {
+  if (!hasMoreWallpapers.value) {
+    showToast("必应壁纸已全部加载");
+    return;
+  }
+  void wallpaperRuntime.loadMoreWallpapers();
+};
+
+let wallpaperAutoLoadObserver: IntersectionObserver | null = null;
+const WALLPAPER_AUTO_LOAD_DISTANCE = 180;
+
+const maybeAutoLoadWallpapers = () => {
+  const panel = wallpaperPanelElement.value;
+  if (!panel || panel.clientHeight <= 0 || !hasMoreWallpapers.value) {
+    return;
+  }
+
+  const distanceToBottom =
+    panel.scrollHeight - panel.scrollTop - panel.clientHeight;
+  if (
+    panel.scrollHeight <= panel.clientHeight ||
+    distanceToBottom <= WALLPAPER_AUTO_LOAD_DISTANCE
+  ) {
+    loadMoreWallpapers();
+  }
+};
+
+const syncWallpaperAutoLoadObserver = () => {
+  wallpaperAutoLoadObserver?.disconnect();
+  wallpaperAutoLoadObserver = null;
+  if (
+    openedWidget.value?.kind !== "wallpaper" ||
+    !hasMoreWallpapers.value ||
+    !wallpaperPanelElement.value ||
+    !wallpaperLoadMoreSentinelElement.value ||
+    typeof IntersectionObserver === "undefined"
+  ) {
+    return;
+  }
+
+  wallpaperAutoLoadObserver = new IntersectionObserver(
+    (entries) => {
+      if (entries.some((entry) => entry.isIntersecting)) {
+        loadMoreWallpapers();
+      }
+    },
+    {
+      root: wallpaperPanelElement.value,
+      rootMargin: `${WALLPAPER_AUTO_LOAD_DISTANCE}px 0px`,
+      threshold: 0,
+    },
+  );
+  wallpaperAutoLoadObserver.observe(wallpaperLoadMoreSentinelElement.value);
+};
+
+const handleWallpaperPanelScroll = () => {
+  maybeAutoLoadWallpapers();
+};
+
+const toggleWallpaperSettings = () => {
+  wallpaperSettingsOpen.value = !wallpaperSettingsOpen.value;
 };
 
 const clampPoint = (event: MouseEvent, width = 150, height = 220): Point => {
@@ -4421,6 +5303,12 @@ const openWidget = (widget: WidgetItem) => {
     activeConverterToolLabel.value = "计算器";
     resetConverterCalculator();
   }
+  if (widget.kind === "wallpaper") {
+    wallpaperSettingsOpen.value = false;
+  }
+  if (widget.id === "ip-30") {
+    void fetchIpLookup("", false);
+  }
   openedWidgetId.value = widget.id;
 };
 
@@ -4485,7 +5373,7 @@ const selectSearchEngine = (engine: string) => {
   if (engine === "添加") {
     showToast("已进入添加搜索引擎");
   } else {
-    activeSearch.value = engine === "综合搜索" ? "百度" : engine;
+    activeSearch.value = engine;
   }
   showSearchMenu.value = false;
 };
@@ -4663,11 +5551,40 @@ const widgetClass = (widget: WidgetItem) => {
   ];
 };
 
+const shouldRenderIpOuterInfo = (widget: WidgetItem) =>
+  widget.id === "ip-30" && (widget.size === "2x2" || widget.size === "2x4");
+
 const handleKeydown = (event: KeyboardEvent) => {
+  if (event.code === "F11" && openedWidget.value?.kind === "daily-quote") {
+    event.preventDefault();
+    toggleDailyQuoteFullscreen();
+    return;
+  }
   if (event.key !== "Escape") return;
   closeMenus();
   closePanels();
 };
+
+watch(
+  () =>
+    [
+      openedWidget.value?.kind,
+      wallpaperRuntime.visibleBingWallpapers.value.length,
+      wallpaperRuntime.hasMoreWallpapers.value,
+    ] as const,
+  async ([kind]) => {
+    if (kind !== "wallpaper") {
+      wallpaperAutoLoadObserver?.disconnect();
+      wallpaperAutoLoadObserver = null;
+      return;
+    }
+
+    await nextTick();
+    syncWallpaperAutoLoadObserver();
+    maybeAutoLoadWallpapers();
+  },
+  { flush: "post" },
+);
 
 onMounted(() => {
   document.title = "新标签页";
@@ -4690,8 +5607,18 @@ onMounted(() => {
     true,
   );
   document.addEventListener("visibilitychange", visibilityChangeHandler);
+  document.addEventListener("fullscreenchange", syncDailyQuoteFullscreenState);
   void fetchMovieCalendar();
   void fetchDailyEnglish();
+  void fetchDailyQuote();
+  dailyQuoteClockTimer = window.setInterval(updateDailyQuoteClock, 1000);
+  void fetchIpLookup("", false);
+  ipLookupRefreshTimer = window.setInterval(
+    () => {
+      void fetchIpLookup("", false);
+    },
+    60 * 60 * 1000,
+  );
 });
 
 onBeforeUnmount(() => {
@@ -4699,24 +5626,49 @@ onBeforeUnmount(() => {
   if (clockTimer) {
     window.clearInterval(clockTimer);
   }
+  if (ipLookupRefreshTimer) {
+    window.clearInterval(ipLookupRefreshTimer);
+  }
+  if (dailyQuoteClockTimer) {
+    window.clearInterval(dailyQuoteClockTimer);
+  }
+  (Object.keys(dailyQuoteActionAnimationTimers) as DailyQuoteAction[]).forEach(
+    (action) => {
+      const timer = dailyQuoteActionAnimationTimers[action];
+      if (timer) {
+        window.clearTimeout(timer);
+      }
+      dailyQuoteActionAnimationTimers[action] = undefined;
+      dailyQuoteActionAnimating[action] = false;
+    },
+  );
   if (toastTimer) {
     window.clearTimeout(toastTimer);
   }
   if (todoScrollHideTimer) {
     window.clearTimeout(todoScrollHideTimer);
   }
+  clearEatTodayAnimation();
   dailyEnglishAbortController?.abort();
+  dailyQuoteAbortController?.abort();
   movieCalendarAbortController?.abort();
+  ipLookupAbortController?.abort();
   stopDailyEnglishAudio();
   clearTomatoTimer();
   pauseTomatoAudio();
   tomatoAudioElement = null;
+  wallpaperAutoLoadObserver?.disconnect();
+  wallpaperAutoLoadObserver = null;
   if (updateViewportHandler) {
     window.removeEventListener("resize", updateViewportHandler);
   }
   if (visibilityChangeHandler) {
     document.removeEventListener("visibilitychange", visibilityChangeHandler);
   }
+  document.removeEventListener(
+    "fullscreenchange",
+    syncDailyQuoteFullscreenState,
+  );
   document.removeEventListener(
     "pointerdown",
     handleAnniversaryOutsidePointerDown,
@@ -4835,7 +5787,11 @@ onBeforeUnmount(() => {
               ? movieCalendarOuterStyle
               : widget.kind === 'countdown'
                 ? offworkCountdownCardStyle
-                : undefined
+                : widget.kind === 'daily-quote'
+                  ? dailyQuoteOuterStyle
+                  : widget.kind === 'wallpaper'
+                    ? wallpaperCardStyle
+                    : undefined
           "
           @open="openWidget(widget)"
           @contextmenu="openWidgetMenu(widget, $event)"
@@ -5125,6 +6081,40 @@ onBeforeUnmount(() => {
             </dl>
           </template>
 
+          <template v-else-if="widget.kind === 'daily-quote'">
+            <span
+              class="daily-quote-card"
+              :class="`daily-quote-size-${widget.size.replace('x', '-')}`"
+              :style="dailyQuoteOuterStyle"
+              :data-daily-quote-api="dailyQuoteApiUrl"
+              :data-daily-quote-source-status="dailyQuote.sourceStatus"
+              :data-daily-quote-date="dailyQuote.date"
+            >
+              <img
+                v-if="widget.size === '1x1'"
+                class="daily-quote-icon"
+                alt="每日一言"
+                :src="dailyQuoteIconUrl"
+                :data-source-src="dailyQuoteSourceIconUrl"
+              />
+              <span v-else class="daily-quote-wrap">
+                <span class="daily-quote-content-layer">
+                  <span
+                    v-if="widget.size === '2x2' || widget.size === '2x4'"
+                    class="daily-quote-title"
+                    >每日一言</span
+                  >
+                  <span class="daily-quote-text" :title="dailyQuote.quote">
+                    {{ dailyQuote.quote }}
+                    <em v-if="widget.size === '2x4'">{{
+                      dailyQuoteAttributionText
+                    }}</em>
+                  </span>
+                </span>
+              </span>
+            </span>
+          </template>
+
           <template v-else-if="widget.kind === 'poem'">
             <ItabPoemWidget
               :widget="itabLivePoemWidget"
@@ -5259,14 +6249,39 @@ onBeforeUnmount(() => {
           </template>
 
           <template v-else-if="widget.kind === 'eat-today'">
-            <strong>今天吃什么</strong>
-            <button type="button" @click.stop="showToast('开始随机')">
-              开始
-            </button>
+            <span class="d-watch-resize w-full h-full">
+              <span class="app-eat d-flex-center">
+                <span class="eat-box ac">
+                  <strong class="eat-title">今天吃什么</strong>
+                  <span
+                    class="start eat-button d-flex-center"
+                    :class="{ 'is-running': eatTodayRunning }"
+                    :data-eat-today-current="eatTodaySelectedItem"
+                    data-eat-today-action="start"
+                    @click.stop="pickEatToday"
+                  >
+                    <span aria-live="polite">{{
+                      eatTodayOuterButtonText
+                    }}</span>
+                  </span>
+                </span>
+              </span>
+            </span>
           </template>
 
           <template v-else-if="widget.kind === 'wallpaper'">
-            <span>四川省的茶梯田</span>
+            <span
+              v-if="
+                activeWallpaper &&
+                wallpaperCopyrightVisibleSizes.has(widget.size)
+              "
+              class="wallpaper-copyright"
+              :title="wallpaperDescription(activeWallpaper)"
+            >
+              <span class="wallpaper-copyright-text">
+                {{ wallpaperDescription(activeWallpaper) }}
+              </span>
+            </span>
           </template>
 
           <template v-else-if="widget.kind === 'todo'">
@@ -5605,8 +6620,23 @@ onBeforeUnmount(() => {
             </span>
           </template>
 
+          <template v-else-if="shouldRenderIpOuterInfo(widget)">
+            <span class="ip-outer-card" :class="ipLookupOuterAddressClass">
+              <strong class="ip-outer-title">
+                {{ ipLookupOuterAddress }}
+              </strong>
+              <span class="ip-outer-subtitle">
+                {{ ipLookupOuterLocation }}
+              </span>
+            </span>
+          </template>
+
           <template v-else>
-            <img :alt="widget.title" :src="widget.icon" />
+            <img
+              class="app-item-img mask-100"
+              :alt="widget.title"
+              :src="widget.icon"
+            />
           </template>
           <template #title>{{ widget.title }}</template>
         </ItabLiveWidgetFrame>
@@ -7197,12 +8227,54 @@ onBeforeUnmount(() => {
 
         <template v-else-if="openedWidget.kind === 'eat-today'">
           <div class="opened-food-panel">
-            <h2>今天吃什么</h2>
-            <div class="food-wheel">
-              <span>牛肉粉</span><span>砂锅粥</span><span>肠粉</span
-              ><span>咖喱饭</span><span>云吞面</span><span>麻辣烫</span>
+            <div class="opened-food-decoration" aria-hidden="true">
+              <span class="food-decoration-burger"></span>
+              <span class="food-decoration-drumstick"></span>
+              <span class="food-decoration-skewer"></span>
+              <span class="food-decoration-dot dot-one"></span>
+              <span class="food-decoration-dot dot-two"></span>
+              <span class="food-decoration-dot dot-three"></span>
             </div>
-            <button type="button">开始</button>
+            <div class="opened-food-core">
+              <h2 aria-live="polite">{{ eatTodayOpenedTitle }}</h2>
+              <button
+                class="opened-food-start"
+                :class="{ 'is-running': eatTodayRunning }"
+                type="button"
+                :data-eat-today-current="eatTodaySelectedItem"
+                @click.stop="pickEatToday"
+              >
+                {{ eatTodayOpenedStartText }}
+              </button>
+            </div>
+            <div class="opened-food-actions">
+              <button
+                class="food-friend-button"
+                type="button"
+                @click.stop="pickEatToday"
+              >
+                <svg viewBox="0 0 11 11" aria-hidden="true">
+                  <path
+                    d="M8.8 1.6 2.4 4.1l2.4 1.1 1.1 2.4 2.9-6Z"
+                    fill="currentColor"
+                  />
+                </svg>
+                <span>朋友帮我选</span>
+              </button>
+              <button
+                class="food-menu-button"
+                type="button"
+                @click.stop="showToast('菜单编辑暂未开放')"
+              >
+                <svg viewBox="0 0 1024 1024" aria-hidden="true">
+                  <path
+                    d="M232 704h360v72H232v-72Zm0-232h560v72H232v-72Zm0-224h560v72H232v-72Zm524 392 72 72-188 188h-72v-72l188-188Z"
+                    fill="currentColor"
+                  />
+                </svg>
+                <span>菜单自己写</span>
+              </button>
+            </div>
           </div>
         </template>
 
@@ -7270,36 +8342,32 @@ onBeforeUnmount(() => {
           </div>
         </template>
 
-        <template
-          v-else-if="
-            openedWidget.kind === 'tool-icon' && openedWidget.title === 'IP查询'
-          "
-        >
-          <div class="opened-tool opened-ip">
-            <header>
-              <img :alt="openedWidget.title" :src="openedWidget.icon" />
-              <div>
-                <strong>IP查询</strong><span>查询公网 IP 与归属地</span>
-              </div>
-            </header>
-            <div class="ip-card">
-              <strong>46.8.226.199</strong
-              ><span>Hong Kong · China Telecom</span>
-            </div>
-            <dl>
-              <div>
-                <dt>位置</dt>
-                <dd>中国香港</dd>
-              </div>
-              <div>
-                <dt>网络</dt>
-                <dd>AS4134 CHINANET</dd>
-              </div>
-              <div>
-                <dt>时区</dt>
-                <dd>Asia/Shanghai</dd>
-              </div>
-            </dl>
+        <template v-else-if="openedWidget.id === 'ip-30'">
+          <div class="opened-ip-panel">
+            <section class="opened-ip-result" aria-live="polite">
+              <h2>{{ ipLookupHeading }}</h2>
+              <p v-if="ipLookupError" class="opened-ip-error">
+                {{ ipLookupError }}
+              </p>
+              <dl>
+                <div>
+                  <dt>解析地址：</dt>
+                  <dd>{{ ipLookupResolvedIp }}</dd>
+                </div>
+                <div>
+                  <dt>归属地：</dt>
+                  <dd>{{ ipLookupArea }}</dd>
+                </div>
+                <div>
+                  <dt>网络：</dt>
+                  <dd>{{ ipLookupNetwork }}</dd>
+                </div>
+                <div>
+                  <dt>经纬度：</dt>
+                  <dd>{{ ipLookupCoordinate }}</dd>
+                </div>
+              </dl>
+            </section>
           </div>
         </template>
 
@@ -7715,16 +8783,6 @@ onBeforeUnmount(() => {
             :data-movie-source-status="movieCalendar.sourceStatus"
           >
             <span class="opened-movie-bg" aria-hidden="true"></span>
-            <aside class="opened-movie-poster" aria-hidden="true">
-              <img
-                v-if="movieCalendar.posterUrl"
-                alt=""
-                width="273"
-                height="405"
-                :src="movieCalendar.posterUrl"
-              />
-              <span v-else>{{ movieCalendar.movieTitle }}</span>
-            </aside>
             <section class="opened-movie-copy">
               <h2>{{ movieCalendar.movieTitle }}</h2>
               <span class="opened-movie-rating-row">
@@ -7742,15 +8800,134 @@ onBeforeUnmount(() => {
               </p>
               <p class="opened-movie-quote">“ {{ movieCalendar.quote }} ”</p>
               <p class="opened-movie-intro">{{ movieCalendarIntroText }}</p>
-              <a
-                v-if="movieCalendar.sourceUrl"
-                class="opened-movie-source"
-                :href="movieCalendar.sourceUrl"
-                target="_blank"
-                rel="noreferrer noopener"
-                >查看电影源→</a
-              >
             </section>
+            <aside class="opened-movie-poster" aria-hidden="true">
+              <img
+                v-if="movieCalendar.posterUrl"
+                class="opened-movie-poster-image rounded-md float-left mr10 m-block"
+                :alt="movieCalendar.movieTitle"
+                width="273"
+                height="405"
+                :src="movieCalendar.posterUrl"
+              />
+              <img
+                v-if="movieCalendar.posterUrl"
+                class="opened-movie-poster-image rounded-md m-hide"
+                :alt="movieCalendar.movieTitle"
+                width="273"
+                height="405"
+                :src="movieCalendar.posterUrl"
+              />
+              <span v-else>{{ movieCalendar.movieTitle }}</span>
+            </aside>
+            <a
+              v-if="movieCalendar.sourceUrl"
+              class="opened-movie-source"
+              :href="movieCalendar.sourceUrl"
+              target="_blank"
+              rel="noreferrer noopener"
+              >查看电影源→</a
+            >
+          </div>
+        </template>
+
+        <template v-else-if="openedWidget.kind === 'daily-quote'">
+          <div
+            ref="dailyQuotePanelRef"
+            class="opened-daily-quote-panel"
+            :class="{ 'is-fullscreen': dailyQuoteFullscreen }"
+            :style="dailyQuoteOpenedStyle"
+            :data-daily-quote-api="dailyQuoteApiUrl"
+            :data-daily-quote-like-api="dailyQuoteLikeApiUrl"
+            :data-daily-quote-share-api="dailyQuoteShareApiUrl"
+            :data-daily-quote-source-status="dailyQuote.sourceStatus"
+            :data-daily-quote-date="dailyQuote.date"
+            :data-daily-quote-fullscreen="dailyQuoteFullscreen"
+            data-itab-no-iframe="true"
+          >
+            <span class="opened-daily-quote-bg" aria-hidden="true"></span>
+            <button
+              class="opened-daily-quote-chevron is-left"
+              type="button"
+              aria-label="上一句"
+              data-itab-inner-control
+              data-itab-hotspot-id="daily-quote-prev"
+              data-itab-action="previous-quote"
+              @click.stop="navigateDailyQuote('prev')"
+            ></button>
+            <button
+              class="opened-daily-quote-chevron is-right"
+              type="button"
+              aria-label="下一句"
+              data-itab-inner-control
+              data-itab-hotspot-id="daily-quote-next"
+              data-itab-action="next-quote"
+              @click.stop="navigateDailyQuote('next')"
+            ></button>
+            <section class="opened-daily-quote-main">
+              <p class="opened-daily-quote-date">{{ dailyQuote.dateLabel }}</p>
+              <strong class="opened-daily-quote-time">{{
+                dailyQuote.timeLabel
+              }}</strong>
+              <span class="opened-daily-quote-line" aria-hidden="true"></span>
+              <blockquote>{{ dailyQuote.quote }}</blockquote>
+              <p class="opened-daily-quote-author">
+                {{ dailyQuoteAttributionText }}
+              </p>
+            </section>
+            <footer class="opened-daily-quote-actions">
+              <button
+                v-if="!dailyQuoteFullscreen"
+                type="button"
+                title="分享"
+                aria-label="分享每日一言"
+                :class="{ 'is-clicking': dailyQuoteActionAnimating.share }"
+                data-itab-inner-control
+                data-itab-hotspot-id="daily-quote-copy"
+                data-itab-action="share-quote"
+                @click.stop="copyDailyQuote"
+              >
+                <CopyIcon aria-hidden="true" />
+              </button>
+              <button
+                type="button"
+                title="设为屏保"
+                aria-label="设为屏保"
+                :class="{ 'is-clicking': dailyQuoteActionAnimating.fullscreen }"
+                data-itab-inner-control
+                data-itab-hotspot-id="daily-quote-fullscreen"
+                data-itab-action="toggle-fullscreen"
+                @click.stop="toggleDailyQuoteFullscreen"
+              >
+                <ScanIcon aria-hidden="true" />
+              </button>
+              <button
+                v-if="!dailyQuoteFullscreen"
+                type="button"
+                title="喜欢"
+                aria-label="喜欢每日一言"
+                :aria-pressed="dailyQuoteLiked"
+                :class="{
+                  like: dailyQuoteLiked,
+                  'is-clicking': dailyQuoteActionAnimating.like,
+                }"
+                data-itab-inner-control
+                data-itab-hotspot-id="daily-quote-like"
+                data-itab-action="toggle-like"
+                @click.stop="toggleDailyQuoteLike"
+              >
+                <HeartIcon aria-hidden="true" />
+              </button>
+            </footer>
+            <a
+              class="opened-daily-quote-source"
+              href="https://tide.fm/"
+              target="_blank"
+              rel="noreferrer noopener"
+            >
+              <span>数据来源于</span>
+              <img :src="dailyQuoteTideLogoUrl" alt="" />
+            </a>
           </div>
         </template>
 
@@ -7817,15 +8994,161 @@ onBeforeUnmount(() => {
         </template>
 
         <template v-else-if="openedWidget.kind === 'wallpaper'">
-          <div class="opened-media-panel">
-            <aside>
-              <img alt="" :src="sourceAssets.wallpaper" />
-            </aside>
-            <section>
-              <h2>{{ openedWidget.title }}</h2>
-              <p>四川省的茶梯田，今日 Bing 壁纸。</p>
-              <button type="button">收藏</button>
+          <div
+            ref="wallpaperPanelElement"
+            class="opened-wallpaper-panel"
+            :class="{ 'is-settings-open': wallpaperSettingsOpen }"
+            @scroll.passive="handleWallpaperPanelScroll"
+          >
+            <button
+              class="wallpaper-settings-trigger"
+              type="button"
+              aria-label="参数设置"
+              :aria-expanded="wallpaperSettingsOpen"
+              @click.stop="toggleWallpaperSettings"
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path
+                  d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.09a2 2 0 0 1 1 1.73v.52a2 2 0 0 1-1 1.73l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.38a2 2 0 0 0-.73-2.73l-.15-.09a2 2 0 0 1-1-1.73v-.52a2 2 0 0 1 1-1.73l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2Z"
+                />
+                <circle cx="12" cy="12" r="3" />
+              </svg>
+            </button>
+
+            <section
+              v-if="wallpaperSettingsOpen"
+              class="wallpaper-settings-popover"
+              aria-label="参数设置"
+              @click.stop
+            >
+              <label>
+                <input
+                  v-model="wallpaperSettings.dailyAutoUpdate"
+                  type="checkbox"
+                />
+                <span>选中壁纸每日自动更新</span>
+              </label>
+              <label>
+                <input
+                  v-model="wallpaperSettings.dimWallpaper"
+                  type="checkbox"
+                />
+                <span>桌面背景增加暗色遮罩</span>
+              </label>
+              <label class="wallpaper-range">
+                <span>背景模糊</span>
+                <input
+                  v-model.number="wallpaperSettings.blurLevel"
+                  type="range"
+                  min="0"
+                  max="20"
+                  step="1"
+                />
+                <b>{{ wallpaperSettings.blurLevel }}</b>
+              </label>
             </section>
+
+            <header class="wallpaper-panel-head">
+              <h2>壁纸库</h2>
+              <p>必应每日壁纸 可以使用快捷键 Ctrl+G 打开壁纸应用</p>
+            </header>
+
+            <section v-if="featuredWallpaper" class="wallpaper-featured">
+              <button
+                class="wallpaper-featured-image"
+                type="button"
+                :aria-label="`选中 ${featuredWallpaper.title}`"
+                @click="selectWallpaper(featuredWallpaper)"
+              >
+                <img
+                  :alt="featuredWallpaper.title"
+                  :src="featuredWallpaper.thumbnailUrl"
+                />
+              </button>
+              <div class="wallpaper-featured-copy">
+                <strong>
+                  {{ featuredWallpaper.title }},
+                  {{ featuredWallpaper.location }} (©
+                  {{ featuredWallpaper.credit }})
+                </strong>
+                <p>选中此图像每天会自动更新壁纸</p>
+                <p>
+                  图像来源: <b>必应</b>
+                  <a
+                    :href="featuredWallpaper.downloadUrl"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    @click.stop
+                    >点此下载4k高清壁纸</a
+                  >
+                </p>
+              </div>
+            </section>
+
+            <p
+              v-else
+              class="wallpaper-empty-state"
+              data-itab-live-wallpaper-empty-state
+            >
+              {{
+                wallpaperRuntime.loading.value
+                  ? "正在从后端加载壁纸"
+                  : wallpaperRuntime.error.value || "后端暂未返回可用壁纸"
+              }}
+            </p>
+
+            <section
+              v-if="visibleBingWallpapers.length"
+              class="wallpaper-bing-grid"
+              aria-label="必应壁纸"
+            >
+              <article
+                v-for="wallpaper in visibleBingWallpapers"
+                :key="wallpaper.id"
+                :class="{ active: wallpaper.id === activeWallpaper?.id }"
+              >
+                <button
+                  class="wallpaper-thumb"
+                  type="button"
+                  :aria-pressed="wallpaper.id === activeWallpaper?.id"
+                  :aria-label="`选中 ${wallpaper.title}`"
+                  @click="selectWallpaper(wallpaper)"
+                >
+                  <img :alt="wallpaper.title" :src="wallpaper.thumbnailUrl" />
+                  <span
+                    v-if="wallpaper.id === activeWallpaper?.id"
+                    class="wallpaper-check"
+                    aria-hidden="true"
+                    >✓</span
+                  >
+                </button>
+                <a
+                  class="wallpaper-download-icon"
+                  :href="wallpaper.downloadUrl"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  :aria-label="`下载 ${wallpaper.title}`"
+                  @click.stop
+                >
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M12 3v12m0 0 5-5m-5 5-5-5M5 21h14" />
+                  </svg>
+                </a>
+              </article>
+            </section>
+
+            <footer
+              ref="wallpaperLoadMoreSentinelElement"
+              class="wallpaper-panel-actions"
+            >
+              <button
+                type="button"
+                :disabled="!hasMoreWallpapers"
+                @click="loadMoreWallpapers"
+              >
+                {{ hasMoreWallpapers ? "加载更多" : "已全部加载" }}
+              </button>
+            </footer>
           </div>
         </template>
 
@@ -9169,6 +10492,7 @@ button {
   height: 12px;
   box-sizing: border-box;
   padding: 0 2px;
+  border-radius: 6px;
   background: #ffac2d;
   color: #4f0e03;
   font-size: 12px;
@@ -9780,6 +11104,185 @@ button {
   width: 202px;
 }
 
+.ip-outer-card {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 16px 8px;
+  background: rgb(60, 102, 255);
+  color: #fff;
+  font-family: HarmonyOS_Sans, Arial, "PingFang SC", sans-serif;
+  text-align: center;
+}
+
+.ip-outer-title {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  color: #fff;
+  font-size: 18px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 24px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ip-outer-subtitle {
+  display: block;
+  max-width: 100%;
+  margin-top: 8px;
+  overflow: hidden;
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0;
+  line-height: 19px;
+  overflow-wrap: anywhere;
+  text-overflow: clip;
+  white-space: normal;
+  word-break: break-word;
+}
+
+.ip-outer-card.is-long-address .ip-outer-title {
+  font-size: 15px;
+  line-height: 21px;
+  overflow-wrap: anywhere;
+  text-overflow: clip;
+  white-space: normal;
+  word-break: break-all;
+}
+
+.size-2-4 .ip-outer-card {
+  padding: 20px 32px;
+}
+
+.size-2-4 .ip-outer-title {
+  font-size: 40px;
+  line-height: 48px;
+}
+
+.size-2-4 .ip-outer-subtitle {
+  margin-top: 10px;
+  font-size: 17px;
+  line-height: 23px;
+}
+
+.size-2-4 .ip-outer-card.is-long-address .ip-outer-title {
+  font-size: 32px;
+  line-height: 40px;
+}
+
+.daily-quote-card {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  color: #fff;
+  font-family:
+    "PingFang SC",
+    -apple-system,
+    "system-ui",
+    "Helvetica Neue",
+    Helvetica,
+    sans-serif;
+}
+
+.daily-quote-icon {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: rgb(1, 18, 17);
+  object-fit: contain;
+}
+
+.daily-quote-wrap {
+  display: block;
+  width: 100%;
+  height: 100%;
+  padding: 10px;
+  background-image:
+    linear-gradient(rgba(0, 0, 0, 0.8), rgba(0, 20, 0, 0.7)),
+    var(--daily-quote-bg-image);
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+  font-weight: 700;
+}
+
+.daily-quote-content-layer {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  width: 100%;
+  height: 100%;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+}
+
+.daily-quote-title {
+  display: block;
+  max-width: 100%;
+  margin-bottom: 4px;
+  overflow: hidden;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 18px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.daily-quote-text {
+  display: -webkit-box;
+  max-width: 100%;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  color: #fff;
+  font-size: 12.6px;
+  font-weight: 400;
+  line-height: 17.64px;
+  text-align: center;
+}
+
+.daily-quote-text em {
+  display: block;
+  margin-top: 4px;
+  color: rgba(255, 255, 255, 0.45);
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 400;
+  line-height: 16px;
+}
+
+.daily-quote-size-1-2 .daily-quote-text,
+.daily-quote-size-2-1 .daily-quote-text {
+  -webkit-line-clamp: 2;
+  font-size: 11.4px;
+  line-height: 15.96px;
+}
+
+.daily-quote-size-2-1 .daily-quote-content-layer {
+  writing-mode: vertical-lr;
+}
+
+.daily-quote-size-2-2 .daily-quote-text {
+  -webkit-line-clamp: 5;
+}
+
+.daily-quote-size-2-4 .daily-quote-text {
+  -webkit-line-clamp: 3;
+  font-size: 14px;
+  line-height: 19.6px;
+}
+
 .daily-english-card {
   position: relative;
   display: block;
@@ -9882,23 +11385,145 @@ button {
   line-height: 21px;
 }
 
-.is-eat-today strong {
-  font-size: 20px;
+.is-eat-today .d-watch-resize,
+.is-eat-today .app-eat {
+  display: block;
+  width: 100%;
+  height: 100%;
+  font-family:
+    "PingFang SC",
+    -apple-system,
+    system-ui,
+    "Helvetica Neue",
+    Helvetica,
+    sans-serif;
+  font-size: 8px;
+  line-height: 12px;
 }
 
-.is-eat-today button {
+.is-eat-today .app-eat {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgb(255, 255, 255);
+  color: rgb(34, 34, 34);
+}
+
+.is-eat-today .eat-box {
+  display: block;
+  width: 40px;
   height: 34px;
-  min-width: 86px;
-  margin-top: 18px;
-  border: 0;
-  border-radius: 18px;
-  background: #f39b2d;
-  color: #fff;
-  cursor: pointer;
+  color: rgb(34, 34, 34);
+  text-align: center;
 }
 
-.is-wallpaper span {
-  font-size: 12px;
+.is-eat-today .eat-title {
+  display: block;
+  width: 40px;
+  height: 13px;
+  margin: 0;
+  color: oklch(0.278 0.033 256.848);
+  font-size: 8px;
+  font-weight: 700;
+  line-height: 12px;
+  white-space: nowrap;
+}
+
+.is-eat-today .eat-button {
+  display: inline-block;
+  width: 38px;
+  height: 13px;
+  margin: 8px 0 0;
+  border-radius: 8px;
+  background: linear-gradient(135deg, rgb(236, 126, 49), rgb(242, 181, 66));
+  box-shadow: rgb(242, 178, 65) 0 2px 6px 0;
+  color: rgb(255, 255, 255);
+  font-size: 8px;
+  line-height: 12px;
+  cursor: pointer;
+  transition:
+    box-shadow 0.16s ease,
+    transform 0.16s ease;
+}
+
+.is-eat-today .eat-button > span {
+  display: inline;
+  font-size: 5.36px;
+  line-height: 8.04px;
+}
+
+.is-eat-today .eat-button.is-running {
+  box-shadow: rgb(242, 178, 65) 0 1px 4px 0;
+  transform: scale(0.96);
+}
+
+.is-eat-today .eat-button.is-running > span {
+  animation: eat-today-random-flip 70ms linear infinite;
+}
+
+.is-eat-today.size-2-2 .d-watch-resize,
+.is-eat-today.size-2-4 .d-watch-resize,
+.is-eat-today.size-2-2 .app-eat,
+.is-eat-today.size-2-4 .app-eat {
+  font-size: 21px;
+  line-height: 31.5px;
+}
+
+.is-eat-today.size-2-2 .eat-box,
+.is-eat-today.size-2-4 .eat-box {
+  width: 105px;
+  height: 88px;
+}
+
+.is-eat-today.size-2-2 .eat-title,
+.is-eat-today.size-2-4 .eat-title {
+  width: 105px;
+  height: 34px;
+  font-size: 21px;
+  line-height: 31.5px;
+}
+
+.is-eat-today.size-2-2 .eat-button,
+.is-eat-today.size-2-4 .eat-button {
+  width: 99px;
+  height: 34px;
+  margin-top: 21px;
+  border-radius: 21px;
+  font-size: 21px;
+  line-height: 31.5px;
+}
+
+.is-eat-today.size-2-2 .eat-button > span,
+.is-eat-today.size-2-4 .eat-button > span {
+  font-size: 14.07px;
+  line-height: 21.105px;
+}
+
+.wallpaper-copyright {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  box-sizing: border-box;
+  display: block;
+  height: 40px;
+  overflow: hidden;
+  padding: 5px 10px 6px;
+  color: #fff;
+  font-size: 10.5px;
+  font-weight: 400;
+  line-height: 14px;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: normal;
+}
+
+.wallpaper-copyright-text {
+  display: -webkit-box;
+  max-height: 28px;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 
 .todo-icon-asset {
@@ -10982,6 +12607,35 @@ button {
   background: rgba(250, 250, 250, 0.96);
   color: #20242c;
   backdrop-filter: blur(26px);
+}
+
+.opened-window.opened-eat-today {
+  width: min(1000px, calc(100vw - 32px));
+  height: min(602px, calc(100vh - 32px));
+  border: 0;
+  border-radius: 20px;
+  background: rgb(255, 255, 255);
+  box-shadow: rgba(0, 0, 0, 0.48) 0 12px 32px 0;
+  color: rgb(34, 34, 34);
+  font-family:
+    "PingFang SC",
+    -apple-system,
+    system-ui,
+    "Helvetica Neue",
+    Helvetica,
+    sans-serif;
+  font-size: 14px;
+  line-height: 21px;
+  backdrop-filter: none;
+}
+
+.opened-window.opened-eat-today .traffic {
+  top: 11px;
+  right: 17px;
+}
+
+.opened-window.opened-eat-today .traffic .yellow {
+  display: none;
 }
 
 .opened-window.opened-poem {
@@ -14933,90 +16587,182 @@ button {
 }
 
 .opened-food-panel {
-  display: grid;
-  place-items: center;
-  align-content: center;
-  background:
-    radial-gradient(
-      circle at 70% 22%,
-      rgba(255, 225, 142, 0.84),
-      transparent 24%
-    ),
-    #fff;
-}
-
-.opened-food-panel h2 {
-  margin: 0 0 28px;
-  font-size: 34px;
-}
-
-.food-wheel {
   position: relative;
-  display: grid;
-  width: 350px;
-  height: 350px;
-  place-items: center;
-  border-radius: 50%;
-  background: conic-gradient(
-    #ffbd59 0 16.6%,
-    #ff8d59 16.6% 33.2%,
-    #ffd75e 33.2% 49.8%,
-    #8adf89 49.8% 66.4%,
-    #70c7ff 66.4% 83%,
-    #b58cff 83% 100%
-  );
-  color: #fff;
+  width: calc(100% - 2px);
+  height: calc(100% - 2px);
+  margin: 1px;
+  overflow: hidden;
+  background: rgb(255, 255, 255);
+  color: rgb(34, 34, 34);
 }
 
-.food-wheel::after {
+.opened-food-decoration {
   position: absolute;
-  width: 110px;
-  height: 110px;
-  border-radius: 50%;
-  background: #fff;
-  content: "";
+  inset: 0;
+  color: rgba(237, 133, 51, 0.18);
+  pointer-events: none;
 }
 
-.food-wheel span {
+.food-decoration-burger,
+.food-decoration-drumstick,
+.food-decoration-skewer,
+.food-decoration-dot {
   position: absolute;
-  z-index: 1;
-  color: #fff;
-  font-size: 15px;
+  display: block;
+  opacity: 0.38;
 }
 
-.food-wheel span:nth-child(1) {
-  transform: translateY(-122px);
-}
-
-.food-wheel span:nth-child(2) {
-  transform: translate(105px, -60px);
-}
-
-.food-wheel span:nth-child(3) {
-  transform: translate(104px, 62px);
-}
-
-.food-wheel span:nth-child(4) {
-  transform: translateY(123px);
-}
-
-.food-wheel span:nth-child(5) {
-  transform: translate(-105px, 60px);
-}
-
-.food-wheel span:nth-child(6) {
-  transform: translate(-105px, -60px);
-}
-
-.opened-food-panel > button {
-  z-index: 1;
-  width: 110px;
+.food-decoration-burger {
+  top: 256px;
+  left: 282px;
+  width: 58px;
   height: 42px;
-  margin-top: -196px;
-  border-radius: 22px;
-  background: #f39b2d;
-  color: #fff;
+  border-radius: 28px 28px 16px 16px;
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.42), rgba(255, 255, 255, 0.42)) 0
+      20px / 100% 5px no-repeat,
+    rgb(242, 181, 66);
+}
+
+.food-decoration-drumstick {
+  top: 96px;
+  right: 234px;
+  width: 58px;
+  height: 36px;
+  border-radius: 50% 48% 44% 52%;
+  border: 2px solid rgba(237, 133, 51, 0.28);
+  transform: rotate(30deg);
+}
+
+.food-decoration-skewer {
+  right: 220px;
+  bottom: 116px;
+  width: 50px;
+  height: 2px;
+  background: rgba(237, 133, 51, 0.32);
+  transform: rotate(-44deg);
+}
+
+.food-decoration-dot {
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  background: currentColor;
+}
+
+.food-decoration-dot.dot-one {
+  top: 220px;
+  left: 220px;
+}
+
+.food-decoration-dot.dot-two {
+  top: 340px;
+  right: 214px;
+  color: rgba(75, 154, 239, 0.16);
+}
+
+.food-decoration-dot.dot-three {
+  top: 120px;
+  left: 420px;
+  width: 54px;
+  height: 54px;
+  color: rgba(242, 181, 66, 0.14);
+}
+
+.opened-food-core {
+  position: absolute;
+  top: calc(50% - 30px);
+  left: 50%;
+  display: grid;
+  justify-items: center;
+  transform: translate(-50%, -50%);
+}
+
+.opened-food-core h2 {
+  margin: 0 0 31px;
+  color: rgb(34, 34, 34);
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 42px;
+}
+
+.opened-food-start {
+  display: flex;
+  width: 122px;
+  height: 42px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 15px;
+  border-radius: 21px;
+  background: linear-gradient(135deg, rgb(236, 126, 49), rgb(242, 181, 66));
+  box-shadow: rgb(242, 178, 65) 0 2px 6px 0;
+  color: rgb(255, 255, 255);
   font-size: 18px;
+  font-weight: 400;
+  line-height: 21px;
+  transition:
+    box-shadow 0.16s ease,
+    transform 0.16s ease;
+}
+
+.opened-food-start.is-running {
+  box-shadow: rgb(242, 178, 65) 0 1px 4px 0;
+  transform: scale(0.97);
+}
+
+.opened-food-core:has(.opened-food-start.is-running) h2 {
+  animation: eat-today-random-flip 70ms linear infinite;
+}
+
+@keyframes eat-today-random-flip {
+  0% {
+    opacity: 0.55;
+    transform: translateY(-1px);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.opened-food-actions {
+  position: absolute;
+  right: 100px;
+  bottom: 49px;
+  left: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.opened-food-actions button {
+  display: flex;
+  width: 122px;
+  height: 32px;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 15px;
+  border-radius: 20px;
+  color: rgb(255, 255, 255);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 14px;
+}
+
+.opened-food-actions svg {
+  width: 1em;
+  height: 1em;
+  flex: 0 0 auto;
+}
+
+.food-friend-button {
+  background: rgb(75, 154, 239);
+}
+
+.food-menu-button {
+  background: rgb(237, 133, 51);
 }
 
 .opened-2048 {
@@ -15145,37 +16891,73 @@ button {
   color: #354051;
 }
 
-.ip-card {
-  width: 470px;
-  margin-bottom: 18px;
-  padding: 24px;
-  border-radius: 18px;
-  background: linear-gradient(135deg, #1c8cf7, #6f55f0);
-  color: #fff;
+.opened-ip-panel {
+  position: absolute;
+  inset: 1px;
+  overflow: hidden;
+  border-radius: 19px;
+  background: #fff;
+  color: #141414;
+  font-family:
+    "HarmonyOS Sans",
+    "PingFang SC",
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
 }
 
-.ip-card strong {
-  display: block;
-  font-size: 34px;
+.opened-ip-result {
+  width: calc(100% - 60px);
+  margin: 78px 30px 0;
 }
 
-.opened-ip dl {
-  display: grid;
-  width: 470px;
-  gap: 9px;
-}
-
-.opened-ip dl div {
-  display: flex;
-  justify-content: space-between;
-  padding: 11px 14px;
-  border-radius: 9px;
-  background: #f3f6f9;
-}
-
-.opened-ip dd {
+.opened-ip-result h2 {
   margin: 0;
-  color: #586373;
+  color: #111;
+  font-weight: 600;
+  font-size: 16px;
+  line-height: 22px;
+}
+
+.opened-ip-error {
+  margin: 8px 0 0;
+  color: #b56b00;
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.opened-ip-result dl {
+  display: grid;
+  gap: 8px;
+  margin: 25px 0 0;
+}
+
+.opened-ip-result dl div {
+  display: grid;
+  grid-template-columns: 88px minmax(0, 1fr);
+  align-items: baseline;
+  gap: 0;
+  min-height: 24px;
+}
+
+.opened-ip-result dt,
+.opened-ip-result dd {
+  margin: 0;
+  color: #111;
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 24px;
+}
+
+.opened-ip-result dt {
+  font-weight: 400;
+  text-align: start;
+}
+
+.opened-ip-result dd {
+  overflow-wrap: anywhere;
+  font-weight: 400;
 }
 
 .avatar-grid {
@@ -15363,6 +17145,291 @@ button {
     repeating-linear-gradient(to bottom, transparent 0 36px, #e9edf2 37px), #fff;
 }
 
+.opened-daily-quote-panel {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  border-radius: 20px;
+  background: #000;
+  color: #fff;
+  font-family:
+    "PingFang SC",
+    -apple-system,
+    "system-ui",
+    "Helvetica Neue",
+    Helvetica,
+    sans-serif;
+  font-weight: 700;
+  user-select: text;
+}
+
+.opened-daily-quote-panel:fullscreen {
+  width: 100vw;
+  height: 100vh;
+  border-radius: 0;
+}
+
+.opened-daily-quote-bg {
+  position: absolute;
+  top: -10px;
+  left: -10px;
+  display: block;
+  width: calc(100% + 20px);
+  height: calc(100% + 20px);
+  background-image:
+    linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 20, 0, 0.4)),
+    var(--daily-quote-opened-bg-image);
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+  filter: blur(5px);
+  transition: background 0.2s;
+}
+
+.opened-daily-quote-panel::after {
+  content: none;
+}
+
+.opened-daily-quote-main {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  padding-top: 10%;
+  line-height: 1.6;
+  text-align: center;
+}
+
+.opened-daily-quote-date {
+  margin: 0;
+  color: #fff;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 24px;
+}
+
+.opened-daily-quote-time {
+  display: block;
+  margin: 0 10%;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  color: #fff;
+  font-size: 66px;
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 1.6;
+}
+
+.opened-daily-quote-panel.is-fullscreen .opened-daily-quote-time {
+  font-size: 100px;
+}
+
+.opened-daily-quote-line {
+  display: none;
+}
+
+.opened-daily-quote-main blockquote {
+  display: block;
+  margin: 20px 20% 0;
+  overflow: hidden;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+.opened-daily-quote-author {
+  display: block;
+  max-width: 60%;
+  margin: 0 auto;
+  overflow: hidden;
+  color: #fff;
+  opacity: 0.4;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.6;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.opened-daily-quote-actions {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  margin-top: 100px;
+  opacity: 0.8;
+}
+
+.opened-daily-quote-actions button {
+  position: relative;
+  display: inline-block;
+  width: 80px;
+  height: 80px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #fff;
+  cursor: pointer;
+  opacity: 0.4;
+  transform-origin: center;
+  transition:
+    opacity 0.18s ease,
+    color 0.18s ease;
+}
+
+.opened-daily-quote-actions button[aria-pressed="true"] {
+  color: rgba(255, 98, 118, 0.92);
+  opacity: 0.9;
+}
+
+.opened-daily-quote-panel.is-fullscreen .opened-daily-quote-actions button {
+  opacity: 0.2;
+}
+
+.opened-daily-quote-actions svg {
+  width: 30px;
+  height: 30px;
+  margin-top: 24px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+  transition:
+    transform 0.18s ease,
+    stroke-width 0.18s ease;
+}
+
+.opened-daily-quote-actions button[aria-pressed="true"] svg {
+  fill: currentColor;
+}
+
+.opened-daily-quote-actions button:hover {
+  opacity: 0.9;
+}
+
+.opened-daily-quote-actions button:active svg {
+  transform: scale(0.88);
+}
+
+.opened-daily-quote-actions button.is-clicking {
+  animation: daily-quote-action-pop 0.36s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.opened-daily-quote-actions button.is-clicking svg {
+  stroke-width: 2.1;
+}
+
+@keyframes daily-quote-action-pop {
+  0% {
+    transform: scale(1);
+  }
+
+  38% {
+    transform: scale(0.82);
+  }
+
+  76% {
+    transform: scale(1.12);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+.opened-daily-quote-source {
+  position: absolute;
+  right: 0;
+  bottom: 8px;
+  left: 0;
+  z-index: 2;
+  display: inline-flex;
+  height: 18px;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  color: #fff;
+  font-size: 10px;
+  line-height: 18px;
+  opacity: 0.3;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.opened-daily-quote-source:hover {
+  opacity: 0.6;
+}
+
+.opened-daily-quote-source img {
+  display: block;
+  height: 18px;
+  object-fit: contain;
+}
+
+.opened-daily-quote-chevron {
+  position: absolute;
+  top: calc(50% - 40px);
+  z-index: 2;
+  display: block;
+  width: 20px;
+  height: 40px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #fff;
+  cursor: pointer;
+  opacity: 0.2;
+}
+
+.opened-daily-quote-chevron.is-left {
+  left: 20px;
+}
+
+.opened-daily-quote-chevron.is-right {
+  right: 20px;
+}
+
+.opened-daily-quote-chevron::before,
+.opened-daily-quote-chevron::after {
+  position: absolute;
+  width: 20px;
+  height: 1px;
+  background-color: currentColor;
+  content: "";
+}
+
+.opened-daily-quote-chevron.is-left::before {
+  left: 0;
+  transform: translateY(20px) rotate(-45deg);
+  transform-origin: left top;
+}
+
+.opened-daily-quote-chevron.is-left::after {
+  left: 0;
+  transform: translateY(20px) rotate(45deg);
+  transform-origin: left top;
+}
+
+.opened-daily-quote-chevron.is-right::before {
+  right: 0;
+  transform: translateY(20px) rotate(-45deg);
+  transform-origin: right top;
+}
+
+.opened-daily-quote-chevron.is-right::after {
+  right: 0;
+  transform: translateY(20px) rotate(45deg);
+  transform-origin: right top;
+}
+
+.opened-daily-quote-chevron:hover {
+  opacity: 0.8;
+}
+
 .opened-window.opened-today-english {
   width: min(860px, calc(100vw - 42px));
   height: min(552px, calc(100vh - 64px));
@@ -15475,6 +17542,299 @@ button {
   font-size: 0;
 }
 
+.opened-wallpaper-panel {
+  position: relative;
+  height: 100%;
+  box-sizing: border-box;
+  overflow: hidden auto;
+  padding: 22px 20px;
+  background: rgba(235, 238, 238, 0.62);
+  color: #25262a;
+  backdrop-filter: blur(22px);
+}
+
+.wallpaper-settings-trigger {
+  position: absolute;
+  top: 11px;
+  right: 73px;
+  z-index: 5;
+  display: grid;
+  width: 16px;
+  height: 16px;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.72);
+  color: #168bff;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.12);
+}
+
+.wallpaper-settings-trigger svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+}
+
+.wallpaper-settings-trigger:hover,
+.wallpaper-settings-trigger[aria-expanded="true"] {
+  background: rgba(255, 255, 255, 0.62);
+  color: #168bff;
+}
+
+.wallpaper-settings-popover {
+  position: absolute;
+  top: 48px;
+  right: 56px;
+  z-index: 6;
+  display: grid;
+  width: 270px;
+  box-sizing: border-box;
+  gap: 8px;
+  padding: 14px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.82);
+  box-shadow: 0 18px 46px rgba(0, 0, 0, 0.22);
+  backdrop-filter: blur(18px);
+}
+
+.wallpaper-settings-popover label {
+  display: flex;
+  min-height: 32px;
+  align-items: center;
+  gap: 10px;
+  color: #30343a;
+  font-size: 13px;
+}
+
+.wallpaper-settings-popover input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: #1890ff;
+}
+
+.wallpaper-range {
+  display: grid !important;
+  grid-template-columns: auto 1fr auto;
+}
+
+.wallpaper-range input {
+  width: 100%;
+  accent-color: #1890ff;
+}
+
+.wallpaper-range b {
+  color: #1890ff;
+  font-weight: 500;
+}
+
+.wallpaper-panel-head {
+  display: flex;
+  align-items: baseline;
+  gap: 28px;
+  padding-right: 116px;
+}
+
+.wallpaper-panel-head h2 {
+  margin: 0;
+  color: #25262a;
+  font-size: 30px;
+  font-weight: 700;
+  line-height: 42px;
+}
+
+.wallpaper-panel-head p {
+  margin: 0;
+  color: rgba(68, 73, 80, 0.56);
+  font-size: 14px;
+  line-height: 22px;
+}
+
+.wallpaper-featured {
+  display: grid;
+  grid-template-columns: 360px minmax(0, 1fr);
+  gap: 28px;
+  align-items: start;
+  margin-top: 16px;
+}
+
+.wallpaper-featured-image,
+.wallpaper-thumb {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  padding: 0;
+  border: 0;
+  border-radius: 12px;
+  background: #d7d9dc;
+  cursor: pointer;
+}
+
+.wallpaper-featured-image {
+  width: 360px;
+  height: 202px;
+}
+
+.wallpaper-featured-image img,
+.wallpaper-thumb img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.wallpaper-featured-image span {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(0, 0, 0, 0.18);
+  color: #fff;
+  font-size: 34px;
+  text-shadow: 0 2px 14px rgba(0, 0, 0, 0.48);
+}
+
+.wallpaper-featured-copy {
+  padding-top: 2px;
+  color: rgba(62, 66, 72, 0.62);
+  font-size: 14px;
+  line-height: 22px;
+}
+
+.wallpaper-featured-copy strong {
+  display: block;
+  margin-bottom: 10px;
+  color: rgba(49, 54, 60, 0.52);
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 24px;
+}
+
+.wallpaper-featured-copy p {
+  margin: 5px 0;
+}
+
+.wallpaper-featured-copy b,
+.wallpaper-featured-copy a {
+  color: #1890ff;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.wallpaper-empty-state {
+  display: grid;
+  min-height: 240px;
+  place-items: center;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.72);
+  color: rgba(15, 23, 42, 0.58);
+  font-size: 14px;
+  line-height: 1.6;
+  text-align: center;
+}
+
+.wallpaper-bing-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 18px 16px;
+  margin-top: 22px;
+  padding-bottom: 14px;
+}
+
+.wallpaper-bing-grid article {
+  position: relative;
+  min-width: 0;
+  aspect-ratio: 16 / 9;
+}
+
+.wallpaper-thumb {
+  width: 100%;
+  height: 100%;
+}
+
+.wallpaper-bing-grid article.active .wallpaper-thumb::after {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.18);
+  content: "";
+}
+
+.wallpaper-check {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  font-size: 34px;
+  text-shadow: 0 2px 14px rgba(0, 0, 0, 0.5);
+}
+
+.wallpaper-download-icon {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 3;
+  display: grid;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.34);
+  color: #fff;
+  opacity: 0;
+  transition:
+    opacity 0.16s ease,
+    background-color 0.16s ease;
+}
+
+.wallpaper-bing-grid article:hover .wallpaper-download-icon,
+.wallpaper-bing-grid article.active .wallpaper-download-icon {
+  opacity: 1;
+}
+
+.wallpaper-download-icon:hover {
+  background: rgba(0, 0, 0, 0.55);
+}
+
+.wallpaper-download-icon svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.9;
+}
+
+.wallpaper-panel-actions {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  margin: 6px 0 0;
+  padding: 14px 0 10px;
+  background: transparent;
+}
+
+.wallpaper-panel-actions button {
+  height: 32px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 6px;
+  background: rgb(240, 241, 244);
+  color: #222;
+  font-size: 14px;
+}
+
+.wallpaper-panel-actions button:disabled {
+  cursor: default;
+  opacity: 0.78;
+}
+
 .opened-media-panel {
   display: grid;
   grid-template-columns: 340px 1fr;
@@ -15504,14 +17864,21 @@ button {
 
 .opened-movie-panel {
   position: relative;
-  display: flex;
-  height: 100%;
-  align-items: flex-start;
-  gap: 28px;
+  display: grid;
+  grid-template-columns: 76% minmax(0, 1fr);
+  grid-template-rows: auto auto;
+  column-gap: 0;
+  row-gap: 0;
+  align-content: start;
+  align-items: start;
+  width: 858px;
+  height: 550px;
+  box-sizing: border-box;
+  margin: 1px;
   overflow: hidden;
-  padding: 72px 50px;
+  padding: 51px 50px 50px;
   background: #000;
-  color: #fff;
+  color: #f9d5ad;
 }
 
 .opened-movie-bg {
@@ -15527,14 +17894,34 @@ button {
   position: relative;
   z-index: 1;
   display: block;
-  flex: 0 0 273px;
-  width: 273px;
-  height: 405px;
+  grid-column: 2;
+  grid-row: 1;
+  width: 100%;
+  height: auto;
+  align-self: start;
+  margin: 0;
   padding: 0;
   border-radius: 6px;
-  background: var(--movie-poster-image) center/cover no-repeat;
+  background: transparent;
   box-shadow: none;
   font-size: 18px;
+}
+
+.opened-movie-poster-image {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 273 / 405;
+  border-radius: 6px;
+  object-fit: cover;
+}
+
+.opened-movie-poster-image.m-block {
+  display: none;
+}
+
+.opened-movie-poster-image.m-hide {
+  display: block;
 }
 
 .opened-movie-panel .opened-movie-poster span {
@@ -15553,10 +17940,13 @@ button {
 .opened-movie-copy {
   position: relative;
   z-index: 1;
+  display: block;
+  grid-column: 1;
+  grid-row: 1;
   min-width: 0;
-  flex: 1 1 auto;
-  padding-top: 4px;
-  color: #fff;
+  padding: 0 20px 0 0;
+  color: #f9d5ad;
+  line-height: 22.4px;
 }
 
 .opened-media-panel h2 {
@@ -15582,12 +17972,12 @@ button {
 }
 
 .opened-movie-panel h2 {
-  margin-bottom: 8px;
+  margin: 0;
   overflow: hidden;
-  color: #fff;
-  font-size: 34px;
-  font-weight: 600;
-  line-height: 42px;
+  color: #f9d5ad;
+  font-size: 30px;
+  font-weight: 400;
+  line-height: 48px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -15595,64 +17985,83 @@ button {
 .opened-movie-rating-row {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-bottom: 11px;
+  gap: 7px;
+  height: 22.4px;
+  margin: 0;
 }
 
 .opened-movie-rating-star {
   display: inline-block;
-  width: 82px;
-  height: 16px;
-  background: url("https://files.codelife.cc/itab/rating_s@2x.png") left
-    center/auto 16px no-repeat;
+  width: 55px;
+  height: 11px;
+  background: url("https://files.codelife.cc/itab/rating_s@2x.png") 0 -33px /
+    cover no-repeat;
+  line-height: 11px;
 }
 
-.opened-movie-rating {
+.opened-movie-rating-star::before {
+  content: none;
+}
+
+.opened-movie-rating-star::after {
+  content: none;
+}
+
+.opened-movie-panel .opened-movie-rating {
   margin: 0;
   padding: 0;
   border-radius: 0;
   background: transparent;
-  color: #fff;
-  font-size: 18px;
-  line-height: 18px;
+  color: #f9d5ad;
+  font-size: 14px;
+  line-height: 22.4px;
 }
 
 .opened-movie-panel p {
   max-width: none;
-  margin: 0 0 9px;
-  color: rgba(255, 255, 255, 0.86);
+  margin: 0;
+  color: #f9d5ad;
   font-size: 14px;
-  line-height: 22px;
+  line-height: 22.4px;
 }
 
-.opened-movie-quote {
-  margin: 18px 0 12px;
+.opened-movie-panel .opened-movie-quote {
+  margin: 20px 0 0;
   color: #fff;
-  font-size: 19px;
-  line-height: 30px;
+  font-size: 18px;
+  line-height: 28.8px;
 }
 
-.opened-movie-meta,
-.opened-movie-director {
-  color: rgba(255, 255, 255, 0.9);
+.opened-movie-panel .opened-movie-meta,
+.opened-movie-panel .opened-movie-director {
+  color: #f9d5ad;
 }
 
-.opened-movie-intro {
+.opened-movie-panel .opened-movie-intro {
   display: -webkit-box;
   overflow: hidden;
-  color: rgba(255, 255, 255, 0.84);
+  margin-top: 10px;
+  color: #d1d0d0;
+  font-size: 12px;
+  line-height: 20px;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 7;
 }
 
 .opened-movie-source {
   display: block;
-  margin-top: 8px;
+  position: relative;
+  z-index: 1;
+  grid-column: 1 / -1;
+  grid-row: 2;
+  width: 100%;
+  margin: 0;
   padding: 10px 0 0;
   background: transparent;
   color: #f2cca4;
   font-size: 12px;
   line-height: 19.2px;
+  opacity: 0.8;
   text-decoration: none;
 }
 
@@ -16256,6 +18665,46 @@ button {
 @media (max-width: 640px) {
   .itab-clock div {
     font-size: 60px;
+  }
+
+  .opened-wallpaper-panel {
+    padding: 18px 14px;
+  }
+
+  .wallpaper-settings-trigger {
+    right: 73px;
+  }
+
+  .wallpaper-settings-popover {
+    right: 14px;
+    width: min(270px, calc(100% - 28px));
+  }
+
+  .wallpaper-panel-head {
+    display: grid;
+    gap: 4px;
+    padding-right: 110px;
+  }
+
+  .wallpaper-panel-head h2 {
+    font-size: 24px;
+    line-height: 34px;
+  }
+
+  .wallpaper-featured {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .wallpaper-featured-image {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 16 / 9;
+  }
+
+  .wallpaper-bing-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
   }
 }
 </style>

@@ -6,6 +6,16 @@
 import type { WidgetConfig, AppConfig } from "@/types";
 
 const WIDGET_UI_KEYS = ["collapsed", "editing", "dragging"] as const;
+const UNSYNCED_APP_CONFIG_KEYS = [
+  "forceNetworkMode",
+  "widgetAreaSize",
+  "widgetAreaCols",
+  "widgetAreaRows",
+  "cardSize",
+  "gridGap",
+  "iconSize",
+  "groupGap",
+] as const;
 
 type WidgetUiState = {
   collapsed?: boolean;
@@ -135,22 +145,25 @@ export function normalizeVersion(value: unknown): number {
 }
 
 /**
- * Strip forceNetworkMode from appConfig before serializing to backend.
- * forceNetworkMode is a pure client-only setting.
+ * Strip client-only and deprecated layout settings before appConfig persistence.
  */
-export function stripForceNetworkMode<T extends Record<string, unknown> | undefined>(
-  config: T,
-): T {
+export function stripForceNetworkMode<
+  T extends Record<string, unknown> | undefined,
+>(config: T): T {
   if (!config) return config;
   const next = { ...config };
-  delete (next as { forceNetworkMode?: unknown }).forceNetworkMode;
+  for (const key of UNSYNCED_APP_CONFIG_KEYS) {
+    delete next[key];
+  }
   return next;
 }
 
 /**
  * Migrate legacy wallpaper config.
  */
-export function migrateLegacyWallpaperLock(config: AppConfig & { fixedWallpaper?: boolean }): void {
+export function migrateLegacyWallpaperLock(
+  config: AppConfig & { fixedWallpaper?: boolean },
+): void {
   if (config.fixedWallpaper === true) {
     config.pcRotation = false;
     config.mobileRotation = false;

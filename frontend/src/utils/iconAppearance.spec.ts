@@ -8,7 +8,9 @@ describe("iconAppearance", () => {
   it("normalizes safe color values", () => {
     expect(normalizeIconBackgroundColor("#fff")).toBe("#ffffff");
     expect(normalizeIconBackgroundColor("#ABCDEF")).toBe("#abcdef");
-    expect(normalizeIconBackgroundColor("rgb(17, 24, 39)")).toBe("rgb(17, 24, 39)");
+    expect(normalizeIconBackgroundColor("rgb(17, 24, 39)")).toBe(
+      "rgb(17, 24, 39)",
+    );
     expect(normalizeIconBackgroundColor("javascript:alert(1)")).toBeNull();
   });
 

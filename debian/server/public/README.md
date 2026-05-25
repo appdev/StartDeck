@@ -7,7 +7,7 @@
 - 默认壁纸
 - 固定图片素材
 - `favicon.svg`
-- `favicon.ico` 仅保留给旧浏览器兼容
+- `favicon.ico` 由 `favicon.svg` 转换生成，仅保留给旧浏览器兼容（2026-05-17，Codex）
 
 注意：
 - `server/public` 是构建输出目录，不是素材源目录。

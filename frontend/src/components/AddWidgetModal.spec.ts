@@ -7,6 +7,9 @@ import type {
   AddComponentPayload,
   AddComponentResult,
 } from "@/utils/addComponentTypes";
+import type { WidgetConfig } from "@/types";
+import { ITAB_FOOD_PICKER_CATALOG_ID } from "@/features/itab-food-picker/itabFoodPickerTypes";
+import { ITAB_NUMBER_UPPERCASE_CATALOG_ID } from "@/features/itab-number-uppercase/itabNumberUppercaseTypes";
 import type { StartDeckSiteShortcutCatalogItem } from "@/utils/siteShortcutCatalog";
 
 const mountModal = (
@@ -22,11 +25,12 @@ const mountModal = (
     error?: string;
     items?: StartDeckSiteShortcutCatalogItem[];
   },
+  widgets: WidgetConfig[] = [],
 ) =>
   mount(AddWidgetModal, {
     props: {
       show: true,
-      widgets: [],
+      widgets,
       groups: [{ id: "home", title: "主页", items: [] }],
       activeGroupId: "home",
       onAddComponent,
@@ -73,25 +77,64 @@ describe("AddWidgetModal iTab add UI", () => {
     expect(wrapper.find('[data-testid="itab-add-batch-button"]').exists()).toBe(
       true,
     );
-    expect(wrapper.text()).toContain("PDF转换大师");
+    expect(wrapper.find('[data-testid="itab-add-tab-site"]').exists()).toBe(
+      false,
+    );
+    expect(wrapper.text()).not.toContain("网址导航");
+    expect(wrapper.text()).not.toContain("PDF转换大师");
+    expect(wrapper.text()).not.toContain("渐变色");
+    expect(wrapper.text()).not.toContain("🔥");
+    expect(wrapper.text()).not.toContain("今日推荐");
+    expect(wrapper.text()).not.toContain("最近更新");
+    expect(wrapper.text()).not.toContain("最受欢迎");
+    expect(wrapper.text()).not.toContain("其他");
+    expect(wrapper.find('[data-testid="itab-add-rank-tab"]').exists()).toBe(
+      false,
+    );
+    expect(
+      wrapper
+        .findAll('[data-testid="itab-add-category-chip"]')
+        .map((chip) => chip.text()),
+    ).toEqual([
+      "探索",
+      "全部",
+      "效率",
+      "工具",
+      "系统",
+      "开发",
+      "设计",
+      "创意",
+      "娱乐",
+    ]);
+    expect(wrapper.find(".itab-add-replica-popularity").exists()).toBe(false);
     const initialCards = wrapper.findAll(
       '[data-testid="itab-add-widget-card"]',
     );
     expect(
       initialCards.slice(0, 4).map((card) => card.find("h3").text()),
-    ).toEqual(["PDF转换大师", "数字大写转换", "日历", "渐变色"]);
+    ).toEqual(["金额换算", "天气", "本机IP", "纪念日"]);
+    expect(
+      wrapper.find(".itab-add-widget-preview-frame").attributes("src"),
+    ).toContain("/widget-preview?");
     expect(wrapper.find(".itab-add-window-controls").exists()).toBe(true);
-    expect(wrapper.find(".itab-add-replica-dots").exists()).toBe(true);
-    expect(wrapper.find(".itab-add-size-button").exists()).toBe(false);
-
-    await wrapper.find('[data-testid="itab-add-tab-site"]').trigger("click");
-    expect(wrapper.find('[data-testid="itab-add-site-card"]').exists()).toBe(
+    expect(wrapper.find(".itab-add-window-controls .is-green").exists()).toBe(
       true,
     );
-    expect(wrapper.text()).toContain("添加图标");
-    expect(wrapper.find('[data-testid="itab-add-rank-tab"]').exists()).toBe(
-      false,
-    );
+    await wrapper.find(".itab-add-window-controls .is-red").trigger("click");
+    expect(wrapper.emitted("update:show")).toEqual([[false]]);
+    expect(wrapper.find(".itab-add-replica-dots").exists()).toBe(false);
+    expect(wrapper.find(".itab-add-size-button").exists()).toBe(false);
+
+    await wrapper
+      .findAll('[data-testid="itab-add-category-chip"]')[1]!
+      .trigger("click");
+    await wrapper.vm.$nextTick();
+    const allTabCard = wrapper.find('[data-testid="itab-add-widget-card"]');
+    expect(allTabCard.classes()).toContain("is-replica-card");
+    expect(allTabCard.classes()).toContain("is-catalog-card");
+    expect(allTabCard.find(".itab-add-replica-heading").exists()).toBe(true);
+    expect(allTabCard.find(".itab-add-replica-preview").exists()).toBe(true);
+    expect(wrapper.find(".itab-add-size-button").exists()).toBe(false);
 
     await wrapper.find('[data-testid="itab-add-tab-custom"]').trigger("click");
     expect(wrapper.find('[data-testid="itab-add-custom-url"]').exists()).toBe(
@@ -117,7 +160,7 @@ describe("AddWidgetModal iTab add UI", () => {
     ).toBe(true);
   });
 
-  it("emits selected widget size through the shared payload contract", async () => {
+  it("emits default widget size through the shared payload contract", async () => {
     const addSpy = vi.fn(async (payload: AddComponentPayload) => ({
       status: "success" as const,
       id: payload.kind === "widget" ? payload.catalogItemId : "created",
@@ -128,11 +171,7 @@ describe("AddWidgetModal iTab add UI", () => {
     await wrapper.find('[data-testid="itab-add-search"]').setValue("时钟");
     await wrapper.vm.$nextTick();
 
-    const sizeButtons = wrapper.findAll(".itab-add-size-button");
-    const targetSize = sizeButtons.find((button) => button.text() === "2x1");
-    if (!targetSize) throw new Error("2x1 size button not found");
-
-    await targetSize.trigger("click");
+    expect(wrapper.find(".itab-add-size-button").exists()).toBe(false);
     await wrapper.find('[data-testid="itab-add-card-add"]').trigger("click");
 
     expect(addSpy).toHaveBeenCalledWith(
@@ -140,7 +179,62 @@ describe("AddWidgetModal iTab add UI", () => {
         kind: "widget",
         destinationGroupId: "home",
         saveMode: "dirty",
-        sizeKey: "2x1",
+        sizeKey: "2x2",
+      }),
+    );
+  });
+
+  it("shows system widgets as single-instance enable actions", async () => {
+    const addSpy = vi.fn(async (payload: AddComponentPayload) => ({
+      status: "success" as const,
+      id: payload.kind === "widget" ? payload.catalogItemId : "created",
+      groupId: payload.destinationGroupId,
+    }));
+    const wrapper = mountModal(addSpy, undefined, [
+      { id: "docker", type: "docker", enable: false, isPublic: true },
+      {
+        id: "system-status",
+        type: "system-status",
+        enable: true,
+        isPublic: true,
+      },
+    ]);
+
+    const systemChip = wrapper
+      .findAll('[data-testid="itab-add-category-chip"]')
+      .find((chip) => chip.text() === "系统");
+    if (!systemChip) throw new Error("system category chip not found");
+    await systemChip.trigger("click");
+    await wrapper.vm.$nextTick();
+
+    const cards = wrapper.findAll('[data-testid="itab-add-widget-card"]');
+    const dockerCard = cards.find(
+      (card) => card.find("h3").text() === "Docker",
+    );
+    const systemCard = cards.find(
+      (card) => card.find("h3").text() === "系统状态",
+    );
+    if (!dockerCard || !systemCard) throw new Error("system widgets not found");
+
+    const dockerButton = dockerCard.find('[data-testid="itab-add-card-add"]');
+    expect(dockerButton.text()).toBe("启用");
+    expect(dockerButton.attributes("disabled")).toBeUndefined();
+    expect(systemCard.find('[data-testid="itab-add-card-add"]').text()).toBe(
+      "已启用",
+    );
+    expect(
+      systemCard
+        .find('[data-testid="itab-add-card-add"]')
+        .attributes("disabled"),
+    ).toBeDefined();
+
+    await dockerButton.trigger("click");
+    expect(addSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        kind: "widget",
+        catalogItemId: "docker",
+        destinationGroupId: "home",
+        saveMode: "dirty",
       }),
     );
   });
@@ -158,14 +252,20 @@ describe("AddWidgetModal iTab add UI", () => {
     );
     expect(recommendationCards.length).toBeGreaterThan(0);
 
-    const firstReplicaButton = recommendationCards[0]!.find(
+    const displayOnlyCard = recommendationCards.find(
+      (card) =>
+        card.find('[data-testid="itab-add-card-add"]').text() === "待迁移",
+    );
+    if (!displayOnlyCard)
+      throw new Error("display-only recommendation not found");
+
+    const displayOnlyButton = displayOnlyCard.find(
       '[data-testid="itab-add-card-add"]',
     );
-    expect(firstReplicaButton.text()).toBe("待迁移");
-    expect(firstReplicaButton.attributes("disabled")).toBeDefined();
-    expect(firstReplicaButton.attributes("aria-disabled")).toBe("true");
+    expect(displayOnlyButton.attributes("disabled")).toBeDefined();
+    expect(displayOnlyButton.attributes("aria-disabled")).toBe("true");
 
-    await firstReplicaButton.trigger("click");
+    await displayOnlyButton.trigger("click");
 
     expect(addSpy).not.toHaveBeenCalled();
   });
@@ -184,7 +284,7 @@ describe("AddWidgetModal iTab add UI", () => {
     if (!weatherCard) throw new Error("weather recommendation not found");
 
     const addButton = weatherCard.find('[data-testid="itab-add-card-add"]');
-    expect(addButton.text()).toBe("启用");
+    expect(addButton.text()).toBe("添加");
     expect(addButton.attributes("disabled")).toBeUndefined();
 
     await addButton.trigger("click");
@@ -196,6 +296,104 @@ describe("AddWidgetModal iTab add UI", () => {
         destinationGroupId: "home",
         saveMode: "dirty",
         sizeKey: "1x2",
+      }),
+    );
+  });
+
+  it("maps the iTab IP recommendation to the local IP add flow", async () => {
+    const addSpy = vi.fn(async (payload: AddComponentPayload) => ({
+      status: "success" as const,
+      id: payload.kind === "widget" ? payload.catalogItemId : "created",
+      groupId: payload.destinationGroupId,
+    }));
+    const wrapper = mountModal(addSpy);
+
+    const ipCard = wrapper
+      .findAll(".itab-add-widget-card.is-replica-card")
+      .find((card) => card.find("h3").text() === "本机IP");
+    if (!ipCard) throw new Error("IP recommendation not found");
+
+    const addButton = ipCard.find('[data-testid="itab-add-card-add"]');
+    expect(addButton.text()).toBe("添加");
+    expect(addButton.attributes("disabled")).toBeUndefined();
+
+    await addButton.trigger("click");
+
+    expect(addSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        kind: "widget",
+        catalogItemId: "ip",
+        destinationGroupId: "home",
+        saveMode: "dirty",
+        sizeKey: "2x2",
+      }),
+    );
+  });
+
+  it("maps the iTab food picker catalog search to the migrated multi-instance add flow", async () => {
+    const addSpy = vi.fn(async (payload: AddComponentPayload) => ({
+      status: "success" as const,
+      id: payload.kind === "widget" ? payload.catalogItemId : "created",
+      groupId: payload.destinationGroupId,
+    }));
+    const wrapper = mountModal(addSpy);
+
+    await wrapper
+      .find('[data-testid="itab-add-search"]')
+      .setValue("今天吃什么");
+    await wrapper.vm.$nextTick();
+
+    const foodCard = wrapper
+      .findAll('[data-testid="itab-add-widget-card"]')
+      .find((card) => card.find("h3").text() === "今天吃什么");
+    if (!foodCard) throw new Error("food picker catalog card not found");
+
+    const addButton = foodCard.find('[data-testid="itab-add-card-add"]');
+    expect(addButton.text()).toBe("添加");
+    expect(addButton.attributes("disabled")).toBeUndefined();
+
+    await addButton.trigger("click");
+
+    expect(addSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        kind: "widget",
+        catalogItemId: ITAB_FOOD_PICKER_CATALOG_ID,
+        destinationGroupId: "home",
+        saveMode: "dirty",
+        sizeKey: "2x2",
+      }),
+    );
+  });
+
+  it("maps the amount conversion recommendation to the add flow", async () => {
+    const addSpy = vi.fn(async (payload: AddComponentPayload) => ({
+      status: "success" as const,
+      id: payload.kind === "widget" ? payload.catalogItemId : "created",
+      groupId: payload.destinationGroupId,
+    }));
+    const wrapper = mountModal(addSpy);
+
+    await wrapper.find('[data-testid="itab-add-search"]').setValue("金额换算");
+    await wrapper.vm.$nextTick();
+
+    const numberCard = wrapper
+      .findAll('[data-testid="itab-add-widget-card"]')
+      .find((card) => card.find("h3").text() === "金额换算");
+    if (!numberCard) throw new Error("number uppercase catalog card not found");
+
+    const addButton = numberCard.find('[data-testid="itab-add-card-add"]');
+    expect(addButton.text()).toBe("添加");
+    expect(addButton.attributes("disabled")).toBeUndefined();
+
+    await addButton.trigger("click");
+
+    expect(addSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        kind: "widget",
+        catalogItemId: ITAB_NUMBER_UPPERCASE_CATALOG_ID,
+        destinationGroupId: "home",
+        saveMode: "dirty",
+        sizeKey: "2x2",
       }),
     );
   });
@@ -233,11 +431,11 @@ describe("AddWidgetModal iTab add UI", () => {
     const pomodoroButton = pomodoroCard.find(
       '[data-testid="itab-add-card-add"]',
     );
-    expect(clockButton.text()).toBe("启用");
-    expect(memoButton.text()).toBe("启用");
-    expect(todoButton.text()).toBe("启用");
-    expect(pomodoroButton.text()).toBe("启用");
-    expect(poemButton.text()).toBe("启用");
+    expect(clockButton.text()).toBe("添加");
+    expect(memoButton.text()).toBe("添加");
+    expect(todoButton.text()).toBe("添加");
+    expect(pomodoroButton.text()).toBe("添加");
+    expect(poemButton.text()).toBe("添加");
     expect(clockButton.attributes("disabled")).toBeUndefined();
     expect(memoButton.attributes("disabled")).toBeUndefined();
     expect(todoButton.attributes("disabled")).toBeUndefined();
@@ -297,7 +495,7 @@ describe("AddWidgetModal iTab add UI", () => {
     );
   });
 
-  it("shows enabled and enable states for canonical iTab weather singleton", async () => {
+  it("reports canonical iTab weather singleton state when matching widgets already exist", async () => {
     const enabled = mountModal(undefined, undefined);
     await enabled.setProps({
       widgets: [
@@ -334,25 +532,18 @@ describe("AddWidgetModal iTab add UI", () => {
     expect(disabled.find('[data-testid="itab-add-card-add"]').text()).toBe(
       "启用",
     );
+    expect(
+      disabled.find('[data-testid="itab-add-card-add"]').attributes("disabled"),
+    ).toBeUndefined();
   });
 
-  it("maps site and custom saves into site/custom payloads", async () => {
+  it("maps custom saves into custom-icon payloads", async () => {
     const addSpy = vi.fn(async (payload: AddComponentPayload) => ({
       status: "success" as const,
       id: payload.kind === "widget" ? payload.catalogItemId : "created",
       groupId: payload.destinationGroupId,
     }));
     const wrapper = mountModal(addSpy);
-
-    await wrapper.find('[data-testid="itab-add-tab-site"]').trigger("click");
-    await wrapper.find('[data-testid="itab-add-card-add"]').trigger("click");
-    expect(addSpy).toHaveBeenLastCalledWith(
-      expect.objectContaining({
-        kind: "site-shortcut",
-        saveMode: "save",
-        destinationGroupId: "home",
-      }),
-    );
 
     await wrapper.find('[data-testid="itab-add-tab-custom"]').trigger("click");
     await wrapper
@@ -383,25 +574,5 @@ describe("AddWidgetModal iTab add UI", () => {
     if (payload?.kind === "custom-icon") {
       expect(payload.navItem.icon).toContain("data:image/svg+xml");
     }
-  });
-
-  it("renders explicit site loading, error, and empty fixture states", async () => {
-    const loading = mountModal(undefined, { loading: true });
-    await loading.find('[data-testid="itab-add-tab-site"]').trigger("click");
-    expect(loading.find('[data-testid="itab-add-site-loading"]').exists()).toBe(
-      true,
-    );
-
-    const error = mountModal(undefined, { error: "站点目录加载失败" });
-    await error.find('[data-testid="itab-add-tab-site"]').trigger("click");
-    expect(error.find('[data-testid="itab-add-site-error"]').text()).toContain(
-      "站点目录加载失败",
-    );
-
-    const empty = mountModal(undefined, { items: [] });
-    await empty.find('[data-testid="itab-add-tab-site"]').trigger("click");
-    expect(empty.find('[data-testid="itab-add-site-empty"]').exists()).toBe(
-      true,
-    );
   });
 });

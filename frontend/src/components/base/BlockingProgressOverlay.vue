@@ -40,7 +40,7 @@ const progressPercent = computed(() => {
     :show-close="false"
     overlay-class="sd-overlay-strong"
     panel-class="w-full max-w-sm"
-    surface-class="max-w-sm"
+    surface-class="max-w-sm sd-compact-window"
     body-class="pt-4"
   >
     <div class="sd-progress-stack">

@@ -2,9 +2,9 @@
 set -euo pipefail
 IFS=$'\n\t'
 
-# Debian 专用部署脚本 (Nginx + Go 版)
+# Debian 专用部署脚本 (Nginx + Rust 版)
 # 说明：
-#   本脚本将部署 Go 后端服务，并使用 Nginx 作为反向代理和静态文件服务器。
+#   本脚本将部署 Rust 后端服务，并使用 Nginx 作为反向代理和静态文件服务器。
 #   如果没有安装 Nginx，脚本会自动安装。
 #
 # 使用方式：
@@ -38,7 +38,6 @@ APP_DIR="${SERVER_DIR}/APP"
 DOC_DIR="${SERVER_DIR}/doc"
 ICON_SERVICE_DIR="${INSTALL_DIR}/icon-service"
 ICON_DATA_DIR="${ICON_SERVICE_DIR}/data"
-ICON_CONFIG_FILE="${ICON_SERVICE_DIR}/config.json"
 LOG_DIR="/var/log/${APP_NAME}"
 CONFIG_DIR="/etc/${APP_NAME}"
 CONFIG_FILE="${CONFIG_DIR}/${APP_NAME}.env"
@@ -177,7 +176,7 @@ load_existing_config() {
 write_systemd_service() {
   cat > "${SYSTEMD_SERVICE}" <<EOF
 [Unit]
-Description=StartDeck Go Service
+Description=StartDeck Rust Service
 Wants=${ICON_SERVICE_NAME}.service
 After=network.target ${ICON_SERVICE_NAME}.service
 
@@ -205,28 +204,9 @@ EOF
   systemctl daemon-reload
 }
 
-write_icon_service_config() {
+ensure_icon_service_data_dirs() {
   mkdir -p "${ICON_SERVICE_DIR}" "${ICON_DATA_DIR}/icons" "${ICON_DATA_DIR}/cache"
-  cat > "${ICON_CONFIG_FILE}" <<EOF
-{
-  "addr": ":${ICON_SERVER_PORT}",
-  "dataDir": "${ICON_DATA_DIR}",
-  "seedIconDir": "${ICON_DATA_DIR}/icons",
-  "cacheIconDir": "${ICON_DATA_DIR}/cache",
-  "cacheFile": "${ICON_DATA_DIR}/cache.json",
-  "seedJSON": "${ICON_DATA_DIR}/seed-data.json",
-  "iconPrefix": "/icons/",
-  "cachePrefix": "/cache/",
-  "publicIconBaseURL": "",
-  "microlinkBaseURL": "https://api.microlink.io/",
-  "microlinkAPIKey": "",
-  "itabFP": "",
-  "itabSignatureKey": "",
-  "itabToken": ""
-}
-EOF
   chown -R "${APP_USER}:${APP_USER}" "${ICON_SERVICE_DIR}"
-  chmod 644 "${ICON_CONFIG_FILE}"
 }
 
 write_icon_systemd_service() {
@@ -240,7 +220,9 @@ Type=simple
 User=${APP_USER}
 Group=${APP_USER}
 WorkingDirectory=${ICON_SERVICE_DIR}
-Environment=CONFIG_FILE=${ICON_CONFIG_FILE}
+EnvironmentFile=-${CONFIG_FILE}
+Environment=BASE_DIR=${INSTALL_DIR}
+Environment=ICON_SERVICE_PORT=${ICON_SERVER_PORT}
 ExecStart=${BIN_DIR}/${ICON_SERVICE_BINARY}
 Restart=on-failure
 RestartSec=5
@@ -331,6 +313,7 @@ PUBLIC_DIR=${PUBLIC_DIR}
 FRONTEND_PORT=${FRONTEND_PORT}
 BACKEND_PORT=${BACKEND_PORT}
 ICON_SERVER_PORT=${ICON_SERVER_PORT}
+ICON_SERVICE_PORT=${ICON_SERVER_PORT}
 ICON_SERVER_BASE_URL=http://127.0.0.1:${ICON_SERVER_PORT}
 ICON_SERVER_TIMEOUT_MS=5000
 EOF
@@ -414,17 +397,17 @@ load_existing_config
 # 端口配置
 FRONTEND_PORT="${STARTDECK_FRONTEND_PORT:-}"
 if [ -z "${FRONTEND_PORT}" ]; then
-  FRONTEND_PORT="$(prompt_port "前端访问端口 (Nginx)" "23000" "${EXISTING_FRONTEND_PORT}")"
+  FRONTEND_PORT="$(prompt_port "前端访问端口 (Nginx)" "9003" "${EXISTING_FRONTEND_PORT}")"
 fi
 
 BACKEND_PORT="${STARTDECK_BACKEND_PORT:-}"
 if [ -z "${BACKEND_PORT}" ]; then
-  BACKEND_PORT="$(prompt_port "后端服务端口 (Internal)" "3000" "${EXISTING_BACKEND_PORT}")"
+  BACKEND_PORT="$(prompt_port "后端服务端口 (Internal)" "9001" "${EXISTING_BACKEND_PORT}")"
 fi
 
 ICON_SERVER_PORT="${STARTDECK_ICON_SERVER_PORT:-}"
 if [ -z "${ICON_SERVER_PORT}" ]; then
-  ICON_SERVER_PORT="$(prompt_port "图标服务端口 (Internal)" "8080" "${EXISTING_ICON_SERVER_PORT}")"
+  ICON_SERVER_PORT="$(prompt_port "图标服务端口 (Internal)" "9002" "${EXISTING_ICON_SERVER_PORT}")"
 fi
 
 if ! validate_port "${FRONTEND_PORT}" || ! validate_port "${BACKEND_PORT}" || ! validate_port "${ICON_SERVER_PORT}"; then
@@ -578,7 +561,7 @@ chmod -R 755 "${ICON_SERVICE_DIR}"
 
 log_info "生成配置..."
 write_config
-write_icon_service_config
+ensure_icon_service_data_dirs
 write_icon_systemd_service
 write_systemd_service
 write_nginx_config

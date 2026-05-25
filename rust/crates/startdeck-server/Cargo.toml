@@ -1,0 +1,34 @@
+[package]
+name = "startdeck-server"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+anyhow.workspace = true
+axum.workspace = true
+base64.workspace = true
+bcrypt.workspace = true
+chrono.workspace = true
+flate2.workspace = true
+jsonwebtoken.workspace = true
+mime_guess.workspace = true
+reqwest.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+sha2.workspace = true
+sqlx.workspace = true
+startdeck-core = { path = "../startdeck-core" }
+thiserror.workspace = true
+tokio.workspace = true
+tower.workspace = true
+tower-http.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+utoipa.workspace = true
+uuid.workspace = true
+
+[dev-dependencies]
+tempfile = "3.24.0"
+tower = { version = "0.5", features = ["util"] }

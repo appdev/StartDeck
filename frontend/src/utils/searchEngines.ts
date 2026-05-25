@@ -1,12 +1,20 @@
 import type { SearchEngine } from "@/types";
-import { normalizeIconBackgroundColor } from "@/utils/iconAppearance";
-import { fetchSiteMetadata, getSiteIconUrl, normalizeSiteUrl } from "@/utils/siteMetadata";
+import { normalizeSiteUrl } from "@/utils/siteMetadata";
 
-export const createDefaultSearchEngines = (): SearchEngine[] => [
+const SEARCH_PLACEHOLDER = "{q}";
+
+const defaultSearchEngines: SearchEngine[] = [
+  {
+    id: "baidu",
+    key: "baidu",
+    label: "百度",
+    urlTemplate: "https://www.baidu.com/s?wd={q}",
+    iconSourceUrl: "https://www.baidu.com",
+  },
   {
     id: "google",
     key: "google",
-    label: "Google",
+    label: "谷歌",
     urlTemplate: "https://www.google.com/search?q={q}",
     iconSourceUrl: "https://www.google.com",
   },
@@ -17,140 +25,111 @@ export const createDefaultSearchEngines = (): SearchEngine[] => [
     urlTemplate: "https://cn.bing.com/search?q={q}",
     iconSourceUrl: "https://cn.bing.com",
   },
-  {
-    id: "baidu",
-    key: "baidu",
-    label: "百度",
-    urlTemplate: "https://www.baidu.com/s?wd={q}",
-    iconSourceUrl: "https://www.baidu.com",
-  },
 ];
 
-const metadataRequests = new Map<string, ReturnType<typeof fetchSiteMetadata>>();
+export const DEFAULT_SEARCH_ENGINE_KEYS = new Set(
+  defaultSearchEngines.map((engine) => engine.key),
+);
 
-const normalizeUrlCandidate = (value: string) => {
-  const raw = value.trim();
-  if (!raw) return "";
+const DEPRECATED_SEARCH_ENGINE_KEYS = new Set(["so", "metaso"]);
 
-  try {
-    const normalized = normalizeSiteUrl(raw);
-    const parsed = new URL(normalized);
-    return parsed.origin;
-  } catch {
-    return "";
+const cloneEngine = (engine: SearchEngine): SearchEngine => ({
+  ...engine,
+});
+
+export const createDefaultSearchEngines = (): SearchEngine[] =>
+  defaultSearchEngines.map(cloneEngine);
+
+const defaultSearchEngineByKey = new Map(
+  defaultSearchEngines.map((engine) => [engine.key, engine] as const),
+);
+
+const normalizeKey = (value: string) =>
+  value
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9_-]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+
+export const createSearchEngineKey = (label: string) => {
+  const base = normalizeKey(label) || `custom-${Date.now().toString(36)}`;
+  return `${base}-${Math.random().toString(36).slice(2, 7)}`;
+};
+
+const normalizeSearchEngine = (
+  engine: SearchEngine,
+  fallbackIndex: number,
+): SearchEngine | null => {
+  const label = String(engine.label || "").trim();
+  const urlTemplate = String(engine.urlTemplate || "").trim();
+  if (!label || !urlTemplate) return null;
+  const key = normalizeKey(String(engine.key || engine.id || label));
+  if (DEPRECATED_SEARCH_ENGINE_KEYS.has(key)) return null;
+  const builtInDefault = defaultSearchEngineByKey.get(key);
+  const builtInLegacyLabel =
+    (key === "google" && label === "Google") ||
+    (key === "bing" && label === "必应");
+  return {
+    ...engine,
+    id: String(
+      engine.id || builtInDefault?.id || key || `search-${fallbackIndex}`,
+    ),
+    key: key || `search-${fallbackIndex}`,
+    label: builtInLegacyLabel ? builtInDefault?.label || label : label,
+    urlTemplate,
+    iconSourceUrl: engine.iconSourceUrl || builtInDefault?.iconSourceUrl,
+    custom: engine.custom === true || !DEFAULT_SEARCH_ENGINE_KEYS.has(key),
+  };
+};
+
+export const normalizeSearchEngines = (
+  engines?: SearchEngine[] | null,
+): SearchEngine[] => {
+  const defaults = createDefaultSearchEngines();
+  if (!Array.isArray(engines)) return defaults;
+  const seen = new Set<string>();
+  const normalized: SearchEngine[] = [];
+
+  for (const [index, engine] of engines.entries()) {
+    const next = normalizeSearchEngine(engine, index);
+    if (!next || seen.has(next.key)) continue;
+    seen.add(next.key);
+    normalized.push(next);
   }
+
+  return normalized.length > 0 ? normalized : defaults;
 };
 
-export const normalizeSearchEngines = (engines?: SearchEngine[] | null): SearchEngine[] => {
-  if (Array.isArray(engines) && engines.length > 0) return engines;
-  return createDefaultSearchEngines();
-};
-
-export const getSearchEngineSourceUrl = (engine?: SearchEngine | null) => {
-  if (!engine) return "";
-  const explicitSource = normalizeUrlCandidate(engine.iconSourceUrl || "");
-  if (explicitSource) return explicitSource;
-
-  const template = String(engine.urlTemplate || "").replaceAll("{q}", "startdeck");
-  return normalizeUrlCandidate(template);
-};
-
-export const getSearchEngineIcon = (engine?: SearchEngine | null) => {
-  if (!engine) return "";
-  const savedIcon = engine.icon?.trim();
-  if (savedIcon) return savedIcon;
-
-  const sourceUrl = getSearchEngineSourceUrl(engine);
-  return sourceUrl ? getSiteIconUrl(sourceUrl) : "";
-};
-
-export const shouldHydrateSearchEngineIcon = (
-  engine?: SearchEngine | null,
-  force = false,
+export const normalizeDefaultSearchEngine = (
+  key: string | undefined,
+  engines: SearchEngine[],
 ) => {
-  if (!engine) return false;
-  const sourceUrl = getSearchEngineSourceUrl(engine);
-  if (!sourceUrl) return false;
-  if (force) return true;
-  if (!engine.icon?.trim()) return true;
-  if (engine.iconSourceUrl !== sourceUrl) return true;
-  return engine.iconBackgroundMode !== "auto" && engine.iconBackgroundMode !== "custom";
+  if (key && engines.some((engine) => engine.key === key)) return key;
+  return engines[0]?.key || createDefaultSearchEngines()[0]!.key;
 };
 
-export const buildSearchEngineUrl = (engine: SearchEngine | undefined, query: string) => {
-  const encodedQuery = encodeURIComponent(query);
-  const template = engine?.urlTemplate || createDefaultSearchEngines()[0].urlTemplate;
+export const buildSearchEngineUrl = (
+  engine: SearchEngine | undefined,
+  query: string,
+) => {
+  const encodedQuery = encodeURIComponent(query.trim());
+  const template =
+    engine?.urlTemplate || createDefaultSearchEngines()[0]!.urlTemplate;
 
-  if (template.includes("{q}")) {
-    return normalizeSiteUrl(template.replaceAll("{q}", encodedQuery));
+  if (template.includes(SEARCH_PLACEHOLDER)) {
+    return normalizeSiteUrl(
+      template.replaceAll(SEARCH_PLACEHOLDER, encodedQuery),
+    );
   }
 
   try {
     const parsed = new URL(normalizeSiteUrl(template));
-    parsed.searchParams.set("q", query);
+    parsed.searchParams.set("q", query.trim());
     return parsed.toString();
   } catch {
-    return `${createDefaultSearchEngines()[0].urlTemplate.replace("{q}", encodedQuery)}`;
+    return createDefaultSearchEngines()[0]!.urlTemplate.replace(
+      SEARCH_PLACEHOLDER,
+      encodedQuery,
+    );
   }
-};
-
-export const hydrateSearchEngineIcon = async (engine: SearchEngine, force = false) => {
-  const sourceUrl = getSearchEngineSourceUrl(engine);
-  if (!sourceUrl) return false;
-  if (!shouldHydrateSearchEngineIcon(engine, force)) return false;
-
-  let request = metadataRequests.get(sourceUrl);
-  if (!request || force) {
-    request = fetchSiteMetadata(sourceUrl);
-    metadataRequests.set(sourceUrl, request);
-  }
-
-  const metadata = await request.catch(() => null);
-  const nextIcon = metadata?.icon?.trim();
-  if (!nextIcon) return false;
-  const nextBackground = normalizeIconBackgroundColor(metadata?.backgroundColor) || undefined;
-
-  let changed = false;
-  if (engine.icon !== nextIcon) {
-    engine.icon = nextIcon;
-    changed = true;
-  }
-  if (engine.iconSourceUrl !== sourceUrl) {
-    engine.iconSourceUrl = sourceUrl;
-    changed = true;
-  }
-  if (metadata?.fetchedAt && engine.iconFetchedAt !== metadata.fetchedAt) {
-    engine.iconFetchedAt = metadata.fetchedAt;
-    changed = true;
-  }
-  if (engine.iconBackgroundMode !== "custom") {
-    if (engine.iconBackgroundMode !== "auto") {
-      engine.iconBackgroundMode = "auto";
-      changed = true;
-    }
-    if (engine.iconAutoBackgroundColor !== nextBackground) {
-      engine.iconAutoBackgroundColor = nextBackground;
-      changed = true;
-    }
-  }
-
-  return changed;
-};
-
-export const hydrateSearchEngineIcons = async (
-  engines: SearchEngine[],
-  options: { force?: boolean; onChanged?: () => void } = {},
-) => {
-  const results = await Promise.all(
-    engines.map((engine) => hydrateSearchEngineIcon(engine, options.force)),
-  );
-  if (results.some(Boolean)) {
-    options.onChanged?.();
-    return true;
-  }
-  return false;
-};
-
-export const resetSearchEngineMetadataCacheForTests = () => {
-  metadataRequests.clear();
 };

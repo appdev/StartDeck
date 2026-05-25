@@ -64,7 +64,11 @@ const MAX_MANAGED_BYTES = 200 * 1024 * 1024;
 
 const getMemorySample = (): MemorySample | null => {
   const perf = performance as Performance & {
-    memory?: { usedJSHeapSize: number; totalJSHeapSize: number; jsHeapSizeLimit: number };
+    memory?: {
+      usedJSHeapSize: number;
+      totalJSHeapSize: number;
+      jsHeapSizeLimit: number;
+    };
   };
   if (!perf.memory) return null;
   return {
@@ -86,7 +90,8 @@ const snapshot = (): ObjectUrlRuntimeSnapshot => {
     if (entry.managed) {
       managedCount += 1;
       managedBytes += entry.size;
-      if (entry.refCount <= 0 && now - entry.lastUsed >= IDLE_TTL) idleManagedCount += 1;
+      if (entry.refCount <= 0 && now - entry.lastUsed >= IDLE_TTL)
+        idleManagedCount += 1;
     } else {
       unmanagedCount += 1;
       unmanagedBytes += entry.size;
@@ -142,7 +147,11 @@ const untrack = (url: string) => {
   urlMap.delete(url);
 };
 
-const createAndTrack = (obj: Blob | MediaSource, managed: boolean, key?: string) => {
+const createAndTrack = (
+  obj: Blob | MediaSource,
+  managed: boolean,
+  key?: string,
+) => {
   const runtime = window.__startdeckObjectUrlRuntime;
   if (!runtime) return URL.createObjectURL(obj);
   const url = runtime.originalCreate(obj);
@@ -163,9 +172,14 @@ const sweep = () => {
     untrack(entry.url);
   }
 
-  const remaining = Array.from(urlMap.values()).filter((e) => e.managed && e.refCount <= 0);
+  const remaining = Array.from(urlMap.values()).filter(
+    (e) => e.managed && e.refCount <= 0,
+  );
   const managedBytes = remaining.reduce((sum, e) => sum + e.size, 0);
-  if (remaining.length > MAX_MANAGED_COUNT || managedBytes > MAX_MANAGED_BYTES) {
+  if (
+    remaining.length > MAX_MANAGED_COUNT ||
+    managedBytes > MAX_MANAGED_BYTES
+  ) {
     remaining.sort((a, b) => a.lastUsed - b.lastUsed);
     let count = remaining.length;
     let bytes = managedBytes;
@@ -188,7 +202,8 @@ const startTimers = () => {
       const sample = getMemorySample();
       if (sample) {
         samples.push(sample);
-        if (samples.length > MAX_SAMPLES) samples.splice(0, samples.length - MAX_SAMPLES);
+        if (samples.length > MAX_SAMPLES)
+          samples.splice(0, samples.length - MAX_SAMPLES);
       }
       notify();
     }, SAMPLE_INTERVAL);
@@ -233,7 +248,9 @@ export const initObjectUrlRuntime = () => {
   window.addEventListener("pagehide", sweep);
 };
 
-export const subscribeObjectUrlRuntime = (fn: (snapshot: ObjectUrlRuntimeSnapshot) => void) => {
+export const subscribeObjectUrlRuntime = (
+  fn: (snapshot: ObjectUrlRuntimeSnapshot) => void,
+) => {
   listeners.add(fn);
   fn(snapshot());
   return () => {
@@ -286,7 +303,9 @@ export const releaseObjectUrl = (key: string, immediate?: boolean) => {
 
 export const getObjectUrlRuntimeSnapshot = () => snapshot();
 
-export const getObjectUrlRuntimeReport = (limit = 5): ObjectUrlRuntimeReport => {
+export const getObjectUrlRuntimeReport = (
+  limit = 5,
+): ObjectUrlRuntimeReport => {
   const now = Date.now();
   const largest = Array.from(urlMap.values())
     .sort((a, b) => b.size - a.size)

@@ -1,10 +1,12 @@
 import { ref, computed } from "vue";
 import { defineStore } from "pinia";
 import type { NavItem, NavGroup } from "@/types";
+import { useUiFeedbackStore } from "./uiFeedback";
 
 export const useGroupsStore = defineStore("groups", () => {
   const groups = ref<NavGroup[]>([]);
   const items = computed(() => groups.value.flatMap((g) => g.items));
+  const uiFeedback = useUiFeedbackStore();
 
   const cleanInvalidGroups = () => {
     const seen = new Set<string>();
@@ -30,8 +32,22 @@ export const useGroupsStore = defineStore("groups", () => {
   };
 
   const deleteGroup = (groupId: string, skipConfirm = false) => {
-    if (!skipConfirm && !confirm("确定删除？")) return;
-    groups.value = groups.value.filter((g) => g.id !== groupId);
+    if (skipConfirm) {
+      groups.value = groups.value.filter((g) => g.id !== groupId);
+      return;
+    }
+    void uiFeedback
+      .confirm({
+        title: "删除分组",
+        message: "确定删除？",
+        confirmLabel: "删除",
+        cancelLabel: "取消",
+        tone: "danger",
+      })
+      .then((confirmed) => {
+        if (!confirmed) return;
+        groups.value = groups.value.filter((g) => g.id !== groupId);
+      });
   };
 
   const updateGroupTitle = (groupId: string, newTitle: string) => {

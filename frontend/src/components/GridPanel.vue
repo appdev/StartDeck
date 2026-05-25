@@ -12,28 +12,36 @@ import {
   type AsyncComponentLoader,
 } from "vue";
 import { VueDraggable } from "vue-draggable-plus";
-import { GridLayout, GridItem } from "grid-layout-plus";
+import { GridStack } from "gridstack";
+import type {
+  GridItemHTMLElement,
+  GridStackNode,
+  GridStackOptions,
+  GridStackWidget,
+} from "gridstack";
 import { useStorage, useWindowSize, useIntervalFn } from "@vueuse/core";
+import { SolarDay } from "tyme4ts";
 import { useMainStore } from "../stores/main";
 import { canReadResource } from "@/utils/permissions";
 import { useWallpaperRotation } from "../composables/useWallpaperRotation";
 import { useDevice } from "../composables/useDevice";
 import {
   resolveWidgetSizeState,
-  useWidgetResize,
   type WidgetSize,
 } from "../composables/useWidgetResize";
 import { resolveWidgetDisplaySize } from "@/composables/useWidgetDisplaySize";
-import { generateLayout, type GridLayoutItem } from "../utils/gridLayout";
+import {
+  generateLayout,
+  resolveResizeLayout,
+  type GridLayoutItem,
+} from "../utils/gridLayout";
 import type { NavItem, SearchEngine, WidgetConfig, NavGroup } from "@/types";
 import ConfirmDialog from "@/components/base/ConfirmDialog.vue";
 import ContextMenuSurface from "@/components/base/ContextMenuSurface.vue";
 import HomeActionBar from "@/components/home/HomeActionBar.vue";
-import HomeGroupTabs from "@/components/home/HomeGroupTabs.vue";
 import HomeTopActions from "@/components/home/HomeTopActions.vue";
 import MainWidgetShell from "@/components/home/MainWidgetShell.vue";
 import WidgetEditFrame from "@/components/home/WidgetEditFrame.vue";
-import WidgetResizeOverlay from "@/components/home/WidgetResizeOverlay.vue";
 import WidgetSizeStrip from "@/components/home/WidgetSizeStrip.vue";
 import { toCatalogWidgetSizeKey } from "@/utils/widgetSizePresets";
 import WidgetRuntimeFrame from "@/features/widget-runtime/WidgetRuntimeFrame.vue";
@@ -52,7 +60,6 @@ import {
 } from "@/features/widget-runtime/widgetRuntimeSizes";
 import { toItabWidgetSizeKey } from "@/features/itab-widgets/itabSizePresets";
 import {
-  ITAB_GRID_CELL,
   ITAB_GRID_GAP,
   ITAB_GRID_MAX_COLUMNS,
   ITAB_GRID_PITCH,
@@ -73,7 +80,12 @@ import {
   ITAB_ANNIVERSARY_CATALOG_ID,
   ITAB_ANNIVERSARY_WIDGET_TYPE,
 } from "@/features/itab-anniversary/itabAnniversaryTypes";
+import { ITAB_WALLPAPER_WIDGET_TYPE } from "@/features/itab-wallpaper/itabWallpaperTypes";
+import { ITAB_MOVIE_CALENDAR_WIDGET_TYPE } from "@/features/itab-movie-calendar/itabMovieCalendarTypes";
 import { ITAB_CALENDAR_WIDGET_TYPE } from "@/features/itab-calendar/itabCalendarTypes";
+import { ITAB_IP_WIDGET_TYPE } from "@/features/itab-ip/itabIpTypes";
+import { ITAB_FOOD_PICKER_WIDGET_TYPE } from "@/features/itab-food-picker/itabFoodPickerTypes";
+import { ITAB_NUMBER_UPPERCASE_WIDGET_TYPE } from "@/features/itab-number-uppercase/itabNumberUppercaseTypes";
 import { createDefaultItabAnniversaryWidget } from "@/features/itab-anniversary/itabAnniversaryModel";
 import ItabMemoFixedLayer from "@/features/itab-memo/ItabMemoFixedLayer.vue";
 import { useUiFeedbackStore } from "@/stores/uiFeedback";
@@ -85,14 +97,23 @@ import {
 import { resolveIconBackground } from "@/utils/iconAppearance";
 import {
   buildSearchEngineUrl,
-  hydrateSearchEngineIcons,
+  normalizeDefaultSearchEngine,
   normalizeSearchEngines,
 } from "@/utils/searchEngines";
 import {
   createWidgetFromCatalog,
   findExistingCatalogWidget,
+  getWidgetCatalogAction,
   getWidgetCatalogItem,
 } from "@/utils/widgetCatalog";
+import { blurActiveElementMatching } from "@/utils/focus";
+import {
+  DEFAULT_GROUP_GAP,
+  DEFAULT_NAV_CARD_SIZE,
+  DEFAULT_NAV_GRID_GAP,
+  DEFAULT_NAV_ICON_SIZE,
+  DEFAULT_WIDGET_AREA_COLS,
+} from "@/utils/layoutDefaults";
 import type {
   AddComponentPayload,
   AddComponentResult,
@@ -136,20 +157,7 @@ const GroupSettingsModal = loadAsync(() => import("./GroupSettingsModal.vue"));
 const AddWidgetModal = loadAsync(() => import("./AddWidgetModal.vue"));
 /** 同步导入，避免生产/Docker 下动态 chunk 请求失败导致登录框无法弹出；LoginModal 内已做 store/authMode 防御 */
 import LoginModal from "./LoginModal.vue";
-const BookmarkWidget = loadAsync(() => import("./BookmarkWidget.vue"));
-const CalculatorWidget = loadAsync(() => import("./CalculatorWidget.vue"));
-const HotWidget = loadAsync(() => import("./HotWidget.vue"));
-const RssWidget = loadAsync(() => import("./RssWidget.vue"));
 const IconShape = loadAsync(() => import("./IconShape.vue"));
-const SearchEngineIcon = loadAsync(() => import("./SearchEngineIcon.vue"));
-const IframeWidget = loadAsync(() => import("./IframeWidget.vue"));
-const AppSidebar = loadAsync(() => import("./AppSidebar.vue"));
-const CountdownWidget = loadAsync(() => import("./CountdownWidget.vue"));
-const CountUpWidget = loadAsync(() => import("./CountUpWidget.vue"));
-const DockerWidget = loadAsync(() => import("./DockerWidget.vue"));
-const SystemStatusWidget = loadAsync(() => import("./SystemStatusWidget.vue"));
-const CustomCssWidget = loadAsync(() => import("./CustomCssWidget.vue"));
-const FileTransferWidget = loadAsync(() => import("./FileTransferWidget.vue"));
 
 const store = useMainStore();
 useWallpaperRotation();
@@ -165,20 +173,15 @@ const gridWidgetTypes = new Set([
   ITAB_DAILY_ENGLISH_WIDGET_TYPE,
   ITAB_POMODORO_WIDGET_TYPE,
   ITAB_ANNIVERSARY_WIDGET_TYPE,
+  ITAB_WALLPAPER_WIDGET_TYPE,
+  ITAB_MOVIE_CALENDAR_WIDGET_TYPE,
   ITAB_CALENDAR_WIDGET_TYPE,
-  "calculator",
-  "ip",
-  "div-card",
-  "countdown",
-  "countup",
-  "iframe",
-  "bookmarks",
-  "hot",
-  "rss",
+  ITAB_IP_WIDGET_TYPE,
+  ITAB_NUMBER_UPPERCASE_WIDGET_TYPE,
+  ITAB_FOOD_PICKER_WIDGET_TYPE,
   "docker",
   "system-status",
   "custom-css",
-  "file-transfer",
 ]);
 
 const currentHour = ref(new Date().getHours());
@@ -216,9 +219,7 @@ const isEditMode = ref(false);
 const isHomeEditChromeVisible = computed(
   () => isEditMode.value && !showAddWidgetModal.value,
 );
-const HOME_WIDGET_DRAG_HOLD_MS = 200;
 const HOME_WIDGET_OPEN_SUPPRESS_MS = 350;
-const HOME_WIDGET_DRAG_SAVE_DELAY_MS = 500;
 const homeWidgetDragIgnoreFrom = [
   "a",
   "button",
@@ -236,14 +237,14 @@ const homeWidgetDragIgnoreFrom = [
   ".sd-modal-surface",
   ".sd-context-menu-surface",
 ].join(",");
-const homeWidgetDragOption = {
-  hold: HOME_WIDGET_DRAG_HOLD_MS,
-  delay: HOME_WIDGET_DRAG_HOLD_MS,
-};
 const isHomeWidgetDragging = ref(false);
 const suppressWidgetOpenUntil = ref(0);
 let homeWidgetDragIdleTimer: number | null = null;
-let homeWidgetDragSaveTimer: number | null = null;
+let homeWidgetDragTrackingCleanupTimer: number | null = null;
+let homeWidgetDragStartLayout: Map<
+  string,
+  Pick<GridLayoutItem, "x" | "y" | "w" | "h">
+> | null = null;
 
 const shouldSuppressHomeWidgetOpen = () =>
   isHomeWidgetDragging.value || Date.now() < suppressWidgetOpenUntil.value;
@@ -254,33 +255,74 @@ const clearHomeWidgetDragIdleTimer = () => {
   homeWidgetDragIdleTimer = null;
 };
 
-const clearHomeWidgetDragSaveTimer = () => {
-  if (homeWidgetDragSaveTimer === null) return;
-  window.clearTimeout(homeWidgetDragSaveTimer);
-  homeWidgetDragSaveTimer = null;
+const clearHomeWidgetDragTrackingCleanupTimer = () => {
+  if (homeWidgetDragTrackingCleanupTimer === null) return;
+  window.clearTimeout(homeWidgetDragTrackingCleanupTimer);
+  homeWidgetDragTrackingCleanupTimer = null;
 };
 
-const scheduleHomeWidgetDragSave = () => {
+const resetHomeWidgetDragTracking = () => {
+  clearHomeWidgetDragTrackingCleanupTimer();
+  homeWidgetDragStartLayout = null;
+};
+
+const scheduleHomeWidgetDragTrackingCleanup = () => {
+  clearHomeWidgetDragTrackingCleanupTimer();
+  homeWidgetDragTrackingCleanupTimer = window.setTimeout(() => {
+    resetHomeWidgetDragTracking();
+  }, HOME_WIDGET_OPEN_SUPPRESS_MS + 100);
+};
+
+const captureHomeWidgetDragStartLayout = () => {
+  if (homeWidgetDragStartLayout) return;
+  homeWidgetDragStartLayout = new Map(
+    layoutData.value.map((item) => [
+      item.i,
+      { x: item.x, y: item.y, w: item.w, h: item.h },
+    ]),
+  );
+};
+
+const hasHomeWidgetDragLayoutChanged = (nextLayout: GridLayoutItem[]) => {
+  if (!homeWidgetDragStartLayout) return false;
+  if (homeWidgetDragStartLayout.size !== nextLayout.length) return true;
+  return nextLayout.some((item) => {
+    const origin = homeWidgetDragStartLayout?.get(item.i);
+    if (!origin) return true;
+    return (
+      origin.x !== item.x ||
+      origin.y !== item.y ||
+      origin.w !== item.w ||
+      origin.h !== item.h
+    );
+  });
+};
+
+const saveHomeWidgetDragLayout = () => {
   if (!store.isLogged) return;
-  clearHomeWidgetDragSaveTimer();
-  homeWidgetDragSaveTimer = window.setTimeout(() => {
-    homeWidgetDragSaveTimer = null;
-    void store.saveData(true);
-  }, HOME_WIDGET_DRAG_SAVE_DELAY_MS);
+  void store.saveData(true).catch((error) => {
+    console.error("Failed to save home widget drag layout", error);
+  });
 };
 
 const finishHomeWidgetDrag = () => {
   clearHomeWidgetDragIdleTimer();
+  scheduleHomeWidgetDragTrackingCleanup();
   if (!isHomeWidgetDragging.value) return;
   isHomeWidgetDragging.value = false;
   suppressWidgetOpenUntil.value = Date.now() + HOME_WIDGET_OPEN_SUPPRESS_MS;
-  scheduleHomeWidgetDragSave();
 };
 
 const beginHomeWidgetDrag = () => {
+  if (!store.isLogged) return;
+  const isNewDrag = !isHomeWidgetDragging.value;
   closeContextMenu();
   closeBlankContextMenu();
   closeRuntimeContextMenu();
+  if (isNewDrag) {
+    resetHomeWidgetDragTracking();
+    captureHomeWidgetDragStartLayout();
+  }
   isHomeWidgetDragging.value = true;
   clearHomeWidgetDragIdleTimer();
   homeWidgetDragIdleTimer = window.setTimeout(() => {
@@ -358,36 +400,8 @@ const handleHomeActionSave = async () => {
 const selectedWidgetId = ref<string | null>(null);
 const currentEditItem = ref<NavItem | null>(null);
 const currentGroupId = ref<string>("");
-const activePaginationGroupId = computed<string>({
-  get: () => store.webPaginationActiveGroupId || "",
-  set: (val) => {
-    store.webPaginationActiveGroupId = val;
-  },
-});
-const isWebPaginationMode = computed(
-  () => store.appConfig.webGroupPagination && !isMobile.value,
-);
-const mainContainerRef = ref<HTMLElement | null>(null);
 
 const isGridAlive = ref(true);
-
-watch(
-  [() => store.groups, isWebPaginationMode],
-  ([groups, mode]) => {
-    if (mode && groups.length > 0) {
-      if (
-        !activePaginationGroupId.value ||
-        !groups.find((g) => g.id === activePaginationGroupId.value)
-      ) {
-        const first = groups[0];
-        if (first) {
-          activePaginationGroupId.value = first.id;
-        }
-      }
-    }
-  },
-  { immediate: true, deep: true },
-);
 
 watch(showGroupSettingsModal, (val) => {
   if (val && !store.isLogged) {
@@ -408,8 +422,6 @@ watch(showGroupSettingsModal, (val) => {
 const isLanMode = ref(false);
 const latency = ref(0);
 const isChecking = ref(false);
-const networkScope =
-  typeof window !== "undefined" ? window.location.hostname : "default";
 const networkConfig = computed(() =>
   getNetworkConfig(store.appConfig, store.forceNetworkMode),
 );
@@ -422,16 +434,14 @@ const forceMode = computed({
 const latencyThresholdMs = computed(
   () => networkConfig.value.latencyThresholdMs,
 );
-const lastKnownClientIp = ref("");
-const lastKnownClientIpSource = ref("");
 
 const effectiveIsLan = computed(() => {
   if (!store.isLanModeInited) return false;
   const cfg = networkConfig.value;
   const result = computeEffectiveNetworkMode(
     window.location.hostname,
-    lastKnownClientIp.value,
-    lastKnownClientIpSource.value,
+    "",
+    "",
     latency.value,
     {
       internalDomains: cfg.internalDomains,
@@ -463,178 +473,100 @@ watch(
   { immediate: true },
 );
 
-const sidebarCollapsed = ref(true);
-const isSidebarEnabled = computed(() => {
-  const w = store.widgets.find((w) => w.type === "sidebar" && w.enable);
-  return checkVisible(w) && !(isMobile.value && w?.hideOnMobile);
-});
-const approvedHomeSidebarContractEnabled = false;
-const shouldRenderHomeSidebar = computed(
-  () => approvedHomeSidebarContractEnabled && isSidebarEnabled.value,
-);
-
 const toggleForceMode = () => {
   if (forceMode.value === "auto") forceMode.value = "lan";
   else if (forceMode.value === "lan") forceMode.value = "wan";
   else forceMode.value = "auto";
 };
 
-const searchEngineStored = useStorage("start-deck-engine", "google");
-const engines = computed(() =>
+const homeTopNow = ref(new Date());
+const homeSearchText = ref("");
+const homeSearchInputRef = ref<HTMLInputElement | null>(null);
+const storedHomeSearchEngine = useStorage("start-deck-engine", "so");
+const sessionHomeSearchEngine = ref<string | null>(null);
+let homeTopClockTimer: ReturnType<typeof setInterval> | null = null;
+
+const weekNames = ["日", "一", "二", "三", "四", "五", "六"];
+const padClock = (value: number) => String(value).padStart(2, "0");
+
+const showHomeTopTime = computed(() => store.appConfig.showHomeTime !== false);
+const showHomeTopSearch = computed(
+  () => store.appConfig.showHomeSearch !== false,
+);
+const homeSearchEngines = computed(() =>
   normalizeSearchEngines(store.appConfig.searchEngines),
 );
-const sessionEngine = ref<string | null>(null);
-const effectiveEngine = computed({
-  get: () =>
-    sessionEngine.value ||
-    (store.appConfig.rememberLastEngine
-      ? searchEngineStored.value
-      : store.appConfig.defaultSearchEngine ||
-        engines.value[0]?.key ||
-        "google"),
-  set: (val: string) => {
-    sessionEngine.value = val;
-    if (store.appConfig.rememberLastEngine) {
-      searchEngineStored.value = val;
+const homeSearchEngineKey = computed({
+  get: () => {
+    const configured = store.appConfig.rememberLastEngine
+      ? storedHomeSearchEngine.value
+      : store.appConfig.defaultSearchEngine;
+    return normalizeDefaultSearchEngine(
+      sessionHomeSearchEngine.value || configured,
+      homeSearchEngines.value,
+    );
+  },
+  set: (value: string) => {
+    sessionHomeSearchEngine.value = value;
+    if (store.appConfig.rememberLastEngine !== false) {
+      storedHomeSearchEngine.value = value;
     }
   },
 });
-const searchText = ref("");
-const searchInputRef = ref<HTMLInputElement | null>(null);
-const searchEnginePickerRef = ref<HTMLElement | null>(null);
-const isSearchEngineMenuOpen = ref(false);
-let searchEngineIconSaveTimer: number | null = null;
-
-const activeSearchEngine = computed<SearchEngine | undefined>(() => {
-  return (
-    engines.value.find((engine) => engine.key === effectiveEngine.value) ||
-    engines.value.find(
-      (engine) => engine.key === store.appConfig.defaultSearchEngine,
-    ) ||
-    engines.value[0]
-  );
+const activeHomeSearchEngine = computed<SearchEngine | undefined>(() =>
+  homeSearchEngines.value.find(
+    (engine) => engine.key === homeSearchEngineKey.value,
+  ),
+);
+const homeTopHourText = computed(() => padClock(homeTopNow.value.getHours()));
+const homeTopMinuteText = computed(() =>
+  padClock(homeTopNow.value.getMinutes()),
+);
+const homeTopDateText = computed(() => {
+  const value = homeTopNow.value;
+  const month = value.getMonth() + 1;
+  const day = value.getDate();
+  const weekday = weekNames[value.getDay()] || "";
+  try {
+    const lunarDay = SolarDay.fromYmd(
+      value.getFullYear(),
+      month,
+      day,
+    ).getLunarDay();
+    return `${month}月${day}日星期${weekday}${lunarDay
+      .getLunarMonth()
+      .getName()}${lunarDay.getName()}`;
+  } catch {
+    return `${month}月${day}日星期${weekday}`;
+  }
 });
 
-const searchEngineIconFingerprint = computed(() =>
-  engines.value
-    .map(
-      (engine) =>
-        `${engine.key}:${engine.urlTemplate}:${engine.iconSourceUrl || ""}`,
-    )
-    .join("|"),
-);
+const refreshHomeTopTime = () => {
+  homeTopNow.value = new Date();
+};
 
-const closeSearchEngineMenu = (event?: MouseEvent) => {
-  if (!event) {
-    isSearchEngineMenuOpen.value = false;
+const selectHomeSearchEngine = (key: string) => {
+  homeSearchEngineKey.value = key;
+  nextTick(() => homeSearchInputRef.value?.focus());
+};
+
+const submitHomeSearch = () => {
+  const query = homeSearchText.value.trim();
+  if (!query) {
+    homeSearchInputRef.value?.focus();
     return;
   }
-  const target = event.target;
-  if (target instanceof Node && searchEnginePickerRef.value?.contains(target))
-    return;
-  isSearchEngineMenuOpen.value = false;
-};
-
-const toggleSearchEngineMenu = () => {
-  isSearchEngineMenuOpen.value = !isSearchEngineMenuOpen.value;
-};
-
-const selectSearchEngine = (key: string) => {
-  effectiveEngine.value = key;
-  isSearchEngineMenuOpen.value = false;
-  nextTick(() => searchInputRef.value?.focus());
-};
-
-const scheduleSearchEngineIconSave = () => {
-  if (!store.isLogged) return;
-  if (searchEngineIconSaveTimer) window.clearTimeout(searchEngineIconSaveTimer);
-  searchEngineIconSaveTimer = window.setTimeout(() => {
-    searchEngineIconSaveTimer = null;
-    void store.saveData();
-  }, 700);
-};
-
-const hexToRgb = (hex: string) => {
-  let h = hex.trim();
-  if (h.startsWith("#")) h = h.slice(1);
-  if (h.length === 3)
-    h = h
-      .split("")
-      .map((c) => c + c)
-      .join("");
-  if (h.length !== 6) return null;
-  const n = Number.parseInt(h, 16);
-  if (Number.isNaN(n)) return null;
-  return { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255 };
-};
-
-const rgbaFromHex = (hex: string, alpha: number) => {
-  const rgb = hexToRgb(hex);
-  if (!rgb) return null;
-  const a = Math.max(0, Math.min(1, alpha));
-  return `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${a})`;
-};
-
-const searchWidget = computed(() => {
-  const enabled = store.widgets.find(
-    (w) => w.type === "search" && w.enable !== false,
+  window.open(
+    buildSearchEngineUrl(activeHomeSearchEngine.value, query),
+    "_blank",
+    "noopener",
   );
-  if (enabled) return enabled as WidgetConfig;
-  const any = store.widgets.find((w) => w.type === "search");
-  return any as WidgetConfig | undefined;
-});
-const searchTextColor = computed(
-  () => searchWidget.value?.textColor || "#111827",
-);
-const searchBgAlpha = computed(() => {
-  const raw = searchWidget.value?.opacity;
-  if (typeof raw !== "number") return 0.9;
-  return Math.max(0.1, Math.min(1, raw));
-});
-const searchFrameBgAlpha = computed(() => Math.max(0.82, searchBgAlpha.value));
-const searchPlaceholderColor = computed(
-  () => rgbaFromHex(searchTextColor.value, 0.55) || "rgba(107, 114, 128, 1)",
-);
+  homeSearchText.value = "";
+};
 
-watch(
-  () => store.appConfig.defaultSearchEngine,
-  (newVal) => {
-    if (newVal) {
-      // 当默认搜索引擎改变时，重置会话选择
-      sessionEngine.value = null;
-      // 如果开启了"记住上次选择"，则同步更新存储的值
-      if (store.appConfig.rememberLastEngine) {
-        searchEngineStored.value = newVal;
-      }
-    }
-  },
-);
-
-watch(
-  engines,
-  (list) => {
-    if (!list.some((engine) => engine.key === effectiveEngine.value)) {
-      effectiveEngine.value =
-        list.find(
-          (engine) => engine.key === store.appConfig.defaultSearchEngine,
-        )?.key ||
-        list[0]?.key ||
-        "google";
-    }
-  },
-  { immediate: true },
-);
-
-watch(
-  [() => store.isClientReady, searchEngineIconFingerprint],
-  ([ready]) => {
-    if (!ready) return;
-    void hydrateSearchEngineIcons(engines.value, {
-      onChanged: scheduleSearchEngineIconSave,
-    });
-  },
-  { immediate: true },
-);
+const openHomeSearchSettings = () => {
+  showSettingsModal.value = true;
+};
 
 // --- 核心修复逻辑开始 ---
 // 用于清洗 SVG 代码中的无效颜色类名，强制转为白色
@@ -751,9 +683,7 @@ const widgetFrameSize = (widget: WidgetConfig) =>
 const widgetFrameMetadataSize = (widget: WidgetConfig) =>
   isMainShellManagedWidget(widget) ? "" : widgetFrameSize(widget);
 const desktopWidgetAreaCols = computed(() => {
-  const raw = store.appConfig.widgetAreaCols ?? store.appConfig.widgetAreaSize;
-  const n = typeof raw === "number" && Number.isFinite(raw) ? raw : 4;
-  const clamped = Math.min(16, Math.max(0.5, n));
+  const clamped = DEFAULT_WIDGET_AREA_COLS;
   if (store.isExpandedMode) return Math.min(16, Math.max(8, clamped));
   return clamped;
 });
@@ -781,6 +711,7 @@ const mainContentMaxWidthPx = computed(() => {
   return Math.max(0, target);
 });
 const mainContentMaxWidth = computed(() => `${mainContentMaxWidthPx.value}px`);
+const showHomeTitle = computed(() => store.appConfig.showHomeTitle !== false);
 const headerTitleText = computed(() => store.appConfig.customTitle || "");
 const headerTitleMaxWidth = computed(() => {
   if (!isHeaderRowLayout.value) {
@@ -822,48 +753,15 @@ const widgetColNum = computed(() =>
     resolveItabGridColumns(mainContentMaxWidthPx.value, ITAB_GRID_MAX_COLUMNS),
   ),
 );
-const itabGridLayoutWidth = computed(() =>
-  resolveItabGridContainerWidth(widgetColNum.value),
+const itabGridLayoutWidth = computed(
+  () => widgetColNum.value * ITAB_GRID_PITCH,
 );
 const lastDeviceKey = ref(deviceKey.value);
 const lastWidgetColNum = ref(widgetColNum.value);
-const rowHeight = computed(() => ITAB_GRID_CELL);
-const gridScale = 1;
-const gridMargin = computed<[number, number]>(() => [
-  ITAB_GRID_GAP,
-  ITAB_GRID_GAP,
-]);
-const scaledRowHeight = computed(() => rowHeight.value);
 const resizeStepHeight = computed(() => ITAB_GRID_PITCH);
-const scaleGridValue = (value: number) => Math.round(value * gridScale);
-const unscaleGridValue = (value: number) => Math.round(value) / gridScale;
-const scaledLayoutData = computed<GridLayoutItem[]>({
-  get: () =>
-    layoutData.value.map((item) => ({
-      ...item,
-      x: scaleGridValue(item.x),
-      y: scaleGridValue(item.y),
-      w: scaleGridValue(item.w),
-      h: scaleGridValue(item.h),
-    })),
-  set: (next) => {
-    const current = new Map(layoutData.value.map((item) => [item.i, item]));
-    layoutData.value = next.map((item) => {
-      const base = current.get(item.i);
-      const x = unscaleGridValue(item.x);
-      const y = unscaleGridValue(item.y);
-      const w = unscaleGridValue(item.w);
-      const h = unscaleGridValue(item.h);
-      if (base) {
-        return { ...base, x, y, w, h, colSpan: w, rowSpan: h };
-      }
-      return { ...item, x, y, w, h };
-    });
-  },
-});
 
 const compactVertical = (layout: GridLayoutItem[]) => {
-  const step = 1 / gridScale;
+  const step = 1;
   const collides = (a: GridLayoutItem, b: GridLayoutItem) =>
     a.i !== b.i &&
     a.x < b.x + b.w &&
@@ -976,7 +874,7 @@ watch(
     skipNextLayoutSave = true;
     layoutData.value = compactVertical(generateLayout(widgetsToLayout, colNum));
 
-    // 如果 deviceKey 发生变化，强制重新挂载 GridLayout 组件
+    // 如果 deviceKey 发生变化，强制重新挂载 GridStack 容器
     // 这可以解决从窄屏切换回宽屏时布局错乱的问题，同时避免 :key 导致的死循环
     if (shouldRemount && !isInternalUpdate && !isEditMode.value) {
       isGridAlive.value = false;
@@ -1035,127 +933,30 @@ const handleLayoutUpdated = (newLayout: GridLayoutItem[]) => {
 };
 
 const displayGroups = computed(() => {
-  // ✨ 性能优化：在编辑模式且无搜索时，直接返回 store.groups 引用
+  // ✨ 性能优化：在编辑模式时，直接返回 store.groups 引用
   // 这样 VueDraggable 就能直接操作 store 中的数组，确保拖拽状态实时同步
-  if (isEditMode.value && !searchText.value) {
+  if (isEditMode.value) {
     return store.groups;
   }
 
   return store.groups
     .map((g) => ({
       ...g,
-      items: g.items.filter((item) => {
-        const isMatch =
-          !searchText.value ||
-          item.title.toLowerCase().includes(searchText.value.toLowerCase()) ||
-          item.url.toLowerCase().includes(searchText.value.toLowerCase());
-        const isVisible = checkVisible(item);
-        return isMatch && isVisible;
-      }),
+      items: g.items.filter((item) => checkVisible(item)),
     }))
     .filter((g) => {
       if (store.isLogged) return true;
       return g.items.length > 0 || !!g.preset;
     });
 });
-const homeGroupTabs = computed(() =>
-  displayGroups.value.map((group) => ({
-    id: group.id,
-    title: group.title,
-  })),
-);
-const homeActiveGroupId = computed(
-  () => activePaginationGroupId.value || homeGroupTabs.value[0]?.id || "",
-);
-const handleHomeGroupTabSelect = (groupId: string) => {
-  activePaginationGroupId.value = groupId;
-  if (isWebPaginationMode.value) return;
-  void nextTick(() => {
-    const el = document.getElementById(`group-${groupId}`);
-    el?.scrollIntoView({ behavior: "smooth", block: "start" });
-  });
-};
-
-const paginationWheelLockUntil = ref(0);
-const getScrollElement = () => {
-  if (typeof document === "undefined") return null;
-  return (document.scrollingElement ||
-    document.documentElement ||
-    document.body) as HTMLElement | null;
-};
-const movePaginationGroup = (step: number) => {
-  const groups = displayGroups.value;
-  if (groups.length === 0) return;
-  const ids = groups.map((g) => g.id);
-  let idx = ids.indexOf(activePaginationGroupId.value);
-  if (idx < 0) idx = 0;
-  const nextId = ids[(idx + step + ids.length) % ids.length];
-  if (nextId) activePaginationGroupId.value = nextId;
-};
-const handleWebPaginationWheel = (e: WheelEvent) => {
-  if (!isWebPaginationMode.value) return;
-  if (isEditMode.value) return;
-  if (
-    showEditModal.value ||
-    showSettingsModal.value ||
-    showGroupSettingsModal.value ||
-    showAddWidgetModal.value ||
-    showLoginModal.value
-  )
-    return;
-  if (e.ctrlKey || e.metaKey || e.shiftKey) return;
-  if (!e.deltaY) return;
-
-  const now = Date.now();
-  if (now < paginationWheelLockUntil.value) return;
-
-  const scrollEl = getScrollElement();
-  if (!scrollEl) return;
-
-  const canScroll = scrollEl.scrollHeight - scrollEl.clientHeight > 2;
-  const atTop = scrollEl.scrollTop <= 0;
-  const atBottom =
-    scrollEl.scrollTop + scrollEl.clientHeight >= scrollEl.scrollHeight - 1;
-  const shouldPaginate = !canScroll || (e.deltaY < 0 ? atTop : atBottom);
-  if (!shouldPaginate) return;
-
-  e.preventDefault();
-  e.stopPropagation();
-
-  paginationWheelLockUntil.value = now + 320;
-  if (store.appConfig.webGroupPaginationDisableFlip) return;
-  movePaginationGroup(e.deltaY > 0 ? 1 : -1);
-};
-
-watch(
-  [activePaginationGroupId, isWebPaginationMode],
-  ([, mode]) => {
-    if (!mode) return;
-    nextTick(() => {
-      const el = getScrollElement();
-      el?.scrollTo({ top: 0 });
-    });
-  },
-  { flush: "post" },
-);
-
 const sanitizedFooterHtml = computed(() => {
   return DOMPurify.sanitize(store.appConfig.footerHtml || "");
 });
 
-onMounted(() => {
-  mainContainerRef.value?.addEventListener("wheel", handleWebPaginationWheel, {
-    passive: false,
-  });
-});
-
 onUnmounted(() => {
-  mainContainerRef.value?.removeEventListener(
-    "wheel",
-    handleWebPaginationWheel,
-  );
   clearHomeWidgetDragIdleTimer();
-  clearHomeWidgetDragSaveTimer();
+  resetHomeWidgetDragTracking();
+  destroyGridStack();
 });
 
 const handleSizeSelect = (
@@ -1201,8 +1002,12 @@ const handleSizeSelect = (
   );
   Object.assign(widget, normalizedWidget);
 
-  // Manually trigger layout compaction to resolve collisions
-  const newLayout = compactVertical(layoutData.value);
+  const newLayout = resolveResizeLayout(
+    layoutData.value,
+    widget.i || widget.id,
+    { colSpan: nextW, rowSpan: nextH },
+    widgetColNum.value,
+  );
   layoutData.value = newLayout;
 
   // Sync back to store (all widgets, not just the resized one)
@@ -1210,55 +1015,185 @@ const handleSizeSelect = (
 };
 
 const gridLayoutRootRef = ref<HTMLElement | null>(null);
-const commitWidgetResize = (widgetId: string, size: WidgetSize) => {
-  const widget = layoutData.value.find(
-    (item) => item.i === widgetId || item.id === widgetId,
-  );
-  if (!widget) return;
-  handleSizeSelect(widget, size);
-};
-const widgetResize = useWidgetResize({
-  deviceKey,
-  runtimeCols: widgetColNum,
-  rowHeight: resizeStepHeight,
-  columnWidth: resizeStepHeight,
-  gridElement: gridLayoutRootRef,
-  onCommit: commitWidgetResize,
-});
-const activeResizeWidgetId = computed(() => widgetResize.activeWidgetId.value);
-const isWidgetResizeDragging = computed(() => widgetResize.isDragging.value);
-const resizeOverlayState = computed(() => widgetResize.overlayState.value);
+const openedRuntimeWidgetId = ref("");
 const isHomeWidgetDragEnabled = computed(
   () =>
-    !isWidgetResizeDragging.value &&
+    store.isLogged &&
     !showAddWidgetModal.value &&
     !showSettingsModal.value &&
     !showGroupSettingsModal.value &&
     !showLoginModal.value &&
     !showEditModal.value &&
-    !openedRuntimeWidget.value,
+    !openedRuntimeWidgetId.value,
 );
+
+const gridStackRef = ref<GridStack | null>(null);
+const isGridStackReady = ref(false);
+let syncingGridStack = false;
+
+const gridStackOptions = (): GridStackOptions => ({
+  auto: false,
+  column: widgetColNum.value,
+  cellHeight: resizeStepHeight.value,
+  margin: ITAB_GRID_GAP / 2,
+  float: false,
+  animate: false,
+  disableResize: true,
+  disableDrag: !isHomeWidgetDragEnabled.value,
+  draggable: {
+    handle: ".grid-stack-item-content",
+    cancel: homeWidgetDragIgnoreFrom,
+    appendTo: "body",
+    scroll: true,
+  },
+});
+
+const toGridStackWidget = (item: GridLayoutItem): GridStackWidget => ({
+  id: item.i,
+  x: Math.max(0, Math.round(item.x || 0)),
+  y: Math.max(0, Math.round(item.y || 0)),
+  w: Math.max(1, Math.round(item.w || item.colSpan || 1)),
+  h: Math.max(1, Math.round(item.h || item.rowSpan || 1)),
+  noResize: true,
+});
+
+const getGridStackItemId = (node: GridStackNode | undefined, el: Element) =>
+  String(node?.id || el.getAttribute("gs-id") || "");
+
+const readGridStackLayout = () => {
+  const grid = gridStackRef.value;
+  if (!grid) return layoutData.value;
+  const currentById = new Map(layoutData.value.map((item) => [item.i, item]));
+  const next = grid.getGridItems().flatMap((el) => {
+    const node = el.gridstackNode;
+    const id = getGridStackItemId(node, el);
+    const base = currentById.get(id);
+    if (!id || !base) return [];
+    const x = Math.max(0, Math.round(node?.x ?? base.x ?? 0));
+    const y = Math.max(0, Math.round(node?.y ?? base.y ?? 0));
+    const w = Math.max(1, Math.round(node?.w ?? base.w ?? 1));
+    const h = Math.max(1, Math.round(node?.h ?? base.h ?? 1));
+    return [{ ...base, x, y, w, h, colSpan: w, rowSpan: h }];
+  });
+
+  const byId = new Map(next.map((item) => [item.i, item]));
+  return layoutData.value.map((item) => byId.get(item.i) || item);
+};
+
+const syncGridStackMoveState = () => {
+  const grid = gridStackRef.value;
+  if (!grid) return;
+  grid.enableMove(isHomeWidgetDragEnabled.value);
+  grid.enableResize(false);
+};
+
+const syncGridStackWidgets = async () => {
+  await nextTick();
+  const grid = gridStackRef.value;
+  const root = gridLayoutRootRef.value;
+  if (!grid || !root) return;
+
+  isGridStackReady.value = false;
+  syncingGridStack = true;
+  try {
+    grid.batchUpdate();
+    const liveIds = new Set(layoutData.value.map((item) => item.i));
+    grid.getGridItems().forEach((el) => {
+      const id = getGridStackItemId(el.gridstackNode, el);
+      if (!liveIds.has(id)) {
+        grid.removeWidget(el, false, false);
+      }
+    });
+
+    layoutData.value.forEach((item) => {
+      const el = Array.from(
+        root.querySelectorAll<HTMLElement>(".grid-stack-item"),
+      ).find((candidate) => candidate.dataset.widgetGridItem === item.id);
+      if (!el) return;
+      const options = toGridStackWidget(item);
+      if ((el as GridItemHTMLElement).gridstackNode) {
+        grid.update(el, options);
+      } else {
+        grid.makeWidget(el, options);
+      }
+    });
+    grid.batchUpdate(false);
+    syncGridStackMoveState();
+  } finally {
+    syncingGridStack = false;
+    await nextTick();
+    isGridStackReady.value = true;
+  }
+};
+
+const initializeGridStack = async () => {
+  await nextTick();
+  const root = gridLayoutRootRef.value;
+  if (!root || gridStackRef.value) return;
+  const grid = GridStack.init(gridStackOptions(), root);
+  grid.on("dragstart", () => {
+    beginHomeWidgetDrag();
+  });
+  grid.on("dragstop", () => {
+    if (syncingGridStack) return;
+    const nextLayout = readGridStackLayout();
+    const changed = homeWidgetDragStartLayout
+      ? hasHomeWidgetDragLayoutChanged(nextLayout)
+      : nextLayout.some((item) => {
+          const current = layoutData.value.find((entry) => entry.i === item.i);
+          return (
+            !current ||
+            current.x !== item.x ||
+            current.y !== item.y ||
+            current.w !== item.w ||
+            current.h !== item.h
+          );
+        });
+
+    if (changed) {
+      layoutData.value = nextLayout;
+      skipNextLayoutSave = false;
+      handleLayoutUpdated(nextLayout);
+    }
+    finishHomeWidgetDrag();
+    resetHomeWidgetDragTracking();
+    if (store.isLogged && changed) {
+      saveHomeWidgetDragLayout();
+    }
+  });
+  gridStackRef.value = grid;
+  await syncGridStackWidgets();
+};
+
+const destroyGridStack = () => {
+  gridStackRef.value?.destroy(false);
+  gridStackRef.value = null;
+  isGridStackReady.value = false;
+};
+
+watch(
+  [layoutData, widgetColNum, isHomeWidgetDragEnabled],
+  async () => {
+    if (!gridStackRef.value) {
+      await initializeGridStack();
+      return;
+    }
+    const grid = gridStackRef.value;
+    grid.column(widgetColNum.value, "move");
+    grid.cellHeight(resizeStepHeight.value);
+    grid.margin(ITAB_GRID_GAP / 2);
+    await syncGridStackWidgets();
+  },
+  { deep: true },
+);
+
+onMounted(() => {
+  void initializeGridStack();
+});
 
 const selectWidgetForEdit = (widgetId: string) => {
   if (!isHomeEditChromeVisible.value) return;
   selectedWidgetId.value = widgetId;
-};
-
-const startWidgetResize = (event: PointerEvent, widget: GridLayoutItem) => {
-  if (!isHomeEditChromeVisible.value) return;
-  selectWidgetForEdit(widget.id);
-  const resizeTarget =
-    event.currentTarget instanceof HTMLElement ? event.currentTarget : null;
-  const itemElement = resizeTarget?.closest("[data-widget-grid-item]");
-  widgetResize.beginResize(event, {
-    widgetId: widget.id,
-    widgetType: widget.type,
-    currentSize: {
-      colSpan: widget.w || widget.colSpan || 1,
-      rowSpan: widget.h || widget.rowSpan || 1,
-    },
-    itemElement: itemElement instanceof HTMLElement ? itemElement : null,
-  });
 };
 
 const selectedGridWidget = computed(() => {
@@ -1279,10 +1214,6 @@ const selectedWidgetSizeState = computed(() => {
       colSpan: widget.w || widget.colSpan || 1,
       rowSpan: widget.h || widget.rowSpan || 1,
     },
-    requestedSize:
-      resizeOverlayState.value?.widgetId === widget.id
-        ? resizeOverlayState.value.targetSize
-        : undefined,
   });
 });
 const isWidgetSizeStripVisible = computed(
@@ -1300,82 +1231,14 @@ const handleWidgetSizeStripSelect = (size: WidgetSize) => {
 watch(isEditMode, (val) => {
   if (val) return;
   selectedWidgetId.value = null;
-  widgetResize.cancelResize();
 });
 
-const handleScaledLayoutUpdated = (newLayout: GridLayoutItem[]) => {
-  const unscaled = newLayout.map((item) => ({
-    ...item,
-    x: unscaleGridValue(item.x),
-    y: unscaleGridValue(item.y),
-    w: unscaleGridValue(item.w),
-    h: unscaleGridValue(item.h),
-  }));
-
-  // Enforce custom compaction logic so drag results match persisted iTab units.
-  // This ensures the layout is consistent with what will be loaded after refresh
-  const compacted = compactVertical(unscaled);
-
-  // Check if layout actually changed to avoid recursive updates
-  const isChanged =
-    layoutData.value.length !== compacted.length ||
-    layoutData.value.some((item) => {
-      const match = compacted.find((c) => c.i === item.i);
-      if (!match) return true;
-      return (
-        match.x !== item.x ||
-        match.y !== item.y ||
-        match.w !== item.w ||
-        match.h !== item.h
-      );
-    });
-
-  // Update local layout data only when different to avoid redundant writes
-  if (isChanged) {
-    layoutData.value = compacted;
-  }
-  const shouldSaveHomeWidgetDrag =
-    isHomeWidgetDragging.value || Date.now() < suppressWidgetOpenUntil.value;
-  // Always sync to store so drag result is persisted (setter may have updated layoutData already, so isChanged can be false)
-  handleLayoutUpdated(compacted);
-  finishHomeWidgetDrag();
-  if (shouldSaveHomeWidgetDrag) {
-    scheduleHomeWidgetDragSave();
-  }
-};
-
-const onHomeWidgetMove = () => {
-  beginHomeWidgetDrag();
-};
-
-const onHomeWidgetMoved = () => {
-  finishHomeWidgetDrag();
-};
-
 const isEmpireCloudWidget = (type: string) => {
-  return [
-    "bookmarks",
-    "countdown",
-    "rss",
-    ITAB_TODO_WIDGET_TYPE,
-    "hot",
-  ].includes(type);
+  return [ITAB_TODO_WIDGET_TYPE].includes(type);
 };
 
 const devtoolsClickCount = ref(0);
 const devtoolsClickTimer = ref<number | null>(null);
-
-onMounted(() => {
-  document.addEventListener("click", closeSearchEngineMenu);
-});
-
-onUnmounted(() => {
-  document.removeEventListener("click", closeSearchEngineMenu);
-  if (searchEngineIconSaveTimer) {
-    window.clearTimeout(searchEngineIconSaveTimer);
-    searchEngineIconSaveTimer = null;
-  }
-});
 
 const toggleDevTools = () => {
   const style = document.getElementById("devtools-hider");
@@ -1461,8 +1324,8 @@ const checkLatency = async () => {
       const cfg = networkConfig.value;
       const result = computeEffectiveNetworkMode(
         window.location.hostname,
-        lastKnownClientIp.value,
-        lastKnownClientIpSource.value,
+        "",
+        "",
         latency.value,
         {
           internalDomains: cfg.internalDomains,
@@ -1486,8 +1349,8 @@ watch(forceMode, (val) => {
     const cfg = networkConfig.value;
     const result = computeEffectiveNetworkMode(
       window.location.hostname,
-      lastKnownClientIp.value,
-      lastKnownClientIpSource.value,
+      "",
+      "",
       latency.value,
       {
         internalDomains: cfg.internalDomains,
@@ -1506,8 +1369,8 @@ watch(latencyThresholdMs, () => {
     const cfg = networkConfig.value;
     const result = computeEffectiveNetworkMode(
       window.location.hostname,
-      lastKnownClientIp.value,
-      lastKnownClientIpSource.value,
+      "",
+      "",
       latency.value,
       {
         internalDomains: cfg.internalDomains,
@@ -1535,19 +1398,8 @@ onMounted(() => {
     },
   );
   isLanMode.value = initialResult.isLan;
+  store.isLanModeInited = true;
   setTimeout(() => checkLatency(), 2000);
-  fetchIp(true);
-  ipInterval = window.setInterval(() => fetchIp(), 3600000);
-  const ensureSearchFocus = () => {
-    nextTick(() => {
-      if (searchInputRef.value) {
-        searchInputRef.value.focus();
-      } else {
-        setTimeout(ensureSearchFocus, 200);
-      }
-    });
-  };
-  ensureSearchFocus();
 });
 
 let gridPostInitReady = false;
@@ -1557,17 +1409,9 @@ watch(
     if (!ready || gridPostInitReady) return;
     gridPostInitReady = true;
     store.cleanInvalidGroups();
-    normalizeDivCardWidgets();
   },
   { immediate: true },
 );
-
-const doSearch = () => {
-  if (!searchText.value) return;
-  const url = buildSearchEngineUrl(activeSearchEngine.value, searchText.value);
-  window.open(url, "_blank");
-  searchText.value = "";
-};
 
 const openAddModal = (groupId: string) => {
   if (!store.isLogged) {
@@ -1594,47 +1438,32 @@ const handleSave = async (payload: { item: NavItem; groupId?: string }) => {
     showLoginModal.value = true;
     throw new Error("请先登录后再编辑");
   }
-  // Check if it's a div-card widget update
-  const widget = store.widgets.find(
-    (w) => w.id === payload.item.id && w.type === "div-card",
-  );
-  if (widget) {
-    // Merge all properties from the edited item back into widget.data
-    // This ensures icon, url, background, etc. are saved
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { id: _id, ...dataProps } = payload.item;
-    widget.data = {
-      ...widget.data,
-      ...dataProps,
-    };
-    store.markDirty();
-  } else {
-    if (payload.item.id) {
-      // Check for group move
-      const targetGroupId = payload.groupId;
-      let moved = false;
 
-      if (targetGroupId) {
-        const currentGroup = store.groups.find((g) =>
-          g.items.some((i) => i.id === payload.item.id),
-        );
-        if (currentGroup && currentGroup.id !== targetGroupId) {
-          // Move item: remove from old group, add to new group
-          store.deleteItem(payload.item.id);
-          store.addItem(payload.item, targetGroupId);
-          moved = true;
-        }
-      }
+  if (payload.item.id) {
+    // Check for group move
+    const targetGroupId = payload.groupId;
+    let moved = false;
 
-      if (!moved) {
-        store.updateItem(payload.item);
-      }
-    } else if (payload.groupId) {
-      store.addItem(
-        { ...payload.item, id: Date.now().toString() },
-        payload.groupId,
+    if (targetGroupId) {
+      const currentGroup = store.groups.find((g) =>
+        g.items.some((i) => i.id === payload.item.id),
       );
+      if (currentGroup && currentGroup.id !== targetGroupId) {
+        // Move item: remove from old group, add to new group
+        store.deleteItem(payload.item.id);
+        store.addItem(payload.item, targetGroupId);
+        moved = true;
+      }
     }
+
+    if (!moved) {
+      store.updateItem(payload.item);
+    }
+  } else if (payload.groupId) {
+    store.addItem(
+      { ...payload.item, id: Date.now().toString() },
+      payload.groupId,
+    );
   }
 
   const result = await store.saveData(true);
@@ -1647,37 +1476,6 @@ const handleSave = async (payload: { item: NavItem; groupId?: string }) => {
 function normalizeGridSpan(value: number) {
   return Math.max(1, Math.round(value));
 }
-
-function getDivCardDefaultSize() {
-  const maxCols = widgetColNum.value;
-  const w = Math.max(1, Math.min(maxCols, normalizeGridSpan(1)));
-  return { w, h: 1 };
-}
-
-function normalizeDivCardWidgets() {
-  let changed = false;
-  const { w: defaultW, h: defaultH } = getDivCardDefaultSize();
-  store.widgets.forEach((widget) => {
-    if (widget.type !== "div-card") return;
-    const nextW = widget.w ?? widget.colSpan ?? defaultW;
-    const nextH = widget.h ?? widget.rowSpan ?? defaultH;
-    const finalW = nextW > 0 ? nextW : defaultW;
-    const finalH = nextH > 0 ? nextH : defaultH;
-    if (
-      widget.w !== finalW ||
-      widget.h !== finalH ||
-      widget.colSpan !== finalW ||
-      widget.rowSpan !== finalH
-    ) {
-      widget.w = finalW;
-      widget.h = finalH;
-      widget.colSpan = finalW;
-      widget.rowSpan = finalH;
-      changed = true;
-    }
-  });
-  if (changed) store.markDirty();
-}
 const openAddWidgetModal = () => {
   if (!store.isLogged) {
     showLoginModal.value = true;
@@ -1685,7 +1483,6 @@ const openAddWidgetModal = () => {
   }
   closeBlankContextMenu();
   selectedWidgetId.value = null;
-  widgetResize.cancelResize();
   showAddWidgetModal.value = true;
 };
 
@@ -1715,13 +1512,23 @@ const syncCatalogWidgetLayout = (widget: WidgetConfig) => {
   // The layout watcher ignores external updates during edit mode, so new/enabled widgets
   // must be placed into layoutData immediately.
   const currentLayout = layoutData.value.filter((item) => item.i !== widget.id);
-  const newLayoutItem: GridLayoutItem = {
+  const hasFinitePosition =
+    Number.isFinite(widget.x) && Number.isFinite(widget.y);
+  const newLayoutItem: WidgetConfig = {
     ...widget,
-    i: widget.id,
-    x: widget.x ?? 0,
-    y: widget.y ?? Infinity,
     w: widget.w ?? width,
     h: widget.h ?? height,
+    colSpan: widget.colSpan ?? width,
+    rowSpan: widget.rowSpan ?? height,
+    ...(hasFinitePosition
+      ? {
+          x: widget.x,
+          y: widget.y,
+        }
+      : {
+          x: undefined,
+          y: undefined,
+        }),
   };
   const updatedLayout = compactVertical(
     generateLayout([...currentLayout, newLayoutItem], widgetColNum.value),
@@ -1783,23 +1590,26 @@ const addWidgetPayload = (
   const item = getWidgetCatalogItem(payload.catalogItemId);
   if (!item) return { status: "validation-error", message: "组件不存在" };
 
-  const existing = findExistingCatalogWidget(store.widgets, item);
-  if (item.mode === "singleton" && existing) {
-    if (existing.enable !== false) {
-      return {
-        status: "duplicate",
-        id: existing.id,
-        groupId: payload.destinationGroupId,
-        message: "该组件已启用",
-      };
-    }
-    applyWidgetSizeFromPayload(existing, item, payload.sizeKey);
-    existing.enable = true;
-    syncCatalogWidgetLayout(existing);
+  const existingWidget = findExistingCatalogWidget(store.widgets, item);
+  const action = getWidgetCatalogAction(store.widgets, item);
+  if (existingWidget && action === "enabled") {
+    return {
+      status: "duplicate",
+      id: existingWidget.id,
+      groupId: payload.destinationGroupId,
+      message: "组件已启用",
+    };
+  }
+  if (existingWidget && action === "enable") {
+    existingWidget.enable = true;
+    existingWidget.isPublic = existingWidget.isPublic ?? true;
+    existingWidget.hideOnMobile = false;
+    applyWidgetSizeFromPayload(existingWidget, item, payload.sizeKey);
+    syncCatalogWidgetLayout(existingWidget);
     store.markDirty();
     return {
       status: "success",
-      id: existing.id,
+      id: existingWidget.id,
       groupId: payload.destinationGroupId,
       message: "组件已启用",
     };
@@ -1913,34 +1723,6 @@ const addComponent = async (
   return addNavItemPayload(payload);
 };
 
-const handleDivCardClick = (widget: WidgetConfig) => {
-  if (isEditMode.value || shouldSuppressHomeWidgetOpen()) {
-    // Disable click while editing or just after a drag to avoid opening on drag release.
-    return;
-  }
-
-  // View mode: Open URL if available
-  if (widget.data) {
-    const item: NavItem = {
-      id: widget.id,
-      title: widget.data.title || "div 卡片",
-      url: widget.data.url || "",
-      ...widget.data,
-    };
-    handleCardClick(item);
-  }
-};
-const deleteDivCardWidget = (id: string) => {
-  if (!store.isLogged) return;
-  store.widgets = store.widgets.filter((w) => w.id !== id);
-  layoutData.value = layoutData.value.filter((w) => w.i !== id && w.id !== id);
-  if (selectedWidgetId.value === id) selectedWidgetId.value = null;
-  if (activeResizeWidgetId.value === id) widgetResize.cancelResize();
-  const newLayout = compactVertical(layoutData.value);
-  layoutData.value = newLayout;
-  handleLayoutUpdated(newLayout);
-  store.markDirty();
-};
 const disableWidgetFromGrid = (id: string) => {
   if (!store.isLogged) return;
   const widget = store.widgets.find((w) => w.id === id);
@@ -1948,18 +1730,42 @@ const disableWidgetFromGrid = (id: string) => {
   widget.enable = false;
   layoutData.value = layoutData.value.filter((w) => w.i !== id && w.id !== id);
   if (selectedWidgetId.value === id) selectedWidgetId.value = null;
-  if (activeResizeWidgetId.value === id) widgetResize.cancelResize();
   const newLayout = compactVertical(layoutData.value);
   layoutData.value = newLayout;
   handleLayoutUpdated(newLayout);
   store.markDirty();
 };
 const closeWidgetFromGrid = (widget: WidgetConfig) => {
-  if (widget.type === "div-card") {
-    deleteDivCardWidget(widget.id);
+  disableWidgetFromGrid(widget.id);
+};
+
+const saveAfterDelete = async () => {
+  try {
+    const result = await store.saveData(true);
+    if (result === "conflict" || result === "unauthorized") {
+      void uiFeedback.alert({
+        title: "删除已执行，但保存失败",
+        message:
+          result === "conflict" ? "发生版本冲突。" : "未授权或登录已过期。",
+        tone: "warning",
+      });
+    }
+  } catch {
+    void uiFeedback.alert({
+      title: "删除已执行，但保存失败",
+      message: "请重试。",
+      tone: "warning",
+    });
+  }
+};
+
+const deleteWidgetFromGridImmediately = async (widget: WidgetConfig) => {
+  if (!store.isLogged) {
+    showLoginModal.value = true;
     return;
   }
-  disableWidgetFromGrid(widget.id);
+  closeWidgetFromGrid(widget);
+  await saveAfterDelete();
 };
 
 // --- Heartbeat / Polling Mechanism for Layout ---
@@ -2252,60 +2058,7 @@ const fetchContainerStatuses = async () => {
     });
   });
 
-  // 1. Generate Mock Data for known mock containers (ALWAYS do this for testing)
-  store.groups.forEach((g) => {
-    g.items.forEach((item) => {
-      if (item.containerId && item.containerId.startsWith("mock-")) {
-        const existing = containerStatuses.value[item.containerId];
-        // Simulate fluctuating stats
-        const cpuPercent = Math.min(
-          100,
-          Math.max(
-            0,
-            (existing?.stats?.cpuPercent || 30) + (Math.random() - 0.5) * 20,
-          ),
-        );
-        const memPercent = Math.min(
-          100,
-          Math.max(
-            0,
-            (existing?.stats?.memPercent || 40) + (Math.random() - 0.5) * 10,
-          ),
-        );
-        const memUsage = (memPercent / 100) * 1024 * 1024 * 1024; // Mock 1GB limit
-
-        // Mock IO
-        const rx = Math.random() * 1024 * 1024; // 0-1MB
-        const tx = Math.random() * 512 * 1024; // 0-512KB
-        const read = Math.random() * 2 * 1024 * 1024; // 0-2MB
-        const write = Math.random() * 1024 * 1024; // 0-1MB
-
-        statusMap[item.containerId] = {
-          state: existing?.state || "running",
-          hasUpdate:
-            existing?.hasUpdate !== undefined
-              ? existing.hasUpdate
-              : Math.random() > 0.7, // Demo: 30% chance of update
-          stats: {
-            cpuPercent,
-            memPercent,
-            memUsage,
-            netIO: { rx, tx },
-            blockIO: { read, write },
-          },
-        };
-      }
-    });
-  });
-
-  const dockerWidget = store.widgets.find(
-    (w) => w.type === "docker" || w.id === "docker",
-  );
-  const dockerMockEnabled = Boolean(
-    dockerWidget?.data && dockerWidget.data.useMock,
-  );
-
-  if (!dockerSystemEnabled && !dockerMockEnabled) {
+  if (!dockerSystemEnabled) {
     if (Object.keys(containerStatuses.value).length)
       containerStatuses.value = {};
     if (Object.keys(previousStatsMap.value).length) previousStatsMap.value = {};
@@ -2314,59 +2067,11 @@ const fetchContainerStatuses = async () => {
     return;
   }
 
-  if (dockerMockEnabled) {
-    store.groups.forEach((g) => {
-      g.items.forEach((item) => {
-        if (!item.containerId || item.containerId.startsWith("mock-")) return;
-        const existing = containerStatuses.value[item.containerId];
-        const cpuPercent = Math.min(
-          100,
-          Math.max(
-            0,
-            (existing?.stats?.cpuPercent || 30) + (Math.random() - 0.5) * 20,
-          ),
-        );
-        const memPercent = Math.min(
-          100,
-          Math.max(
-            0,
-            (existing?.stats?.memPercent || 40) + (Math.random() - 0.5) * 10,
-          ),
-        );
-        const memUsage = (memPercent / 100) * 1024 * 1024 * 1024;
-        const rx = Math.random() * 1024 * 1024;
-        const tx = Math.random() * 512 * 1024;
-        const read = Math.random() * 2 * 1024 * 1024;
-        const write = Math.random() * 1024 * 1024;
-        statusMap[item.containerId] = {
-          state: existing?.state || "running",
-          hasUpdate:
-            existing?.hasUpdate !== undefined
-              ? existing.hasUpdate
-              : Math.random() > 0.7,
-          stats: {
-            cpuPercent,
-            memPercent,
-            memUsage,
-            netIO: { rx, tx },
-            blockIO: { read, write },
-          },
-        };
-      });
-    });
-  }
-
-  // 2. Try to fetch real data
-  // Only fetch if there are container items to update
   const hasRealDockerItems = store.groups.some((g) =>
-    g.items.some(
-      (item) =>
-        (item.containerId && !item.containerId.startsWith("mock-")) ||
-        item.containerName,
-    ),
+    g.items.some((item) => item.containerId || item.containerName),
   );
 
-  if (hasRealDockerItems && !dockerMockEnabled) {
+  if (hasRealDockerItems) {
     try {
       const headers = store.getHeaders();
       const controller = new AbortController();
@@ -2397,7 +2102,7 @@ const fetchContainerStatuses = async () => {
         store.groups.forEach((g) => {
           g.items.forEach((item) => {
             // Case 1: Has ID. Check if valid, or fix if invalid.
-            if (item.containerId && !item.containerId.startsWith("mock-")) {
+            if (item.containerId) {
               const foundById = liveContainers.find(
                 (c) => c.Id === item.containerId,
               );
@@ -2424,9 +2129,6 @@ const fetchContainerStatuses = async () => {
                 }
 
                 if (foundByName) {
-                  console.log(
-                    `[Docker Fix] Container ID changed. Updating ${item.containerId} -> ${foundByName.Id} (Name: ${foundByName.Names?.[0]})`,
-                  );
                   item.containerId = foundByName.Id;
 
                   // Ensure containerName is synced to the real container name
@@ -2443,11 +2145,8 @@ const fetchContainerStatuses = async () => {
                 }
               }
             }
-            // Case 2: No ID (or mock ID), but has Name. Try to bind.
-            else if (
-              (!item.containerId || item.containerId.startsWith("mock-")) &&
-              item.containerName
-            ) {
+            // Case 2: No ID, but has Name. Try to bind.
+            else if (item.containerName) {
               const foundByName = liveContainers.find((c) =>
                 (c.Names || []).some(
                   (n) => n.replace(/^\//, "") === item.containerName,
@@ -2455,9 +2154,6 @@ const fetchContainerStatuses = async () => {
               );
 
               if (foundByName) {
-                console.log(
-                  `[Docker Bind] Found container by name. Binding ${item.containerName} -> ${foundByName.Id}`,
-                );
                 item.containerId = foundByName.Id;
                 needsSave = true;
               }
@@ -2631,9 +2327,7 @@ const runtimeContextMenu = ref<{
   x: number;
   y: number;
 } | null>(null);
-const openedRuntimeWidgetId = ref("");
 const runtimeRefreshTokens = ref<Record<string, number>>({});
-let ignoreNextNativeContextMenu = false;
 
 const openContextMenuAt = (
   x: number,
@@ -2773,48 +2467,8 @@ const onCardPointerUp = () => {
   clearCardLongPress();
 };
 
-const handleDivCardContextMenu = (e: MouseEvent, widget: WidgetConfig) => {
-  if (!store.isLogged) return;
-  e.preventDefault();
-
-  const proxyItem: NavItem = {
-    id: widget.id,
-    title: widget.data?.title || "div 卡片",
-    url: widget.data?.url || "", // Ensure it has a URL field so it's treated as a link item
-    ...widget.data,
-  };
-
-  contextMenuItem.value = proxyItem;
-  contextMenuGroupId.value = undefined;
-  openContextMenu(e, proxyItem, undefined);
-};
-
-const handleDivCardContextMenuPointerDown = (
-  e: MouseEvent,
-  widget: WidgetConfig,
-) => {
-  if (!store.isLogged) return;
-  ignoreNextNativeContextMenu = true;
-  handleDivCardContextMenu(e, widget);
-};
-
 const handleContextMenu = (e: MouseEvent, item: NavItem, groupId?: string) => {
   if (!store.isLogged) return;
-  if (ignoreNextNativeContextMenu && e.type === "contextmenu") {
-    ignoreNextNativeContextMenu = false;
-    e.preventDefault();
-    return;
-  }
-  openContextMenu(e, item, groupId);
-};
-
-const handleContextMenuPointerDown = (
-  e: MouseEvent,
-  item: NavItem,
-  groupId?: string,
-) => {
-  if (!store.isLogged) return;
-  ignoreNextNativeContextMenu = true;
   openContextMenu(e, item, groupId);
 };
 
@@ -2858,7 +2512,7 @@ const openRuntimeContextMenu = (widget: WidgetConfig, event: MouseEvent) => {
   event.preventDefault();
   event.stopPropagation();
   const menuWidth = 140;
-  const menuHeight = 198;
+  const menuHeight = 232;
   let finalX = event.clientX;
   let finalY = event.clientY;
   if (finalX + menuWidth > window.innerWidth) {
@@ -2888,6 +2542,7 @@ const openRuntimeWidget = (widget: WidgetConfig) => {
 };
 
 const closeRuntimeWidget = () => {
+  blurActiveElementMatching("[data-runtime-widget]");
   openedRuntimeWidgetId.value = "";
 };
 
@@ -2912,13 +2567,22 @@ const editRuntimeWidgetHome = () => {
   isEditMode.value = true;
 };
 
-const deleteRuntimeWidget = (widget: WidgetConfig) => {
+const deleteRuntimeWidget = async (widget: WidgetConfig) => {
   if (!store.isLogged) {
     showLoginModal.value = true;
     return;
   }
   closeRuntimeContextMenu();
-  openDeleteConfirm(widget.id);
+  await deleteWidgetFromGridImmediately(widget);
+};
+
+const refreshRuntimeWidget = (widget: WidgetConfig) => {
+  if (!isRuntimeWidget(widget)) return;
+  closeRuntimeContextMenu();
+  runtimeRefreshTokens.value = {
+    ...runtimeRefreshTokens.value,
+    [widget.id]: (runtimeRefreshTokens.value[widget.id] || 0) + 1,
+  };
 };
 
 const updateRuntimeWidgetData = (
@@ -2994,7 +2658,15 @@ const selectRuntimeWidgetSize = (
     layoutWidget.colSpan = storeWidget.colSpan;
     layoutWidget.rowSpan = storeWidget.rowSpan;
     layoutWidget.data = storeWidget.data;
-    const newLayout = compactVertical(layoutData.value);
+    const newLayout = resolveResizeLayout(
+      layoutData.value,
+      layoutWidget.i || layoutWidget.id,
+      {
+        colSpan: layoutWidget.w || layoutWidget.colSpan || 1,
+        rowSpan: layoutWidget.h || layoutWidget.rowSpan || 1,
+      },
+      widgetColNum.value,
+    );
     layoutData.value = newLayout;
     handleLayoutUpdated(newLayout);
   }
@@ -3052,12 +2724,7 @@ const handleBlankContextMenu = (e: MouseEvent) => {
   openBlankContextMenuAt(e.clientX, e.clientY);
 };
 
-type BlankContextAction =
-  | "add"
-  | "wallpaper"
-  | "search"
-  | "backup"
-  | "settings";
+type BlankContextAction = "add" | "wallpaper" | "backup" | "settings";
 
 const blankContextRows: {
   action: BlankContextAction;
@@ -3068,7 +2735,6 @@ const blankContextRows: {
 }[] = [
   { action: "add", label: "添加图标", testId: "itab-add-context-row-add" },
   { action: "wallpaper", label: "换壁纸" },
-  { action: "search", label: "本地搜索", shortcut: "Ctrl+F" },
   { action: "backup", label: "立即备份" },
   { action: "settings", label: "设置" },
 ];
@@ -3081,10 +2747,6 @@ const handleBlankContextAction = async (action: BlankContextAction) => {
   }
   if (action === "wallpaper" || action === "settings") {
     openSettings();
-    return;
-  }
-  if (action === "search") {
-    searchInputRef.value?.focus();
     return;
   }
   if (action === "backup") {
@@ -3166,18 +2828,19 @@ const handleMenuOpen = (url: string | { url: string }) => {
 };
 
 const handleMenuEdit = () => {
+  const item = contextMenuItem.value;
+  const groupId = contextMenuGroupId.value;
+  closeContextMenu();
   if (!store.isLogged) {
     showLoginModal.value = true;
-    closeContextMenu();
     return;
   }
-  if (contextMenuItem.value) {
-    openEditModal(contextMenuItem.value, contextMenuGroupId.value);
+  if (item) {
+    openEditModal(item, groupId);
   }
-  closeContextMenu();
 };
 
-const handleMenuDelete = () => {
+const handleMenuDelete = async () => {
   if (!store.isLogged) {
     showLoginModal.value = true;
     closeContextMenu();
@@ -3186,6 +2849,11 @@ const handleMenuDelete = () => {
   const item = contextMenuItem.value;
   closeContextMenu();
   if (item) {
+    const widget = store.widgets.find((w) => w.id === item.id);
+    if (widget) {
+      await deleteWidgetFromGridImmediately(widget);
+      return;
+    }
     openDeleteConfirm(item.id);
   }
 };
@@ -3239,23 +2907,7 @@ const confirmDelete = async () => {
     store.deleteGroup(groupToDelete.value, true);
   }
   cancelDelete();
-  try {
-    const result = await store.saveData(true);
-    if (result === "conflict" || result === "unauthorized") {
-      void uiFeedback.alert({
-        title: "删除已执行，但保存失败",
-        message:
-          result === "conflict" ? "发生版本冲突。" : "未授权或登录已过期。",
-        tone: "warning",
-      });
-    }
-  } catch {
-    void uiFeedback.alert({
-      title: "删除已执行，但保存失败",
-      message: "请重试。",
-      tone: "warning",
-    });
-  }
+  await saveAfterDelete();
 };
 
 watch(
@@ -3281,10 +2933,6 @@ onUnmounted(() => {
   document.removeEventListener("scroll", closeContextMenu, true);
   document.removeEventListener("scroll", closeRuntimeContextMenu, true);
   clearHomeWidgetDragIdleTimer();
-  if (ipInterval) {
-    clearInterval(ipInterval);
-    ipInterval = null;
-  }
 });
 
 // --- Group Settings ---
@@ -3309,10 +2957,10 @@ const getLayoutConfig = (group: NavGroup) => {
   const isHorizontal = layout === "horizontal";
   const isNoBg = showBg === false;
 
-  const baseGap = group.gridGap || store.appConfig.gridGap;
+  const baseGap = group.gridGap || DEFAULT_NAV_GRID_GAP;
   const gap = isNoBg ? Math.max(4, Math.round(baseGap * 0.6)) : baseGap;
 
-  const baseSize = group.cardSize || store.appConfig.cardSize || 120;
+  const baseSize = group.cardSize || DEFAULT_NAV_CARD_SIZE;
   const ratio = baseSize / 120;
 
   const modeScale = isNoBg ? 0.6 : 1.0;
@@ -3322,7 +2970,7 @@ const getLayoutConfig = (group: NavGroup) => {
   const horizontalIconMax = Math.max(20, h_h - 18);
 
   // Icon Size Logic
-  const customIconSize = group.iconSize || store.appConfig.iconSize;
+  const customIconSize = group.iconSize || DEFAULT_NAV_ICON_SIZE;
   let v_icon, h_icon;
 
   if (customIconSize) {
@@ -3369,251 +3017,6 @@ const getLayoutConfig = (group: NavGroup) => {
 // Actually, a global click listener or backdrop is safer.
 // For now, let's use a simple window click listener or just rely on the toggle.
 // Better: Use a transparent fixed inset div when menu is open to catch clicks.
-
-// --- IP 组件 ---
-let ipInterval: number | null = null;
-const ipInfo = ref({
-  wanIp: "",
-  lanIp: "",
-  location: "",
-  clientIp: "",
-  clientIpSource: "",
-  baiduLatency: "--",
-});
-
-const hasWanIp = computed(() => {
-  const v = String(ipInfo.value.wanIp || "").trim();
-  return !!v && v !== "Error" && v !== "获取失败";
-});
-
-const hasLanIp = computed(() => {
-  const v = String(ipInfo.value.lanIp || "").trim();
-  return !!v;
-});
-
-const displayIp = computed(() => {
-  if (hasWanIp.value) return ipInfo.value.wanIp;
-  if (hasLanIp.value) return ipInfo.value.lanIp;
-  return "加载中...";
-});
-
-const isIpv6 = computed(() => {
-  const ip = String(displayIp.value || "");
-  return ip.includes(":");
-});
-
-const ipTypeLabel = computed(() => {
-  if (!hasWanIp.value && hasLanIp.value) return "内网 IP";
-  return isIpv6.value ? "IPv6" : "外网 IP";
-});
-
-const showClientIp = computed(() => {
-  if (!ipInfo.value.clientIp) return false;
-  return ipInfo.value.clientIp !== ipInfo.value.wanIp;
-});
-
-const copiedToast = ref("");
-let copiedToastTimer: number | null = null;
-const copyToClipboard = async (text: string) => {
-  const value = String(text || "").trim();
-  if (!value) return;
-  if (value === "加载中..." || value === "检测中..." || value === "Error")
-    return;
-  try {
-    await navigator.clipboard.writeText(value);
-    copiedToast.value = "已复制";
-  } catch {
-    try {
-      const el = document.createElement("textarea");
-      el.value = value;
-      el.style.position = "fixed";
-      el.style.left = "-9999px";
-      el.style.top = "0";
-      document.body.appendChild(el);
-      el.select();
-      document.execCommand("copy");
-      document.body.removeChild(el);
-      copiedToast.value = "已复制";
-    } catch {
-      copiedToast.value = "复制失败";
-    }
-  }
-
-  if (copiedToastTimer) window.clearTimeout(copiedToastTimer);
-  copiedToastTimer = window.setTimeout(() => {
-    copiedToast.value = "";
-    copiedToastTimer = null;
-  }, 1200);
-};
-
-const formattedLocation = computed(() => {
-  const loc = ipInfo.value.location;
-  if (!loc) return "";
-  const parts = loc.split(" ").filter((p) => p.trim());
-  if (parts.length === 0) return "";
-
-  let isp = "";
-  let area = "";
-
-  if (parts.length >= 2) {
-    const lastPart = parts[parts.length - 1];
-    const isIsp =
-      /[a-zA-Z]/.test(lastPart) ||
-      /电信|联通|移动|铁通|网通|教育|科技|信息|网络|数据|通信|广播|电视|有线|公司/.test(
-        lastPart,
-      );
-    if (isIsp) {
-      isp = lastPart;
-      area = parts[parts.length - 2] || "";
-    } else {
-      area = parts[parts.length - 1];
-    }
-  } else {
-    area = parts[0];
-  }
-
-  area = area.replace(/^.+?省/, "");
-  area = area.replace(/^.+?市(?=.+)/, "");
-
-  if (isp) {
-    isp = isp.replace(/ADSL|宽带|光纤/gi, "");
-  }
-
-  return area.trim();
-});
-
-const fetchIp = async (force = false) => {
-  const CACHE_KEY = `startdeck_ip_cache:${networkScope}`;
-  const CACHE_DURATION = 60 * 60 * 1000; // 1 hour in ms
-  const initialIsLanMode = isLanMode.value;
-  store.ipFetchStatus = "loading";
-  store.isLanModeInited = false;
-
-  if (!force) {
-    try {
-      const cached = localStorage.getItem(CACHE_KEY);
-      if (cached) {
-        const { timestamp, data } = JSON.parse(cached);
-        if (Date.now() - timestamp < CACHE_DURATION) {
-          ipInfo.value = data;
-          lastKnownClientIp.value = data?.clientIp || "";
-          lastKnownClientIpSource.value = data?.clientIpSource || "";
-          const cfg = networkConfig.value;
-          const result = computeEffectiveNetworkMode(
-            window.location.hostname,
-            lastKnownClientIp.value,
-            lastKnownClientIpSource.value,
-            latency.value,
-            {
-              internalDomains: cfg.internalDomains,
-              networkRules: cfg.networkRules,
-              forceNetworkMode: cfg.forceNetworkMode,
-              latencyThresholdMs: cfg.latencyThresholdMs,
-            },
-          );
-          isLanMode.value = result.isLan;
-          store.ipFetchStatus = "success";
-          store.isLanModeInited = true;
-          return;
-        }
-      }
-    } catch (e) {
-      console.warn("Failed to read IP cache", e);
-    }
-  }
-
-  ipInfo.value = {
-    wanIp: "",
-    lanIp: "",
-    location: "",
-    clientIp: "",
-    clientIpSource: "",
-    baiduLatency: "...",
-  };
-
-  // 检测 223.5.5.5 延迟 (通过后端 /api/ping)
-  fetch("/api/ping?target=223.5.5.5")
-    .then((res) => res.json())
-    .then((data) => {
-      if (data.success) {
-        ipInfo.value.baiduLatency = data.latency;
-      } else {
-        ipInfo.value.baiduLatency = "Timeout";
-      }
-      updateCache();
-    })
-    .catch(() => {
-      ipInfo.value.baiduLatency = "Error";
-      updateCache();
-    });
-
-  try {
-    const refreshParam = force ? "&refresh=1" : "";
-    const res = await fetchWithTimeout(
-      `/api/ip?ts=${Date.now()}${refreshParam}`,
-      { method: "GET" },
-      30000,
-    );
-    const data = await res.json();
-
-    if (data.success) {
-      ipInfo.value.wanIp = data.ip || "";
-      ipInfo.value.lanIp = data.clientIp || "";
-      ipInfo.value.location = data.location || "未知位置";
-      ipInfo.value.clientIp = data.clientIp || "";
-      ipInfo.value.clientIpSource = data.clientIpSource || "";
-      lastKnownClientIp.value = ipInfo.value.clientIp;
-      lastKnownClientIpSource.value = ipInfo.value.clientIpSource;
-
-      const cfg = networkConfig.value;
-      const result = computeEffectiveNetworkMode(
-        window.location.hostname,
-        lastKnownClientIp.value,
-        lastKnownClientIpSource.value,
-        latency.value,
-        {
-          internalDomains: cfg.internalDomains,
-          networkRules: cfg.networkRules,
-          forceNetworkMode: cfg.forceNetworkMode,
-          latencyThresholdMs: cfg.latencyThresholdMs,
-        },
-      );
-      isLanMode.value = result.isLan;
-      store.ipFetchStatus = "success";
-    } else {
-      ipInfo.value.wanIp = data.ip || "";
-      ipInfo.value.lanIp = data.clientIp || "";
-      ipInfo.value.location = "未知位置";
-      ipInfo.value.clientIp = data.clientIp || "";
-      ipInfo.value.clientIpSource = data.clientIpSource || "";
-      isLanMode.value = initialIsLanMode;
-      store.ipFetchStatus = "error";
-    }
-    store.isLanModeInited = true;
-    updateCache();
-  } catch (e) {
-    console.error("IP Fetch Error", e);
-    ipInfo.value.wanIp = "";
-    isLanMode.value = initialIsLanMode;
-    store.ipFetchStatus = "error";
-    store.isLanModeInited = true;
-    updateCache();
-  }
-};
-
-const updateCache = () => {
-  if (ipInfo.value.baiduLatency !== "...") {
-    localStorage.setItem(
-      `startdeck_ip_cache:${networkScope}`,
-      JSON.stringify({
-        timestamp: Date.now(),
-        data: ipInfo.value,
-      }),
-    );
-  }
-};
-
-// --- IP 组件结束 ---
 
 // Visitor Stats
 const onlineDuration = ref("00:00:00");
@@ -3696,10 +3099,14 @@ onMounted(() => {
   updateHour();
   if (daylightTimer) clearInterval(daylightTimer);
   daylightTimer = setInterval(updateHour, 60 * 1000);
+  refreshHomeTopTime();
+  if (homeTopClockTimer) clearInterval(homeTopClockTimer);
+  homeTopClockTimer = setInterval(refreshHomeTopTime, 30 * 1000);
 });
 
 onUnmounted(() => {
   if (daylightTimer) clearInterval(daylightTimer);
+  if (homeTopClockTimer) clearInterval(homeTopClockTimer);
 });
 </script>
 
@@ -3799,18 +3206,8 @@ onUnmounted(() => {
       ></div>
     </div>
 
-    <AppSidebar
-      v-if="shouldRenderHomeSidebar"
-      v-model:collapsed="sidebarCollapsed"
-      class="fixed left-0 top-0 z-40 pt-[env(safe-area-inset-top)] pl-[env(safe-area-inset-left)]"
-      :class="isMobile && sidebarCollapsed ? 'h-auto' : 'h-full'"
-      :onOpenSettings="openSettings"
-      :onOpenEdit="openEditOrLogin"
-    />
-
     <div
       class="flex-1 w-full p-4 md:p-8 transition-all pb-[calc(2rem+env(safe-area-inset-bottom))] md:pb-[calc(2.5rem+env(safe-area-inset-bottom))] relative z-10"
-      ref="mainContainerRef"
       @contextmenu="handleBlankContextMenu"
       :style="{
         backgroundColor:
@@ -3827,12 +3224,6 @@ onUnmounted(() => {
             : store.appConfig.background || store.appConfig.solidBackgroundColor
               ? 'rgba(255, 255, 255, 0.35)'
               : 'rgba(15, 23, 42, 0.12)',
-        paddingLeft:
-          shouldRenderHomeSidebar && !isMobile
-            ? sidebarCollapsed
-              ? '100px'
-              : '288px'
-            : undefined,
       }"
     >
       <div
@@ -3853,6 +3244,7 @@ onUnmounted(() => {
             }"
           >
             <h1
+              v-if="showHomeTitle"
               class="sd-home-brand-title transition-all duration-300 whitespace-nowrap overflow-hidden text-ellipsis max-w-full"
               :style="{
                 fontSize: headerTitleFontSize + 'px',
@@ -3881,92 +3273,6 @@ onUnmounted(() => {
             </span>
           </div>
 
-          <div v-if="checkVisible(searchWidget)" class="sd-home-search-zone">
-            <form
-              class="sd-home-search-form startdeck-search-form"
-              :style="{
-                backgroundColor: `rgba(255, 255, 255, ${searchFrameBgAlpha})`,
-                '--startdeck-search-text-color': searchTextColor,
-                '--startdeck-search-placeholder-color': searchPlaceholderColor,
-              }"
-              @submit.prevent="doSearch"
-              action="."
-            >
-              <div
-                ref="searchEnginePickerRef"
-                class="relative flex h-full shrink-0 items-center pl-1"
-              >
-                <button
-                  type="button"
-                  class="startdeck-search-engine-button"
-                  :title="activeSearchEngine?.label || '搜索引擎'"
-                  :aria-label="`搜索引擎：${activeSearchEngine?.label || '默认'}`"
-                  :aria-expanded="isSearchEngineMenuOpen"
-                  aria-haspopup="menu"
-                  @click.stop="toggleSearchEngineMenu"
-                >
-                  <SearchEngineIcon :engine="activeSearchEngine" :size="20" />
-                  <span class="startdeck-search-engine-label">{{
-                    activeSearchEngine?.label || "搜索"
-                  }}</span>
-                  <svg
-                    viewBox="0 0 20 20"
-                    fill="currentColor"
-                    class="h-3.5 w-3.5 opacity-55 transition-transform"
-                    :class="{ 'rotate-180': isSearchEngineMenuOpen }"
-                    aria-hidden="true"
-                  >
-                    <path
-                      fill-rule="evenodd"
-                      d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 11.17l3.71-3.94a.75.75 0 1 1 1.08 1.04l-4.25 4.5a.75.75 0 0 1-1.08 0l-4.25-4.5a.75.75 0 0 1 .02-1.06Z"
-                      clip-rule="evenodd"
-                    />
-                  </svg>
-                </button>
-                <div
-                  v-if="isSearchEngineMenuOpen"
-                  class="startdeck-search-engine-menu"
-                  role="menu"
-                  @click.stop
-                  @mousedown.stop
-                >
-                  <button
-                    v-for="engine in engines"
-                    :key="engine.key"
-                    type="button"
-                    class="startdeck-search-engine-option"
-                    :class="{
-                      'is-active': engine.key === activeSearchEngine?.key,
-                    }"
-                    :title="engine.label"
-                    :aria-label="`使用 ${engine.label} 搜索`"
-                    role="menuitemradio"
-                    :aria-checked="engine.key === activeSearchEngine?.key"
-                    @click.stop="selectSearchEngine(engine.key)"
-                  >
-                    <SearchEngineIcon :engine="engine" :size="22" />
-                  </button>
-                </div>
-              </div>
-              <div class="mx-1 h-5 w-px shrink-0 bg-slate-200/80"></div>
-              <input
-                ref="searchInputRef"
-                id="main-search-input"
-                name="q"
-                v-model="searchText"
-                @keyup.enter="doSearch"
-                @mousedown.stop
-                type="search"
-                role="searchbox"
-                aria-label="搜索框"
-                autocomplete="off"
-                autofocus
-                class="h-full min-w-0 flex-1 rounded-full bg-transparent border-0 outline-none startdeck-search-input"
-                placeholder="搜索..."
-              />
-            </form>
-          </div>
-
           <div
             class="startdeck-handshake-signal sd-home-top-slot"
             :class="{ 'is-editing': isHomeEditChromeVisible }"
@@ -3976,8 +3282,7 @@ onUnmounted(() => {
               class="pointer-events-auto"
               :is-saving="store.isSaving"
               :has-unsaved-changes="store.hasUnsavedChanges"
-              @complete="toggleEditMode"
-              @save="handleHomeActionSave"
+              @save="toggleEditMode"
               @add-widget="openAddWidgetModal"
               @add-group="store.addGroup"
             />
@@ -3997,330 +3302,157 @@ onUnmounted(() => {
           </div>
         </div>
 
-        <HomeGroupTabs
-          v-if="!isEditMode && isWebPaginationMode && !showAddWidgetModal"
-          :groups="homeGroupTabs"
-          :active-id="homeActiveGroupId"
-          @select="handleHomeGroupTabSelect"
-        />
+        <section
+          v-if="showHomeTopTime || showHomeTopSearch"
+          class="sd-itab-home-top"
+          data-home-source-top
+          :class="{
+            'has-time': showHomeTopTime,
+            'has-search': showHomeTopSearch,
+          }"
+        >
+          <header
+            v-if="showHomeTopTime"
+            class="sd-itab-home-clock"
+            :style="{
+              color: store.appConfig.titleColor,
+              textShadow: store.appConfig.background
+                ? '0 2px 18px rgba(0,0,0,0.42)'
+                : '0 2px 14px rgba(15,23,42,0.18)',
+            }"
+          >
+            <div class="sd-itab-home-clock-digits">
+              <time>{{ homeTopHourText }}</time>
+              <span>:</span>
+              <time>{{ homeTopMinuteText }}</time>
+            </div>
+            <p>{{ homeTopDateText }}</p>
+          </header>
+
+          <div v-if="showHomeTopSearch" class="sd-itab-home-search-wrap">
+            <form
+              class="sd-itab-home-search"
+              role="search"
+              action="."
+              @submit.prevent="submitHomeSearch"
+            >
+              <button
+                class="sd-itab-home-search-icon"
+                type="button"
+                :title="activeHomeSearchEngine?.label || '搜索引擎'"
+                @click="homeSearchInputRef?.focus()"
+              >
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <circle cx="11" cy="11" r="6.5" />
+                  <path d="m16 16 4 4" />
+                </svg>
+              </button>
+              <input
+                ref="homeSearchInputRef"
+                v-model="homeSearchText"
+                type="search"
+                autocomplete="off"
+                aria-label="输入搜索内容"
+                placeholder="输入搜索内容"
+              />
+              <button
+                class="sd-itab-home-search-submit"
+                type="submit"
+                aria-label="搜索"
+              >
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M5 12h13" />
+                  <path d="m13 6 6 6-6 6" />
+                </svg>
+              </button>
+            </form>
+
+            <nav class="sd-itab-home-search-engines" aria-label="搜索引擎">
+              <button
+                v-for="engine in homeSearchEngines"
+                :key="engine.key"
+                type="button"
+                :class="{
+                  'is-active': engine.key === activeHomeSearchEngine?.key,
+                }"
+                :aria-pressed="engine.key === activeHomeSearchEngine?.key"
+                @click="selectHomeSearchEngine(engine.key)"
+              >
+                {{ engine.label }}
+              </button>
+              <button
+                type="button"
+                class="is-add"
+                @click="openHomeSearchSettings"
+              >
+                添加
+              </button>
+            </nav>
+          </div>
+        </section>
 
         <div
           v-if="layoutData.length > 0"
-          ref="gridLayoutRootRef"
           class="group-container transition-all"
           :style="{
             width: itabGridLayoutWidth + 'px',
             maxWidth: 'none',
             marginLeft: 'auto',
             marginRight: 'auto',
-            marginBottom: (store.appConfig.groupGap ?? 30) + 'px',
+            marginBottom: DEFAULT_GROUP_GAP + 'px',
           }"
         >
-          <GridLayout
+          <div
             v-if="isGridAlive"
-            v-model:layout="scaledLayoutData"
-            :col-num="widgetColNum * gridScale"
-            :row-height="scaledRowHeight"
-            :is-draggable="isHomeWidgetDragEnabled"
-            :is-resizable="false"
-            :vertical-compact="true"
-            :use-css-transforms="true"
-            :margin="gridMargin"
+            ref="gridLayoutRootRef"
             :style="{ width: itabGridLayoutWidth + 'px', maxWidth: 'none' }"
-            @layout-updated="handleScaledLayoutUpdated"
-            :class="[
-              'text-white select-none transition-all duration-300',
-              activeResizeWidgetId ? 'smooth-size' : '',
-            ]"
+            :class="['grid-stack sd-home-grid-stack text-white select-none']"
           >
-            <GridItem
+            <div
               v-for="widget in layoutData"
               :key="widget.i"
-              :x="scaleGridValue(widget.x)"
-              :y="scaleGridValue(widget.y)"
-              :w="scaleGridValue(widget.w)"
-              :h="scaleGridValue(widget.h)"
-              :i="widget.i"
+              class="grid-stack-item relative"
+              :gs-id="widget.i"
+              :gs-x="widget.x"
+              :gs-y="widget.y"
+              :gs-w="widget.w"
+              :gs-h="widget.h"
               :data-widget-grid-item="widget.id"
-              :drag-ignore-from="homeWidgetDragIgnoreFrom"
-              :drag-option="homeWidgetDragOption"
-              @move="onHomeWidgetMove"
-              @moved="onHomeWidgetMoved"
-              class="transition-all duration-300 relative"
               :class="[
                 isHomeEditChromeVisible ? 'rounded-2xl overflow-visible' : '',
                 widget.hideOnMobile ? 'hidden md:block' : '',
-                activeResizeWidgetId === widget.id ? '!z-[1000]' : '',
                 store.appConfig.empireMode && isEmpireCloudWidget(widget.type)
                   ? 'empire-cloud-widget'
                   : '',
               ]"
             >
-              <WidgetEditFrame
-                :editing="isHomeEditChromeVisible"
-                :selected="
-                  isHomeEditChromeVisible &&
-                  (selectedWidgetId === widget.id ||
-                    activeResizeWidgetId === widget.id)
-                "
-                :resize-active="
-                  isHomeEditChromeVisible && activeResizeWidgetId === widget.id
-                "
-                :widget-type="widget.type"
-                :widget-size="widgetFrameMetadataSize(widget)"
-                :delete-label="
-                  widget.type === 'div-card' ? '删除卡片' : '禁用组件'
-                "
-                @select="selectWidgetForEdit(widget.id)"
-                @delete="closeWidgetFromGrid(widget)"
-                @resize-start="(event) => startWidgetResize(event, widget)"
-              >
-                <template #overlay>
-                  <WidgetResizeOverlay
-                    v-if="
-                      isHomeEditChromeVisible &&
-                      resizeOverlayState?.widgetId === widget.id
-                    "
-                    :current-size="resizeOverlayState.currentSize"
-                    :target-size="resizeOverlayState.targetSize"
-                    :max-size="resizeOverlayState.maxSize"
-                    :limited="resizeOverlayState.limited"
-                    :limit-label="resizeOverlayState.limitLabel"
-                  />
-                </template>
-                <WidgetRuntimeFrame
-                  v-if="isRuntimeWidget(widget)"
-                  :widget="widget"
+              <div class="grid-stack-item-content">
+                <WidgetEditFrame
                   :editing="isHomeEditChromeVisible"
-                  :is-dragging="isHomeWidgetDragging"
-                  :refresh-token="runtimeRefreshTokens[widget.id] || 0"
-                  @open="openRuntimeWidget"
-                  @contextmenu="openRuntimeContextMenu"
-                  @update-data="updateRuntimeWidgetData"
-                />
-                <CalculatorWidget
-                  v-else-if="widget.type === 'calculator'"
-                  :widget="widget"
-                />
-                <div
-                  v-else-if="widget.type === 'div-card'"
-                  @click.stop="handleDivCardClick(widget)"
-                  @mousedown.right.prevent.stop="
-                    handleDivCardContextMenuPointerDown($event, widget)
+                  :selected="
+                    isHomeEditChromeVisible && selectedWidgetId === widget.id
                   "
-                  @contextmenu.prevent.stop="
-                    handleDivCardContextMenu($event, widget)
-                  "
-                  class="div-card-click-target w-full h-full p-3 rounded-2xl border text-white flex flex-col justify-center items-center text-center relative overflow-hidden group transition-all duration-300"
-                  :class="[
-                    widget.data?.backgroundImage
-                      ? 'border-white/20 bg-white/10 backdrop-blur'
-                      : 'border-transparent bg-transparent',
-                    store.appConfig.mouseHoverEffect === 'lift'
-                      ? 'hover:-translate-y-1 hover:shadow-lg'
-                      : store.appConfig.mouseHoverEffect === 'glow'
-                        ? 'hover:shadow-[0_0_15px_rgba(168,85,247,0.5)]'
-                        : '',
-                  ]"
+                  :widget-type="widget.type"
+                  :widget-size="widgetFrameMetadataSize(widget)"
+                  delete-label="禁用组件"
+                  @select="selectWidgetForEdit(widget.id)"
+                  @delete="closeWidgetFromGrid(widget)"
                 >
-                  <!-- ✨ 背景图层 (高斯模糊 + 遮罩) -->
-                  <div
-                    v-if="widget.data?.backgroundImage"
-                    class="absolute inset-0 z-0 pointer-events-none overflow-hidden rounded-[inherit]"
-                  >
-                    <div
-                      class="absolute inset-0 bg-cover bg-center transition-all duration-300"
-                      :style="{
-                        backgroundImage: `url('${store.getAssetUrl(widget.data.backgroundImage)}')`,
-                        filter: `blur(${widget.data.backgroundBlur ?? 6}px)`,
-                        transform: 'scale(1.1)',
-                      }"
-                    ></div>
-                    <div
-                      class="absolute inset-0"
-                      :style="{
-                        backgroundColor: `rgba(0,0,0,${widget.data.backgroundMask ?? 0.3})`,
-                      }"
-                    ></div>
-                  </div>
-
-                  <!-- Icon -->
-                  <div
-                    v-if="widget.data?.icon"
-                    class="relative flex items-center justify-center flex-shrink-0 transition-all duration-300 z-10 mb-2"
-                    :style="{
-                      width:
-                        (store.appConfig.iconSize || 48) *
-                          ((widget.data.iconSize || 100) / 100) +
-                        'px',
-                      height:
-                        (store.appConfig.iconSize || 48) *
-                          ((widget.data.iconSize || 100) / 100) +
-                        'px',
-                    }"
-                  >
-                    <IconShape
-                      :shape="store.appConfig.iconShape || 'circle'"
-                      :size="
-                        (store.appConfig.iconSize || 48) *
-                        ((widget.data.iconSize || 100) / 100)
-                      "
-                      :imgScale="100"
-                      :bgClass="
-                        getIconBackground(
-                          widget.data,
-                          store.appConfig.iconShape || 'circle',
-                        )
-                      "
-                      :icon="processIcon(widget.data.icon)"
-                      class="w-full h-full"
-                      :class="
-                        widget.data.backgroundImage ? 'drop-shadow-lg' : ''
-                      "
-                    />
-                  </div>
-
-                  <div
-                    class="text-sm font-semibold tracking-wide relative z-10 truncate w-full px-2"
-                    :style="{
-                      color: widget.data?.titleColor || '#ffffff',
-                      textShadow: widget.data?.backgroundImage
-                        ? '0 2px 4px rgba(0,0,0,0.8)'
-                        : 'none',
-                    }"
-                  >
-                    {{ widget.data?.title || "div 卡片" }}
-                  </div>
-
-                  <div
-                    v-if="
-                      !widget.data?.url &&
-                      !widget.data?.lanUrl &&
-                      !widget.data?.icon
-                    "
-                    class="text-[10px] opacity-70 mt-1 relative z-10"
-                  >
-                    请在编辑模式下右键添加项目
-                  </div>
-                </div>
-                <div
-                  v-else-if="widget.type === 'ip'"
-                  class="w-full h-full p-3 rounded-2xl backdrop-blur border border-white/10 flex flex-col items-center transition-colors text-center text-white"
-                  :style="{
-                    backgroundColor: `rgba(0,0,0,${Math.min(0.85, Math.max(0.15, widget.opacity ?? 0.35))})`,
-                    color: '#fff',
-                  }"
-                >
-                  <div
-                    v-if="ipInfo.location && ipInfo.location !== '未知位置'"
-                    class="text-[19px] font-medium sm:font-bold w-full truncate flex-1 flex items-center justify-center -mt-px"
-                    :title="ipInfo.location"
-                  >
-                    {{ formattedLocation }}
-                  </div>
-                  <div
-                    v-if="hasWanIp"
-                    class="flex items-center justify-center gap-2 w-full flex-1"
-                  >
-                    <span class="text-[12px] opacity-70 uppercase">外网</span>
-                    <button
-                      class="max-w-full font-mono font-medium sm:font-bold leading-tight text-center select-text break-all hover:opacity-90 transition-opacity text-xl"
-                      type="button"
-                      title="点击复制外网 IP"
-                      @click.stop="copyToClipboard(ipInfo.wanIp)"
-                    >
-                      {{ ipInfo.wanIp }}
-                    </button>
-                  </div>
-                  <div
-                    v-if="hasLanIp"
-                    class="flex items-center justify-center gap-2 w-full flex-1"
-                  >
-                    <span class="text-[10px] opacity-50 uppercase">内网</span>
-                    <button
-                      class="max-w-full font-mono font-medium leading-tight text-center select-text break-all opacity-70 hover:opacity-90 transition-opacity text-sm"
-                      type="button"
-                      title="点击复制内网 IP"
-                      @click.stop="copyToClipboard(ipInfo.lanIp)"
-                    >
-                      {{ ipInfo.lanIp }}
-                    </button>
-                  </div>
-                  <div
-                    v-if="!hasWanIp && !hasLanIp"
-                    class="flex items-center justify-center gap-2 w-full flex-1"
-                  >
-                    <span class="text-2xl font-mono opacity-60">{{
-                      displayIp
-                    }}</span>
-                  </div>
-
-                  <div
-                    class="flex items-center justify-center gap-2 w-full flex-1"
-                  >
-                    <span class="text-[12px] opacity-70 uppercase"
-                      >PING测试</span
-                    >
-                    <div
-                      class="text-base font-mono font-medium text-white/90 bg-white/20 backdrop-blur-sm border border-white/20 px-2 py-0.5 rounded"
-                    >
-                      {{ ipInfo.baiduLatency }}
-                    </div>
-                    <button
-                      @click="fetchIp(true)"
-                      class="text-[12px] text-white/80 bg-white/20 px-2.5 py-0.5 rounded hover:bg-white/30 transition-colors"
-                    >
-                      刷新
-                    </button>
-                  </div>
-
-                  <div v-if="copiedToast" class="text-[11px] opacity-80 -mt-1">
-                    {{ copiedToast }}
-                  </div>
-                </div>
-                <CountdownWidget
-                  v-else-if="widget.type === 'countdown'"
-                  :widget="widget"
-                />
-                <CountUpWidget
-                  v-else-if="widget.type === 'countup'"
-                  :widget="widget"
-                />
-                <IframeWidget
-                  v-else-if="widget.type === 'iframe'"
-                  :widget="widget"
-                  :is-lan-mode="effectiveIsLan"
-                  :is-edit-mode="isHomeEditChromeVisible"
-                />
-                <BookmarkWidget
-                  v-else-if="widget.type === 'bookmarks'"
-                  :widget="widget"
-                />
-                <HotWidget
-                  v-else-if="widget.type === 'hot'"
-                  :widget="widget"
-                  :is-edit-mode="isHomeEditChromeVisible"
-                />
-                <RssWidget v-else-if="widget.type === 'rss'" :widget="widget" />
-                <DockerWidget
-                  v-else-if="widget.type === 'docker'"
-                  :widget="widget"
-                />
-                <SystemStatusWidget
-                  v-else-if="widget.type === 'system-status'"
-                  :widget="widget"
-                />
-                <CustomCssWidget
-                  v-else-if="widget.type === 'custom-css'"
-                  :widget="widget"
-                />
-                <FileTransferWidget
-                  v-else-if="widget.type === 'file-transfer'"
-                  :widget="widget"
-                />
-              </WidgetEditFrame>
-            </GridItem>
-          </GridLayout>
+                  <WidgetRuntimeFrame
+                    v-if="isRuntimeWidget(widget)"
+                    :widget="widget"
+                    :editing="isHomeEditChromeVisible"
+                    :is-dragging="isHomeWidgetDragging"
+                    :validate-contract="isGridStackReady"
+                    :refresh-token="runtimeRefreshTokens[widget.id] || 0"
+                    @open="openRuntimeWidget"
+                    @contextmenu="openRuntimeContextMenu"
+                    @update-data="updateRuntimeWidgetData"
+                  />
+                </WidgetEditFrame>
+              </div>
+            </div>
+          </div>
         </div>
 
         <WidgetSizeStrip
@@ -4334,11 +3466,7 @@ onUnmounted(() => {
             colSpan: selectedGridWidget.w || selectedGridWidget.colSpan || 1,
             rowSpan: selectedGridWidget.h || selectedGridWidget.rowSpan || 1,
           }"
-          :target-size="
-            resizeOverlayState?.widgetId === selectedGridWidget.id
-              ? resizeOverlayState.targetSize
-              : null
-          "
+          :target-size="null"
           :max-size="selectedWidgetSizeState.maxSize"
           :runtime-cols="widgetColNum"
           @select="handleWidgetSizeStripSelect"
@@ -4350,19 +3478,16 @@ onUnmounted(() => {
           :move="checkMove"
           :animation="300"
           :forceFallback="true"
-          :disabled="!isHomeEditChromeVisible || isWebPaginationMode"
+          :disabled="!isHomeEditChromeVisible"
           @end="() => store.markDirty()"
           class="pb-20 flex flex-col transition-all"
-          :style="{ gap: (store.appConfig.groupGap ?? 30) + 'px' }"
+          :style="{ gap: DEFAULT_GROUP_GAP + 'px' }"
         >
           <div
             v-for="group in displayGroups"
             :key="group.id"
             class="group-container"
             :id="'group-' + group.id"
-            v-show="
-              !isWebPaginationMode || group.id === activePaginationGroupId
-            "
           >
             <div
               class="flex items-center gap-3 mb-2 group-header relative transition-opacity duration-200"
@@ -4475,7 +3600,7 @@ onUnmounted(() => {
               group="apps"
               :animation="200"
               :forceFallback="true"
-              :disabled="!isHomeEditChromeVisible || !!searchText"
+              :disabled="!isHomeEditChromeVisible"
               class="grid transition-all duration-300 min-h-[100px] rounded-xl"
               :class="
                 isHomeEditChromeVisible
@@ -4492,9 +3617,6 @@ onUnmounted(() => {
                 v-for="item in group.items"
                 :key="item.id"
                 @click="handleCardClick(item)"
-                @mousedown.right.prevent.stop="
-                  handleContextMenuPointerDown($event, item, group.id)
-                "
                 @contextmenu.prevent.stop="
                   handleContextMenu($event, item, group.id)
                 "
@@ -5092,6 +4214,7 @@ onUnmounted(() => {
       :y="runtimeContextMenu?.y || 0"
       :widget="runtimeMenuWidget"
       @close="closeRuntimeContextMenu"
+      @refresh="refreshRuntimeWidget"
       @edit-icon="editRuntimeWidgetIcon"
       @edit-home="editRuntimeWidgetHome"
       @delete="deleteRuntimeWidget"
@@ -5168,6 +4291,7 @@ onUnmounted(() => {
         data-grid-context-menu
         role="menu"
         class="sd-context-menu-list"
+        @contextmenu.prevent.stop
       >
         <div
           v-if="contextMenuItem?.lanUrl"
@@ -5478,43 +4602,171 @@ onUnmounted(() => {
 .shadow-text {
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.6);
 }
-.startdeck-search-input {
-  padding: 0 1rem 0 0.5rem;
-  color: var(--startdeck-search-text-color, #111827);
+
+.sd-itab-home-top {
+  display: grid;
+  justify-items: center;
+  gap: 18px;
+  margin: 4px auto 28px;
 }
-.startdeck-search-input::placeholder {
-  color: var(--startdeck-search-placeholder-color, rgba(107, 114, 128, 1));
+
+.sd-itab-home-top.has-time.has-search {
+  margin-top: -2px;
 }
-.startdeck-search-engine-button {
-  display: inline-flex;
-  width: auto;
-  min-width: 5.25rem;
-  max-width: 9rem;
-  height: 2.75rem;
+
+.sd-itab-home-clock {
+  width: min(330px, 100%);
+  text-align: center;
+}
+
+.sd-itab-home-clock-digits {
+  display: flex;
+  justify-content: center;
+  font-family:
+    "SF Pro Display",
+    "SF Pro Icons",
+    -apple-system,
+    BlinkMacSystemFont,
+    "Helvetica Neue",
+    sans-serif;
+  font-size: clamp(52px, 6vw, 72px);
+  font-weight: 300;
+  line-height: 1;
+  letter-spacing: 0;
+}
+
+.sd-itab-home-clock p {
+  margin: 4px 0 0;
+  color: color-mix(in srgb, currentColor 86%, transparent);
+  font-size: 14px;
+  font-weight: 650;
+  line-height: 20px;
+  letter-spacing: 0;
+}
+
+.sd-itab-home-search-wrap {
+  display: grid;
+  width: min(600px, calc(100vw - 88px));
+  justify-items: center;
+  gap: 8px;
+}
+
+.sd-itab-home-search {
+  display: flex;
+  width: 100%;
+  height: 46px;
+  align-items: center;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.36);
+  border-radius: 999px;
+  background: rgba(239, 246, 250, 0.74);
+  color: #20242a;
+  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.12);
+  backdrop-filter: blur(18px) saturate(130%);
+}
+
+.sd-itab-home-search-icon,
+.sd-itab-home-search-submit {
+  display: grid;
+  width: 50px;
+  height: 46px;
+  flex: none;
+  place-items: center;
+  border: 0;
+  background: transparent;
+  color: rgba(0, 0, 0, 0.58);
+  cursor: pointer;
+}
+
+.sd-itab-home-search-icon svg,
+.sd-itab-home-search-submit svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+}
+
+.sd-itab-home-search input {
+  min-width: 0;
+  height: 100%;
+  flex: 1;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: #20242a;
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.sd-itab-home-search input::placeholder {
+  color: rgba(0, 0, 0, 0.42);
+}
+
+.sd-itab-home-search-engines {
+  display: flex;
+  max-width: 100%;
+  min-height: 24px;
   align-items: center;
   justify-content: center;
-  gap: 0.25rem;
-  border: 1px solid rgba(203, 213, 225, 0.8);
-  border-radius: 9999px;
-  padding: 0 0.625rem;
-  color: var(--startdeck-search-text-color, #334155);
-  background: rgba(255, 255, 255, 0.56);
-  transition:
-    background-color 160ms ease,
-    border-color 160ms ease,
-    box-shadow 160ms ease,
-    transform 160ms ease;
+  gap: 2px;
+  overflow-x: auto;
+  scrollbar-width: none;
 }
-.startdeck-search-engine-button:hover {
-  border-color: rgba(148, 163, 184, 0.82);
-  background: rgba(255, 255, 255, 0.78);
+
+.sd-itab-home-search-engines::-webkit-scrollbar {
+  display: none;
 }
-.startdeck-search-engine-button:focus-visible {
+
+.sd-itab-home-search-engines button {
+  width: 64px;
+  height: 24px;
+  flex: 0 0 auto;
+  overflow: hidden;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.86);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 24px;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.42);
+  cursor: pointer;
+}
+
+.sd-itab-home-search-engines button:hover,
+.sd-itab-home-search-engines button:focus-visible,
+.sd-itab-home-search-engines button.is-active {
+  background: rgba(255, 255, 255, 0.18);
   outline: none;
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.18);
 }
-.startdeck-search-engine-button:active {
-  transform: scale(0.98);
+
+.sd-itab-home-search-engines button.is-add {
+  color: rgba(255, 255, 255, 0.72);
+}
+
+@media (max-width: 767px) {
+  .sd-itab-home-top {
+    gap: 14px;
+    margin-bottom: 20px;
+  }
+
+  .sd-itab-home-clock-digits {
+    font-size: 48px;
+  }
+
+  .sd-itab-home-search-wrap {
+    width: min(100%, calc(100vw - 40px));
+  }
+
+  .sd-itab-home-search-engines {
+    justify-content: flex-start;
+  }
 }
 .itab-add-blank-context-list {
   display: grid;
@@ -5565,83 +4817,6 @@ onUnmounted(() => {
 .itab-add-blank-context-shortcut {
   color: rgba(255, 255, 255, 0.55);
   font-size: 11px;
-}
-.startdeck-search-engine-label {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  color: #0071e3;
-  font-size: 0.9375rem;
-  font-weight: 800;
-}
-.startdeck-search-engine-menu {
-  position: absolute;
-  top: calc(100% + 0.5rem);
-  left: 0;
-  z-index: 80;
-  display: flex;
-  max-height: 15rem;
-  width: 3.75rem;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.375rem;
-  overflow-y: auto;
-  border: 1px solid rgba(226, 232, 240, 0.88);
-  border-radius: 14px;
-  background: rgba(255, 255, 255, 0.96);
-  padding: 0.4375rem;
-  box-shadow:
-    0 16px 40px rgba(15, 23, 42, 0.18),
-    0 2px 8px rgba(15, 23, 42, 0.08);
-  backdrop-filter: blur(14px);
-}
-.startdeck-search-engine-option {
-  display: inline-flex;
-  width: 2.75rem;
-  height: 2.75rem;
-  flex: 0 0 auto;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid transparent;
-  border-radius: 10px;
-  color: #475569;
-  transition:
-    background-color 160ms ease,
-    border-color 160ms ease,
-    color 160ms ease,
-    transform 160ms ease;
-}
-.startdeck-search-engine-option:hover {
-  border-color: rgba(203, 213, 225, 0.82);
-  background: rgba(241, 245, 249, 0.92);
-  color: #0f172a;
-}
-.startdeck-search-engine-option.is-active {
-  border-color: rgba(37, 99, 235, 0.35);
-  background: #eff6ff;
-  color: #2563eb;
-}
-.startdeck-search-engine-option:focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.18);
-}
-
-@media (max-width: 767px) {
-  .startdeck-search-input {
-    padding-right: 0.5rem;
-  }
-
-  .startdeck-search-engine-button {
-    min-width: 4.25rem;
-    max-width: 6.5rem;
-    height: 2.25rem;
-    padding-inline: 0.5rem;
-  }
-
-  .startdeck-search-engine-label {
-    font-size: 0.8125rem;
-  }
 }
 .card-item {
   border-color: var(--card-border-color);
@@ -5714,7 +4889,7 @@ onUnmounted(() => {
 }
 
 /* Force background override for ALL widget root elements */
-.empire-theme .vgl-item > * {
+.empire-theme .grid-stack-item > * {
   background-color: #000000 !important;
   background-image:
     url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23d4af37' fill-opacity='0.1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E"),
@@ -5726,8 +4901,8 @@ onUnmounted(() => {
 }
 
 /* Hide original backgrounds of inner elements */
-.empire-theme .vgl-item > * > [class*="bg-"],
-.empire-theme .vgl-item > * > [class*="bg-gradient-"],
+.empire-theme .grid-stack-item > * > [class*="bg-"],
+.empire-theme .grid-stack-item > * > [class*="bg-gradient-"],
 .empire-theme :deep(.bg-white),
 .empire-theme :deep(.bg-white\/80),
 .empire-theme :deep(.bg-yellow-100\/90),
@@ -5745,9 +4920,9 @@ onUnmounted(() => {
 }
 
 /* Specific fix for Calendar, Todo, Bookmarks which use specific classes */
-.empire-theme .vgl-item :deep(.bg-white\/90),
-.empire-theme .vgl-item :deep(.bg-white\/50),
-.empire-theme .vgl-item :deep(.hover\:bg-white:hover) {
+.empire-theme .grid-stack-item :deep(.bg-white\/90),
+.empire-theme .grid-stack-item :deep(.bg-white\/50),
+.empire-theme .grid-stack-item :deep(.hover\:bg-white:hover) {
   background-color: transparent !important;
 }
 

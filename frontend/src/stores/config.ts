@@ -19,7 +19,6 @@ export const useConfigStore = defineStore("config", () => {
   const isLanMode = ref(false);
   const networkLatency = ref(0);
   const effectiveIsLan = ref(false);
-  const ipFetchStatus = ref<"success" | "error" | "loading">("loading");
   const isPageUnloading = ref(false);
   const serverSyncLockCount = ref(0);
 
@@ -62,9 +61,6 @@ export const useConfigStore = defineStore("config", () => {
     solidBackgroundColor: "",
     enableMobileWallpaper: true,
     deviceMode: "auto",
-    widgetAreaSize: 4,
-    widgetAreaCols: 4,
-    widgetAreaRows: 4,
     pcRotation: false,
     pcRotationInterval: 30,
     pcRotationMode: "random",
@@ -75,6 +71,7 @@ export const useConfigStore = defineStore("config", () => {
     backgroundMask: 0,
     mobileBackgroundBlur: 0,
     mobileBackgroundMask: 0,
+    themeMode: "auto",
     daylightModeEnabled: false,
     daylightMask: 0.5,
     customTitle: "我的导航",
@@ -82,19 +79,18 @@ export const useConfigStore = defineStore("config", () => {
     titleSize: 48,
     titleColor: "#ffffff",
     cardLayout: "vertical",
-    cardSize: 148,
-    gridGap: 18,
-    iconSize: 64,
     cardBgColor: "transparent",
     cardTitleColor: "#111827",
     cardBorderColor: "transparent",
     showCardBackground: true,
     iconShape: "rounded",
+    showHomeTitle: true,
+    showHomeTime: true,
+    showHomeSearch: true,
     searchEngines: createDefaultSearchEngines(),
-    defaultSearchEngine: "google",
+    defaultSearchEngine: "baidu",
     rememberLastEngine: true,
     groupTitleColor: "#ffffff",
-    groupGap: 30,
     showFooterStats: false,
     footerHtml: "",
     footerHeight: 0,
@@ -110,7 +106,6 @@ export const useConfigStore = defineStore("config", () => {
     wallpaperApiMobileDeleteBase: "/api/mobile_backgrounds",
     wallpaperMobileImageBase: "/mobile_backgrounds",
     mobileWallpaperOrder: [],
-    sidebarViewMode: "bookmarks",
     webGroupPagination: false,
     webGroupPaginationDisableFlip: false,
     empireMode: false,
@@ -204,22 +199,6 @@ export const useConfigStore = defineStore("config", () => {
     },
   );
 
-  watch(
-    () =>
-      [appConfig.value.widgetAreaCols, appConfig.value.widgetAreaRows] as const,
-    ([cols, rows]) => {
-      const normalize = (v: unknown, fallback: number) => {
-        const n = typeof v === "number" && Number.isFinite(v) ? v : fallback;
-        return Math.min(16, Math.max(0.5, n));
-      };
-      const nextCols = normalize(cols, 4);
-      const nextRows = normalize(rows, 4);
-      if (nextCols !== cols) appConfig.value.widgetAreaCols = nextCols;
-      if (nextRows !== rows) appConfig.value.widgetAreaRows = nextRows;
-    },
-    { immediate: true },
-  );
-
   return {
     appConfig,
     systemConfig,
@@ -230,7 +209,6 @@ export const useConfigStore = defineStore("config", () => {
     isLanMode,
     networkLatency,
     effectiveIsLan,
-    ipFetchStatus,
     isPageUnloading,
     currentVersion,
     latestVersion,

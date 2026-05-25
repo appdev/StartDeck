@@ -1,5 +1,9 @@
 import { ref, shallowRef, type Ref } from "vue";
-import { fetchSiteMetadata, getSiteIconUrl, normalizeSiteUrl } from "@/utils/siteMetadata";
+import {
+  fetchSiteMetadata,
+  getSiteIconUrl,
+  normalizeSiteUrl,
+} from "@/utils/siteMetadata";
 import { normalizeIconBackgroundColor } from "@/utils/iconAppearance";
 
 export interface SmartIconCandidate {
@@ -86,7 +90,10 @@ const loadImageDimensions = (
 ): Promise<{ width: number; height: number; valid: boolean }> => {
   return new Promise((resolve) => {
     const img = new Image();
-    const timer = window.setTimeout(() => resolve({ width: 0, height: 0, valid: false }), SMART_MATCH_TIMEOUT_MS);
+    const timer = window.setTimeout(
+      () => resolve({ width: 0, height: 0, valid: false }),
+      SMART_MATCH_TIMEOUT_MS,
+    );
 
     img.onload = () => {
       window.clearTimeout(timer);
@@ -111,20 +118,26 @@ const loadImageDimensions = (
 export const validateDataUriIcon = async (input: string): Promise<boolean> => {
   const raw = input.trim();
   if (!raw.startsWith("data:image/")) return false;
-  const meta = raw.slice(5, raw.indexOf(",") > 0 ? raw.indexOf(",") : undefined).toLowerCase();
+  const meta = raw
+    .slice(5, raw.indexOf(",") > 0 ? raw.indexOf(",") : undefined)
+    .toLowerCase();
   if (!meta.includes(";base64")) return false;
   const result = await loadImageDimensions(raw);
   return result.valid;
 };
 
-export const validateRemoteIconUrl = async (input: string): Promise<boolean> => {
+export const validateRemoteIconUrl = async (
+  input: string,
+): Promise<boolean> => {
   const raw = input.trim();
   if (!raw) return false;
   const result = await loadImageDimensions(raw);
   return result.valid;
 };
 
-export const validateIconCandidate = async (input: string): Promise<boolean> => {
+export const validateIconCandidate = async (
+  input: string,
+): Promise<boolean> => {
   const raw = input.trim();
   if (!raw) return false;
   if (raw.startsWith("data:")) return validateDataUriIcon(raw);
@@ -135,7 +148,11 @@ const resolveTargetUrl = (form: SmartIconFormState): string => {
   return normalizeSiteUrl(form.url?.trim() || form.lanUrl?.trim() || "");
 };
 
-export const useSmartIconMatch = ({ form, onSelect, notify }: SmartIconMatchOptions) => {
+export const useSmartIconMatch = ({
+  form,
+  onSelect,
+  notify,
+}: SmartIconMatchOptions) => {
   const smartMatchCandidates = shallowRef<SmartIconCandidate[]>([]);
   const selectedSmartMatchCandidateUrl = ref("");
   const showSmartMatchModal = ref(false);
@@ -190,7 +207,9 @@ export const useSmartIconMatch = ({ form, onSelect, notify }: SmartIconMatchOpti
 
       const candidates: SmartIconCandidate[] = [];
       const metadataIcon = metadata?.icon?.trim();
-      const metadataBackgroundColor = normalizeIconBackgroundColor(metadata?.backgroundColor);
+      const metadataBackgroundColor = normalizeIconBackgroundColor(
+        metadata?.backgroundColor,
+      );
       if (metadataIcon && (await validateIconCandidate(metadataIcon))) {
         candidates.push({
           url: metadataIcon,
@@ -206,7 +225,8 @@ export const useSmartIconMatch = ({ form, onSelect, notify }: SmartIconMatchOpti
           candidates.push({
             url: fallbackIcon,
             source: "site",
-            label: metadata?.title || extractKeywordFromUrl(targetUrl) || "site",
+            label:
+              metadata?.title || extractKeywordFromUrl(targetUrl) || "site",
             backgroundColor: metadataBackgroundColor || undefined,
           });
         }

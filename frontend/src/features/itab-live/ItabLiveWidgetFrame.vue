@@ -179,6 +179,31 @@ onBeforeUnmount(() => {
   object-fit: contain;
 }
 
+.itab-native .itab-native-widget.widget-ip-30 > .widget-card {
+  display: block;
+  background: transparent;
+  box-shadow: rgba(0, 0, 0, 0.1) 0 0 5px 0;
+  backdrop-filter: none;
+}
+
+.itab-native .itab-native-widget.widget-ip-30.size-2-2 > .widget-card {
+  background: rgb(60, 102, 255);
+  box-shadow: rgba(0, 0, 0, 0.3) 0 0 10px 0;
+}
+
+.itab-native .itab-native-widget.widget-ip-30.size-2-4 > .widget-card {
+  background: rgb(60, 102, 255);
+  box-shadow: rgba(0, 0, 0, 0.3) 0 0 10px 0;
+}
+
+.itab-native .itab-native-widget.widget-ip-30 > .widget-card img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: rgb(60, 102, 255);
+  object-fit: contain;
+}
+
 .itab-native .itab-native-widget.is-shell-contract-invalid > .widget-card {
   display: grid;
   place-items: center;
@@ -360,7 +385,12 @@ onBeforeUnmount(() => {
   display: block;
   background: var(--movie-bg-color, #4c4c3f);
   color: var(--movie-text-color, #f9f9f4);
+  box-shadow: rgba(0, 0, 0, 0.1) 0 0 5px 0;
   text-align: left;
+}
+
+.itab-native .itab-native-widget.is-movie.size-2-2 > .widget-card {
+  box-shadow: rgba(0, 0, 0, 0.3) 0 0 10px 0;
 }
 
 .itab-native .itab-native-widget.is-movie > .widget-card::before {
@@ -405,6 +435,42 @@ onBeforeUnmount(() => {
   content: "";
   border: 1px dashed rgba(255, 255, 255, 0.18);
   border-radius: 10px;
+}
+
+.itab-native .itab-native-widget.is-daily-quote > .widget-card {
+  display: block;
+  background: transparent;
+  color: #fff;
+  box-shadow: rgba(0, 0, 0, 0.1) 0 0 5px 0;
+  text-align: center;
+  backdrop-filter: none;
+}
+
+.itab-native .itab-native-widget.is-daily-quote.size-2-2 > .widget-card,
+.itab-native .itab-native-widget.is-daily-quote.size-2-4 > .widget-card {
+  box-shadow: rgba(0, 0, 0, 0.3) 0 0 10px 0;
+}
+
+.itab-native .itab-native-widget.is-daily-quote > .widget-title {
+  top: calc(100% + 6px);
+  width: 90px;
+  font-family:
+    "PingFang SC",
+    -apple-system,
+    "system-ui",
+    "Helvetica Neue",
+    Helvetica,
+    sans-serif;
+  line-height: 13.2px;
+}
+
+.itab-native .itab-native-widget.is-daily-quote.size-1-2 > .widget-title,
+.itab-native .itab-native-widget.is-daily-quote.size-2-2 > .widget-title {
+  width: 180px;
+}
+
+.itab-native .itab-native-widget.is-daily-quote.size-2-4 > .widget-title {
+  width: 360px;
 }
 
 .itab-native .itab-native-widget.is-poem > .widget-card {
@@ -513,28 +579,37 @@ onBeforeUnmount(() => {
 }
 
 .itab-native .itab-native-widget.is-eat-today > .widget-card {
-  display: grid;
-  align-content: center;
-  place-items: center;
-  background:
-    radial-gradient(
-      circle at 78% 12%,
-      rgba(255, 226, 142, 0.82),
-      transparent 30%
-    ),
-    #fff;
-  color: #202429;
+  display: block;
+  background: #fff;
+  box-shadow: rgba(0, 0, 0, 0.3) 0 0 10px 0;
+  color: rgb(34, 34, 34);
+}
+
+.itab-native .itab-native-widget.is-eat-today.size-1-1 > .widget-card,
+.itab-native .itab-native-widget.is-eat-today.size-1-2 > .widget-card,
+.itab-native .itab-native-widget.is-eat-today.size-2-1 > .widget-card {
+  box-shadow: rgba(0, 0, 0, 0.1) 0 0 5px 0;
 }
 
 .itab-native .itab-native-widget.is-wallpaper > .widget-card {
-  display: grid;
-  align-items: end;
-  padding: 13px;
-  background:
-    linear-gradient(rgba(0, 0, 0, 0.03), rgba(0, 0, 0, 0.42)),
-    url("https://cn.bing.com//th?id=OHR.SichuanTea_ZH-CN6703437873_1920x1080.jpg&rf=LaDigue_1920x1080.jpg&pid=hp&w=300&h=168")
-      center/cover;
+  display: block;
+  padding: 0;
+  background-image: var(
+    --wallpaper-image,
+    url("https://cn.bing.com//th?id=OHR.BumbleBee_ZH-CN6429376340_1920x1080.jpg&rf=LaDigue_1920x1080.jpg&pid=hp&w=360&h=202")
+  );
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+  box-shadow: rgba(0, 0, 0, 0.3) 0 0 10px 0;
+  color: #fff;
   text-align: left;
+}
+
+.itab-native .itab-native-widget.is-wallpaper.size-1-1 > .widget-card,
+.itab-native .itab-native-widget.is-wallpaper.size-1-2 > .widget-card,
+.itab-native .itab-native-widget.is-wallpaper.size-2-1 > .widget-card {
+  box-shadow: rgba(0, 0, 0, 0.1) 0 0 5px 0;
 }
 
 .itab-native .itab-native-widget.is-todo > .widget-card {

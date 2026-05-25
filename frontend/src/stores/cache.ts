@@ -9,7 +9,7 @@ import {
   stripForceNetworkMode,
   normalizeVersion,
 } from "@/utils/storeHelpers";
-import type { AppConfig, WidgetConfig, NavGroup, RssFeed, RssCategory } from "@/types";
+import type { AppConfig, WidgetConfig } from "@/types";
 
 const LEGACY_CACHE_KEY = "start-deck-data-cache";
 const CACHE_KEY_PREFIX = "start-deck-data-cache";
@@ -34,10 +34,14 @@ export const useCacheStore = defineStore("cache", () => {
   const deferredSaveRequested = ref(false);
   const isFetchingData = ref(false);
   let isLoadingSnapshot = false;
-  const serverSnapshotRetryTimer = ref<ReturnType<typeof setTimeout> | null>(null);
+  const serverSnapshotRetryTimer = ref<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
 
   const getHeaders = (): Record<string, string> => {
-    const headers: Record<string, string> = { "Content-Type": "application/json" };
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+    };
     if (auth.token) {
       headers["Authorization"] = `Bearer ${auth.token}`;
     }
@@ -56,22 +60,26 @@ export const useCacheStore = defineStore("cache", () => {
     if (!auth.isLogged) {
       return { key: GUEST_CACHE_KEY, username: GUEST_CACHE_USER };
     }
-    const authMode = ((data.systemConfig as Record<string, unknown> | undefined)?.authMode ??
-      configStore.systemConfig.authMode) === "single"
-      ? "single"
-      : "multi";
-    const username = authMode === "single"
-      ? "admin"
-      : typeof data.username === "string" && data.username.trim()
-        ? data.username.trim()
-        : currentAuthUsername();
+    const authMode =
+      ((data.systemConfig as Record<string, unknown> | undefined)?.authMode ??
+        configStore.systemConfig.authMode) === "single"
+        ? "single"
+        : "multi";
+    const username =
+      authMode === "single"
+        ? "admin"
+        : typeof data.username === "string" && data.username.trim()
+          ? data.username.trim()
+          : currentAuthUsername();
     return { key: authCacheKey(username), username };
   };
 
   const saveToCache = (data: Record<string, unknown>) => {
     try {
       const cacheWidgets = Array.isArray(data.widgets)
-        ? (data.widgets as WidgetConfig[]).map((widget) => stripWidgetUiState(widget))
+        ? (data.widgets as WidgetConfig[]).map((widget) =>
+            stripWidgetUiState(widget),
+          )
         : data.widgets;
       const { key, username } = getCacheScopeForData(data);
       const cacheData = {
@@ -80,11 +88,11 @@ export const useCacheStore = defineStore("cache", () => {
         appConfig: stripForceNetworkMode(
           (data.appConfig || undefined) as Record<string, unknown> | undefined,
         ),
-        rssFeeds: data.rssFeeds,
-        rssCategories: data.rssCategories,
         systemConfig: data.systemConfig,
         username,
         version: data.version,
+        layoutSchemaVersion: data.layoutSchemaVersion,
+        lastOperationAt: data.lastOperationAt,
         timestamp: Date.now(),
       };
       localStorage.setItem(key, JSON.stringify(cacheData));
@@ -119,8 +127,6 @@ export const useCacheStore = defineStore("cache", () => {
   };
 
   const loadFromCache = (
-    rssFeedsRef: ReturnType<typeof ref<RssFeed[]>>,
-    rssCategoriesRef: ReturnType<typeof ref<RssCategory[]>>,
     dataVersionRef: ReturnType<typeof ref<number>>,
   ): boolean => {
     try {
@@ -129,22 +135,31 @@ export const useCacheStore = defineStore("cache", () => {
       const cache = JSON.parse(json);
 
       const cachedUser = cache.username || "";
-      const currentUser = auth.isLogged ? currentAuthUsername() : GUEST_CACHE_USER;
+      const currentUser = auth.isLogged
+        ? currentAuthUsername()
+        : GUEST_CACHE_USER;
       const isMatch = auth.isLogged
-        ? cachedUser === currentUser || (currentUser === "admin" && cachedUser === "admin")
+        ? cachedUser === currentUser ||
+          (currentUser === "admin" && cachedUser === "admin")
         : cachedUser === GUEST_CACHE_USER;
       if (!isMatch) return false;
 
       if (cache.groups) groupsStore.groups = cache.groups;
       if (cache.widgets) {
         widgetsStore.applyServerWidgets(
-          widgetsStore.normalizeIncomingWidgets(cache.widgets as WidgetConfig[], auth.isLogged),
+          widgetsStore.normalizeIncomingWidgets(
+            cache.widgets as WidgetConfig[],
+            auth.isLogged,
+          ),
           auth.isLogged,
           widgetsStore.layoutEditInProgress,
         );
       }
       if (cache.appConfig) {
-        const mergedConfig = { ...configStore.appConfig, ...cache.appConfig } as AppConfig & {
+        const mergedConfig = {
+          ...configStore.appConfig,
+          ...cache.appConfig,
+        } as AppConfig & {
           fixedWallpaper?: boolean;
           forceNetworkMode?: unknown;
         };
@@ -153,18 +168,18 @@ export const useCacheStore = defineStore("cache", () => {
           mergedConfig.mobileRotation = false;
         }
         delete mergedConfig.fixedWallpaper;
-        delete mergedConfig.forceNetworkMode;
-        configStore.appConfig = mergedConfig;
+        configStore.appConfig = stripForceNetworkMode(
+          mergedConfig as unknown as Record<string, unknown>,
+        ) as unknown as AppConfig;
       }
       if (
         !configStore.appConfig.marketplaceListUrl ||
         configStore.appConfig.marketplaceListUrl === DEV_MARKETPLACE_LIST_URL ||
-        configStore.appConfig.marketplaceListUrl === LEGACY_DEFAULT_MARKETPLACE_LIST_URL
+        configStore.appConfig.marketplaceListUrl ===
+          LEGACY_DEFAULT_MARKETPLACE_LIST_URL
       ) {
         configStore.appConfig.marketplaceListUrl = DEFAULT_MARKETPLACE_LIST_URL;
       }
-      if (Array.isArray(cache.rssFeeds)) rssFeedsRef.value = cache.rssFeeds;
-      if (Array.isArray(cache.rssCategories)) rssCategoriesRef.value = cache.rssCategories;
       if (cache.systemConfig) configStore.systemConfig = cache.systemConfig;
       if (typeof cache.version !== "undefined") {
         dataVersionRef.value = normalizeVersion(cache.version);
@@ -188,7 +203,9 @@ export const useCacheStore = defineStore("cache", () => {
   };
 
   const isServerSnapshotReady = computed(() => hasServerSnapshot.value);
-  const isClientReady = computed(() => hasServerSnapshot.value || cacheLoadedAt.value !== null);
+  const isClientReady = computed(
+    () => hasServerSnapshot.value || cacheLoadedAt.value !== null,
+  );
 
   const fetchWithTimeout = async (
     input: RequestInfo | URL,
@@ -212,16 +229,22 @@ export const useCacheStore = defineStore("cache", () => {
     if (isLoadingSnapshot) return;
     isLoadingSnapshot = true;
     try {
-      const res = await fetchWithTimeout("/api/data", { headers: getHeaders() });
+      const res = await fetchWithTimeout("/api/data", {
+        headers: getHeaders(),
+      });
       if (res.status === 304) {
         if (!isClientReady.value) {
           const reloadRes = await fetchWithTimeout("/api/data", {
             headers: getHeaders(),
             cache: "reload",
           });
-          if (!reloadRes.ok) throw new Error(`Init reload failed with status ${reloadRes.status}`);
+          if (!reloadRes.ok)
+            throw new Error(
+              `Init reload failed with status ${reloadRes.status}`,
+            );
           const reloadData = await reloadRes.json();
-          if (reloadData.systemConfig) configStore.systemConfig = reloadData.systemConfig;
+          if (reloadData.systemConfig)
+            configStore.systemConfig = reloadData.systemConfig;
           handleDataUpdate(reloadData);
         }
         updateLayout();

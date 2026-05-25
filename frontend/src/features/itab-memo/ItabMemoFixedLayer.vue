@@ -95,8 +95,12 @@ const fixedMemoBody = (note: ItabMemoNote) => note.body.trim() || "无内容";
   height: 131px;
   margin: 0 0 10px;
   padding: 8px 12px;
+  overflow: hidden;
   border-radius: 12px;
   background: rgba(255, 255, 255, 0.3);
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.12);
+  backdrop-filter: blur(10px) saturate(116%);
+  -webkit-backdrop-filter: blur(10px) saturate(116%);
   box-sizing: border-box;
   color: rgba(0, 0, 0, 0.9);
 }

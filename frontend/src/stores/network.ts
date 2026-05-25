@@ -103,7 +103,6 @@ export const useNetworkStore = defineStore("network", () => {
   ) => {
     if (typeof window === "undefined") return;
     window.addEventListener("online", () => {
-      console.log("[Network] Browser online event");
       if (getStatusValue() !== "OPEN") wsOpen();
       setTimeout(() => triggerOfflineQueueReplay(), 2000);
     });
@@ -115,7 +114,6 @@ export const useNetworkStore = defineStore("network", () => {
       ).connection;
       if (conn && typeof conn.addEventListener === "function") {
         conn.addEventListener("change", () => {
-          console.log("[Network] Connection type changed");
           if (getStatusValue() === "OPEN") return;
           setTimeout(() => {
             if (navigator.onLine && getStatusValue() !== "OPEN") wsOpen();
@@ -130,7 +128,6 @@ export const useNetworkStore = defineStore("network", () => {
         if (now - lastVisibilityReplayAt < 10000) return;
         lastVisibilityReplayAt = now;
         if (navigator.onLine && getStatusValue() === "OPEN") {
-          console.log("[Visibility] Page visible, checking offline queue");
           setTimeout(() => triggerOfflineQueueReplay(), 1000);
         }
       }

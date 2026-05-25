@@ -44,13 +44,13 @@ describe("AppWindowBar", () => {
 
     expect(bar.find(".sd-window-traffic-button").exists()).toBe(false);
     expect(bar.find(".sd-window-title-layer").exists()).toBe(true);
+    expect(bar.find(".sd-window-controls").exists()).toBe(true);
+    expect(bar.find(".sd-window-control-dot.is-green").exists()).toBe(true);
     expect(
-      bar.find(".sd-window-bar-edge.is-trailing [aria-label='关闭']").exists(),
+      bar.find(".sd-window-control-dot.is-red[aria-label='关闭']").exists(),
     ).toBe(true);
 
-    await bar
-      .find(".sd-window-bar-edge.is-trailing [aria-label='关闭']")
-      .trigger("click");
+    await bar.find(".sd-window-control-dot.is-red").trigger("click");
 
     expect(bar.emitted("close")).toEqual([[]]);
   });

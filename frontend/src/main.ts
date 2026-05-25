@@ -1,4 +1,5 @@
 import "./assets/main.css";
+import "gridstack/dist/gridstack.min.css";
 import "./assets/grid-layout.css";
 import { createApp } from "vue";
 import { createPinia } from "pinia";

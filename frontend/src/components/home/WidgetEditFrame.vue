@@ -1,9 +1,10 @@
 <script setup lang="ts">
+import { X as XIcon } from "@lucide/vue";
+
 withDefaults(
   defineProps<{
     editing?: boolean;
     selected?: boolean;
-    resizeActive?: boolean;
     deleteLabel?: string;
     widgetType?: string;
     widgetSize?: string;
@@ -11,7 +12,6 @@ withDefaults(
   {
     editing: false,
     selected: false,
-    resizeActive: false,
     deleteLabel: "移除组件",
     widgetType: "",
     widgetSize: "",
@@ -21,7 +21,6 @@ withDefaults(
 defineEmits<{
   select: [];
   delete: [];
-  resizeStart: [event: PointerEvent];
 }>();
 </script>
 
@@ -31,7 +30,6 @@ defineEmits<{
     :class="{
       'is-editing': editing,
       'is-selected': selected,
-      'is-resizing': resizeActive,
     }"
     :data-widget-type="widgetType || null"
     :data-widget-size="widgetSize || null"
@@ -52,17 +50,8 @@ defineEmits<{
         :title="deleteLabel"
         @click.stop="$emit('delete')"
       >
-        ×
+        <XIcon :size="15" :stroke-width="3" aria-hidden="true" />
       </button>
-      <button
-        type="button"
-        class="sd-home-widget-resize-grip widget-resize-grip"
-        data-grid-drag-ignore="true"
-        aria-label="调整组件尺寸"
-        title="调整组件尺寸"
-        @pointerdown.stop="$emit('resizeStart', $event)"
-        @click.stop
-      />
     </template>
   </div>
 </template>

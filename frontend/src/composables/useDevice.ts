@@ -1,7 +1,9 @@
 import { computed, type Ref } from "vue";
 import { useWindowSize } from "@vueuse/core";
 
-export function useDevice(deviceMode?: Ref<"auto" | "desktop" | "tablet" | "mobile" | undefined>) {
+export function useDevice(
+  deviceMode?: Ref<"auto" | "desktop" | "tablet" | "mobile" | undefined>,
+) {
   const { width, height } = useWindowSize();
 
   const ua = typeof navigator !== "undefined" ? navigator.userAgent : "";
@@ -20,7 +22,12 @@ export function useDevice(deviceMode?: Ref<"auto" | "desktop" | "tablet" | "mobi
     if (mode !== "auto") return mode as "desktop" | "tablet" | "mobile";
 
     const treatAsHandheld =
-      isHarmony || isHuaweiBrowser || isAndroid || isiOS || isMobileUA || isAlook;
+      isHarmony ||
+      isHuaweiBrowser ||
+      isAndroid ||
+      isiOS ||
+      isMobileUA ||
+      isAlook;
 
     if (treatAsHandheld) {
       const minSide = Math.min(w, h);
@@ -36,7 +43,8 @@ export function useDevice(deviceMode?: Ref<"auto" | "desktop" | "tablet" | "mobi
   const deviceKey = computed(() => {
     const mode = deviceMode?.value || "auto";
     if (mode === "auto") return autoKey.value;
-    if (mode === "desktop" || mode === "tablet" || mode === "mobile") return mode;
+    if (mode === "desktop" || mode === "tablet" || mode === "mobile")
+      return mode;
     return autoKey.value;
   });
   const isMobile = computed(() => deviceKey.value === "mobile");

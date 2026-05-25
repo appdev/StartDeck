@@ -38,8 +38,55 @@ class MockAudioElement {
 
 const audioInstances: MockAudioElement[] = [];
 
-const mockFetch = vi.fn(async (input: RequestInfo | URL) => {
+const mockBingWallpaperEntries = Array.from({ length: 15 }, (_, index) => ({
+  id: `backend-wallpaper-${index + 1}`,
+  title: index === 0 ? "后端壁纸一" : `后端壁纸 ${index + 1}`,
+  location: index === 0 ? "后端地点一" : `后端地点 ${index + 1}`,
+  credit: index === 0 ? "Backend Credit" : "Bing",
+  thumbnailUrl: `https://www.bing.com/th?id=OHR.Backend${index + 1}_ZH-CN_1920x1080.jpg&w=360&h=202`,
+  downloadUrl: `https://www.bing.com/th?id=OHR.Backend${index + 1}_ZH-CN_1920x1080.jpg`,
+}));
+
+const defaultMockFetch = async (input: RequestInfo | URL) => {
   const url = String(input);
+
+  if (url.includes("/api/itab/bing-wallpapers")) {
+    return {
+      ok: true,
+      json: async () => ({
+        success: true,
+        data: {
+          entries: mockBingWallpaperEntries,
+          sourceStatus: "ok",
+          updatedAt: "2026-05-26T00:00:00Z",
+          count: mockBingWallpaperEntries.length,
+          totalPages: 1,
+          pageSize: 24,
+          currentPage: 1,
+        },
+      }),
+    } as Response;
+  }
+
+  if (url.includes("/api/ip")) {
+    return {
+      ok: true,
+      json: async () => ({
+        success: true,
+        ip: "163.125.214.27",
+        queryIp: "163.125.214.27",
+        clientIp: "127.0.0.1",
+        clientIpSource: "test",
+        location: "中国 广东 深圳 中国联通",
+        country: "中国",
+        region: "广东",
+        city: "深圳",
+        isp: "中国联通",
+        longitude: "114.045422",
+        latitude: "22.696667",
+      }),
+    } as Response;
+  }
 
   if (url.includes("/api/itab/movie-calendar")) {
     return {
@@ -72,20 +119,95 @@ const mockFetch = vi.fn(async (input: RequestInfo | URL) => {
     } as Response;
   }
 
-  if (url.includes("/itab/todayEnglish")) {
+  if (url.includes("api.codelife.cc/itab/todayMovie")) {
+    return {
+      ok: true,
+      json: async () => ({
+        date: "20260523",
+        mov_title: "雌雄莫辨",
+        mov_rating: "7.4",
+        mov_text: "你不需要成为任何人，只需做你自己。",
+        poster_url:
+          "https://files.codelife.cc/itab/movieCalendar/p-202303234712730.webp",
+        mov_pic:
+          "https://files.codelife.cc/itab/movieCalendar/c-202303234712730.webp",
+        mov_link: "https://movie.douban.com/subject/4712730/",
+        mov_year: "2011",
+        mov_area: "英国 美国 爱尔兰",
+        mov_director: "罗德里戈·加西亚",
+        mov_intro: "Albert Nobbs 在酒店谨慎生活，直到命运改变他的孤独世界。",
+        mov_type: ["剧情", "同性"],
+        color: "f9d5ad",
+      }),
+    } as Response;
+  }
+
+  if (url.includes("api.timelessq.com/english-sentence")) {
+    return {
+      ok: true,
+      json: async () => ({
+        errno: 0,
+        errmsg: "",
+        data: {
+          content: "Light stretches longer, painting walls gold.",
+          note: "日光拉得更长，把墙壁染成金色。",
+          picture:
+            "https://staticedu-wps-cache.iciba.com/image/ignored-picture.png",
+          middlePicture:
+            "https://staticedu-wps-cache.iciba.com/image/fa0ba1a3b8cc0bc45195b87a9e7dc82f.png",
+          tts: "https://staticedu-wps-cache.iciba.com/audio/source-capture.mp3",
+          date: "2026-05-20",
+        },
+      }),
+    } as Response;
+  }
+
+  if (url.includes("/yiyan/info")) {
+    const requestUrl = new URL(url);
+    const date = requestUrl.searchParams.get("date") || "20260523";
+    const isPreviousDate = date === "20260522";
     return {
       ok: true,
       json: async () => ({
         code: 200,
         data: {
-          content: "Light stretches longer, painting walls gold.",
-          note: "日光拉得更长，把墙壁染成金色。",
-          picture:
-            "https://staticedu-wps-cache.iciba.com/image/fa0ba1a3b8cc0bc45195b87a9e7dc82f.png",
-          picture2:
-            "https://staticedu-wps-cache.iciba.com/image/fa0ba1a3b8cc0bc45195b87a9e7dc82f.png",
-          tts: "https://staticedu-wps-cache.iciba.com/audio/source-capture.mp3",
-          dateline: "2026-05-20",
+          _id: isPreviousDate ? "daily-quote-previous" : "daily-quote-current",
+          date,
+          author: isPreviousDate ? "海明威" : "三毛",
+          content: isPreviousDate
+            ? "生活总是让我们遍体鳞伤，但后来，那些受伤的地方一定会变成我们最强壮的地方。"
+            : "真正的快乐，不是狂喜，亦不是苦痛，在我很主观地来说，它是细水长流。",
+          from: isPreviousDate ? "小说家" : "作家",
+          like: 56,
+          share: 27,
+          pic_url:
+            "https://pics.tide.moreless.io/dailypics/lkgaHBEg12pm2js5igPS57nUzoWq?imageView2/1/w/1366/h/768/format/webp",
+          thumb:
+            "https://pics.tide.moreless.io/dailypics/lkgaHBEg12pm2js5igPS57nUzoWq?imageView2/1/w/1366/h/768/format/webp?imageView2/1/w/300/h/300/format/webp",
+        },
+      }),
+    } as Response;
+  }
+
+  if (url.includes("/yiyan/like")) {
+    return {
+      ok: true,
+      json: async () => ({
+        code: 200,
+        data: {
+          like: 57,
+        },
+      }),
+    } as Response;
+  }
+
+  if (url.includes("/yiyan/share")) {
+    return {
+      ok: true,
+      json: async () => ({
+        code: 200,
+        data: {
+          share: 28,
         },
       }),
     } as Response;
@@ -281,7 +403,9 @@ const mockFetch = vi.fn(async (input: RequestInfo | URL) => {
     status: 404,
     json: async () => ({}),
   } as Response;
-});
+};
+
+const mockFetch = vi.fn(defaultMockFetch);
 
 describe("ItabLiveReplica clock replica", () => {
   let wrapper: VueWrapper | null = null;
@@ -310,6 +434,7 @@ describe("ItabLiveReplica clock replica", () => {
     );
     audioInstances.length = 0;
     mockFetch.mockClear();
+    mockFetch.mockImplementation(defaultMockFetch);
   });
 
   afterEach(() => {
@@ -337,6 +462,13 @@ describe("ItabLiveReplica clock replica", () => {
     return wrapper;
   };
 
+  const flushReplicaAsync = async () => {
+    await Promise.resolve();
+    await Promise.resolve();
+    await Promise.resolve();
+    await nextTick();
+  };
+
   const setWidgetSize = async (selector: string, size: string) => {
     const widget = wrapper!.find(selector);
     await widget.trigger("contextmenu", {
@@ -360,17 +492,26 @@ describe("ItabLiveReplica clock replica", () => {
   const setDailyEnglishSize = async (size: string) =>
     setWidgetSize(".widget-english-14", size);
 
+  const setDailyQuoteSize = async (size: string) =>
+    setWidgetSize(".widget-daily-quote-09", size);
+
   const setMovieSize = async (size: string) =>
     setWidgetSize(".widget-movie-05", size);
 
   const setSpeedtestSize = async (size: string) =>
     setWidgetSize(".widget-speedtest-13", size);
 
+  const setEatTodaySize = async (size: string) =>
+    setWidgetSize(".widget-food-15", size);
+
   const setGradientSize = async (size: string) =>
     setWidgetSize(".widget-gradient-25", size);
 
   const setConverterSize = async (size: string) =>
     setWidgetSize(".widget-converter-34", size);
+
+  const setIpSize = async (size: string) =>
+    setWidgetSize(".widget-ip-30", size);
 
   const expectCssRule = (
     selector: string,
@@ -431,7 +572,7 @@ describe("ItabLiveReplica clock replica", () => {
   it("deduplicates the initial desktop widget set", async () => {
     await mountReplica();
 
-    expect(wrapper!.findAll(".itab-native-widget")).toHaveLength(30);
+    expect(wrapper!.findAll(".itab-native-widget")).toHaveLength(31);
     for (const removedDuplicate of [
       ".widget-anniversary-day-08",
       ".widget-weather-19",
@@ -597,6 +738,159 @@ describe("ItabLiveReplica clock replica", () => {
     });
     expect(styleSource).toContain(".offwork-settings-main");
     expect(styleSource).toContain("countdown/offwork.png");
+  });
+
+  it("renders the source-shaped food picker body states and opened actions", async () => {
+    await mountReplica();
+
+    const food = () => wrapper!.find(".widget-food-15");
+    const foodCard = () => food().find(".widget-card");
+
+    expect(food().find(".d-watch-resize").exists()).toBe(true);
+    expect(food().find(".app-eat.d-flex-center").exists()).toBe(true);
+    expect(food().find(".eat-box.ac").exists()).toBe(true);
+    expect(food().find(".eat-title").text()).toBe("今天吃什么");
+    expect(food().find(".eat-button").text()).toBe("开始");
+    expect(foodCard().find("button").exists()).toBe(false);
+
+    for (const size of ["1x1", "1x2", "2x1", "2x2", "2x4"]) {
+      await setWidgetSize(".widget-food-15", size);
+      expect(food().classes()).toContain(`size-${size.replace("x", "-")}`);
+      expect(food().find(".eat-title").exists()).toBe(true);
+      expect(food().find(".eat-button").exists()).toBe(true);
+    }
+
+    await wrapper!.find(".widget-food-15").trigger("click");
+    await nextTick();
+
+    const openedWindow = wrapper!.find(".opened-window.opened-eat-today");
+    const openedPanel = wrapper!.find(".opened-food-panel");
+    expect(openedWindow.exists()).toBe(true);
+    expect(openedPanel.exists()).toBe(true);
+    expect(openedPanel.find(".food-wheel").exists()).toBe(false);
+    expect(openedPanel.find(".opened-food-core h2").text()).toBe("今天吃什么");
+    expect(openedPanel.find(".opened-food-start").text()).toBe("开始");
+    expect(
+      openedPanel
+        .findAll(".opened-food-actions button")
+        .map((button) => button.text()),
+    ).toEqual(["朋友帮我选", "菜单自己写"]);
+
+    expectCssRule(
+      ".itab-native .itab-native-widget.is-eat-today > .widget-card",
+      {
+        background: "#fff",
+        "box-shadow": "rgba(0, 0, 0, 0.3) 0 0 10px 0",
+      },
+    );
+    expect(styleSource).toContain(
+      ".itab-native .itab-native-widget.is-eat-today.size-1-1 > .widget-card,\n.itab-native .itab-native-widget.is-eat-today.size-1-2 > .widget-card,\n.itab-native .itab-native-widget.is-eat-today.size-2-1 > .widget-card {\n  box-shadow: rgba(0, 0, 0, 0.1) 0 0 5px 0;\n}",
+    );
+    expectCssRule(".is-eat-today .eat-title", {
+      width: "40px",
+      height: "13px",
+      "font-size": "8px",
+      "line-height": "12px",
+    });
+    expectCssRule(".is-eat-today .eat-button", {
+      width: "38px",
+      height: "13px",
+      "border-radius": "8px",
+      "box-shadow": "rgb(242, 178, 65) 0 2px 6px 0",
+    });
+    expectCssRule(
+      ".is-eat-today.size-2-2 .eat-title,\n.is-eat-today.size-2-4 .eat-title",
+      {
+        width: "105px",
+        height: "34px",
+        "font-size": "21px",
+        "line-height": "31.5px",
+      },
+    );
+    expectCssRule(
+      ".is-eat-today.size-2-2 .eat-button,\n.is-eat-today.size-2-4 .eat-button",
+      {
+        width: "99px",
+        height: "34px",
+        "border-radius": "21px",
+      },
+    );
+    expectCssRule(".opened-window.opened-eat-today", {
+      width: "min(1000px, calc(100vw - 32px))",
+      height: "min(602px, calc(100vh - 32px))",
+      "border-radius": "20px",
+      background: "rgb(255, 255, 255)",
+      "box-shadow": "rgba(0, 0, 0, 0.48) 0 12px 32px 0",
+      "backdrop-filter": "none",
+    });
+    expectCssRule(".opened-window.opened-eat-today .traffic .yellow", {
+      display: "none",
+    });
+    expectCssRule(".opened-food-actions button", {
+      width: "122px",
+      height: "32px",
+      "border-radius": "20px",
+      "font-size": "14px",
+    });
+  });
+
+  it("reacts when the food picker start controls are clicked", async () => {
+    const randomSpy = vi
+      .spyOn(Math, "random")
+      .mockReturnValueOnce(0)
+      .mockReturnValueOnce(0.16);
+    await mountReplica();
+
+    const food = () => wrapper!.find(".widget-food-15");
+    const foodStart = () => food().find(".eat-button");
+
+    await foodStart().trigger("click");
+    await nextTick();
+
+    expect(wrapper!.find(".opened-window.opened-eat-today").exists()).toBe(
+      false,
+    );
+    expect(foodStart().text()).toBe("牛肉粉");
+
+    vi.advanceTimersByTime(70);
+    await nextTick();
+    expect(foodStart().text()).toBe("砂锅粥");
+
+    vi.advanceTimersByTime(70);
+    await nextTick();
+    expect(foodStart().text()).toBe("肠粉");
+
+    vi.advanceTimersByTime(640);
+    await nextTick();
+
+    expect(foodStart().text()).toBe("砂锅粥");
+    expect(foodStart().attributes("data-eat-today-current")).toBe("砂锅粥");
+
+    await food().trigger("click");
+    await nextTick();
+
+    const openedPanel = wrapper!.find(".opened-food-panel");
+    expect(openedPanel.exists()).toBe(true);
+    expect(openedPanel.find(".opened-food-core h2").text()).toBe("砂锅粥");
+    expect(openedPanel.find(".opened-food-start").text()).toBe("换一个");
+
+    randomSpy.mockReturnValueOnce(0.25).mockReturnValueOnce(0.5);
+    await openedPanel.find(".opened-food-start").trigger("click");
+    await nextTick();
+
+    expect(openedPanel.find(".opened-food-core h2").text()).toBe("肠粉");
+    expect(openedPanel.find(".opened-food-start").text()).toBe("选择中");
+
+    vi.advanceTimersByTime(70);
+    await nextTick();
+    expect(openedPanel.find(".opened-food-core h2").text()).toBe("咖喱饭");
+
+    vi.advanceTimersByTime(710);
+    await nextTick();
+
+    expect(openedPanel.find(".opened-food-core h2").text()).toBe("云吞面");
+    expect(openedPanel.find(".opened-food-start").text()).toBe("换一个");
+    expect(foodStart().text()).toBe("云吞面");
   });
 
   it("keeps shared widget chrome in the centralized frame shell", () => {
@@ -770,6 +1064,122 @@ describe("ItabLiveReplica clock replica", () => {
         "box-shadow": "rgba(0, 0, 0, 0.1) 0 0 5px 0",
       },
     );
+  });
+
+  it("renders eat-today source outer sizes and opened source panel", async () => {
+    await mountReplica();
+
+    const foodWidget = () => wrapper!.find(".widget-food-15");
+
+    expect(foodWidget().text()).toContain("今天吃什么");
+    expect(foodWidget().text()).toContain("开始");
+    expect(foodWidget().find(".eat-title").exists()).toBe(true);
+    expect(foodWidget().find(".eat-button").exists()).toBe(true);
+
+    for (const size of ["1x1", "1x2", "2x1", "2x2", "2x4"]) {
+      await setEatTodaySize(size);
+      expect(foodWidget().classes()).toContain(
+        `size-${size.replace("x", "-")}`,
+      );
+      expect(foodWidget().find(".eat-title").text()).toBe("今天吃什么");
+      expect(foodWidget().find(".eat-button").text()).toBe("开始");
+    }
+
+    expectCssRule(
+      ".itab-native .itab-native-widget.is-eat-today > .widget-card",
+      {
+        display: "block",
+        background: "#fff",
+        "box-shadow": "rgba(0, 0, 0, 0.3) 0 0 10px 0",
+      },
+    );
+    expectCssRule(
+      ".itab-native .itab-native-widget.is-eat-today.size-1-1 > .widget-card,\n.itab-native .itab-native-widget.is-eat-today.size-1-2 > .widget-card,\n.itab-native .itab-native-widget.is-eat-today.size-2-1 > .widget-card",
+      {
+        "box-shadow": "rgba(0, 0, 0, 0.1) 0 0 5px 0",
+      },
+    );
+    expectCssRule(".is-eat-today .eat-title", {
+      width: "40px",
+      height: "13px",
+      "font-size": "8px",
+      "font-weight": "700",
+      "line-height": "12px",
+    });
+    expectCssRule(".is-eat-today .eat-button", {
+      width: "38px",
+      height: "13px",
+      margin: "8px 0 0",
+      "border-radius": "8px",
+      "box-shadow": "rgb(242, 178, 65) 0 2px 6px 0",
+    });
+    expectCssRule(
+      ".is-eat-today.size-2-2 .eat-title,\n.is-eat-today.size-2-4 .eat-title",
+      {
+        width: "105px",
+        height: "34px",
+        "font-size": "21px",
+        "line-height": "31.5px",
+      },
+    );
+    expectCssRule(
+      ".is-eat-today.size-2-2 .eat-button,\n.is-eat-today.size-2-4 .eat-button",
+      {
+        width: "99px",
+        height: "34px",
+        "margin-top": "21px",
+        "border-radius": "21px",
+      },
+    );
+
+    await foodWidget().trigger("click");
+    await nextTick();
+
+    const openedWindow = wrapper!.find(".opened-window.opened-eat-today");
+    expect(openedWindow.exists()).toBe(true);
+    expect(openedWindow.attributes("style")).toContain(
+      "width: min(1000px, calc(100vw - 32px));",
+    );
+    expect(openedWindow.attributes("style")).toContain(
+      "height: min(602px, calc(100vh - 32px));",
+    );
+    expect(wrapper!.find(".opened-food-panel").exists()).toBe(true);
+    expect(wrapper!.find(".food-wheel").exists()).toBe(false);
+    expect(wrapper!.find(".opened-generic-panel").exists()).toBe(false);
+    expect(wrapper!.find(".opened-food-panel").text()).toContain("今天吃什么");
+    expect(wrapper!.find(".opened-food-panel").text()).toContain("开始");
+    expect(wrapper!.find(".opened-food-panel").text()).toContain("朋友帮我选");
+    expect(wrapper!.find(".opened-food-panel").text()).toContain("菜单自己写");
+
+    expectCssRule(".opened-window.opened-eat-today", {
+      border: "0",
+      "border-radius": "20px",
+      background: "rgb(255, 255, 255)",
+      "box-shadow": "rgba(0, 0, 0, 0.48) 0 12px 32px 0",
+      "backdrop-filter": "none",
+    });
+    expectCssRule(".opened-window.opened-eat-today .traffic .yellow", {
+      display: "none",
+    });
+    expectCssRule(".opened-food-panel", {
+      position: "relative",
+      width: "calc(100% - 2px)",
+      height: "calc(100% - 2px)",
+      margin: "1px",
+      background: "rgb(255, 255, 255)",
+    });
+    expectCssRule(".opened-food-start", {
+      width: "122px",
+      height: "42px",
+      "border-radius": "21px",
+      "box-shadow": "rgb(242, 178, 65) 0 2px 6px 0",
+    });
+    expectCssRule(".opened-food-actions", {
+      right: "100px",
+      bottom: "49px",
+      left: "100px",
+      "justify-content": "space-between",
+    });
   });
 
   it("renders converter source-sized outer states", async () => {
@@ -1092,13 +1502,114 @@ describe("ItabLiveReplica clock replica", () => {
     expect(panel.attributes("data-movie-source-status")).toBe("ok");
     expect(panel.find(".opened-movie-bg").exists()).toBe(true);
     expect(panel.find(".opened-movie-rating-star").exists()).toBe(true);
-    expect(panel.find(".opened-movie-poster img").attributes("src")).toContain(
+    expect(
+      panel.find(".opened-movie-copy + .opened-movie-poster").exists(),
+    ).toBe(true);
+    const posterImages = panel.findAll(".opened-movie-poster img");
+    expect(posterImages).toHaveLength(2);
+    expect(posterImages[0].attributes("src")).toContain(
       "p-202303231870044.webp",
     );
     expect(panel.find(".opened-movie-source").attributes("href")).toBe(
       "https://movie.douban.com/subject/1870044/",
     );
     expect(wrapper!.find(".opened-generic-panel").exists()).toBe(false);
+  });
+
+  it("uses current source API data when the local movie calendar proxy fails", async () => {
+    mockFetch.mockImplementation(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes("/api/itab/movie-calendar")) {
+        return {
+          ok: false,
+          status: 500,
+          json: async () => ({ success: false }),
+        } as Response;
+      }
+      return defaultMockFetch(input);
+    });
+
+    await mountReplica();
+    await flushReplicaAsync();
+
+    const movieCalls = mockFetch.mock.calls
+      .map(([input]) => String(input))
+      .filter(
+        (url) =>
+          url.includes("/api/itab/movie-calendar") ||
+          url.includes("api.codelife.cc/itab/todayMovie"),
+      );
+    expect(movieCalls[0]).toContain("/api/itab/movie-calendar");
+    expect(movieCalls[1]).toBe(
+      "https://api.codelife.cc/itab/todayMovie?version=v2",
+    );
+
+    const movieWidget = wrapper!.find(".widget-movie-05");
+    expect(movieWidget.text()).toContain("23");
+    expect(movieWidget.text()).toContain("5月/周六");
+    expect(movieWidget.text()).toContain("《雌雄莫辨》");
+    expect(movieWidget.text()).toContain("你不需要成为任何人，只需做你自己。");
+    expect(movieWidget.text()).not.toContain("红气球之旅");
+    expect(movieWidget.find(".widget-card").attributes("style")).toContain(
+      "c-202303234712730.webp",
+    );
+
+    await movieWidget.trigger("click");
+    await nextTick();
+
+    const panel = wrapper!.find(".opened-movie-panel");
+    expect(panel.exists()).toBe(true);
+    expect(panel.attributes("data-movie-source-status")).toBe("direct");
+    expect(panel.text()).toContain("雌雄莫辨");
+    expect(panel.text()).toContain("剧情/同性2011英国 美国 爱尔兰");
+    expect(panel.text()).toContain("导演：罗德里戈·加西亚");
+    expect(panel.text()).toContain(
+      "Albert Nobbs 在酒店谨慎生活，直到命运改变他的孤独世界。",
+    );
+    expect(
+      panel.findAll(".opened-movie-poster img")[0].attributes("src"),
+    ).toContain("p-202303234712730.webp");
+    expect(panel.find(".opened-movie-source").attributes("href")).toBe(
+      "https://movie.douban.com/subject/4712730/",
+    );
+  });
+
+  it("shows an explicit movie calendar error state instead of stale sample data", async () => {
+    mockFetch.mockImplementation(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (
+        url.includes("/api/itab/movie-calendar") ||
+        url.includes("api.codelife.cc/itab/todayMovie")
+      ) {
+        return {
+          ok: false,
+          status: 500,
+          json: async () => ({}),
+        } as Response;
+      }
+      return defaultMockFetch(input);
+    });
+
+    await mountReplica();
+    await flushReplicaAsync();
+
+    const movieWidget = wrapper!.find(".widget-movie-05");
+    expect(movieWidget.text()).toContain("电影日历加载失败");
+    expect(movieWidget.text()).toContain("请检查电影日历接口连接");
+    expect(movieWidget.text()).not.toContain("红气球之旅");
+    expect(movieWidget.text()).not.toContain("波拉特");
+    expect(movieWidget.find(".widget-card").attributes("style")).toContain(
+      "--movie-cover-image: none",
+    );
+
+    await movieWidget.trigger("click");
+    await nextTick();
+
+    const panel = wrapper!.find(".opened-movie-panel");
+    expect(panel.attributes("data-movie-source-status")).toBe("error");
+    expect(panel.findAll(".opened-movie-poster img")).toHaveLength(0);
+    expect(panel.text()).toContain("电影日历加载失败");
+    expect(panel.text()).not.toContain("红气球之旅");
   });
 
   it("renders every movie calendar outer size branch with API data", async () => {
@@ -1134,6 +1645,15 @@ describe("ItabLiveReplica clock replica", () => {
     expect(
       wrapper!.find(".widget-movie-05 .movie-title-vertical").text(),
     ).toContain("波拉特");
+
+    expectCssRule(".movie-rating", { "border-radius": "6px" });
+    expectCssRule(".itab-native .itab-native-widget.is-movie > .widget-card", {
+      "box-shadow": "rgba(0, 0, 0, 0.1) 0 0 5px 0",
+    });
+    expectCssRule(
+      ".itab-native .itab-native-widget.is-movie.size-2-2 > .widget-card",
+      { "box-shadow": "rgba(0, 0, 0, 0.3) 0 0 10px 0" },
+    );
   });
 
   it("renders every source clock outer size branch", async () => {
@@ -1308,13 +1828,346 @@ describe("ItabLiveReplica clock replica", () => {
     expectCssRule(".is-clock.size-2-4 .f16", { width: "202px" });
   });
 
+  it("renders daily quote from the live source API contract", async () => {
+    vi.setSystemTime(new Date("2026-05-23T21:09:08+08:00"));
+    await mountReplica();
+    await flushReplicaAsync();
+
+    expect(
+      mockFetch.mock.calls.some(([input]) =>
+        String(input).includes("https://base.itab.link/yiyan/info"),
+      ),
+    ).toBe(true);
+
+    const quoteWidget = () => wrapper!.find(".widget-daily-quote-09");
+    const quoteCard = () => quoteWidget().find(".daily-quote-card");
+
+    expect(quoteWidget().exists()).toBe(true);
+    expect(quoteWidget().classes()).toContain("size-2-2");
+    expect(quoteCard().attributes("data-daily-quote-api")).toBe(
+      "https://base.itab.link/yiyan/info",
+    );
+    expect(quoteCard().attributes("data-daily-quote-source-status")).toBe(
+      "direct",
+    );
+    expect(quoteCard().attributes("data-daily-quote-date")).toBe("20260523");
+    expect(quoteCard().attributes("style")).toContain("lkgaHBEg12pm2js5igPS57");
+    expect(quoteWidget().find(".daily-quote-title").text()).toBe("每日一言");
+    expect(quoteWidget().text()).toContain("真正的快乐");
+    expect(quoteWidget().text()).not.toContain("维克多·弗兰克尔");
+
+    await setDailyQuoteSize("1x1");
+    expect(quoteWidget().classes()).toContain("size-1-1");
+    expect(quoteWidget().find(".daily-quote-icon").attributes("src")).toBe(
+      "/itab-live-assets/yiyan.svg",
+    );
+    expect(
+      quoteWidget().find(".daily-quote-icon").attributes("data-source-src"),
+    ).toBe("https://files.codelife.cc/icons/yiyan.svg");
+    expect(quoteWidget().find(".daily-quote-wrap").exists()).toBe(false);
+
+    await setDailyQuoteSize("1x2");
+    expect(quoteWidget().classes()).toContain("size-1-2");
+    expect(quoteWidget().find(".daily-quote-title").exists()).toBe(false);
+    expect(quoteWidget().text()).toContain("真正的快乐");
+
+    await setDailyQuoteSize("2x1");
+    expect(quoteWidget().classes()).toContain("size-2-1");
+    expect(quoteWidget().find(".daily-quote-title").exists()).toBe(false);
+    expect(quoteWidget().text()).toContain("真正的快乐");
+
+    await setDailyQuoteSize("2x2");
+    expect(quoteWidget().classes()).toContain("size-2-2");
+    expect(quoteWidget().find(".daily-quote-title").text()).toBe("每日一言");
+
+    await setDailyQuoteSize("2x4");
+    expect(quoteWidget().classes()).toContain("size-2-4");
+    expect(quoteWidget().find(".daily-quote-text em").text()).toBe(
+      "作家，三毛",
+    );
+
+    expectCssRule(
+      ".itab-native .itab-native-widget.is-daily-quote > .widget-card",
+      {
+        background: "transparent",
+        "box-shadow": "rgba(0, 0, 0, 0.1) 0 0 5px 0",
+      },
+    );
+    expectCssRule(
+      ".itab-native .itab-native-widget.is-daily-quote.size-2-2 > .widget-card,\n.itab-native .itab-native-widget.is-daily-quote.size-2-4 > .widget-card",
+      {
+        "box-shadow": "rgba(0, 0, 0, 0.3) 0 0 10px 0",
+      },
+    );
+    expectCssRule(".daily-quote-icon", {
+      background: "rgb(1, 18, 17)",
+      "object-fit": "contain",
+    });
+    expectCssRule(".daily-quote-wrap", {
+      padding: "10px",
+      "background-size": "cover",
+    });
+    expectCssRule(".daily-quote-title", {
+      color: "rgba(255, 255, 255, 0.6)",
+      "font-size": "12px",
+      "font-weight": "700",
+      "line-height": "18px",
+    });
+    expectCssRule(".daily-quote-text", {
+      "font-size": "12.6px",
+      "font-weight": "400",
+      "line-height": "17.64px",
+    });
+    expectCssRule(
+      ".daily-quote-size-1-2 .daily-quote-text,\n.daily-quote-size-2-1 .daily-quote-text",
+      {
+        "font-size": "11.4px",
+        "line-height": "15.96px",
+      },
+    );
+    expectCssRule(".daily-quote-size-2-1 .daily-quote-content-layer", {
+      "writing-mode": "vertical-lr",
+    });
+    expectCssRule(".daily-quote-size-2-4 .daily-quote-text", {
+      "font-size": "14px",
+      "line-height": "19.6px",
+    });
+    expectCssRule(".daily-quote-text em", {
+      "font-size": "12px",
+      "font-weight": "400",
+    });
+  });
+
+  it("opens a source-shaped daily quote panel with safe native interactions", async () => {
+    vi.setSystemTime(new Date("2026-05-23T21:09:08+08:00"));
+    await mountReplica();
+    await flushReplicaAsync();
+
+    await wrapper!.find(".widget-daily-quote-09").trigger("click");
+    await nextTick();
+
+    const openedWindow = wrapper!.find(".opened-window.opened-daily-quote");
+    const panel = wrapper!.find(".opened-daily-quote-panel");
+    expect(openedWindow.exists()).toBe(true);
+    expect(openedWindow.attributes("style")).toContain(
+      "width: min(860px, calc(100vw - 42px));",
+    );
+    expect(openedWindow.attributes("style")).toContain(
+      "height: min(552px, calc(100vh - 64px));",
+    );
+    expect(panel.exists()).toBe(true);
+    expect(panel.attributes("data-daily-quote-api")).toBe(
+      "https://base.itab.link/yiyan/info",
+    );
+    expect(panel.attributes("data-daily-quote-like-api")).toBe(
+      "https://base.itab.link/yiyan/like",
+    );
+    expect(panel.attributes("data-daily-quote-share-api")).toBe(
+      "https://base.itab.link/yiyan/share",
+    );
+    expect(panel.attributes("data-daily-quote-source-status")).toBe("direct");
+    expect(panel.attributes("data-itab-no-iframe")).toBe("true");
+    expect(wrapper!.find(".opened-generic-panel").exists()).toBe(false);
+    expect(wrapper!.find(".opened-daily-quote-panel iframe").exists()).toBe(
+      false,
+    );
+    expect(panel.attributes("style")).toContain("lkgaHBEg12pm2js5igPS57");
+    expect(panel.find(".opened-daily-quote-date").text()).toBe(
+      "2026.05.23 星期六",
+    );
+    expect(panel.find(".opened-daily-quote-time").text()).toBe("21:09");
+    expect(panel.find("blockquote").text()).toContain("真正的快乐");
+    expect(panel.find(".opened-daily-quote-author").text()).toBe("作家，三毛");
+    expect(panel.findAll(".opened-daily-quote-chevron")).toHaveLength(2);
+    expect(panel.findAll(".opened-daily-quote-actions button")).toHaveLength(3);
+    expect(
+      panel
+        .find('[data-itab-hotspot-id="daily-quote-fullscreen"]')
+        .attributes("aria-label"),
+    ).toBe("设为屏保");
+    expect(panel.find(".opened-daily-quote-source").text()).toContain(
+      "数据来源于",
+    );
+    expect(panel.find(".opened-daily-quote-source").attributes("href")).toBe(
+      "https://tide.fm/",
+    );
+    expect(panel.find(".opened-daily-quote-source img").attributes("src")).toBe(
+      "https://go.itab.link/tide.png",
+    );
+    expect(panel.findAll(".opened-daily-quote-actions span")).toHaveLength(0);
+    expect(
+      panel
+        .findAll(".opened-daily-quote-actions button")
+        .map((button) => button.text()),
+    ).toEqual(["", "", ""]);
+
+    const shareButton = panel
+      .findAll(".opened-daily-quote-actions button")
+      .find((button) => button.attributes("aria-label") === "分享每日一言");
+    expect(shareButton).toBeTruthy();
+    expect(shareButton!.text()).toBe("");
+    await shareButton!.trigger("click");
+    await flushReplicaAsync();
+    expect(
+      mockFetch.mock.calls.some(([input]) => {
+        const url = String(input);
+        return (
+          url.includes("https://base.itab.link/yiyan/share") &&
+          url.includes("_id=daily-quote-current")
+        );
+      }),
+    ).toBe(true);
+    expect(
+      panel
+        .findAll(".opened-daily-quote-actions button")
+        .find((button) => button.attributes("aria-label") === "分享每日一言")!
+        .classes(),
+    ).toContain("is-clicking");
+    expect(panel.findAll(".opened-daily-quote-actions span")).toHaveLength(0);
+
+    const likeButton = panel
+      .findAll(".opened-daily-quote-actions button")
+      .find((button) => button.attributes("aria-label") === "喜欢每日一言");
+    expect(likeButton).toBeTruthy();
+    expect(likeButton!.text()).toBe("");
+    await likeButton!.trigger("click");
+    await flushReplicaAsync();
+    expect(
+      mockFetch.mock.calls.some(([input]) => {
+        const url = String(input);
+        return (
+          url.includes("https://base.itab.link/yiyan/like") &&
+          url.includes("_id=daily-quote-current")
+        );
+      }),
+    ).toBe(true);
+    expect(
+      panel
+        .findAll(".opened-daily-quote-actions button")
+        .find((button) => button.attributes("aria-label") === "喜欢每日一言")!
+        .attributes("aria-pressed"),
+    ).toBe("true");
+    expect(
+      panel
+        .findAll(".opened-daily-quote-actions button")
+        .find((button) => button.attributes("aria-label") === "喜欢每日一言")!
+        .classes(),
+    ).toContain("is-clicking");
+    expect(panel.findAll(".opened-daily-quote-actions span")).toHaveLength(0);
+
+    await panel
+      .find('[data-itab-hotspot-id="daily-quote-prev"]')
+      .trigger("click");
+    await flushReplicaAsync();
+    expect(
+      mockFetch.mock.calls.some(([input]) => {
+        const url = String(input);
+        return (
+          url.includes("https://base.itab.link/yiyan/info") &&
+          url.includes("date=20260522")
+        );
+      }),
+    ).toBe(true);
+    expect(panel.find(".opened-daily-quote-date").text()).toBe(
+      "2026.05 星期五",
+    );
+    expect(panel.find(".opened-daily-quote-time").text()).toBe("22");
+    expect(panel.find("blockquote").text()).toContain("生活总是");
+
+    await panel
+      .find('[data-itab-hotspot-id="daily-quote-fullscreen"]')
+      .trigger("click");
+    await nextTick();
+    expect(panel.classes()).toContain("is-fullscreen");
+    expect(panel.attributes("data-daily-quote-fullscreen")).toBe("true");
+    expect(panel.findAll(".opened-daily-quote-actions button")).toHaveLength(1);
+    expect(
+      panel.find('[data-itab-hotspot-id="daily-quote-fullscreen"]').classes(),
+    ).toContain("is-clicking");
+    expect(panel.findAll(".opened-daily-quote-actions span")).toHaveLength(0);
+
+    expect(wrapper!.find(".opened-daily-quote-panel").exists()).toBe(true);
+
+    expectCssRule(".opened-window.opened-daily-quote", {
+      width: "min(860px, calc(100vw - 42px))",
+      height: "min(552px, calc(100vh - 64px))",
+      "border-radius": "20px",
+      "box-shadow": "rgba(0, 0, 0, 0.48) 0 12px 32px 0",
+    });
+    expectCssRule(".opened-daily-quote-main", {
+      "padding-top": "10%",
+      "text-align": "center",
+    });
+    expectCssRule(".opened-daily-quote-date", {
+      "font-size": "15px",
+      "font-weight": "700",
+    });
+    expectCssRule(".opened-daily-quote-time", {
+      "font-size": "66px",
+      "font-weight": "700",
+      "line-height": "1.6",
+    });
+    expectCssRule(".opened-daily-quote-main blockquote", {
+      "font-size": "18px",
+      "font-weight": "700",
+      margin: "20px 20% 0",
+    });
+    expectCssRule(".opened-daily-quote-author", {
+      "font-size": "12px",
+      "font-weight": "400",
+    });
+    expectCssRule(".opened-daily-quote-actions", {
+      "margin-top": "100px",
+      gap: "0",
+    });
+    expectCssRule(".opened-daily-quote-actions button", {
+      width: "80px",
+      height: "80px",
+      opacity: "0.4",
+    });
+    expectCssRule(".opened-daily-quote-actions svg", {
+      width: "30px",
+      height: "30px",
+      "margin-top": "24px",
+    });
+    expectCssRule(".opened-daily-quote-actions button.is-clicking", {
+      animation: "daily-quote-action-pop 0.36s cubic-bezier(0.22, 1, 0.36, 1)",
+    });
+    expect(replicaSource).toContain("@keyframes daily-quote-action-pop");
+    expect(replicaSource).toContain('from "@lucide/vue"');
+    expect(replicaSource).toContain("<CopyIcon");
+    expect(replicaSource).toContain("<ScanIcon");
+    expect(replicaSource).toContain("<HeartIcon");
+    expect(replicaSource).not.toContain("M8 7.5h9.5A2.5");
+    expect(replicaSource).not.toContain("M12 20.5s-7.5");
+    expectCssRule(".opened-daily-quote-source", {
+      bottom: "8px",
+      "font-size": "10px",
+      opacity: "0.3",
+    });
+    expectCssRule(".opened-daily-quote-source img", {
+      height: "18px",
+    });
+    expectCssRule(".opened-daily-quote-chevron", {
+      top: "calc(50% - 40px)",
+      width: "20px",
+      height: "40px",
+      opacity: "0.2",
+    });
+  });
+
   it("renders daily English from the observed source API contract", async () => {
     await mountReplica();
     expect(
       mockFetch.mock.calls.some(([input]) =>
-        String(input).includes("https://base.itab.link/itab/todayEnglish"),
+        String(input).includes("https://api.timelessq.com/english-sentence"),
       ),
     ).toBe(true);
+    expect(
+      mockFetch.mock.calls.some(([input]) =>
+        String(input).includes("english-sentence?"),
+      ),
+    ).toBe(false);
 
     await setDailyEnglishSize("1x1");
     expect(wrapper!.find(".widget-english-14").classes()).toContain("size-1-1");
@@ -1333,12 +2186,12 @@ describe("ItabLiveReplica clock replica", () => {
       wrapper!
         .find(".widget-english-14 .daily-english-card")
         .attributes("data-daily-english-api"),
-    ).toBe("https://base.itab.link/itab/todayEnglish");
+    ).toBe("https://api.timelessq.com/english-sentence");
     expect(
       wrapper!
         .find(".widget-english-14 .daily-english-card")
         .attributes("data-daily-english-provider"),
-    ).toBe("https://open.iciba.com/dsapi/");
+    ).toBe("https://api.timelessq.com");
 
     await setDailyEnglishSize("1x2");
     expect(wrapper!.find(".widget-english-14").classes()).toContain("size-1-2");
@@ -1460,12 +2313,12 @@ describe("ItabLiveReplica clock replica", () => {
       wrapper!
         .find(".opened-english-panel")
         .attributes("data-daily-english-api"),
-    ).toBe("https://base.itab.link/itab/todayEnglish");
+    ).toBe("https://api.timelessq.com/english-sentence");
     expect(
       wrapper!
         .find(".opened-english-panel")
         .attributes("data-daily-english-provider"),
-    ).toBe("https://open.iciba.com/dsapi/");
+    ).toBe("https://api.timelessq.com");
 
     const playButton = wrapper!.find(".opened-english-play");
     expect(playButton.attributes("aria-pressed")).toBe("false");
@@ -1648,6 +2501,329 @@ describe("ItabLiveReplica clock replica", () => {
     expect(wrapper!.find(".blank-menu").exists()).toBe(false);
   });
 
+  it("replicates the simplified Bing-only wallpaper outer sizes and opened interactions", async () => {
+    await mountReplica();
+
+    const wallpaper = () => wrapper!.find(".widget-wallpaper-16");
+    const copyright = () => wallpaper().find(".wallpaper-copyright");
+    const firstBackendWallpaperDescription =
+      "后端壁纸一 后端地点一 © Backend Credit";
+
+    expect(wallpaper().classes()).toContain("size-2-2");
+    expect(copyright().text()).toBe(firstBackendWallpaperDescription);
+    expect(wallpaper().find(".widget-card").attributes("style")).toContain(
+      "OHR.Backend1",
+    );
+
+    await setWidgetSize(".widget-wallpaper-16", "1x1");
+    expect(copyright().exists()).toBe(false);
+
+    await setWidgetSize(".widget-wallpaper-16", "2x1");
+    expect(copyright().exists()).toBe(false);
+
+    for (const size of ["1x2", "2x2", "2x4"]) {
+      await setWidgetSize(".widget-wallpaper-16", size);
+      expect(wallpaper().classes()).toContain(`size-${size.replace("x", "-")}`);
+      expect(copyright().text()).toBe(firstBackendWallpaperDescription);
+    }
+
+    await wallpaper().trigger("click");
+    await nextTick();
+
+    const panel = wrapper!.find(".opened-wallpaper-panel");
+    expect(wrapper!.find(".opened-window.opened-wallpaper").exists()).toBe(
+      true,
+    );
+    expect(panel.exists()).toBe(true);
+    expect(wrapper!.find(".opened-media-panel").exists()).toBe(false);
+    expect(panel.text()).toContain("壁纸库");
+    expect(panel.text()).toContain("必应每日壁纸");
+    expect(panel.text()).toContain("点此下载4k高清壁纸");
+    expect(panel.find(".wallpaper-featured-image span").exists()).toBe(false);
+    for (const removedSource of [
+      "纯色",
+      "官方壁纸",
+      "动态壁纸",
+      "Wallhaven",
+      "Deepin",
+      "自定义壁纸",
+      "我的收藏",
+    ]) {
+      expect(panel.text()).not.toContain(removedSource);
+    }
+
+    expect(panel.findAll(".wallpaper-bing-grid article")).toHaveLength(12);
+    expect(panel.find(".wallpaper-settings-popover").exists()).toBe(false);
+    await panel.find(".wallpaper-settings-trigger").trigger("click");
+    await nextTick();
+    expect(panel.find(".wallpaper-settings-popover").exists()).toBe(true);
+    expect(
+      panel.find(".wallpaper-settings-trigger").attributes("aria-expanded"),
+    ).toBe("true");
+
+    const range = panel.find(".wallpaper-range input");
+    await range.setValue("7");
+    await nextTick();
+    expect(panel.find(".wallpaper-range b").text()).toBe("7");
+
+    await panel.findAll(".wallpaper-thumb")[1].trigger("click");
+    await nextTick();
+    expect(wrapper!.find(".wallpaper-featured-copy strong").text()).toContain(
+      "后端壁纸一",
+    );
+    expect(
+      wrapper!.find(".wallpaper-featured-copy strong").text(),
+    ).not.toContain("后端壁纸 2");
+    expect(copyright().text()).toBe("后端壁纸 2 后端地点 2 © Bing");
+    expect(wallpaper().find(".widget-card").attributes("style")).toContain(
+      "OHR.Backend2",
+    );
+
+    expect(panel.find(".wallpaper-panel-actions button").text()).toBe(
+      "加载更多",
+    );
+    expect(
+      panel.find(".wallpaper-panel-actions button").attributes("disabled"),
+    ).toBeUndefined();
+
+    Object.defineProperties(panel.element, {
+      clientHeight: { value: 420, configurable: true },
+      scrollHeight: { value: 1000, configurable: true },
+    });
+    Object.defineProperty(panel.element, "scrollTop", {
+      value: 430,
+      configurable: true,
+      writable: true,
+    });
+    await panel.trigger("scroll");
+    await nextTick();
+    expect(panel.findAll(".wallpaper-bing-grid article")).toHaveLength(15);
+    expect(panel.find(".wallpaper-panel-actions button").text()).toBe(
+      "已全部加载",
+    );
+    expect(
+      panel.find(".wallpaper-panel-actions button").attributes("disabled"),
+    ).toBeDefined();
+
+    expectCssRule(".wallpaper-copyright", {
+      position: "absolute",
+      bottom: "0",
+      height: "40px",
+      "font-weight": "400",
+    });
+    expectCssRule(".wallpaper-copyright-text", {
+      "-webkit-line-clamp": "2",
+    });
+    expectCssRule(".wallpaper-panel-head", {
+      display: "flex",
+      gap: "28px",
+    });
+    expectCssRule(".wallpaper-settings-trigger", {
+      top: "11px",
+      right: "73px",
+      width: "16px",
+      height: "16px",
+    });
+    expectCssRule(".wallpaper-bing-grid", {
+      "grid-template-columns": "repeat(4, minmax(0, 1fr))",
+    });
+    expectCssRule(".wallpaper-panel-actions", {
+      position: "relative",
+      background: "transparent",
+    });
+    expectCssRule(".opened-window.opened-wallpaper", {
+      "border-radius": "20px",
+      "box-shadow": "rgba(0, 0, 0, 0.48) 0 12px 32px 0",
+    });
+    expectCssRule(
+      ".itab-native .itab-native-widget.is-wallpaper > .widget-card",
+      {
+        display: "block",
+        padding: "0",
+        "background-position": "center",
+        "background-size": "cover",
+      },
+    );
+  });
+
+  it("replicates the IP lookup outer sizes and opened native query panel", async () => {
+    await mountReplica();
+
+    const ipWidget = () => wrapper!.find(".widget-ip-30");
+
+    expect(ipWidget().find(".widget-title").text()).toBe("本机IP");
+    expect(
+      mockFetch.mock.calls.some(([input]) =>
+        String(input).includes("/api/ip?"),
+      ),
+    ).toBe(true);
+
+    for (const size of ["1x1", "1x2", "2x1"]) {
+      await setIpSize(size);
+      expect(ipWidget().classes()).toContain(`size-${size.replace("x", "-")}`);
+      const icon = ipWidget().find(".widget-card > img");
+      expect(icon.exists()).toBe(true);
+      expect(icon.attributes("src")).toBe("/itab-live-assets/ip.svg");
+    }
+
+    for (const size of ["2x2", "2x4"]) {
+      await setIpSize(size);
+      expect(ipWidget().classes()).toContain(`size-${size.replace("x", "-")}`);
+      expect(ipWidget().find(".widget-card > img").exists()).toBe(false);
+      const outerCard = ipWidget().find(".ip-outer-card");
+      expect(outerCard.exists()).toBe(true);
+      expect(outerCard.text()).toContain("163.125.214.27");
+      expect(outerCard.text()).toContain("中国-广东-深圳");
+      expect(ipWidget().find(".ip-outer-title").text()).toBe("163.125.214.27");
+      expect(ipWidget().find(".ip-outer-subtitle").text()).toBe(
+        "中国-广东-深圳",
+      );
+    }
+
+    expectCssRule(
+      ".itab-native .itab-native-widget.widget-ip-30 > .widget-card",
+      {
+        display: "block",
+        background: "transparent",
+        "box-shadow": "rgba(0, 0, 0, 0.1) 0 0 5px 0",
+        "backdrop-filter": "none",
+      },
+    );
+    expectCssRule(
+      ".itab-native .itab-native-widget.widget-ip-30.size-2-2 > .widget-card",
+      {
+        background: "rgb(60, 102, 255)",
+        "box-shadow": "rgba(0, 0, 0, 0.3) 0 0 10px 0",
+      },
+    );
+    expectCssRule(
+      ".itab-native .itab-native-widget.widget-ip-30.size-2-4 > .widget-card",
+      {
+        background: "rgb(60, 102, 255)",
+        "box-shadow": "rgba(0, 0, 0, 0.3) 0 0 10px 0",
+      },
+    );
+    expectCssRule(
+      ".itab-native .itab-native-widget.widget-ip-30 > .widget-card img",
+      {
+        width: "100%",
+        height: "100%",
+        background: "rgb(60, 102, 255)",
+        "object-fit": "contain",
+      },
+    );
+    expectCssRule(".ip-outer-card", {
+      display: "flex",
+      "align-items": "center",
+      "justify-content": "center",
+      background: "rgb(60, 102, 255)",
+      "text-align": "center",
+    });
+    expectCssRule(".ip-outer-title", {
+      "font-size": "18px",
+      "font-weight": "700",
+      "line-height": "24px",
+      "white-space": "nowrap",
+    });
+    expectCssRule(".ip-outer-subtitle", {
+      "font-size": "14px",
+      "font-weight": "500",
+      "line-height": "19px",
+      "white-space": "normal",
+      "word-break": "break-word",
+    });
+    expectCssRule(".size-2-4 .ip-outer-title", {
+      "font-size": "40px",
+      "line-height": "48px",
+    });
+    expectCssRule(".size-2-4 .ip-outer-subtitle", {
+      "font-size": "17px",
+      "line-height": "23px",
+    });
+    expectCssRule(".ip-outer-card.is-long-address .ip-outer-title", {
+      "word-break": "break-all",
+    });
+
+    await setIpSize("2x2");
+    await ipWidget().trigger("click");
+    await nextTick();
+    await Promise.resolve();
+    await nextTick();
+
+    const openedWindow = wrapper!.find(".opened-window.opened-widget-ip-30");
+    expect(openedWindow.exists()).toBe(true);
+    expect(openedWindow.attributes("style")).toContain(
+      "width: min(1000px, calc(100vw - 42px));",
+    );
+    expect(openedWindow.attributes("style")).toContain(
+      "height: min(602px, calc(100vh - 64px));",
+    );
+
+    expect(openedWindow.find("iframe").exists()).toBe(false);
+    expect(replicaSource).not.toContain("widget.codelife.cc/ip/index.html");
+    expect(replicaSource).not.toContain("<iframe");
+
+    const panel = wrapper!.find(".opened-ip-panel");
+    expect(panel.exists()).toBe(true);
+    expect(panel.find(".opened-ip-tabs").exists()).toBe(false);
+    expect(panel.find(".opened-ip-search").exists()).toBe(false);
+    expect(replicaSource).not.toContain("opened-ip-tabs");
+    expect(replicaSource).not.toContain("opened-ip-search");
+    expect(panel.text()).not.toContain("IP138");
+    expect(panel.text()).not.toContain("请输入ip地址");
+    expect(panel.text()).toContain("本机IP地址信息");
+    expect(panel.text()).toContain("解析地址：");
+    expect(panel.text()).toContain("163.125.214.27");
+    expect(panel.text()).toContain("归属地：");
+    expect(panel.text()).toContain("中国-广东-深圳");
+    expect(panel.text()).toContain("网络：");
+    expect(panel.text()).toContain("中国联通");
+    expect(panel.text()).toContain("经纬度：");
+    expect(panel.text()).toContain("114.045422,22.696667");
+    expect(panel.text()).not.toContain("刷新当前 IP");
+    expect(panel.text()).not.toContain("访问地址：");
+    expect(panel.text()).not.toContain("更新时间：");
+    expect(wrapper!.find(".ip-card").exists()).toBe(false);
+
+    expect(mockFetch).toHaveBeenCalledWith(
+      expect.stringContaining("/api/ip?"),
+      expect.objectContaining({ headers: { accept: "application/json" } }),
+    );
+
+    expectCssRule(".opened-window.opened-widget-ip-30", {
+      "border-radius": "20px",
+      background: "#fff",
+      "box-shadow": "rgba(0, 0, 0, 0.48) 0 12px 32px 0",
+      "backdrop-filter": "none",
+    });
+    expectCssRule(".opened-window.opened-widget-ip-30 .traffic .yellow", {
+      display: "none",
+    });
+    expectCssRule(".opened-ip-result", {
+      width: "calc(100% - 60px)",
+      margin: "78px 30px 0",
+    });
+    expectCssRule(".opened-ip-result h2", {
+      "font-size": "16px",
+      "line-height": "22px",
+    });
+    expectCssRule(".opened-ip-result dl div", {
+      "grid-template-columns": "88px minmax(0, 1fr)",
+      "min-height": "24px",
+    });
+    expectCssRule(".opened-ip-result dt", {
+      "font-weight": "400",
+      "text-align": "start",
+    });
+    expectCssRule(".opened-ip-result dd", {
+      "font-weight": "400",
+    });
+
+    await wrapper!.find(".itab-native-panel .traffic .red").trigger("click");
+    await nextTick();
+    expect(wrapper!.find(".itab-native-panel").exists()).toBe(false);
+  });
+
   it("keeps opened state clearing behind the named close handler", () => {
     expect(replicaSource).toContain("const closeOpenedWidget = () =>");
     expect(
@@ -1665,6 +2841,24 @@ describe("ItabLiveReplica clock replica", () => {
     expect(setWidgetSizeBlock!.indexOf("closeMenus();")).toBeLessThan(
       setWidgetSizeBlock!.indexOf("!isItabReplicaWidgetSizeSupported"),
     );
+  });
+
+  it("blurs the focused widget trigger when Escape closes an opened panel", async () => {
+    await mountReplica();
+    const widget = wrapper!.find(".widget-memo-04");
+    const widgetElement = widget.element as HTMLElement;
+    widgetElement.focus();
+    expect(document.activeElement).toBe(widgetElement);
+
+    await widget.trigger("click");
+    await nextTick();
+    expect(wrapper!.find(".itab-native-panel").exists()).toBe(true);
+
+    window.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
+    await nextTick();
+
+    expect(wrapper!.find(".itab-native-panel").exists()).toBe(false);
+    expect(document.activeElement).not.toBe(widgetElement);
   });
 
   it("opens the flip-clock dialog and animates digit changes", async () => {

@@ -15,14 +15,21 @@ export function detectNetworkByLatency(
   thresholdMs?: number,
 ): "lan" | "wan" | "unknown";
 
-export function isInternalNetwork(url: unknown, internalDomains?: string, networkRules?: string): boolean;
+export function isInternalNetwork(
+  url: unknown,
+  internalDomains?: string,
+  networkRules?: string,
+): boolean;
 
-export function getNetworkConfig(appConfig?: {
-  internalDomains?: string;
-  networkRules?: string;
-  networkPresets?: Record<string, boolean>;
-  latencyThresholdMs?: number;
-}, localForceNetworkMode?: "auto" | "lan" | "wan" | "latency"): {
+export function getNetworkConfig(
+  appConfig?: {
+    internalDomains?: string;
+    networkRules?: string;
+    networkPresets?: Record<string, boolean>;
+    latencyThresholdMs?: number;
+  },
+  localForceNetworkMode?: "auto" | "lan" | "wan" | "latency",
+): {
   internalDomains: string;
   networkRules: string;
   forceNetworkMode: "auto" | "lan" | "wan" | "latency";

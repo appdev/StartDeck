@@ -1,7 +1,9 @@
 <script setup lang="ts">
-import { ref, watch, onUnmounted, computed } from "vue";
+import { ref, watch, computed } from "vue";
 import { useMainStore } from "../stores/main";
-import OverlayMotion from "@/components/base/OverlayMotion.vue";
+import ActionFooter from "@/components/base/ActionFooter.vue";
+import AppButton from "@/components/base/AppButton.vue";
+import AppModalShell from "@/components/base/AppModalShell.vue";
 
 const props = defineProps<{
   show: boolean;
@@ -13,46 +15,10 @@ const props = defineProps<{
 const emit = defineEmits(["update:show", "select", "cancelLink"]);
 const store = useMainStore();
 
-const timeoutSeconds = ref(10);
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-let timer: any = null;
-
-const startTimer = () => {
-  clearInterval(timer);
-  timeoutSeconds.value = 10;
-  timer = setInterval(() => {
-    timeoutSeconds.value--;
-    if (timeoutSeconds.value <= 0) {
-      clearInterval(timer); // Ensure timer stops
-      if (props.candidates.length > 0) {
-        const first = props.candidates[0];
-        if (first) {
-          selectIcon(first);
-        }
-      }
-    }
-  }, 1000);
-};
-
 const selectIcon = (icon: string) => {
-  clearInterval(timer);
   emit("select", icon);
   emit("update:show", false);
 };
-
-// Start timer when show becomes true
-watch(
-  () => props.show,
-  (val) => {
-    clearInterval(timer); // Clear any existing timer first
-    if (val) {
-      startTimer();
-    }
-  },
-  { immediate: true }
-);
-
-onUnmounted(() => clearInterval(timer));
 
 const getIconName = (url: string) => {
   // Extract name from URL or path
@@ -75,8 +41,14 @@ const getIconName = (url: string) => {
 
 const PAGE_SIZE = 100;
 const visibleCount = ref(PAGE_SIZE);
-const visibleCandidates = computed(() => props.candidates.slice(0, visibleCount.value));
+const visibleCandidates = computed(() =>
+  props.candidates.slice(0, visibleCount.value),
+);
 const hasMore = computed(() => visibleCount.value < props.candidates.length);
+const dialogTitle = computed(() =>
+  props.source === "local" ? "本地图标" : "网络图标",
+);
+const dialogSubtitle = computed(() => `${props.candidates.length} 个候选图标`);
 
 const loadMore = () => {
   visibleCount.value += PAGE_SIZE;
@@ -89,79 +61,87 @@ watch(
     visibleCount.value = PAGE_SIZE;
   },
 );
-
 </script>
 
 <template>
-  <OverlayMotion
+  <AppModalShell
     :show="show"
     :z-index="200"
+    :title="dialogTitle"
+    :subtitle="dialogSubtitle"
     close-on-overlay
-    overlay-class="sd-overlay pointer-events-auto"
-    panel-class="max-w-2xl"
+    close-on-escape
+    trap-focus
+    restore-focus
+    initial-focus="first"
+    :aria-label="`${dialogTitle}选择`"
+    overlay-class="sd-overlay"
+    panel-class="w-full max-w-3xl"
+    body-class="p-0"
     @close="$emit('update:show', false)"
   >
-    <div class="sd-modal-surface flex max-h-[80vh] flex-col">
-      <div class="sd-modal-header">
-        <h3 class="sd-modal-title flex items-center gap-2">
-          <span>{{ source === "local" ? "本地图标" : "网络图标" }}</span>
-          <span class="text-sm font-normal text-slate-500">({{ candidates.length }} 个匹配)</span>
-        </h3>
-        <div
-          class="rounded-full bg-amber-50 px-2.5 py-1 text-sm font-medium text-amber-600"
+    <div
+      class="border-b border-[var(--sd-color-border-subtle)] px-4 py-3 text-sm text-[var(--sd-color-text-secondary)]"
+    >
+      请选择一个图标用于当前卡片。不会再自动选择首项。
+    </div>
+
+    <div class="max-h-[60vh] overflow-y-auto p-4">
+      <div
+        v-if="visibleCandidates.length"
+        class="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-6"
+      >
+        <button
+          v-for="icon in visibleCandidates"
+          :key="icon"
+          @click="selectIcon(icon)"
+          class="group flex flex-col items-center gap-3 rounded-xl border border-[var(--sd-color-border-subtle)] bg-[var(--sd-color-surface)] p-3 text-left transition-all hover:border-[var(--sd-color-border-accent)] hover:bg-[color-mix(in_srgb,var(--sd-color-surface-muted)_82%,var(--sd-color-surface)_18%)]"
         >
-          <span>{{ timeoutSeconds }}s 后自动选择</span>
-        </div>
+          <div
+            class="flex h-12 w-12 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--sd-color-surface-muted)_88%,var(--sd-color-surface)_12%)] shadow-sm transition-transform group-hover:scale-[1.03]"
+          >
+            <img
+              :src="store.getAssetUrl(icon)"
+              class="h-8 w-8 object-contain"
+              loading="lazy"
+            />
+          </div>
+          <span
+            class="w-full truncate text-center text-xs font-medium text-[var(--sd-color-text-secondary)]"
+            :title="getIconName(icon)"
+          >
+            {{ getIconName(icon) }}
+          </span>
+        </button>
       </div>
 
-      <div class="sd-modal-body flex-1 min-h-[200px]">
-        <div class="grid grid-cols-4 sm:grid-cols-6 gap-4">
-          <button
-            v-for="icon in visibleCandidates"
-            :key="icon"
-            @click="selectIcon(icon)"
-            class="group flex flex-col items-center gap-3 rounded-xl border border-slate-200 bg-white p-3 transition-all hover:border-blue-200 hover:bg-blue-50 hover:shadow-sm"
-          >
-            <div
-              class="w-12 h-12 flex items-center justify-center bg-slate-50 rounded-lg shadow-sm group-hover:scale-105 transition-transform"
-            >
-              <img :src="store.getAssetUrl(icon)" class="w-8 h-8 object-contain" loading="lazy" />
-            </div>
-            <span
-              class="text-xs text-gray-600 truncate w-full text-center font-medium"
-              :title="getIconName(icon)"
-            >
-              {{ getIconName(icon) }}
-            </span>
-          </button>
-        </div>
-        <div v-if="hasMore" class="mt-4 flex justify-center">
-          <button
-            @click="loadMore"
-            class="sd-btn sd-btn-secondary"
-          >
-            加载更多 ({{ candidates.length - visibleCount }} 个)
-          </button>
-        </div>
+      <div
+        v-else
+        class="rounded-xl border border-dashed border-[var(--sd-color-border-subtle)] px-4 py-8 text-center text-sm text-[var(--sd-color-text-secondary)]"
+      >
+        未找到匹配图标，请返回后调整关键字或改用手动图标地址。
       </div>
 
-      <div class="sd-modal-footer justify-between">
-        <button
-          v-if="source === 'api'"
-          @click="$emit('cancelLink')"
-          class="sd-btn sd-btn-danger-soft"
-        >
-          取消链接
-        </button>
-        <div v-else></div>
-
-        <button
-          @click="$emit('update:show', false)"
-          class="sd-btn sd-btn-secondary px-6"
-        >
-          取消
-        </button>
+      <div v-if="hasMore" class="mt-4 flex justify-center">
+        <AppButton variant="secondary" @click="loadMore">
+          加载更多 ({{ candidates.length - visibleCount }} 个)
+        </AppButton>
       </div>
     </div>
-  </OverlayMotion>
+
+    <template #footer>
+      <ActionFooter>
+        <AppButton
+          v-if="source === 'api'"
+          variant="danger-soft"
+          @click="$emit('cancelLink')"
+        >
+          取消链接
+        </AppButton>
+        <AppButton variant="secondary" @click="$emit('update:show', false)"
+          >取消</AppButton
+        >
+      </ActionFooter>
+    </template>
+  </AppModalShell>
 </template>

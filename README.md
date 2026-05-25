@@ -4,7 +4,7 @@
 [![Gitee](https://img.shields.io/badge/Gitee-StartDeck-C71D23?style=flat&logo=gitee&logoColor=white)](https://gitee.com/gjx0808/StartDeck)
 [![Docker Image](https://img.shields.io/badge/Docker-qdnas%2Fstartdeck-2496ED?style=flat&logo=docker&logoColor=white)](https://hub.docker.com/r/qdnas/startdeck)
 
-StartDeck 是一个轻量级、高度可定制的个人导航页与仪表盘系统。它基于 Vue 3 与 Go(Gin) 构建，旨在为 NAS 用户、极客和开发者提供一个优雅的浏览器起始页。
+StartDeck 是一个轻量级、高度可定制的个人导航页与仪表盘系统。它基于 Vue 3、Rust 与 SQLite 构建，旨在为 NAS 用户、极客和开发者提供一个优雅的浏览器起始页。
 交流QQ群:613835409
 ![debian/1.png](public/1.png)
 ![debian/7.png](public/7.png)
@@ -13,7 +13,7 @@ StartDeck 是一个轻量级、高度可定制的个人导航页与仪表盘系�
 ### ✨ 功能概览
 
 - **多端统一入口**: 把常用网站、内网服务和工具聚合在同一仪表盘。
-- **文件与媒体能力**: 内置文件传输助手、音乐播放器和壁纸管理。
+- **媒体与壁纸能力**: 内置音乐播放器和壁纸管理。
 - **内外网智能切换**: 自动识别网络环境并路由到最佳地址。
 - **本地数据可控**: 配置与数据存储在本地目录，迁移与备份更方便。
 - **可视化组件生态**: 内置多种组件，支持自定义 CSS/JS 深度扩展。
@@ -32,14 +32,10 @@ StartDeck 是一个轻量级、高度可定制的个人导航页与仪表盘系�
 StartDeck 内置了多种实用的小组件，满足日常需求：
 ![tools.png](public/tools.png)
 
-- **文件传输助手**: 强大的跨设备传输工具。支持发送文本、文件与图片；支持断点续传、大文件上传；提供专属**图片**视图，自动归类并预览所有图片文件。
 - **书签组件**: 快速访问常用网站，支持自定义图标。首次启动时会自动填充常用的 10 个网站（如 GitHub, Bilibili 等）。
 - **时钟与天气**: 实时显示当前时间、日期及当地天气情况。
 - **高德地图组件**: 支持添加高德地图组件，显示当前位置及地图导航。
 - **待办事项 (Todo)**: 简单的任务管理，随时记录灵感和待办。
-- **RSS 订阅**: 内置 RSS 阅读器，实时获取订阅源的最新内容。
-- **热搜榜单**: 集成微博热搜、新闻热榜等，不错过即时热点。
-- **计算器**: 随时可用的简易计算器。
 - **音乐播放器**: 内置 MiniPlayer，支持播放服务器端的本地音乐文件。
 - **Docker管理**: 内置docker管理组件，支持查看、启动、停止、重启docker容器、升级镜像等。
 - **系统监控**: 内置系统监控组件，支持查看CPU、内存、磁盘、网络等系统信息。
@@ -59,12 +55,12 @@ StartDeck 提供了丰富的自定义选项，并自建了60000个图标的图�
 - **自定义HTML**: 支持添加自定义 HTML 代码，实现更多定制化效果。
 - **天气组件**: 支持添加天气组件，显示当前天气情况。
 - **图标管理**: 内置图标库，支持上传自定义图片，并全面支持 **Hex 颜色代码** (如 `#ffffff`) 自定义图标背景色。
-- **站点元数据服务**: 通过仓库内 Go `icon-service/` 获取网站标题、描述和图标，部署脚本会随 StartDeck 一起安装。
+- **站点元数据服务**: 通过独立 Rust 图标服务获取网站标题、描述和图标，部署脚本会随 StartDeck 一起安装。
 - **背景设置**: 支持自定义壁纸。
 - **分组卡片背景**: 支持在分组设置中统一配置该组所有卡片的背景（图片、模糊、遮罩），实现风格统一的视觉效果。
 - **访客统计**: 底部页脚显示网站总访问量、今日访问量及当前在线时长（需在设置中开启）。
 - **数据安全**:
-  - 本地存储配置 (`server/data/data.json`)，数据完全掌握在自己手中。
+  - 本地 SQLite 存储配置与运行数据，数据完全掌握在自己手中。
   - 简单的密码访问保护（默认密码：`admin`，Docker 可通过 `STARTDECK_ADMIN_PASSWORD` 指定），保护隐私配置。
 - **更新提醒**: 内置版本检测功能，自动检查 GitHub 最新 Release 版本，并在设置面板提示 Docker 更新。
   ![自定义脚本.png](public/自定义脚本.png)
@@ -168,26 +164,25 @@ sudo ./debian/manage.sh
 cd /opt/startdeck
 chmod +x startdeck-server
 chmod +x startdeck-iconserver
-cd icon-service
-CONFIG_FILE=./config.json ../startdeck-iconserver &
-cd ..
-ICON_SERVER_BASE_URL=http://127.0.0.1:8080 ./startdeck-server
+ICON_SERVICE_PORT=9002 ./startdeck-iconserver &
+PORT=9001 ICON_SERVER_BASE_URL=http://127.0.0.1:9002 ./startdeck-server
 ```
 
-访问地址：`http://<服务器IP>:3000`
+访问地址：`http://<服务器IP>:9001`
 
 ### 3. Docker CLI 部署
 
 ```bash
 docker run -d \
-  -p 23000:3000 \
+  -p 9001:9001 \
   -v $(pwd)/data:/app/server/data \
-  -v $(pwd)/doc:/app/server/doc \
   -v $(pwd)/music:/app/server/music \
   -v $(pwd)/PC:/app/server/PC \
   -v $(pwd)/APP:/app/server/APP \
   -v $(pwd)/icon-service-data:/app/icon-service/data \
-  -e ICON_SERVER_BASE_URL=http://127.0.0.1:8080 \
+  -e PORT=9001 \
+  -e ICON_SERVICE_PORT=9002 \
+  -e ICON_SERVER_BASE_URL=http://127.0.0.1:9002 \
   -e ICON_SERVER_TIMEOUT_MS=5000 \
   -v /var/run/docker.sock:/var/run/docker.sock \
   --name startdeck \
@@ -205,18 +200,18 @@ services:
     container_name: startdeck
     restart: unless-stopped
     ports:
-      - '23000:3000'
+      - '9001:9001'
     environment:
       - HOST=0.0.0.0
-      - PORT=3000
+      - PORT=9001
       - STARTDECK_ADMIN_PASSWORD=violet
-      - ICON_SERVER_BASE_URL=http://127.0.0.1:8080
+      - ICON_SERVICE_PORT=9002
+      - ICON_SERVER_BASE_URL=http://127.0.0.1:9002
       - ICON_SERVER_TIMEOUT_MS=5000
       # 如需让后端自己识别子路径，可启用：
       # - BASE_PATH=/startdeck
     volumes:
       - ./data:/app/server/data
-      - ./doc:/app/server/doc
       - ./music:/app/server/music
       - ./PC:/app/server/PC
       - ./APP:/app/server/APP
@@ -227,9 +222,9 @@ services:
 ## ⚙️ 配置说明
 
 - **默认密码**: 系统初始密码为 `admin`。Docker 部署可设置 `STARTDECK_ADMIN_PASSWORD`，容器启动时会同步 admin 密码；未设置时请登录后在设置中及时修改。
-- **数据文件**: 所有配置（布局、组件、书签等）均存储在 `server/data/data.json` 中。
+- **数据文件**: 所有配置（布局、组件、书签等）均存储在 `server/data/startdeck.sqlite3` 中，二进制资源仍保存在 `server/` 下的对应目录。
 - **音乐文件**: 将 MP3 文件放入 `server/music` 目录，刷新页面后即可在播放器中看到。
-- **站点图标数据**: Go 图标服务使用 `icon-service/data`，Docker 挂载为 `/app/icon-service/data`，Debian 安装到 `/opt/startdeck/icon-service/data`。
+- **站点图标数据**: Rust 图标服务使用 `icon-service/data`，Docker 挂载为 `/app/icon-service/data`，Debian 安装到 `/opt/startdeck/icon-service/data`。
 - **Docker 自动升级镜像**:
   - 入口：设置 → Docker 管理 → 自动升级镜像(每2小时)。
   - 关闭时：后台不会进行任何镜像拉取或版本对比。

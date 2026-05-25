@@ -2,7 +2,11 @@
   <div class="network-indicator" :class="statusClass" :title="statusTooltip">
     <div class="indicator-dot" />
     <span class="indicator-text">{{ statusLabel }}</span>
-    <span v-if="offlineQueueCount > 0" class="indicator-badge" :title="`${offlineQueueCount} 条待同步`">
+    <span
+      v-if="offlineQueueCount > 0"
+      class="indicator-badge"
+      :title="`${offlineQueueCount} 条待同步`"
+    >
       {{ offlineQueueCount }}
     </span>
   </div>
@@ -19,7 +23,9 @@ const offlineQueueCount = computed(() => store.offlineQueueCount);
 const isHttpPollingActive = computed(() => {
   try {
     return store.isHttpPollingActive;
-  } catch { return false; }
+  } catch {
+    return false;
+  }
 });
 
 const networkMode = computed(() => {
@@ -51,11 +57,13 @@ const statusLabel = computed(() => {
 });
 
 const statusTooltip = computed(() => {
-  if (store.offlineQueueCount > 0) return `${store.offlineQueueCount} 条离线数据待同步`;
+  if (store.offlineQueueCount > 0)
+    return `${store.offlineQueueCount} 条离线数据待同步`;
   if (store.isConnected) return "WebSocket 已连接";
   const wsStatus = store.status;
   const wsConnectingOrOpen = wsStatus === "CONNECTING" || wsStatus === "OPEN";
-  if (isHttpPollingActive.value || !store.isLogged) return "WebSocket 断开，HTTP 通道可用";
+  if (isHttpPollingActive.value || !store.isLogged)
+    return "WebSocket 断开，HTTP 通道可用";
   if (wsConnectingOrOpen) return "WebSocket 连接中...";
   return "网络不可用";
 });
@@ -130,7 +138,14 @@ const statusTooltip = computed(() => {
 }
 
 @keyframes pulse-dot {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.5; transform: scale(0.8); }
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(0.8);
+  }
 }
 </style>

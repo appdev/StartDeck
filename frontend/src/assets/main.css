@@ -42,6 +42,47 @@
   --sd-color-danger-soft-border: rgba(215, 0, 21, 0.16);
   --sd-color-overlay: rgba(13, 16, 23, 0.34);
   --sd-color-overlay-strong: rgba(13, 16, 23, 0.42);
+  --sd-shell-overlay: var(--sd-color-overlay-strong);
+  --sd-shell-surface: var(--sd-color-surface-floating);
+  --sd-shell-surface-muted: color-mix(
+    in srgb,
+    var(--sd-color-surface-muted) 76%,
+    transparent
+  );
+  --sd-shell-border: var(--sd-color-border-subtle);
+  --sd-shell-text-primary: var(--sd-color-text-primary);
+  --sd-shell-text-secondary: var(--sd-color-text-secondary);
+  --sd-shell-text-tertiary: var(--sd-color-text-tertiary);
+  --sd-shell-control-shadow: rgba(0, 0, 0, 0.28);
+  --sd-shell-control-success: rgb(0, 190, 38);
+  --sd-shell-control-danger: rgb(255, 70, 82);
+  --sd-shell-control-danger-ring: rgba(255, 143, 151, 0.46);
+  --sd-component-surface: var(--sd-color-surface);
+  --sd-component-surface-muted: var(--sd-color-surface-muted);
+  --sd-component-surface-raised: var(--sd-color-elevated);
+  --sd-component-border: var(--sd-color-border-subtle);
+  --sd-component-text-primary: var(--sd-color-text-primary);
+  --sd-component-text-secondary: var(--sd-color-text-secondary);
+  --sd-component-text-tertiary: var(--sd-color-text-tertiary);
+  --sd-state-info: var(--sd-color-accent-primary);
+  --sd-state-info-hover: var(--sd-color-accent-primary-hover);
+  --sd-state-info-surface: color-mix(
+    in srgb,
+    var(--sd-state-info) 10%,
+    var(--sd-color-surface) 90%
+  );
+  --sd-state-success: var(--sd-color-success);
+  --sd-state-success-surface: color-mix(
+    in srgb,
+    var(--sd-state-success) 12%,
+    var(--sd-color-surface) 88%
+  );
+  --sd-state-warning: var(--sd-color-warning-text);
+  --sd-state-warning-surface: var(--sd-color-warning-surface);
+  --sd-state-danger: var(--sd-color-accent-danger);
+  --sd-state-danger-hover: var(--sd-color-accent-danger-hover);
+  --sd-state-danger-surface: var(--sd-color-danger-soft);
+  --sd-state-danger-border: var(--sd-color-danger-soft-border);
   --sd-home-glass-bg: rgba(255, 255, 255, 0.7);
   --sd-home-glass-bg-strong: rgba(255, 255, 255, 0.86);
   --sd-home-glass-border: rgba(29, 29, 31, 0.14);
@@ -53,9 +94,13 @@
   --sd-home-action-danger: var(--sd-color-accent-danger);
   --sd-home-action-warning: var(--sd-color-warning-text);
   --sd-home-focus-ring: var(--sd-focus-ring);
-  --sd-home-widget-outline: rgba(0, 113, 227, 0.78);
-  --sd-home-resize-ghost-bg: rgba(0, 113, 227, 0.12);
-  --sd-home-resize-ghost-border: rgba(0, 113, 227, 0.84);
+  --sd-home-widget-radius: var(--sd-radius-window);
+  --sd-home-widget-interaction-ring: rgba(125, 211, 252, 0.78);
+  --sd-home-widget-interaction-shadow: rgba(125, 211, 252, 0.26);
+  --sd-home-widget-interaction-fill: rgba(125, 211, 252, 0.18);
+  --sd-home-widget-outline: var(--sd-home-widget-interaction-ring);
+  --sd-home-resize-ghost-bg: var(--sd-home-widget-interaction-fill);
+  --sd-home-resize-ghost-border: var(--sd-home-widget-interaction-ring);
   --sd-home-resize-grid-line: rgba(0, 113, 227, 0.22);
   --sd-home-resize-badge-bg: rgba(0, 113, 227, 0.92);
   --sd-home-resize-badge-text: #ffffff;
@@ -98,20 +143,20 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --sd-color-canvas: #161617;
-    --sd-color-elevated: #1c1c1e;
-    --sd-color-surface: #242426;
-    --sd-color-surface-muted: #2d2d30;
-    --sd-color-surface-floating: rgba(36, 36, 38, 0.92);
-    --sd-color-text-primary: #f5f5f7;
-    --sd-color-text-secondary: #d2d2d7;
-    --sd-color-text-tertiary: #9a9aa1;
-    --sd-color-text-inverse: #1d1d1f;
+    --sd-color-canvas: #0f1115;
+    --sd-color-elevated: #15191f;
+    --sd-color-surface: #1b1f24;
+    --sd-color-surface-muted: #252a31;
+    --sd-color-surface-floating: rgba(27, 31, 36, 0.94);
+    --sd-color-text-primary: #f6f7f9;
+    --sd-color-text-secondary: #c7ccd3;
+    --sd-color-text-tertiary: #8e96a3;
+    --sd-color-text-inverse: #111318;
     --sd-color-border-subtle: rgba(255, 255, 255, 0.08);
     --sd-color-border-strong: rgba(255, 255, 255, 0.14);
-    --sd-color-border-accent: rgba(41, 151, 255, 0.32);
-    --sd-color-accent-primary: #2997ff;
-    --sd-color-accent-primary-hover: #53a7ff;
+    --sd-color-border-accent: rgba(76, 156, 255, 0.34);
+    --sd-color-accent-primary: #4c9cff;
+    --sd-color-accent-primary-hover: #6fb0ff;
     --sd-color-accent-danger: #ff6b6b;
     --sd-color-accent-danger-hover: #ff8585;
     --sd-color-danger: var(--sd-color-accent-danger);
@@ -121,8 +166,49 @@
     --sd-color-warning: var(--sd-color-warning-text);
     --sd-color-danger-soft: rgba(215, 0, 21, 0.18);
     --sd-color-danger-soft-border: rgba(255, 107, 107, 0.2);
-    --sd-color-overlay: rgba(3, 5, 9, 0.52);
-    --sd-color-overlay-strong: rgba(3, 5, 9, 0.64);
+    --sd-color-overlay: rgba(5, 7, 11, 0.56);
+    --sd-color-overlay-strong: rgba(5, 7, 11, 0.68);
+    --sd-shell-overlay: var(--sd-color-overlay-strong);
+    --sd-shell-surface: var(--sd-color-surface-floating);
+    --sd-shell-surface-muted: color-mix(
+      in srgb,
+      var(--sd-color-surface-muted) 76%,
+      transparent
+    );
+    --sd-shell-border: var(--sd-color-border-subtle);
+    --sd-shell-text-primary: var(--sd-color-text-primary);
+    --sd-shell-text-secondary: var(--sd-color-text-secondary);
+    --sd-shell-text-tertiary: var(--sd-color-text-tertiary);
+    --sd-shell-control-shadow: rgba(0, 0, 0, 0.28);
+    --sd-shell-control-success: rgb(0, 190, 38);
+    --sd-shell-control-danger: rgb(255, 70, 82);
+    --sd-shell-control-danger-ring: rgba(255, 143, 151, 0.46);
+    --sd-component-surface: var(--sd-color-surface);
+    --sd-component-surface-muted: var(--sd-color-surface-muted);
+    --sd-component-surface-raised: var(--sd-color-elevated);
+    --sd-component-border: var(--sd-color-border-subtle);
+    --sd-component-text-primary: var(--sd-color-text-primary);
+    --sd-component-text-secondary: var(--sd-color-text-secondary);
+    --sd-component-text-tertiary: var(--sd-color-text-tertiary);
+    --sd-state-info: var(--sd-color-accent-primary);
+    --sd-state-info-hover: var(--sd-color-accent-primary-hover);
+    --sd-state-info-surface: color-mix(
+      in srgb,
+      var(--sd-state-info) 14%,
+      var(--sd-color-surface) 86%
+    );
+    --sd-state-success: var(--sd-color-success);
+    --sd-state-success-surface: color-mix(
+      in srgb,
+      var(--sd-state-success) 14%,
+      var(--sd-color-surface) 86%
+    );
+    --sd-state-warning: var(--sd-color-warning-text);
+    --sd-state-warning-surface: var(--sd-color-warning-surface);
+    --sd-state-danger: var(--sd-color-accent-danger);
+    --sd-state-danger-hover: var(--sd-color-accent-danger-hover);
+    --sd-state-danger-surface: var(--sd-color-danger-soft);
+    --sd-state-danger-border: var(--sd-color-danger-soft-border);
     --sd-home-glass-bg: rgba(20, 24, 31, 0.58);
     --sd-home-glass-bg-strong: rgba(20, 24, 31, 0.76);
     --sd-home-glass-border: rgba(255, 255, 255, 0.18);
@@ -134,9 +220,12 @@
     --sd-home-action-danger: var(--sd-color-accent-danger);
     --sd-home-action-warning: var(--sd-color-warning-text);
     --sd-home-focus-ring: var(--sd-focus-ring);
-    --sd-home-widget-outline: rgba(41, 151, 255, 0.9);
-    --sd-home-resize-ghost-bg: rgba(41, 151, 255, 0.14);
-    --sd-home-resize-ghost-border: rgba(41, 151, 255, 0.86);
+    --sd-home-widget-interaction-ring: rgba(147, 197, 253, 0.86);
+    --sd-home-widget-interaction-shadow: rgba(125, 211, 252, 0.22);
+    --sd-home-widget-interaction-fill: rgba(125, 211, 252, 0.16);
+    --sd-home-widget-outline: var(--sd-home-widget-interaction-ring);
+    --sd-home-resize-ghost-bg: var(--sd-home-widget-interaction-fill);
+    --sd-home-resize-ghost-border: var(--sd-home-widget-interaction-ring);
     --sd-home-resize-grid-line: rgba(41, 151, 255, 0.24);
     --sd-home-resize-badge-bg: rgba(0, 113, 227, 0.9);
     --sd-home-resize-badge-text: #ffffff;
@@ -172,7 +261,8 @@
   }
 }
 
-[data-sd-scheme="light"] {
+[data-sd-scheme="light"],
+[data-sd-theme="light"] {
   color-scheme: light;
   --sd-color-canvas: #f5f5f7;
   --sd-color-elevated: #fbfbfd;
@@ -197,6 +287,47 @@
   --sd-color-danger-soft-border: rgba(215, 0, 21, 0.16);
   --sd-color-overlay: rgba(13, 16, 23, 0.34);
   --sd-color-overlay-strong: rgba(13, 16, 23, 0.42);
+  --sd-shell-overlay: var(--sd-color-overlay-strong);
+  --sd-shell-surface: var(--sd-color-surface-floating);
+  --sd-shell-surface-muted: color-mix(
+    in srgb,
+    var(--sd-color-surface-muted) 76%,
+    transparent
+  );
+  --sd-shell-border: var(--sd-color-border-subtle);
+  --sd-shell-text-primary: var(--sd-color-text-primary);
+  --sd-shell-text-secondary: var(--sd-color-text-secondary);
+  --sd-shell-text-tertiary: var(--sd-color-text-tertiary);
+  --sd-shell-control-shadow: rgba(0, 0, 0, 0.28);
+  --sd-shell-control-success: rgb(0, 190, 38);
+  --sd-shell-control-danger: rgb(255, 70, 82);
+  --sd-shell-control-danger-ring: rgba(255, 143, 151, 0.46);
+  --sd-component-surface: var(--sd-color-surface);
+  --sd-component-surface-muted: var(--sd-color-surface-muted);
+  --sd-component-surface-raised: var(--sd-color-elevated);
+  --sd-component-border: var(--sd-color-border-subtle);
+  --sd-component-text-primary: var(--sd-color-text-primary);
+  --sd-component-text-secondary: var(--sd-color-text-secondary);
+  --sd-component-text-tertiary: var(--sd-color-text-tertiary);
+  --sd-state-info: var(--sd-color-accent-primary);
+  --sd-state-info-hover: var(--sd-color-accent-primary-hover);
+  --sd-state-info-surface: color-mix(
+    in srgb,
+    var(--sd-state-info) 10%,
+    var(--sd-color-surface) 90%
+  );
+  --sd-state-success: var(--sd-color-success);
+  --sd-state-success-surface: color-mix(
+    in srgb,
+    var(--sd-state-success) 12%,
+    var(--sd-color-surface) 88%
+  );
+  --sd-state-warning: var(--sd-color-warning-text);
+  --sd-state-warning-surface: var(--sd-color-warning-surface);
+  --sd-state-danger: var(--sd-color-accent-danger);
+  --sd-state-danger-hover: var(--sd-color-accent-danger-hover);
+  --sd-state-danger-surface: var(--sd-color-danger-soft);
+  --sd-state-danger-border: var(--sd-color-danger-soft-border);
   --sd-home-glass-bg: rgba(255, 255, 255, 0.7);
   --sd-home-glass-bg-strong: rgba(255, 255, 255, 0.86);
   --sd-home-glass-border: rgba(29, 29, 31, 0.14);
@@ -208,9 +339,12 @@
   --sd-home-action-danger: var(--sd-color-accent-danger);
   --sd-home-action-warning: var(--sd-color-warning-text);
   --sd-home-focus-ring: var(--sd-focus-ring);
-  --sd-home-widget-outline: rgba(0, 113, 227, 0.78);
-  --sd-home-resize-ghost-bg: rgba(0, 113, 227, 0.12);
-  --sd-home-resize-ghost-border: rgba(0, 113, 227, 0.84);
+  --sd-home-widget-interaction-ring: rgba(125, 211, 252, 0.78);
+  --sd-home-widget-interaction-shadow: rgba(125, 211, 252, 0.26);
+  --sd-home-widget-interaction-fill: rgba(125, 211, 252, 0.18);
+  --sd-home-widget-outline: var(--sd-home-widget-interaction-ring);
+  --sd-home-resize-ghost-bg: var(--sd-home-widget-interaction-fill);
+  --sd-home-resize-ghost-border: var(--sd-home-widget-interaction-ring);
   --sd-home-resize-grid-line: rgba(0, 113, 227, 0.22);
   --sd-home-resize-badge-bg: rgba(0, 113, 227, 0.92);
   --sd-home-resize-badge-text: #ffffff;
@@ -245,22 +379,23 @@
   --sd-shadow-button: 0 10px 20px rgba(0, 113, 227, 0.18);
 }
 
-[data-sd-scheme="dark"] {
+[data-sd-scheme="dark"],
+[data-sd-theme="dark"] {
   color-scheme: dark;
-  --sd-color-canvas: #161617;
-  --sd-color-elevated: #1c1c1e;
-  --sd-color-surface: #242426;
-  --sd-color-surface-muted: #2d2d30;
-  --sd-color-surface-floating: rgba(36, 36, 38, 0.92);
-  --sd-color-text-primary: #f5f5f7;
-  --sd-color-text-secondary: #d2d2d7;
-  --sd-color-text-tertiary: #9a9aa1;
-  --sd-color-text-inverse: #1d1d1f;
+  --sd-color-canvas: #0f1115;
+  --sd-color-elevated: #15191f;
+  --sd-color-surface: #1b1f24;
+  --sd-color-surface-muted: #252a31;
+  --sd-color-surface-floating: rgba(27, 31, 36, 0.94);
+  --sd-color-text-primary: #f6f7f9;
+  --sd-color-text-secondary: #c7ccd3;
+  --sd-color-text-tertiary: #8e96a3;
+  --sd-color-text-inverse: #111318;
   --sd-color-border-subtle: rgba(255, 255, 255, 0.08);
   --sd-color-border-strong: rgba(255, 255, 255, 0.14);
-  --sd-color-border-accent: rgba(41, 151, 255, 0.32);
-  --sd-color-accent-primary: #2997ff;
-  --sd-color-accent-primary-hover: #53a7ff;
+  --sd-color-border-accent: rgba(76, 156, 255, 0.34);
+  --sd-color-accent-primary: #4c9cff;
+  --sd-color-accent-primary-hover: #6fb0ff;
   --sd-color-accent-danger: #ff6b6b;
   --sd-color-accent-danger-hover: #ff8585;
   --sd-color-success: #4cd964;
@@ -268,8 +403,49 @@
   --sd-color-warning-text: #ffd86f;
   --sd-color-danger-soft: rgba(215, 0, 21, 0.18);
   --sd-color-danger-soft-border: rgba(255, 107, 107, 0.2);
-  --sd-color-overlay: rgba(3, 5, 9, 0.52);
-  --sd-color-overlay-strong: rgba(3, 5, 9, 0.64);
+  --sd-color-overlay: rgba(5, 7, 11, 0.56);
+  --sd-color-overlay-strong: rgba(5, 7, 11, 0.68);
+  --sd-shell-overlay: var(--sd-color-overlay-strong);
+  --sd-shell-surface: var(--sd-color-surface-floating);
+  --sd-shell-surface-muted: color-mix(
+    in srgb,
+    var(--sd-color-surface-muted) 76%,
+    transparent
+  );
+  --sd-shell-border: var(--sd-color-border-subtle);
+  --sd-shell-text-primary: var(--sd-color-text-primary);
+  --sd-shell-text-secondary: var(--sd-color-text-secondary);
+  --sd-shell-text-tertiary: var(--sd-color-text-tertiary);
+  --sd-shell-control-shadow: rgba(0, 0, 0, 0.28);
+  --sd-shell-control-success: rgb(0, 190, 38);
+  --sd-shell-control-danger: rgb(255, 70, 82);
+  --sd-shell-control-danger-ring: rgba(255, 143, 151, 0.46);
+  --sd-component-surface: var(--sd-color-surface);
+  --sd-component-surface-muted: var(--sd-color-surface-muted);
+  --sd-component-surface-raised: var(--sd-color-elevated);
+  --sd-component-border: var(--sd-color-border-subtle);
+  --sd-component-text-primary: var(--sd-color-text-primary);
+  --sd-component-text-secondary: var(--sd-color-text-secondary);
+  --sd-component-text-tertiary: var(--sd-color-text-tertiary);
+  --sd-state-info: var(--sd-color-accent-primary);
+  --sd-state-info-hover: var(--sd-color-accent-primary-hover);
+  --sd-state-info-surface: color-mix(
+    in srgb,
+    var(--sd-state-info) 14%,
+    var(--sd-color-surface) 86%
+  );
+  --sd-state-success: var(--sd-color-success);
+  --sd-state-success-surface: color-mix(
+    in srgb,
+    var(--sd-state-success) 14%,
+    var(--sd-color-surface) 86%
+  );
+  --sd-state-warning: var(--sd-color-warning-text);
+  --sd-state-warning-surface: var(--sd-color-warning-surface);
+  --sd-state-danger: var(--sd-color-accent-danger);
+  --sd-state-danger-hover: var(--sd-color-accent-danger-hover);
+  --sd-state-danger-surface: var(--sd-color-danger-soft);
+  --sd-state-danger-border: var(--sd-color-danger-soft-border);
   --sd-home-glass-bg: rgba(20, 24, 31, 0.58);
   --sd-home-glass-bg-strong: rgba(20, 24, 31, 0.76);
   --sd-home-glass-border: rgba(255, 255, 255, 0.18);
@@ -281,9 +457,12 @@
   --sd-home-action-danger: var(--sd-color-accent-danger);
   --sd-home-action-warning: var(--sd-color-warning-text);
   --sd-home-focus-ring: var(--sd-focus-ring);
-  --sd-home-widget-outline: rgba(41, 151, 255, 0.9);
-  --sd-home-resize-ghost-bg: rgba(41, 151, 255, 0.14);
-  --sd-home-resize-ghost-border: rgba(41, 151, 255, 0.86);
+  --sd-home-widget-interaction-ring: rgba(147, 197, 253, 0.86);
+  --sd-home-widget-interaction-shadow: rgba(125, 211, 252, 0.22);
+  --sd-home-widget-interaction-fill: rgba(125, 211, 252, 0.16);
+  --sd-home-widget-outline: var(--sd-home-widget-interaction-ring);
+  --sd-home-resize-ghost-bg: var(--sd-home-widget-interaction-fill);
+  --sd-home-resize-ghost-border: var(--sd-home-widget-interaction-ring);
   --sd-home-resize-grid-line: rgba(41, 151, 255, 0.24);
   --sd-home-resize-badge-bg: rgba(0, 113, 227, 0.9);
   --sd-home-resize-badge-text: #ffffff;
@@ -471,21 +650,17 @@
 }
 
 .sd-overlay {
-  background-color: var(--sd-color-overlay);
+  background-color: var(--sd-shell-overlay, var(--sd-color-overlay));
 }
 
 .settings-shell-overlay {
-  background-color: color-mix(
-    in srgb,
-    var(--sd-color-overlay-strong) 86%,
-    transparent
-  );
+  background-color: var(--sd-shell-overlay, var(--sd-color-overlay-strong));
   backdrop-filter: blur(18px) saturate(140%);
   -webkit-backdrop-filter: blur(18px) saturate(140%);
 }
 
 .sd-overlay-strong {
-  background-color: var(--sd-color-overlay-strong);
+  background-color: var(--sd-shell-overlay, var(--sd-color-overlay-strong));
 }
 
 .sd-modal-surface {
@@ -494,18 +669,18 @@
   flex-direction: column;
   max-height: 100%;
   overflow: hidden;
-  border: 1px solid var(--sd-color-border-subtle);
+  border: 1px solid var(--sd-shell-border, var(--sd-color-border-subtle));
   border-radius: var(--sd-radius-window);
-  background: var(--sd-color-surface-floating);
-  color: var(--sd-color-text-primary);
+  background: var(--sd-shell-surface, var(--sd-color-surface-floating));
+  color: var(--sd-shell-text-primary, var(--sd-color-text-primary));
   box-shadow: var(--sd-shadow-window);
   backdrop-filter: saturate(180%) blur(20px);
 }
 
 .sd-modal-surface.sd-modal-dark {
-  border-color: var(--sd-color-border-subtle);
-  background: var(--sd-color-surface-floating);
-  color: var(--sd-color-text-primary);
+  border-color: var(--sd-shell-border, var(--sd-color-border-subtle));
+  background: var(--sd-shell-surface, var(--sd-color-surface-floating));
+  color: var(--sd-shell-text-primary, var(--sd-color-text-primary));
 }
 
 .sd-modal-header {
@@ -514,33 +689,25 @@
   justify-content: space-between;
   gap: 1rem;
   padding: 1rem 1.5rem;
-  border-bottom: 1px solid var(--sd-color-border-subtle);
-  background: color-mix(
-    in srgb,
-    var(--sd-color-surface-muted) 72%,
-    transparent
-  );
+  border-bottom: 1px solid var(--sd-shell-border, var(--sd-color-border-subtle));
+  background: var(--sd-shell-surface-muted);
 }
 
 .sd-modal-dark .sd-modal-header {
-  border-bottom-color: var(--sd-color-border-subtle);
-  background: color-mix(
-    in srgb,
-    var(--sd-color-surface-muted) 72%,
-    transparent
-  );
+  border-bottom-color: var(--sd-shell-border, var(--sd-color-border-subtle));
+  background: var(--sd-shell-surface-muted);
 }
 
 .sd-modal-title {
   margin: 0;
-  color: var(--sd-color-text-primary);
+  color: var(--sd-shell-text-primary, var(--sd-color-text-primary));
   font-size: 1.125rem;
   font-weight: 700;
   line-height: 1.4;
 }
 
 .sd-modal-dark .sd-modal-title {
-  color: var(--sd-color-text-primary);
+  color: var(--sd-shell-text-primary, var(--sd-color-text-primary));
 }
 
 .sd-modal-body {
@@ -562,21 +729,13 @@
   justify-content: flex-end;
   gap: 0.75rem;
   padding: 1rem 1.5rem;
-  border-top: 1px solid var(--sd-color-border-subtle);
-  background: color-mix(
-    in srgb,
-    var(--sd-color-surface-muted) 76%,
-    transparent
-  );
+  border-top: 1px solid var(--sd-shell-border, var(--sd-color-border-subtle));
+  background: var(--sd-shell-surface-muted);
 }
 
 .sd-modal-dark .sd-modal-footer {
-  border-top-color: var(--sd-color-border-subtle);
-  background: color-mix(
-    in srgb,
-    var(--sd-color-surface-muted) 76%,
-    transparent
-  );
+  border-top-color: var(--sd-shell-border, var(--sd-color-border-subtle));
+  background: var(--sd-shell-surface-muted);
 }
 
 .sd-icon-button {
@@ -737,9 +896,7 @@
   position: relative;
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
-  grid-template-areas:
-    "brand actions"
-    "search search";
+  grid-template-areas: "brand actions";
   align-items: center;
   gap: 1.375rem 1.5rem;
   margin-bottom: 1.25rem;
@@ -795,30 +952,6 @@
   align-items: center;
   justify-content: flex-end;
   gap: 0.75rem;
-}
-
-.sd-home-search-zone {
-  grid-area: search;
-  position: relative;
-  z-index: 50;
-  width: min(100%, 43.75rem);
-  justify-self: center;
-}
-
-.sd-home-search-form {
-  position: relative;
-  display: flex;
-  width: 100%;
-  height: 3.75rem;
-  align-items: center;
-  gap: 0.75rem;
-  border: 1px solid rgba(255, 255, 255, 0.52);
-  border-radius: 999px;
-  padding: 0.375rem 1.125rem;
-  color: var(--sd-color-text-primary);
-  box-shadow: 0 1.125rem 3rem rgba(0, 0, 0, 0.18);
-  backdrop-filter: blur(24px) saturate(140%);
-  -webkit-backdrop-filter: blur(24px) saturate(140%);
 }
 
 .sd-home-toolbar {
@@ -974,69 +1107,12 @@
   }
 }
 
-.sd-home-group-tabs {
-  display: flex;
-  width: min(100%, 43.75rem);
-  align-items: center;
-  gap: 0.5rem;
-  margin: 0 auto 1.5rem;
-  overflow-x: auto;
-  padding: 0.0625rem 0.125rem 0.375rem;
-  scrollbar-width: none;
-}
-
-.sd-home-group-tabs::-webkit-scrollbar {
-  display: none;
-}
-
-.sd-home-group-tab {
-  display: inline-flex;
-  min-height: 2.375rem;
-  flex: 0 0 auto;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid var(--sd-home-glass-border);
-  border-radius: 999px;
-  padding: 0 1rem;
-  background: var(--sd-home-control-bg);
-  color: var(--sd-home-text-secondary);
-  font-size: 0.875rem;
-  font-weight: 850;
-  white-space: nowrap;
-  backdrop-filter: blur(18px) saturate(130%);
-  -webkit-backdrop-filter: blur(18px) saturate(130%);
-  transition:
-    background-color 0.16s ease,
-    border-color 0.16s ease,
-    color 0.16s ease,
-    transform 0.16s ease;
-}
-
-.sd-home-group-tab:hover {
-  border-color: var(--sd-color-border-accent);
-  background: var(--sd-home-control-bg-hover);
-  color: var(--sd-home-text-primary);
-}
-
-.sd-home-group-tab.is-active {
-  border-color: rgba(255, 255, 255, 0.68);
-  background: var(--sd-home-glass-bg-strong);
-  color: var(--sd-home-text-primary);
-  box-shadow: var(--sd-shadow-popover);
-}
-
-.sd-home-group-tab:focus-visible {
-  outline: none;
-  box-shadow: var(--sd-home-focus-ring);
-}
-
 @media (max-width: 1279px) {
   .sd-home-header-frame {
     grid-template-columns: minmax(0, 1fr);
     grid-template-areas:
       "brand"
-      "actions"
-      "search";
+      "actions";
     justify-items: center;
     gap: 1rem;
   }
@@ -1070,7 +1146,7 @@
   min-width: 0;
   min-height: 0;
   overflow: visible;
-  border-radius: 1rem;
+  border-radius: var(--sd-home-widget-radius);
 }
 
 .sd-home-widget-frame.is-editing {
@@ -1078,14 +1154,11 @@
 }
 
 .sd-home-widget-frame.is-selected {
-  outline: 2px solid var(--sd-home-widget-outline);
-  outline-offset: 4px;
-  box-shadow: 0 0 0 8px
-    color-mix(in srgb, var(--sd-home-widget-outline) 18%, transparent);
-}
-
-.sd-home-widget-frame.is-resizing {
-  z-index: 5;
+  outline: none;
+  border-radius: var(--sd-home-widget-radius);
+  box-shadow:
+    0 0 0 2px var(--sd-home-widget-interaction-ring),
+    0 0 0 8px var(--sd-home-widget-interaction-shadow);
 }
 
 .sd-home-widget-content {
@@ -1098,8 +1171,7 @@
 }
 
 .sd-home-widget-delete,
-.sd-home-widget-move-handle,
-.sd-home-widget-resize-grip {
+.sd-home-widget-move-handle {
   position: absolute;
   z-index: 8;
   display: grid;
@@ -1118,14 +1190,18 @@
 }
 
 .sd-home-widget-delete {
-  top: -0.625rem;
-  left: -0.625rem;
-  width: 2rem;
-  height: 2rem;
+  top: -0.375rem;
+  left: -0.375rem;
+  width: 1.5rem;
+  height: 1.5rem;
   border-radius: 999px;
-  background: var(--sd-home-action-danger);
-  font-size: 1.25rem;
-  font-weight: 700;
+  border-color: rgba(255, 255, 255, 0.52);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.22), transparent),
+    color-mix(in srgb, var(--sd-home-action-danger) 88%, #ffffff 12%);
+  box-shadow:
+    0 8px 18px rgba(215, 0, 21, 0.24),
+    0 1px 3px rgba(15, 23, 42, 0.18);
   line-height: 1;
 }
 
@@ -1150,38 +1226,8 @@
   cursor: grabbing;
 }
 
-.sd-home-widget-resize-grip {
-  right: 0.75rem;
-  bottom: 0.75rem;
-  width: 2.375rem;
-  height: 2.375rem;
-  border-radius: 0.875rem;
-  cursor: nwse-resize;
-}
-
-.sd-home-widget-resize-grip::before,
-.sd-home-widget-resize-grip::after {
-  content: "";
-  position: absolute;
-  right: 0.625rem;
-  bottom: 0.625rem;
-  border-radius: 999px;
-  background: currentColor;
-}
-
-.sd-home-widget-resize-grip::before {
-  width: 1.0625rem;
-  height: 0.125rem;
-}
-
-.sd-home-widget-resize-grip::after {
-  width: 0.125rem;
-  height: 1.0625rem;
-}
-
 .sd-home-widget-delete:hover,
-.sd-home-widget-move-handle:hover,
-.sd-home-widget-resize-grip:hover {
+.sd-home-widget-move-handle:hover {
   border-color: var(--sd-color-border-accent);
   background: var(--sd-home-control-bg-hover);
   color: var(--sd-home-text-primary);
@@ -1190,7 +1236,6 @@
 
 .sd-home-widget-delete:focus-visible,
 .sd-home-widget-move-handle:focus-visible,
-.sd-home-widget-resize-grip:focus-visible,
 .sd-home-size-option:focus-visible {
   outline: none;
   box-shadow: var(--sd-home-focus-ring);
@@ -1207,7 +1252,7 @@
 .sd-home-resize-grid {
   position: absolute;
   inset: -0.5rem;
-  border-radius: 1.5rem;
+  border-radius: calc(var(--sd-home-widget-radius) + 0.5rem);
   background:
     linear-gradient(var(--sd-home-resize-grid-line) 1px, transparent 1px) 0 0 /
       3.5rem 3.5rem,
@@ -1221,10 +1266,12 @@
   left: 0;
   top: 0;
   border: 2px dashed var(--sd-home-resize-ghost-border);
-  border-radius: 1.5rem;
+  border-radius: var(--sd-home-widget-radius);
   background: var(--sd-home-resize-ghost-bg);
-  box-shadow: inset 0 0 0 999px
-    color-mix(in srgb, var(--sd-home-resize-ghost-bg) 28%, transparent);
+  box-shadow:
+    0 0 0 8px var(--sd-home-widget-interaction-shadow),
+    inset 0 0 0 999px
+      color-mix(in srgb, var(--sd-home-resize-ghost-bg) 28%, transparent);
 }
 
 .sd-home-resize-badge,
@@ -1501,11 +1548,6 @@
     margin-bottom: 1rem;
   }
 
-  .sd-home-search-form {
-    height: 3rem;
-    padding: 0.25rem 0.625rem;
-  }
-
   .sd-home-toolbar {
     --sd-home-toolbar-gap: 0.375rem;
     --sd-home-toolbar-padding-block: 0.375rem;
@@ -1517,13 +1559,6 @@
     flex-wrap: nowrap;
   }
 
-  .sd-home-group-tab {
-    height: 2rem;
-    min-height: 2rem;
-    padding-inline: 0.625rem;
-    font-size: 0.75rem;
-  }
-
   .sd-home-top-network {
     min-width: 6.25rem;
     padding-inline: 0.375rem;
@@ -1533,20 +1568,12 @@
     font-size: 0.625rem;
   }
 
-  .sd-home-group-tabs {
-    width: 100%;
-    justify-content: flex-start;
-    margin-bottom: 1rem;
-  }
-
   .sd-home-action-bar {
     width: 100%;
     overflow-x: auto;
   }
 
-  .sd-home-widget-delete,
-  .sd-home-widget-move-handle,
-  .sd-home-widget-resize-grip {
+  .sd-home-widget-move-handle {
     min-width: 2.75rem;
     min-height: 2.75rem;
   }
@@ -1766,6 +1793,41 @@
   gap: 0.5rem;
 }
 
+.sd-window-controls {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.sd-window-control-dot {
+  display: block;
+  width: 16px;
+  height: 16px;
+  border: 0;
+  border-radius: 9999px;
+  padding: 0;
+  box-shadow: 0 1px 6px var(--sd-shell-control-shadow);
+}
+
+button.sd-window-control-dot {
+  appearance: none;
+  cursor: pointer;
+}
+
+.sd-window-control-dot.is-green {
+  background: var(--sd-shell-control-success);
+}
+
+.sd-window-control-dot.is-red {
+  background: var(--sd-shell-control-danger);
+}
+
+button.sd-window-control-dot.is-red:hover,
+button.sd-window-control-dot.is-red:focus-visible {
+  outline: 2px solid var(--sd-shell-control-danger-ring);
+  outline-offset: 3px;
+}
+
 .sd-window-traffic-button {
   appearance: none;
   border: 0;
@@ -1856,6 +1918,31 @@
   line-height: 1.25rem;
 }
 
+.sd-compact-window .sd-window-title-layer {
+  position: static;
+  min-width: 0;
+  flex: 1 1 auto;
+  justify-content: flex-start;
+  padding-inline: 0;
+  pointer-events: auto;
+}
+
+.sd-compact-window .sd-window-title-stack {
+  width: 100%;
+  max-width: 100%;
+  text-align: left;
+}
+
+.sd-compact-window .sd-window-title {
+  white-space: normal;
+  word-break: keep-all;
+  overflow-wrap: break-word;
+}
+
+.sd-compact-window .sd-window-bar-edge {
+  flex: 0 0 auto;
+}
+
 .sd-window-subtitle {
   margin-top: 0.125rem;
   color: var(--sd-color-text-tertiary);
@@ -1881,6 +1968,13 @@
   color: var(--sd-color-text-primary);
   backdrop-filter: saturate(180%) blur(24px);
   -webkit-backdrop-filter: saturate(180%) blur(24px);
+}
+
+.sd-settings-shell-surface > .sd-window-bar {
+  height: var(--sd-window-bar-height);
+  min-height: var(--sd-window-bar-height);
+  flex: 0 0 var(--sd-window-bar-height);
+  overflow: hidden;
 }
 
 .settings-shell-window.is-mobile .sd-window-bar {
@@ -2981,98 +3075,6 @@
 
 .scrollbar-glass::-webkit-scrollbar-corner {
   background: transparent;
-}
-
-.rss-form-panel {
-  --rss-form-bg: #fff7ed;
-  --rss-form-border: #ffedd5;
-  --rss-form-text: #1f2937;
-  --rss-form-title: #9a3412;
-  --rss-form-label: #4b5563;
-  --rss-form-placeholder: #9ca3af;
-  --rss-form-hint: #94a3b8;
-  --rss-form-input-bg: #ffffff;
-  --rss-form-input-border: #e5e7eb;
-  --rss-form-input-text: #111827;
-  --rss-form-input-focus: #f97316;
-  --rss-form-tag-bg: #f3f4f6;
-  --rss-form-tag-text: #6b7280;
-  --rss-form-tag-hover-bg: #ffedd5;
-  --rss-form-tag-hover-text: #c2410c;
-  --rss-form-hover-border: rgba(255, 255, 255, 0.6);
-  --rss-form-focus-ring: rgba(249, 115, 22, 0.35);
-  background-color: var(--rss-form-bg);
-  border-color: var(--rss-form-border);
-  border-width: 1px;
-  color: var(--rss-form-text);
-  transition: border-color 0.2s ease-in-out;
-}
-
-.night-settings .rss-form-panel {
-  --rss-form-bg: rgba(15, 23, 42, 0.72);
-  --rss-form-border: rgba(226, 232, 240, 0.18);
-  --rss-form-text: #f8fafc;
-  --rss-form-title: #fdba74;
-  --rss-form-label: #e2e8f0;
-  --rss-form-placeholder: rgba(226, 232, 240, 0.72);
-  --rss-form-hint: rgba(226, 232, 240, 0.7);
-  --rss-form-input-bg: rgba(2, 6, 23, 0.7);
-  --rss-form-input-border: rgba(226, 232, 240, 0.24);
-  --rss-form-input-text: #f8fafc;
-  --rss-form-input-focus: #fb923c;
-  --rss-form-tag-bg: rgba(30, 41, 59, 0.8);
-  --rss-form-tag-text: #e2e8f0;
-  --rss-form-tag-hover-bg: rgba(124, 45, 18, 0.55);
-  --rss-form-tag-hover-text: #ffedd5;
-  --rss-form-hover-border: rgba(255, 255, 255, 0.6);
-  --rss-form-focus-ring: rgba(251, 146, 60, 0.45);
-}
-
-.rss-form-panel:hover {
-  border-color: var(--rss-form-hover-border);
-  background-color: var(--rss-form-bg);
-}
-
-.rss-form-title {
-  color: var(--rss-form-title);
-}
-
-.rss-form-label {
-  color: var(--rss-form-label);
-}
-
-.rss-form-hint {
-  color: var(--rss-form-hint);
-}
-
-.rss-form-input {
-  background-color: var(--rss-form-input-bg);
-  border-color: var(--rss-form-input-border);
-  color: var(--rss-form-input-text);
-  transition:
-    border-color 0.2s ease-in-out,
-    box-shadow 0.2s ease-in-out,
-    background-color 0.2s ease-in-out;
-}
-
-.rss-form-input::placeholder {
-  color: var(--rss-form-placeholder);
-}
-
-.rss-form-input:focus,
-.rss-form-input:focus-visible {
-  border-color: var(--rss-form-input-focus);
-  box-shadow: 0 0 0 2px var(--rss-form-focus-ring);
-}
-
-.rss-form-tag {
-  background-color: var(--rss-form-tag-bg);
-  color: var(--rss-form-tag-text);
-}
-
-.rss-form-tag:hover {
-  background-color: var(--rss-form-tag-hover-bg);
-  color: var(--rss-form-tag-hover-text);
 }
 
 @media (max-width: 1024px) and (max-height: 768px) {

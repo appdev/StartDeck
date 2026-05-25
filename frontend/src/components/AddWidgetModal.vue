@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
 import AppModalShell from "@/components/base/AppModalShell.vue";
-import WidgetSizeVariantPreview from "@/components/home/WidgetSizeVariantPreview.vue";
+import AppWindowControls from "@/components/base/AppWindowControls.vue";
 import {
   useSmartIconMatch,
   type SmartIconMatchResult,
@@ -20,7 +20,6 @@ import {
 } from "@/utils/navItemAdapter";
 import {
   SITE_SHORTCUT_CATEGORIES,
-  SITE_SHORTCUT_SORT_TABS,
   filterAndSortSiteShortcuts,
   getSiteShortcutIcon,
   type StartDeckSiteShortcutCatalogItem,
@@ -34,7 +33,6 @@ import {
   type WidgetCatalogCategory,
   type WidgetCatalogItem,
   type WidgetCatalogSizeKey,
-  type WidgetCatalogSizePreset,
 } from "@/utils/widgetCatalog";
 
 type AddTab = "widget" | "site" | "custom";
@@ -43,12 +41,9 @@ type ReplicaWidgetCard = {
   catalogItemId: string;
   title: string;
   description: string;
-  popularity: string;
   glyph: string;
   previewKind:
-    | "pdf"
     | "number"
-    | "gradient"
     | "clock"
     | "weather"
     | "quote"
@@ -56,6 +51,7 @@ type ReplicaWidgetCard = {
     | "memo"
     | "todo"
     | "pomodoro"
+    | "food"
     | "quote"
     | "english"
     | "audio"
@@ -83,11 +79,11 @@ type WidgetUiCategory =
   | "all"
   | "productivity"
   | "tool"
+  | "system"
   | "development"
   | "design"
   | "creative"
-  | "entertainment"
-  | "other";
+  | "entertainment";
 
 const props = defineProps<{
   show: boolean;
@@ -118,10 +114,10 @@ const activeWidgetCategory = ref<WidgetUiCategory>("explore");
 const activeSiteCategory = ref<SiteShortcutCategory | "all">("all");
 const activeSortMode = ref<SiteShortcutSortMode>("featured");
 const activeRecommendationBatch = ref(0);
-const selectedSizeByItemId = ref<Record<string, WidgetCatalogSizeKey>>({});
 const busyKey = ref("");
 const resultMessage = ref("");
 const customUploadInputRef = ref<HTMLInputElement | null>(null);
+const previewSizeKey: WidgetCatalogSizeKey = "2x2";
 
 const customForm = ref<CustomIconDraft>({
   title: "",
@@ -178,7 +174,6 @@ watch(
     activeSiteCategory.value = "browser";
     activeSortMode.value = "featured";
     activeRecommendationBatch.value = 0;
-    selectedSizeByItemId.value = {};
     resultMessage.value = "";
     resetCustomForm();
     ensureDestination();
@@ -195,7 +190,6 @@ const tabs: { id: AddTab; label: string; testId: string; icon: string }[] = [
     testId: "itab-add-tab-widget",
     icon: "widget",
   },
-  { id: "site", label: "网址导航", testId: "itab-add-tab-site", icon: "site" },
   {
     id: "custom",
     label: "自定义图标",
@@ -214,13 +208,13 @@ const WIDGET_UI_CATEGORIES: {
   { label: "全部", value: "all" },
   { label: "效率", value: "productivity", categories: ["common", "content"] },
   { label: "工具", value: "tool", categories: ["tool"] },
+  { label: "系统", value: "system", categories: ["system"] },
   {
     label: "开发",
     value: "development",
-    categories: ["system"],
-    types: ["custom-css", "iframe"],
+    types: ["custom-css"],
   },
-  { label: "设计", value: "design", types: ["custom-css", "iframe"] },
+  { label: "设计", value: "design", types: ["custom-css"] },
   {
     label: "创意",
     value: "creative",
@@ -229,9 +223,8 @@ const WIDGET_UI_CATEGORIES: {
   {
     label: "娱乐",
     value: "entertainment",
-    types: ["hot", "rss", "bookmarks"],
+    types: ["itab-movie-calendar-05", "itab-poem-10", "itab-daily-english-14"],
   },
-  { label: "其他", value: "other", categories: ["system"] },
 ];
 
 const categoryOptions = computed(() => WIDGET_UI_CATEGORIES);
@@ -239,39 +232,13 @@ const categoryOptions = computed(() => WIDGET_UI_CATEGORIES);
 const ITAB_WIDGET_RECOMMENDATION_BATCHES: ReplicaWidgetCard[][] = [
   [
     {
-      id: "source-pdf-master-batch-1",
-      catalogItemId: "itab-converter-suite-34",
-      title: "PDF转换大师",
-      description: "PDF转换大师",
-      popularity: "2604",
-      glyph: "PDF",
-      previewKind: "pdf",
-      previewTone: "blue",
-      previewAsset: "/itab-live-assets/pdf-master.svg",
-    },
-    {
       id: "source-number-uppercase",
       catalogItemId: "itab-number-uppercase-35",
-      title: "数字大写转换",
-      description: "数字大写转换",
-      popularity: "3.25万",
-      glyph: "壹",
+      title: "金额换算",
+      description: "将金额转为大写",
+      glyph: "¥",
       previewKind: "number",
       previewTone: "slate",
-      previewAsset: "/itab-live-assets/uppercase.svg",
-    },
-    {
-      id: "source-gradient",
-      catalogItemId: "itab-gradient-25",
-      title: "渐变色",
-      description:
-        "集合180种线性渐变，您可以将其作用于任何网站，并且可以快速复制css3渐变颜色的代码用于您的项目中",
-      popularity: "8.16万",
-      glyph: "渐",
-      previewKind: "gradient",
-      previewTone: "purple",
-      previewAsset: "/__itab-qa-skins/body/25-2x4.png",
-      previewAssetFit: "cover",
     },
     {
       id: "source-weather",
@@ -279,10 +246,19 @@ const ITAB_WIDGET_RECOMMENDATION_BATCHES: ReplicaWidgetCard[][] = [
       title: "天气",
       description:
         "准确预报全球近10000多个地区的一周天气预报，包括国内县级和县级以上全部城市",
-      popularity: "10.26万",
       glyph: "天",
       previewKind: "weather",
       previewTone: "blue",
+    },
+    {
+      id: "source-ip",
+      catalogItemId: "ip",
+      title: "本机IP",
+      description: "显示当前 IP 地址、归属地和网络信息",
+      glyph: "IP",
+      previewKind: "number",
+      previewTone: "blue",
+      previewAsset: "/itab-live-assets/ip.svg",
     },
     {
       id: "source-anniversary",
@@ -290,7 +266,6 @@ const ITAB_WIDGET_RECOMMENDATION_BATCHES: ReplicaWidgetCard[][] = [
       title: "纪念日",
       description:
         "可配置纪念日、恋爱日期、倒数日等事件，支持日期、颜色、背景图片和蒙版设置",
-      popularity: "9.01万",
       glyph: "纪",
       previewKind: "anniversary",
       previewTone: "pink",
@@ -300,17 +275,24 @@ const ITAB_WIDGET_RECOMMENDATION_BATCHES: ReplicaWidgetCard[][] = [
       catalogItemId: "itab-clock-12",
       title: "时钟",
       description: "桌面翻页时钟，打开后可进入大屏时间面板",
-      popularity: "4.56万",
       glyph: "时",
       previewKind: "clock",
       previewTone: "slate",
+    },
+    {
+      id: "source-food-picker",
+      catalogItemId: "itab-food-picker-15",
+      title: "今天吃什么",
+      description: "随机抽取用餐候选并维护本地菜单",
+      glyph: "吃",
+      previewKind: "food",
+      previewTone: "amber",
     },
     {
       id: "source-memo",
       catalogItemId: "itab-memo-04",
       title: "备忘录",
       description: "快速记录备忘内容，支持搜索、编辑和固定到桌面",
-      popularity: "12.68万",
       glyph: "备",
       previewKind: "memo",
       previewTone: "amber",
@@ -320,7 +302,6 @@ const ITAB_WIDGET_RECOMMENDATION_BATCHES: ReplicaWidgetCard[][] = [
       catalogItemId: "itab-todo-17",
       title: "待办事项",
       description: "记录任务清单，打开后可新增、编辑和勾选待办",
-      popularity: "11.34万",
       glyph: "办",
       previewKind: "todo",
       previewTone: "blue",
@@ -330,7 +311,6 @@ const ITAB_WIDGET_RECOMMENDATION_BATCHES: ReplicaWidgetCard[][] = [
       catalogItemId: "itab-pomodoro-29",
       title: "番茄时钟",
       description: "专注计时、背景音和会话进度",
-      popularity: "8.86万",
       glyph: "番",
       previewKind: "pomodoro",
       previewTone: "green",
@@ -340,7 +320,6 @@ const ITAB_WIDGET_RECOMMENDATION_BATCHES: ReplicaWidgetCard[][] = [
       catalogItemId: "itab-poem-10",
       title: "今日诗词",
       description: "每天一句诗词名句，可查看出处、全文、译文和注释",
-      popularity: "8.54万",
       glyph: "诗",
       previewKind: "quote",
       previewTone: "green",
@@ -350,7 +329,6 @@ const ITAB_WIDGET_RECOMMENDATION_BATCHES: ReplicaWidgetCard[][] = [
       catalogItemId: "itab-daily-english-14",
       title: "今日英语",
       description: "每日英语句子、中文翻译和跟读音频",
-      popularity: "7.42万",
       glyph: "英",
       previewKind: "english",
       previewTone: "slate",
@@ -360,7 +338,6 @@ const ITAB_WIDGET_RECOMMENDATION_BATCHES: ReplicaWidgetCard[][] = [
       catalogItemId: "itab-converter-suite-34",
       title: "音频格式转换",
       description: "支持mp3、wav、ogg、ac3、flac、opus、pcm、m4a、aac在线互转",
-      popularity: "6.21万",
       glyph: "音",
       previewKind: "audio",
       previewTone: "cyan",
@@ -370,7 +347,6 @@ const ITAB_WIDGET_RECOMMENDATION_BATCHES: ReplicaWidgetCard[][] = [
       catalogItemId: "itab-offwork-22",
       title: "下班倒计时",
       description: "下班倒计时，打工人的必备神器。 下班还有 休息时间",
-      popularity: "9.83万",
       glyph: "下",
       previewKind: "offwork",
       previewTone: "green",
@@ -378,23 +354,11 @@ const ITAB_WIDGET_RECOMMENDATION_BATCHES: ReplicaWidgetCard[][] = [
   ],
   [
     {
-      id: "source-pdf-master",
-      catalogItemId: "itab-converter-suite-34",
-      title: "PDF转换大师",
-      description: "PDF转换大师",
-      popularity: "2604",
-      glyph: "PDF",
-      previewKind: "pdf",
-      previewTone: "blue",
-      previewAsset: "/itab-live-assets/pdf-master.svg",
-    },
-    {
       id: "source-sbti",
       catalogItemId: "custom-css",
       title: "SBTI人格测试",
       description:
         "SBTI（Silly Big Personality Test），直译''傻乎乎人格测试'，由B站UP主创作，核心定位是纯娱乐化精神状态自测工具，无专业心理学依据",
-      popularity: "1129",
       glyph: "SB",
       previewKind: "sbti",
       previewTone: "purple",
@@ -404,33 +368,9 @@ const ITAB_WIDGET_RECOMMENDATION_BATCHES: ReplicaWidgetCard[][] = [
       catalogItemId: "itab-converter-suite-34",
       title: "图片压缩",
       description: "不改变图片尺寸减小文件大小，支持20张批量处理",
-      popularity: "7.17万",
       glyph: "图",
       previewKind: "image",
       previewTone: "cyan",
-    },
-    {
-      id: "source-aippt",
-      catalogItemId: "iframe",
-      title: "AiPPT",
-      description:
-        "AiPPT结合最新AI技术，为用户提供一键生成高质量PPT的解决方案。无论是职场展示、教育课件还是销售报告，AiPPT均能快速生成符合需求的专业PPT，简化设计流程，提升工作效率",
-      popularity: "7378",
-      glyph: "AI",
-      previewKind: "ai",
-      previewTone: "pink",
-    },
-    {
-      id: "source-pdf-master-alt",
-      catalogItemId: "itab-converter-suite-34",
-      title: "PDF转换大师",
-      description:
-        "PDF转换大师，提供PDF转换等功能，支持多种文件格式，PDF转Word、Excel、PPT，Word、Excel、PPT转PDF，PDF和图片互转，PDF拆分",
-      popularity: "3.41万",
-      glyph: "PDF",
-      previewKind: "pdf",
-      previewTone: "blue",
-      previewAsset: "/itab-live-assets/pdf-master.svg",
     },
     {
       id: "source-sports",
@@ -438,7 +378,6 @@ const ITAB_WIDGET_RECOMMENDATION_BATCHES: ReplicaWidgetCard[][] = [
       title: "体育",
       description:
         "关注运动最新资讯和赛程，球迷的福利德乙升降级附加赛05-22 02:30沃尔夫斯堡VS帕德博恩",
-      popularity: "5.98万",
       glyph: "体",
       previewKind: "sports",
       previewTone: "green",
@@ -449,7 +388,6 @@ const ITAB_WIDGET_RECOMMENDATION_BATCHES: ReplicaWidgetCard[][] = [
       title: "2048",
       description:
         "《2048》是一款比较流行的数字游戏，合并相同方块，得到2048的方块!",
-      popularity: "10.90万",
       glyph: "2",
       previewKind: "game",
       previewTone: "amber",
@@ -665,20 +603,17 @@ const defaultSizeFor = (item: WidgetCatalogItem) => {
   );
 };
 
-const selectedSize = (item: WidgetCatalogItem) => {
-  const selectedKey = selectedSizeByItemId.value[item.id];
-  return (
-    item.sizeFamily.supported.find(
-      (candidate) => candidate.key === selectedKey,
-    ) || defaultSizeFor(item)
-  );
-};
+const previewSizeFor = (item: WidgetCatalogItem) =>
+  item.sizeFamily.supported.find(
+    (candidate) => candidate.key === previewSizeKey,
+  ) || defaultSizeFor(item);
 
-const selectSize = (item: WidgetCatalogItem, size: WidgetCatalogSizePreset) => {
-  selectedSizeByItemId.value = {
-    ...selectedSizeByItemId.value,
-    [item.id]: size.key,
-  };
+const widgetPreviewFrameSrc = (item: WidgetCatalogItem) =>
+  `/widget-preview?catalogId=${encodeURIComponent(item.id)}&size=${encodeURIComponent(previewSizeFor(item).key)}`;
+
+const replicaPreviewFrameSrc = (card: ReplicaWidgetCard) => {
+  const item = replicaCatalogItem(card);
+  return item ? widgetPreviewFrameSrc(item) : "";
 };
 
 const actionLabel = (item: WidgetCatalogItem) => {
@@ -706,19 +641,6 @@ const onTabKeydown = (event: KeyboardEvent) => {
   if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
   event.preventDefault();
   focusTabByOffset(event.key === "ArrowRight" ? 1 : -1);
-};
-
-const onSortKeydown = (event: KeyboardEvent) => {
-  if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
-  event.preventDefault();
-  const index = SITE_SHORTCUT_SORT_TABS.findIndex(
-    (tab) => tab.id === activeSortMode.value,
-  );
-  const offset = event.key === "ArrowRight" ? 1 : -1;
-  const next =
-    (index + offset + SITE_SHORTCUT_SORT_TABS.length) %
-    SITE_SHORTCUT_SORT_TABS.length;
-  activeSortMode.value = SITE_SHORTCUT_SORT_TABS[next]!.id;
 };
 
 const invokeAdd = async (
@@ -755,7 +677,7 @@ const addWidget = async (item: WidgetCatalogItem) => {
     catalogItemId: item.id,
     destinationGroupId: destinationGroupId.value,
     saveMode: "dirty",
-    sizeKey: selectedSize(item).key,
+    sizeKey: defaultSizeFor(item).key,
   };
   await invokeAdd(payload, `widget:${item.id}`);
 };
@@ -899,10 +821,12 @@ const submitCustom = async (
     @close="close"
   >
     <div data-testid="itab-add-modal" class="itab-add-layout">
-      <div class="itab-add-window-controls" aria-hidden="true">
-        <span class="is-green"></span>
-        <span class="is-red"></span>
-      </div>
+      <AppWindowControls
+        class="itab-add-window-controls"
+        aria-label="添加组件窗口控制"
+        close-label="关闭添加组件"
+        @close="close"
+      />
       <aside class="itab-add-sidebar" role="tablist" aria-label="添加类型">
         <button
           v-for="tab in tabs"
@@ -1009,28 +933,8 @@ const submitCustom = async (
             </button>
           </div>
 
-          <div
-            class="itab-add-rank-row"
-            role="tablist"
-            aria-label="组件排序"
-            @keydown="onSortKeydown"
-          >
+          <div v-if="isReplicaWidgetRecommendation" class="itab-add-rank-row">
             <button
-              v-for="tab in SITE_SHORTCUT_SORT_TABS"
-              :key="tab.id"
-              type="button"
-              data-testid="itab-add-rank-tab"
-              class="itab-add-rank-tab"
-              :class="{ 'is-active': activeSortMode === tab.id }"
-              role="tab"
-              :aria-selected="activeSortMode === tab.id"
-              :tabindex="activeSortMode === tab.id ? 0 : -1"
-              @click="activeSortMode = tab.id"
-            >
-              {{ tab.label }}
-            </button>
-            <button
-              v-if="isReplicaWidgetRecommendation"
               type="button"
               data-testid="itab-add-batch-button"
               class="itab-add-batch-button"
@@ -1060,8 +964,18 @@ const submitCustom = async (
               </div>
               <div class="itab-add-replica-preview">
                 <span class="itab-add-replica-art">
+                  <iframe
+                    v-if="replicaPreviewFrameSrc(card)"
+                    class="itab-add-widget-preview-frame"
+                    :src="replicaPreviewFrameSrc(card)"
+                    :title="`${card.title} 2x2 预览`"
+                    loading="lazy"
+                    sandbox="allow-scripts allow-same-origin"
+                    aria-hidden="true"
+                    tabindex="-1"
+                  ></iframe>
                   <img
-                    v-if="card.previewAsset"
+                    v-else-if="card.previewAsset"
                     :src="card.previewAsset"
                     alt=""
                     class="itab-add-replica-asset"
@@ -1069,19 +983,6 @@ const submitCustom = async (
                       'is-cover': card.previewAssetFit === 'cover',
                     }"
                   />
-                  <span
-                    v-else-if="card.previewKind === 'pdf'"
-                    class="itab-add-pdf-art"
-                  >
-                    <span>W</span>
-                    <span>X</span>
-                    <strong>PDF转换大师</strong>
-                    <span>P</span>
-                  </span>
-                  <span
-                    v-else-if="card.previewKind === 'gradient'"
-                    class="itab-add-gradient-art"
-                  ></span>
                   <span
                     v-else-if="card.previewKind === 'weather'"
                     class="itab-add-weather-art"
@@ -1139,19 +1040,8 @@ const submitCustom = async (
                     card.glyph
                   }}</span>
                 </span>
-                <span class="itab-add-replica-dots" aria-hidden="true">
-                  <span></span>
-                  <span></span>
-                  <span></span>
-                  <span class="is-active"></span>
-                  <span></span>
-                </span>
               </div>
               <div class="itab-add-replica-footer">
-                <span class="itab-add-replica-popularity">
-                  <span aria-hidden="true">🔥</span>
-                  {{ card.popularity }}
-                </span>
                 <button
                   type="button"
                   data-testid="itab-add-card-add"
@@ -1174,55 +1064,50 @@ const submitCustom = async (
             </article>
           </div>
 
-          <div v-else class="itab-add-widget-grid">
+          <div v-else class="itab-add-widget-grid is-replica">
             <article
               v-for="item in filteredCatalog"
               :key="item.id"
               data-testid="itab-add-widget-card"
-              class="itab-add-widget-card"
+              class="itab-add-widget-card is-replica-card is-catalog-card"
               :class="{ 'is-enabled': actionDisabled(item) }"
             >
-              <div class="itab-add-widget-preview">
-                <WidgetSizeVariantPreview
-                  :type="item.type"
-                  :title="item.title"
-                  :glyph="item.glyph"
-                  :size="selectedSize(item)"
-                  preview-role="hero"
-                />
-              </div>
-              <div class="itab-add-widget-copy">
+              <div class="itab-add-replica-heading">
                 <h3>{{ item.title }}</h3>
                 <p>{{ item.description }}</p>
               </div>
-              <div class="itab-add-size-row" :aria-label="`${item.title} 尺寸`">
+              <div class="itab-add-replica-preview">
+                <span class="itab-add-replica-art">
+                  <iframe
+                    class="itab-add-widget-preview-frame"
+                    :src="widgetPreviewFrameSrc(item)"
+                    :title="`${item.title} 2x2 预览`"
+                    loading="lazy"
+                    sandbox="allow-scripts allow-same-origin"
+                    aria-hidden="true"
+                    tabindex="-1"
+                  ></iframe>
+                </span>
+              </div>
+              <div class="itab-add-replica-footer">
                 <button
-                  v-for="size in item.sizeFamily.supported"
-                  :key="size.key"
                   type="button"
-                  class="itab-add-size-button"
-                  :class="{ 'is-active': selectedSize(item).key === size.key }"
-                  :aria-pressed="selectedSize(item).key === size.key"
-                  @click="selectSize(item, size)"
+                  data-testid="itab-add-card-add"
+                  class="itab-add-card-button"
+                  :disabled="
+                    actionDisabled(item) || busyKey === `widget:${item.id}`
+                  "
+                  :aria-disabled="actionDisabled(item)"
+                  :aria-label="`${actionLabel(item)} ${item.title}`"
+                  @click="addWidget(item)"
                 >
-                  {{ size.label }}
+                  {{
+                    busyKey === `widget:${item.id}`
+                      ? "处理中"
+                      : actionLabel(item)
+                  }}
                 </button>
               </div>
-              <button
-                type="button"
-                data-testid="itab-add-card-add"
-                class="itab-add-card-button"
-                :disabled="
-                  actionDisabled(item) || busyKey === `widget:${item.id}`
-                "
-                :aria-disabled="actionDisabled(item)"
-                :aria-label="`${actionLabel(item)} ${item.title}`"
-                @click="addWidget(item)"
-              >
-                {{
-                  busyKey === `widget:${item.id}` ? "处理中" : actionLabel(item)
-                }}
-              </button>
             </article>
           </div>
 
@@ -1460,9 +1345,9 @@ const submitCustom = async (
 
 <style scoped>
 :global(.itab-add-overlay) {
-  background: rgba(0, 0, 0, 0.5);
-  -webkit-backdrop-filter: blur(6px) brightness(1.08);
-  backdrop-filter: blur(6px) brightness(1.08);
+  background: rgba(0, 0, 0, 0.22);
+  -webkit-backdrop-filter: blur(10px) saturate(135%) brightness(0.7);
+  backdrop-filter: blur(10px) saturate(135%) brightness(0.7);
 }
 
 :global(.itab-add-panel) {
@@ -1471,13 +1356,14 @@ const submitCustom = async (
 
 :global(.itab-add-surface) {
   position: relative;
-  overflow: hidden auto;
-  border: 1px solid rgba(255, 255, 255, 0.13);
+  overflow: hidden;
+  border: 1px solid var(--sd-shell-border);
   border-radius: 20px;
-  background: rgba(0, 0, 0, 0.45);
-  box-shadow: rgba(0, 0, 0, 0.48) 0 12px 32px 0;
-  -webkit-backdrop-filter: blur(24px) saturate(135%) brightness(1.35);
-  backdrop-filter: blur(24px) saturate(135%) brightness(1.35);
+  background: var(--sd-shell-surface);
+  background-image: none;
+  box-shadow: var(--sd-shadow-window);
+  -webkit-backdrop-filter: saturate(135%) blur(28px) brightness(0.62);
+  backdrop-filter: saturate(135%) blur(28px) brightness(0.62);
 }
 
 :global(.itab-add-surface > .sd-window-bar) {
@@ -1495,7 +1381,7 @@ const submitCustom = async (
   grid-template-columns: 154px minmax(0, 1fr);
   height: min(600px, calc(100vh - 96px));
   min-height: min(600px, calc(100vh - 96px));
-  color: rgb(223, 221, 221);
+  color: var(--sd-shell-text-primary);
 }
 
 .itab-add-window-controls {
@@ -1503,24 +1389,6 @@ const submitCustom = async (
   z-index: 3;
   top: 11px;
   right: 20px;
-  display: inline-flex;
-  gap: 9px;
-}
-
-.itab-add-window-controls span {
-  display: block;
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.28);
-}
-
-.itab-add-window-controls .is-green {
-  background: rgb(0, 190, 38);
-}
-
-.itab-add-window-controls .is-red {
-  background: rgb(255, 70, 82);
 }
 
 .itab-add-sidebar {
@@ -1759,13 +1627,10 @@ const submitCustom = async (
 }
 
 .itab-add-rank-row {
-  gap: 20px;
   align-items: center;
 }
 
-.itab-add-chip,
-.itab-add-rank-tab,
-.itab-add-size-button {
+.itab-add-chip {
   height: 24px;
   border: 0;
   border-radius: 11px;
@@ -1781,27 +1646,9 @@ const submitCustom = async (
   min-width: 38px;
 }
 
-.itab-add-chip.is-active,
-.itab-add-size-button.is-active {
+.itab-add-chip.is-active {
   background: rgb(24, 144, 255);
   color: #fff;
-}
-
-.itab-add-rank-tab {
-  height: 22px;
-  border-radius: 0;
-  background: transparent;
-  color: rgba(223, 221, 221, 0.72);
-  font-size: 14px;
-  font-weight: 400;
-  padding: 0;
-}
-
-.itab-add-rank-tab.is-active {
-  background: transparent;
-  color: rgb(223, 221, 221);
-  font-size: 18px;
-  font-weight: 700;
 }
 
 .itab-add-batch-button {
@@ -1821,6 +1668,7 @@ const submitCustom = async (
 .itab-add-widget-grid,
 .itab-add-site-grid {
   display: grid;
+  width: 100%;
   min-height: 0;
   flex: 1 1 auto;
   gap: 16px;
@@ -1848,13 +1696,16 @@ const submitCustom = async (
 }
 
 .itab-add-widget-grid {
-  grid-template-columns: repeat(2, minmax(260px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
 }
 
 .itab-add-widget-grid.is-replica {
-  grid-template-columns: repeat(2, 391.5px);
+  grid-template-columns: repeat(2, 390px);
+  grid-auto-rows: 308px;
+  align-content: start;
+  align-items: start;
   justify-content: start;
-  overflow-y: scroll;
+  overflow-y: auto;
   padding-right: 10px;
   scrollbar-gutter: stable;
 }
@@ -1882,6 +1733,9 @@ const submitCustom = async (
 }
 
 .itab-add-widget-card.is-replica-card {
+  width: 390px;
+  height: 308px;
+  min-height: 308px;
   grid-template-rows: 58px 190px 40px;
   gap: 0;
   overflow: hidden;
@@ -1900,15 +1754,15 @@ const submitCustom = async (
   opacity: 0.64;
 }
 
-.itab-add-widget-preview {
-  display: grid;
-  min-width: 0;
-  overflow: hidden;
-  place-items: center;
-  border-radius: 12px;
-  background:
-    linear-gradient(135deg, rgba(24, 144, 255, 0.1), transparent),
-    rgba(255, 255, 255, 0.22);
+.itab-add-widget-preview-frame {
+  display: block;
+  width: 150px;
+  height: 150px;
+  border: 0;
+  border-radius: 18px;
+  background: transparent;
+  color-scheme: light dark;
+  pointer-events: none;
 }
 
 .itab-add-replica-preview {
@@ -1951,26 +1805,6 @@ const submitCustom = async (
 .itab-add-replica-art {
   display: grid;
   place-items: center;
-}
-
-.itab-add-replica-dots {
-  position: absolute;
-  bottom: 14px;
-  left: 50%;
-  display: inline-flex;
-  gap: 7px;
-  transform: translateX(-50%);
-}
-
-.itab-add-replica-dots span {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.16);
-}
-
-.itab-add-replica-dots .is-active {
-  background: rgba(255, 255, 255, 0.6);
 }
 
 .itab-add-widget-card.is-tone-blue .itab-add-replica-preview {
@@ -2078,76 +1912,10 @@ const submitCustom = async (
   background: rgb(14, 16, 20);
 }
 
-.itab-add-widget-card.is-preview-pdf .itab-add-replica-asset {
-  width: 184px;
-  height: 184px;
-  transform: translateY(-5px);
-}
-
 .itab-add-widget-card.is-preview-number .itab-add-replica-asset {
   width: 152px;
   height: 152px;
   transform: translateY(-1px);
-}
-
-.itab-add-pdf-art {
-  position: relative;
-  display: grid;
-  width: 118px;
-  height: 118px;
-  place-items: center;
-  border-radius: 12px;
-  background: linear-gradient(145deg, rgb(28, 136, 255), rgb(42, 90, 244));
-  color: white;
-  font-size: 12px;
-  font-weight: 700;
-  box-shadow: 0 12px 24px rgba(0, 39, 115, 0.28);
-}
-
-.itab-add-pdf-art span {
-  position: absolute;
-  display: grid;
-  width: 22px;
-  height: 22px;
-  place-items: center;
-  border-radius: 6px;
-  color: white;
-  font-size: 10px;
-  font-weight: 800;
-}
-
-.itab-add-pdf-art span:nth-child(1) {
-  top: 26px;
-  left: 18px;
-  background: rgb(86, 156, 255);
-  transform: rotate(-10deg);
-}
-
-.itab-add-pdf-art span:nth-child(2) {
-  bottom: 34px;
-  left: 17px;
-  background: rgb(79, 197, 116);
-  transform: rotate(-14deg);
-}
-
-.itab-add-pdf-art span:nth-child(4) {
-  top: 24px;
-  right: 19px;
-  background: rgb(255, 128, 47);
-  transform: rotate(8deg);
-}
-
-.itab-add-pdf-art strong {
-  margin-top: 30px;
-  font-size: 14px;
-  line-height: 1.1;
-}
-
-.itab-add-gradient-art {
-  width: 118px;
-  height: 118px;
-  border-radius: 12px;
-  background: linear-gradient(135deg, #cbff75, #70ffd4 50%, #7a63ff);
 }
 
 .itab-add-weather-art,
@@ -2300,11 +2068,10 @@ const submitCustom = async (
 .itab-add-replica-footer {
   display: flex;
   align-items: end;
-  justify-content: space-between;
-  padding: 13px 0 0;
+  justify-content: flex-end;
+  padding: 13px 12px 0;
 }
 
-.itab-add-widget-copy h3,
 .itab-add-site-copy h3,
 .itab-add-custom-preview h3 {
   overflow: hidden;
@@ -2316,7 +2083,6 @@ const submitCustom = async (
   white-space: nowrap;
 }
 
-.itab-add-widget-copy p,
 .itab-add-site-copy p,
 .itab-add-custom-preview p {
   display: -webkit-box;
@@ -2326,23 +2092,6 @@ const submitCustom = async (
   line-height: 1.35;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
-}
-
-.itab-add-replica-popularity {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  margin-top: 0;
-  color: rgba(223, 221, 221, 0.64);
-  font-size: 12px;
-  line-height: 1.2;
-}
-
-.itab-add-size-row {
-  display: flex;
-  gap: 6px;
-  overflow-x: auto;
-  padding: 2px 0;
 }
 
 .itab-add-card-button,
@@ -2646,6 +2395,14 @@ const submitCustom = async (
   .itab-add-widget-grid,
   .itab-add-site-grid {
     grid-template-columns: 1fr;
+  }
+
+  .itab-add-widget-grid.is-replica {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .itab-add-widget-card.is-replica-card {
+    width: 100%;
   }
 
   .itab-add-custom-options {

@@ -7,7 +7,7 @@ import { resolveWidgetSizeState } from "@/composables/useWidgetResize";
 describe("WidgetSizeStrip", () => {
   it("keeps disabled finite sizes visible and non-committable", async () => {
     const state = resolveWidgetSizeState({
-      widgetType: "file-transfer",
+      widgetType: "custom-css",
       deviceKey: "mobile",
       runtimeCols: 1,
       currentSize: { colSpan: 1, rowSpan: 1 },
@@ -45,7 +45,7 @@ describe("WidgetSizeStrip", () => {
 
   it("surfaces iTab runtime limit reasons in disabled size labels", () => {
     const state = resolveWidgetSizeState({
-      widgetType: "file-transfer",
+      widgetType: "custom-css",
       deviceKey: "mobile",
       runtimeCols: 1,
       currentSize: { colSpan: 1, rowSpan: 1 },

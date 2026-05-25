@@ -1,30 +1,63 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, watch, computed } from "vue";
+import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import type { WidgetConfig } from "../types";
 import { useMainStore } from "@/stores/main";
+import { useUiFeedbackStore } from "@/stores/uiFeedback";
+import {
+  normalizeCustomCssWidgetData,
+  type CustomCssWidgetRuntimeData,
+} from "@/features/widget-runtime/customCssRuntimeModel";
 
-const props = defineProps<{
-  widget: WidgetConfig;
+const props = withDefaults(
+  defineProps<{
+    widget: WidgetConfig;
+    variant?: "card" | "opened";
+    sizeKey?: string;
+    refreshToken?: number;
+  }>(),
+  {
+    variant: "card",
+  },
+);
+
+defineOptions({ inheritAttrs: false });
+
+const emit = defineEmits<{
+  updateData: [data: CustomCssWidgetRuntimeData];
+  "update-data": [data: CustomCssWidgetRuntimeData];
 }>();
 
 const store = useMainStore();
-const isEditing = ref(false);
+const uiFeedback = useUiFeedbackStore();
 const canEdit = computed(() => store.isLogged);
 const activeTab = ref<"html" | "css" | "js">("html");
+const isOpenedVariant = computed(() => props.variant === "opened");
 
-const titleContent = ref(props.widget.data?.title || "自定义组件");
-const htmlContent = ref(
-  props.widget.data?.html || '<div class="my-component">Hello Custom Widget</div>',
+const readData = () => normalizeCustomCssWidgetData(props.widget.data);
+const initialData = readData();
+const titleContent = ref(initialData.title);
+const htmlContent = ref(initialData.html);
+const cssContent = ref(initialData.css);
+const jsContent = ref(initialData.js || "");
+
+const syncFromWidget = () => {
+  const next = readData();
+  titleContent.value = next.title;
+  htmlContent.value = next.html;
+  cssContent.value = next.css;
+  jsContent.value = next.js || "";
+};
+
+const scopeSuffix = computed(() => (isOpenedVariant.value ? "opened" : "card"));
+const widgetDomId = computed(() =>
+  isOpenedVariant.value
+    ? `widget-${props.widget.id}-opened`
+    : `widget-${props.widget.id}`,
 );
-const cssContent = ref(
-  props.widget.data?.css || ".my-component { color: blue; font-weight: bold; }",
-);
-const jsContent = ref<string>(props.widget.data?.js || "");
+const styleId = computed(() => `style-${props.widget.id}-${scopeSuffix.value}`);
+const widgetScope = computed(() => `#${widgetDomId.value}`);
 
 // ─── CSS Scoping ──────────────────────────────────────────────────────────────
-// Uses a simple block parser instead of a single fragile regex so that
-// @keyframes / @font-face / @media / :root / * are all handled correctly.
-
 const NESTED_AT = /^@(media|supports|layer|container)\b/i;
 
 function scopeCss(css: string, scope: string): string {
@@ -33,17 +66,17 @@ function scopeCss(css: string, scope: string): string {
   const n = css.length;
 
   while (i < n) {
-    // skip whitespace / empty lines
     while (i < n && css.charCodeAt(i) <= 32) i++;
     if (i >= n) break;
 
-    // collect selector / at-rule up to the opening brace
     let selector = "";
     while (i < n && css[i] !== "{") selector += css[i++];
-    if (i >= n) { out.push(selector); break; }
-    i++; // consume '{'
+    if (i >= n) {
+      out.push(selector);
+      break;
+    }
+    i++;
 
-    // collect block content (balanced braces)
     let block = "";
     let depth = 1;
     while (i < n && depth > 0) {
@@ -58,14 +91,11 @@ function scopeCss(css: string, scope: string): string {
 
     if (sel.startsWith("@")) {
       if (NESTED_AT.test(sel)) {
-        // Recurse into conditional at-rules
         out.push(`${sel} {\n${scopeCss(block, scope)}\n}`);
       } else {
-        // @keyframes, @font-face, @charset, @import, etc. – keep verbatim
         out.push(`${sel} {\n${block}\n}`);
       }
     } else {
-      // Scope each comma-separated selector
       const scoped = sel
         .split(",")
         .map((s) => {
@@ -83,9 +113,6 @@ function scopeCss(css: string, scope: string): string {
   return out.join("\n\n");
 }
 
-const styleId = computed(() => `style-${props.widget.id}`);
-const widgetScope = computed(() => `#widget-${props.widget.id}`);
-
 const applyStyles = () => {
   let el = document.getElementById(styleId.value) as HTMLStyleElement | null;
   if (!el) {
@@ -96,33 +123,32 @@ const applyStyles = () => {
   el.textContent = scopeCss(cssContent.value, widgetScope.value);
 };
 
-// Live CSS preview while editing (debounced)
 let cssDebounce: number | null = null;
 watch(cssContent, () => {
-  if (!isEditing.value) return;
+  if (!isOpenedVariant.value) return;
   if (cssDebounce) clearTimeout(cssDebounce);
   cssDebounce = window.setTimeout(applyStyles, 300);
 });
 
 // ─── Widget-level JS ──────────────────────────────────────────────────────────
-// Widget JS runs in the widget's own container scope.
-// Non-module scripts receive `ctx` as a parameter:
-//   ctx.el        — widget container DOM element
-//   ctx.query     — querySelector scoped to widget
-//   ctx.queryAll  — querySelectorAll scoped to widget
-//   ctx.onCleanup — register a cleanup callback
-//   ctx.on / ctx.emit — startdeck:* event bus
-
-const jsScriptClass = computed(() => `widget-js-${props.widget.id}`);
+const jsScriptClass = computed(
+  () => `widget-js-${props.widget.id}-${scopeSuffix.value}`,
+);
 const jsCleanupFns: Array<() => void> = [];
 
 const removeWidgetScripts = () => {
-  document.querySelectorAll(`.${jsScriptClass.value}`).forEach((s) => s.remove());
+  document
+    .querySelectorAll(`.${jsScriptClass.value}`)
+    .forEach((script) => script.remove());
 };
 
 const destroyWidgetJs = () => {
   while (jsCleanupFns.length) {
-    try { jsCleanupFns.pop()?.(); } catch { /* ignore */ }
+    try {
+      jsCleanupFns.pop()?.();
+    } catch {
+      /* ignore */
+    }
   }
   removeWidgetScripts();
 };
@@ -132,23 +158,26 @@ const applyWidgetJs = () => {
   const src = jsContent.value?.trim();
   if (!src) return;
 
-  const widgetEl = document.getElementById(`widget-${props.widget.id}`);
+  const widgetEl = document.getElementById(widgetDomId.value);
   if (!widgetEl) return;
 
-  // Build a widget-scoped ctx object and expose it globally before script runs
   const widgetCtx = {
     el: widgetEl,
     query: (sel: string) => widgetEl.querySelector(sel),
     queryAll: (sel: string) => Array.from(widgetEl.querySelectorAll(sel)),
-    onCleanup: (fn: () => void) => { if (typeof fn === "function") jsCleanupFns.push(fn); },
+    onCleanup: (fn: () => void) => {
+      if (typeof fn === "function") jsCleanupFns.push(fn);
+    },
     emit: (type: string, detail?: unknown) => {
       window.dispatchEvent(new CustomEvent(`startdeck:${type}`, { detail }));
     },
     on: (type: string, handler: (ev: CustomEvent) => void) => {
-      const t = `startdeck:${type}`;
-      const wrapped = (e: Event) => handler(e as CustomEvent);
-      window.addEventListener(t, wrapped as EventListener);
-      jsCleanupFns.push(() => window.removeEventListener(t, wrapped as EventListener));
+      const targetType = `startdeck:${type}`;
+      const wrapped = (event: Event) => handler(event as CustomEvent);
+      window.addEventListener(targetType, wrapped as EventListener);
+      jsCleanupFns.push(() =>
+        window.removeEventListener(targetType, wrapped as EventListener),
+      );
     },
   };
 
@@ -167,31 +196,47 @@ const applyWidgetJs = () => {
     script.textContent = src;
   } else {
     const id = props.widget.id;
-    script.textContent =
-      `;(async (ctx) => {\ntry {\n${src}\n} catch (e) {\nconsole.error('[StartDeck Widget JS ${id}]', e);\n}\n})(window.StartDeckWidgetCtx);`;
+    script.textContent = `;(async (ctx) => {\ntry {\n${src}\n} catch (e) {\nconsole.error('[StartDeck Widget JS ${id}]', e);\n}\n})(window.StartDeckWidgetCtx);`;
   }
 
-  script.onerror = (e) => console.error(`[StartDeck Widget JS ${props.widget.id}] load error:`, e);
+  script.onerror = (event) =>
+    console.error(
+      `[StartDeck Widget JS ${props.widget.id}] load error:`,
+      event,
+    );
   document.body.appendChild(script);
 };
 
-// ─── Save / Export / Import ───────────────────────────────────────────────────
+const applyRuntime = () => {
+  applyStyles();
+  applyWidgetJs();
+};
 
 const save = () => {
   if (!canEdit.value) return;
-  const widget = store.widgets.find((w) => w.id === props.widget.id);
-  if (widget) {
-    widget.data = {
-      title: titleContent.value,
-      html: htmlContent.value,
-      css: cssContent.value,
-      js: jsContent.value,
-    };
-    store.markDirty();
-  }
-  isEditing.value = false;
-  applyStyles();
-  applyWidgetJs();
+  const current = readData();
+  const next = normalizeCustomCssWidgetData({
+    ...current,
+    title: titleContent.value,
+    html: htmlContent.value,
+    css: cssContent.value,
+    js: jsContent.value,
+    sizeKey: props.sizeKey || current.sizeKey,
+  });
+
+  const target =
+    store.widgets.find((widget) => widget.id === props.widget.id) ||
+    props.widget;
+  target.data = next;
+  store.markDirty();
+  emit("updateData", next);
+  emit("update-data", next);
+  applyRuntime();
+  uiFeedback.notify({
+    title: "自定义组件已更新",
+    message: "卡片内容已保存。",
+    tone: "success",
+  });
 };
 
 const exportJson = () => {
@@ -201,12 +246,14 @@ const exportJson = () => {
     css: cssContent.value,
   };
   if (jsContent.value.trim()) data.js = jsContent.value;
-  const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+  const blob = new Blob([JSON.stringify(data, null, 2)], {
+    type: "application/json",
+  });
   const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `${(titleContent.value || "custom-widget").replace(/[^\w\u4e00-\u9fa5-]/g, "_")}.json`;
-  a.click();
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = `${(titleContent.value || "custom-widget").replace(/[^\w\u4e00-\u9fa5-]/g, "_")}.json`;
+  anchor.click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 };
 
@@ -218,50 +265,58 @@ const copyPrompt = () => {
 2. 风格现代简约，圆角设计。
 3. 请分别提供 HTML 和 CSS 代码（可选 JS）。`;
   navigator.clipboard.writeText(text).then(() => {
-    alert("提示词已复制到剪贴板，快去发送给 AI 吧！");
+    uiFeedback.notify({
+      title: "已复制提示词",
+      message: "提示词已复制到剪贴板。",
+      tone: "success",
+    });
   });
-};
-
-const toggleEdit = () => {
-  if (!canEdit.value) return;
-  isEditing.value = !isEditing.value;
-  if (isEditing.value) {
-    titleContent.value = props.widget.data?.title || "自定义组件";
-    htmlContent.value = props.widget.data?.html || "";
-    cssContent.value = props.widget.data?.css || "";
-    jsContent.value = props.widget.data?.js || "";
-    activeTab.value = "html";
-  }
 };
 
 const handleFileUpload = (event: Event) => {
   if (!canEdit.value) return;
-  const file = (event.target as HTMLInputElement).files?.[0];
+  const input = event.target as HTMLInputElement;
+  const file = input.files?.[0];
   if (!file) return;
 
   const reader = new FileReader();
-  reader.onload = (e) => {
+  reader.onload = (loadEvent) => {
     try {
-      const content = e.target?.result as string;
+      const content = loadEvent.target?.result as string;
       try {
-        const json = JSON.parse(content);
-        if (json.html !== undefined) htmlContent.value = json.html;
-        if (json.css !== undefined) cssContent.value = json.css;
-        if (json.js !== undefined) jsContent.value = json.js;
-        if (json.title !== undefined) titleContent.value = json.title;
+        const json = JSON.parse(content) as Record<string, unknown>;
+        if (typeof json.html === "string") htmlContent.value = json.html;
+        if (typeof json.css === "string") cssContent.value = json.css;
+        if (typeof json.js === "string") jsContent.value = json.js;
+        if (typeof json.title === "string") titleContent.value = json.title;
       } catch {
         htmlContent.value = content;
       }
-    } catch (err) {
-      console.error("Failed to read file", err);
+    } catch (error) {
+      console.error("Failed to read custom widget file", error);
+    } finally {
+      input.value = "";
     }
   };
   reader.readAsText(file);
 };
 
+watch(
+  () => props.widget.data,
+  () => {
+    syncFromWidget();
+    window.requestAnimationFrame(applyRuntime);
+  },
+  { deep: true },
+);
+
+watch(
+  () => props.refreshToken,
+  () => applyRuntime(),
+);
+
 onMounted(() => {
-  applyStyles();
-  applyWidgetJs();
+  applyRuntime();
 });
 
 onUnmounted(() => {
@@ -269,175 +324,344 @@ onUnmounted(() => {
   const styleEl = document.getElementById(styleId.value);
   if (styleEl) styleEl.remove();
 });
-
-watch(
-  () => store.isLogged,
-  (val) => { if (!val) isEditing.value = false; },
-  { immediate: true },
-);
 </script>
 
 <template>
-  <div
-    :id="`widget-${widget.id}`"
-    class="w-full h-full relative group overflow-hidden bg-transparent rounded-xl"
+  <section
+    v-if="isOpenedVariant"
+    class="custom-css-workbench"
+    data-custom-css-workbench
   >
-    <!-- View Mode -->
-    <div
-      v-if="!isEditing"
-      class="w-full h-full overflow-auto custom-content"
-      v-html="htmlContent"
-    ></div>
-
-    <!-- Edit Overlay Button -->
-    <button
-      v-if="canEdit"
-      @click="toggleEdit"
-      class="absolute top-2 right-2 z-50 p-1.5 bg-gray-100 hover:bg-gray-200 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity text-gray-600"
-      title="编辑组件"
-    >
-      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
-        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-      </svg>
-    </button>
-
-    <!-- Edit Mode -->
-    <div
-      v-if="isEditing && canEdit"
-      class="absolute inset-0 z-40 bg-white flex flex-col overflow-hidden"
-    >
-      <!-- Header -->
-      <div class="flex items-center justify-between px-3 py-2 border-b border-gray-100 bg-gray-50 flex-shrink-0">
-        <h3 class="font-bold text-gray-700 text-sm">编辑自定义组件</h3>
-        <div class="flex gap-1.5 items-center">
-          <!-- Import -->
-          <label class="cursor-pointer px-2 py-1 bg-gray-100 hover:bg-gray-200 rounded text-xs flex items-center gap-1 text-gray-700">
-            <span>📂</span><span>导入</span>
-            <input type="file" accept=".json,.txt,.html,.css" class="hidden" @change="handleFileUpload" />
-          </label>
-          <!-- Export -->
-          <button
-            @click="exportJson"
-            class="px-2 py-1 bg-gray-100 hover:bg-gray-200 rounded text-xs text-gray-700 flex items-center gap-1"
-            title="导出为 JSON 文件"
-          >
-            <span>💾</span><span>导出</span>
-          </button>
-          <!-- Save -->
-          <button
-            @click="save"
-            class="px-3 py-1 bg-blue-500 text-white rounded text-xs hover:bg-blue-600"
-          >
-            保存
-          </button>
-          <!-- Cancel -->
-          <button
-            @click="toggleEdit"
-            class="px-2 py-1 bg-gray-200 text-gray-700 rounded text-xs hover:bg-gray-300"
-          >
-            取消
-          </button>
-        </div>
+    <header class="custom-css-workbench-header">
+      <div>
+        <span>自定义组件</span>
+        <strong>{{ titleContent || "未命名组件" }}</strong>
       </div>
-
-      <!-- Title Field -->
-      <div class="px-3 pt-2 pb-1 flex-shrink-0">
-        <label class="text-xs font-semibold text-gray-500 block mb-1">标题</label>
-        <input
-          v-model="titleContent"
-          class="w-full p-1.5 border rounded text-xs focus:border-blue-500 outline-none text-gray-900"
-          placeholder="自定义组件"
-        />
-      </div>
-
-      <!-- Tabs -->
-      <div class="flex border-b border-gray-200 px-3 flex-shrink-0">
+      <div class="custom-css-workbench-actions">
+        <label>
+          导入
+          <input
+            type="file"
+            accept=".json,.txt,.html,.css"
+            @change="handleFileUpload"
+          />
+        </label>
+        <button type="button" @click="exportJson">导出</button>
+        <button type="button" @click="copyPrompt">AI 提示词</button>
         <button
-          v-for="tab in (['html', 'css', 'js'] as const)"
-          :key="tab"
-          @click="activeTab = tab"
-          :class="[
-            'px-3 py-1.5 text-xs font-medium border-b-2 transition-colors',
-            activeTab === tab
-              ? 'border-blue-500 text-blue-600'
-              : 'border-transparent text-gray-500 hover:text-gray-700'
-          ]"
+          type="button"
+          class="is-primary"
+          :disabled="!canEdit"
+          @click="save"
         >
-          {{ tab.toUpperCase() }}
-          <span v-if="tab === 'js' && jsContent.trim()" class="ml-1 w-1.5 h-1.5 rounded-full bg-green-400 inline-block"></span>
+          保存
         </button>
       </div>
+    </header>
 
-      <!-- Tab Content -->
-      <div class="flex-1 flex flex-col min-h-0 p-3 gap-1">
-        <!-- HTML Tab -->
-        <template v-if="activeTab === 'html'">
-          <label class="text-xs text-gray-400">HTML 结构</label>
+    <div class="custom-css-workbench-body">
+      <aside class="custom-css-preview-pane">
+        <div class="custom-css-pane-title">
+          <span>实时预览</span>
+          <em>{{ props.sizeKey || readData().sizeKey }}</em>
+        </div>
+        <div :id="widgetDomId" class="custom-css-preview-frame">
+          <div class="custom-css-content" v-html="htmlContent"></div>
+        </div>
+      </aside>
+
+      <section class="custom-css-editor-pane">
+        <label class="custom-css-field">
+          <span>标题</span>
+          <input
+            v-model="titleContent"
+            :disabled="!canEdit"
+            placeholder="自定义组件"
+          />
+        </label>
+
+        <nav class="custom-css-tabs" aria-label="编辑类型">
+          <button
+            v-for="tab in ['html', 'css', 'js'] as const"
+            :key="tab"
+            type="button"
+            :class="{ 'is-active': activeTab === tab }"
+            @click="activeTab = tab"
+          >
+            {{ tab.toUpperCase() }}
+          </button>
+        </nav>
+
+        <label v-if="activeTab === 'html'" class="custom-css-code-field">
+          <span>HTML 结构</span>
           <textarea
             v-model="htmlContent"
-            class="flex-1 p-2 border rounded font-mono text-xs resize-none focus:border-blue-500 outline-none text-gray-900 min-h-0"
-            placeholder='<div class="my-widget">Hello World</div>'
+            :disabled="!canEdit"
             spellcheck="false"
+            placeholder='<div class="my-widget">Hello World</div>'
           ></textarea>
-        </template>
+        </label>
 
-        <!-- CSS Tab -->
-        <template v-if="activeTab === 'css'">
-          <label class="text-xs text-gray-400">CSS 样式（自动作用域隔离，实时预览）</label>
+        <label v-else-if="activeTab === 'css'" class="custom-css-code-field">
+          <span>CSS 样式（自动作用域隔离，实时预览）</span>
           <textarea
             v-model="cssContent"
-            class="flex-1 p-2 border rounded font-mono text-xs resize-none focus:border-blue-500 outline-none text-gray-900 min-h-0"
-            placeholder=".my-widget { color: red; }"
+            :disabled="!canEdit"
             spellcheck="false"
+            placeholder=".my-widget { color: red; }"
           ></textarea>
-          <p class="text-[10px] text-gray-400">
-            提示：选择器自动加 <code>#widget-{{ widget.id }}</code> 前缀隔离。支持 <code>@media</code>、<code>@keyframes</code>。使用 <code>:root</code> 映射为当前 widget 容器。CSS 变化后 300ms 自动预览。
-          </p>
-        </template>
+        </label>
 
-        <!-- JS Tab -->
-        <template v-if="activeTab === 'js'">
-          <label class="text-xs text-gray-400">JavaScript（保存后生效）</label>
+        <label v-else class="custom-css-code-field">
+          <span>JavaScript（保存后重新执行）</span>
           <textarea
             v-model="jsContent"
-            class="flex-1 p-2 border rounded font-mono text-xs resize-none focus:border-blue-500 outline-none text-gray-900 min-h-0"
-            placeholder="// ctx.el     — widget 容器 DOM
-// ctx.query  — querySelector(限本 widget)
-// ctx.on / ctx.emit — 事件总线
-
-const el = ctx.query('.my-widget');
-if (el) el.textContent = '运行中 ' + new Date().toLocaleTimeString();
-
-ctx.onCleanup(() => {
-  // 卸载时清理（定时器、监听器等）
-});"
+            :disabled="!canEdit"
             spellcheck="false"
+            placeholder="// ctx.el, ctx.query, ctx.onCleanup"
           ></textarea>
-          <p class="text-[10px] text-amber-600 bg-amber-50 rounded px-2 py-1 mt-0.5">
-            ⚠️ JS 保存后才会重新执行。非模块脚本可直接使用 <code>ctx</code> 变量访问 widget 上下文。
-          </p>
-        </template>
-      </div>
-
-      <!-- AI Helper -->
-      <div class="mx-3 mb-3 p-2 bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg border border-purple-100 flex-shrink-0">
-        <div class="flex items-center gap-1 mb-1">
-          <span class="text-sm">🤖</span>
-          <span class="text-xs font-bold text-purple-700">AI 辅助生成</span>
-        </div>
-        <div
-          class="bg-white p-1.5 rounded border border-purple-100 text-[10px] text-gray-500 font-mono cursor-pointer hover:border-purple-300 transition-colors relative group/ai"
-          @click="copyPrompt"
-          title="点击复制提示词"
-        >
-          <div class="hidden group-hover/ai:block absolute right-1 top-1 bg-purple-100 text-purple-600 px-1 py-0.5 rounded text-[10px]">
-            点击复制
-          </div>
-          <span class="text-purple-600 select-none">Prompt: </span>请帮我写一个简洁的 HTML/CSS 卡片组件...
-        </div>
-      </div>
+        </label>
+      </section>
     </div>
+  </section>
+
+  <div
+    v-else
+    :id="widgetDomId"
+    class="custom-css-widget-card"
+    :data-widget-size="props.sizeKey || readData().sizeKey"
+  >
+    <div class="custom-css-content" v-html="htmlContent"></div>
   </div>
 </template>
+
+<style scoped>
+.custom-css-widget-card {
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  border-radius: inherit;
+  background: transparent;
+}
+
+.custom-css-content {
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+}
+
+.custom-css-workbench {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: var(--sd-color-surface, #fff);
+  color: var(--sd-color-text-primary, #0f172a);
+}
+
+.custom-css-workbench-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  min-width: 0;
+  border-bottom: 1px solid var(--sd-color-border-subtle, rgb(226 232 240));
+  padding: 1.35rem 1.55rem 1rem;
+}
+
+.custom-css-workbench-header div:first-child {
+  display: grid;
+  min-width: 0;
+  gap: 0.24rem;
+}
+
+.custom-css-workbench-header span,
+.custom-css-pane-title span,
+.custom-css-field span,
+.custom-css-code-field span {
+  color: var(--sd-color-text-secondary, #64748b);
+  font-size: 0.78rem;
+  font-weight: 760;
+}
+
+.custom-css-workbench-header strong {
+  overflow: hidden;
+  font-size: 1.34rem;
+  font-weight: 820;
+  letter-spacing: 0;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.custom-css-workbench-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.55rem;
+}
+
+.custom-css-workbench-actions button,
+.custom-css-workbench-actions label {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.2rem;
+  border: 1px solid var(--sd-color-border-subtle, rgb(226 232 240));
+  border-radius: 999px;
+  background: var(--sd-color-surface-muted, #f8fafc);
+  color: var(--sd-color-text-primary, #0f172a);
+  cursor: pointer;
+  font-size: 0.78rem;
+  font-weight: 780;
+  line-height: 1;
+  padding: 0 0.9rem;
+}
+
+.custom-css-workbench-actions .is-primary {
+  border-color: #2563eb;
+  background: #2563eb;
+  color: #fff;
+}
+
+.custom-css-workbench-actions button:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
+.custom-css-workbench-actions input {
+  display: none;
+}
+
+.custom-css-workbench-body {
+  display: grid;
+  grid-template-columns: minmax(18rem, 0.92fr) minmax(24rem, 1.08fr);
+  min-height: 0;
+  gap: 1rem;
+  padding: 1rem 1.55rem 1.55rem;
+}
+
+.custom-css-preview-pane,
+.custom-css-editor-pane {
+  display: grid;
+  min-width: 0;
+  min-height: 0;
+  border: 1px solid var(--sd-color-border-subtle, rgb(226 232 240));
+  border-radius: 18px;
+  background: var(--sd-color-surface-muted, #f8fafc);
+}
+
+.custom-css-preview-pane {
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 0.8rem;
+  padding: 1rem;
+}
+
+.custom-css-pane-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.custom-css-pane-title em {
+  border-radius: 999px;
+  background: #e0f2fe;
+  color: #0369a1;
+  font-size: 0.72rem;
+  font-style: normal;
+  font-weight: 780;
+  padding: 0.22rem 0.52rem;
+}
+
+.custom-css-preview-frame {
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  border: 1px solid var(--sd-color-border-subtle, rgb(226 232 240));
+  border-radius: 16px;
+  background: var(--sd-color-surface, #fff);
+}
+
+.custom-css-editor-pane {
+  grid-template-rows: auto auto minmax(0, 1fr);
+  gap: 0.85rem;
+  padding: 1rem;
+}
+
+.custom-css-field,
+.custom-css-code-field {
+  display: grid;
+  min-width: 0;
+  min-height: 0;
+  gap: 0.45rem;
+}
+
+.custom-css-field input,
+.custom-css-code-field textarea {
+  min-width: 0;
+  border: 1px solid var(--sd-color-border-subtle, rgb(203 213 225));
+  border-radius: 12px;
+  background: var(--sd-color-surface, #fff);
+  color: var(--sd-color-text-primary, #0f172a);
+  outline: none;
+}
+
+.custom-css-field input {
+  height: 2.6rem;
+  padding: 0 0.82rem;
+}
+
+.custom-css-code-field textarea {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  resize: none;
+  font-family:
+    ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono",
+    monospace;
+  font-size: 0.76rem;
+  line-height: 1.55;
+  padding: 0.86rem;
+}
+
+.custom-css-tabs {
+  display: inline-flex;
+  width: fit-content;
+  border-radius: 999px;
+  background: var(--sd-color-surface, #fff);
+  padding: 0.25rem;
+}
+
+.custom-css-tabs button {
+  min-width: 4.1rem;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--sd-color-text-secondary, #64748b);
+  cursor: pointer;
+  font-size: 0.76rem;
+  font-weight: 820;
+  padding: 0.48rem 0.75rem;
+}
+
+.custom-css-tabs button.is-active {
+  background: #2563eb;
+  color: #fff;
+}
+
+@media (max-width: 760px) {
+  .custom-css-workbench-header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .custom-css-workbench-body {
+    grid-template-columns: 1fr;
+  }
+}
+</style>

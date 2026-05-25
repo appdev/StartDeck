@@ -9,6 +9,11 @@ import {
 import { normalizeIncomingWidgets as normalizeIncomingWidgetsUtil } from "@/utils/widgetUtils";
 import type { WidgetConfig, MarketplaceItem } from "@/types";
 import { useAuthStore } from "./auth";
+import {
+  CUSTOM_CSS_DEFAULT_SIZE,
+  applyCustomCssWidgetSizeToWidget,
+  normalizeCustomCssWidgetData,
+} from "@/features/widget-runtime/customCssRuntimeModel";
 
 export const useWidgetsStore = defineStore("widgets", () => {
   const widgets = ref<WidgetConfig[]>([]);
@@ -39,7 +44,10 @@ export const useWidgetsStore = defineStore("widgets", () => {
   const layoutDirty = ref(false);
   const layoutEditInProgress = ref(false);
   const lastSavedLayoutSignature = ref("");
-  const lastSavedLayoutSnapshot = ref<Record<string, WidgetLayoutSnapshot> | null>(null);
+  const lastSavedLayoutSnapshot = ref<Record<
+    string,
+    WidgetLayoutSnapshot
+  > | null>(null);
 
   const readWidgetUiState = (widget: WidgetConfig): WidgetUiState => {
     const source = widget as unknown as Record<string, unknown>;
@@ -72,9 +80,14 @@ export const useWidgetsStore = defineStore("widgets", () => {
     return applyWidgetUiStateUtil(widget, uiStateMap.value);
   };
 
-  const mergedWidgets = computed(() => widgets.value.map((widget) => applyWidgetUiState(widget)));
+  const mergedWidgets = computed(() =>
+    widgets.value.map((widget) => applyWidgetUiState(widget)),
+  );
 
-  const normalizeIncomingWidgets = (input?: WidgetConfig[], isLoggedIn?: boolean) => {
+  const normalizeIncomingWidgets = (
+    input?: WidgetConfig[],
+    isLoggedIn?: boolean,
+  ) => {
     return normalizeIncomingWidgetsUtil(input, isLoggedIn);
   };
 
@@ -86,7 +99,9 @@ export const useWidgetsStore = defineStore("widgets", () => {
     syncUiStateMapFromWidgets(widgets.value);
     const nextServerLayoutMap = buildServerLayoutMap(incomingWidgets);
     const nextLayoutSignature = buildServerLayoutSignature(nextServerLayoutMap);
-    const previousById = new Map(widgets.value.map((widget) => [widget.id, widget] as const));
+    const previousById = new Map(
+      widgets.value.map((widget) => [widget.id, widget] as const),
+    );
     const preserveLayout = layoutEditFlag;
 
     const nextWidgets = incomingWidgets.map((incomingWidget) => {
@@ -102,7 +117,9 @@ export const useWidgetsStore = defineStore("widgets", () => {
         mergedBase.colSpan = previous.colSpan;
         mergedBase.rowSpan = previous.rowSpan;
         mergedBase.layouts = previous.layouts
-          ? (JSON.parse(JSON.stringify(previous.layouts)) as typeof previous.layouts)
+          ? (JSON.parse(
+              JSON.stringify(previous.layouts),
+            ) as typeof previous.layouts)
           : undefined;
       }
       return applyWidgetUiState(mergedBase);
@@ -166,7 +183,9 @@ export const useWidgetsStore = defineStore("widgets", () => {
   ): Promise<boolean> => {
     try {
       const w = widgets.value.find((x) => x.id === widgetId);
-      const widgetVersion = w ? (w as unknown as Record<string, unknown>)["widgetVersion"] ?? 0 : 0;
+      const widgetVersion = w
+        ? ((w as unknown as Record<string, unknown>)["widgetVersion"] ?? 0)
+        : 0;
       const body = { ...payload, version: dataVersion.value, widgetVersion };
       const res = await fetch(`/api/widgets/${encodeURIComponent(widgetId)}`, {
         method: "PUT",
@@ -175,12 +194,25 @@ export const useWidgetsStore = defineStore("widgets", () => {
       });
       if (res.ok) {
         const result = await res.json().catch(() => null);
-        if (result && typeof (result as { version?: number }).version !== "undefined") {
-          dataVersion.value = Math.max(0, Math.floor((result as { version?: number }).version));
+        if (
+          result &&
+          typeof (result as { version?: number }).version !== "undefined"
+        ) {
+          dataVersion.value = Math.max(
+            0,
+            Math.floor((result as { version?: number }).version),
+          );
         }
         // Update widget-level version if returned
-        if (w && result && typeof (result as { widgetVersion?: number }).widgetVersion !== "undefined") {
-          (w as unknown as Record<string, unknown>)["widgetVersion"] = (result as { widgetVersion?: number }).widgetVersion;
+        if (
+          w &&
+          result &&
+          typeof (result as { widgetVersion?: number }).widgetVersion !==
+            "undefined"
+        ) {
+          (w as unknown as Record<string, unknown>)["widgetVersion"] = (
+            result as { widgetVersion?: number }
+          ).widgetVersion;
         }
         return true;
       }
@@ -210,12 +242,17 @@ export const useWidgetsStore = defineStore("widgets", () => {
 
   const updateLastSavedLayout = () => {
     const currentLayoutMap = buildServerLayoutMap(widgets.value);
-    lastSavedLayoutSignature.value = buildServerLayoutSignature(currentLayoutMap);
-    lastSavedLayoutSnapshot.value = JSON.parse(JSON.stringify(currentLayoutMap));
+    lastSavedLayoutSignature.value =
+      buildServerLayoutSignature(currentLayoutMap);
+    lastSavedLayoutSnapshot.value = JSON.parse(
+      JSON.stringify(currentLayoutMap),
+    );
     layoutDirty.value = false;
   };
 
-  const undoLayout = async (saveData: (immediate: boolean, force: boolean) => Promise<string>) => {
+  const undoLayout = async (
+    saveData: (immediate: boolean, force: boolean) => Promise<string>,
+  ) => {
     if (!lastSavedLayoutSnapshot.value) return;
     const layoutMap = lastSavedLayoutSnapshot.value;
     widgets.value.forEach((widget) => {
@@ -233,7 +270,10 @@ export const useWidgetsStore = defineStore("widgets", () => {
     await saveData(true, true);
   };
 
-  const applyMarketplaceItem = (item: MarketplaceItem, appConfig: Record<string, unknown>) => {
+  const applyMarketplaceItem = (
+    item: MarketplaceItem,
+    appConfig: Record<string, unknown>,
+  ) => {
     let changed = false;
 
     if (item.css) {
@@ -264,15 +304,19 @@ export const useWidgetsStore = defineStore("widgets", () => {
 
     if (item.component) {
       const newId = "custom-css-" + Date.now();
-      widgets.value.push({
+      const widget: WidgetConfig = {
         id: newId,
         type: "custom-css",
         enable: true,
-        data: item.component,
+        data: normalizeCustomCssWidgetData(item.component),
         colSpan: 1,
         rowSpan: 1,
+        w: 1,
+        h: 1,
         isPublic: true,
-      });
+      };
+      applyCustomCssWidgetSizeToWidget(widget, CUSTOM_CSS_DEFAULT_SIZE);
+      widgets.value.push(widget);
       changed = true;
     }
 

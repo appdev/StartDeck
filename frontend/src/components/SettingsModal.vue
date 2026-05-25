@@ -1,15 +1,13 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, computed, watch, nextTick } from "vue";
 import { useWindowSize } from "@vueuse/core";
+import { ArrowDown, ArrowUp, Plus, RotateCcw, Trash2 } from "@lucide/vue";
+import { SolarDay } from "tyme4ts";
 import { useMainStore } from "../stores/main";
-import type { WidgetConfig, NavGroup, NavItem } from "@/types";
+import type { SearchEngine, WidgetConfig, NavGroup, NavItem } from "@/types";
 import IconUploader from "./IconUploader.vue";
 import WallpaperLibrary from "./WallpaperLibrary.vue";
 import PasswordConfirmModal from "./PasswordConfirmModal.vue";
-import DockerWidget from "./DockerWidget.vue";
-import SystemStatusWidget from "./SystemStatusWidget.vue";
-import ScriptManager from "./ScriptManager.vue";
-import MarketplaceModal from "./MarketplaceModal.vue";
 import AppButton from "@/components/base/AppButton.vue";
 import AppFieldRow from "@/components/base/AppFieldRow.vue";
 import AppInspectorPanel from "@/components/base/AppInspectorPanel.vue";
@@ -19,6 +17,7 @@ import AppSectionCard from "@/components/base/AppSectionCard.vue";
 import AppSegmentedControl from "@/components/base/AppSegmentedControl.vue";
 import AppSettingsShell from "@/components/base/AppSettingsShell.vue";
 import AppSwitch from "@/components/base/AppSwitch.vue";
+import AppWindowControls from "@/components/base/AppWindowControls.vue";
 import BlockingProgressOverlay from "@/components/base/BlockingProgressOverlay.vue";
 import ConfirmDialog from "@/components/base/ConfirmDialog.vue";
 import StatusBanner from "@/components/base/StatusBanner.vue";
@@ -26,9 +25,16 @@ import {
   useDirtyStateGuard,
   type DirtyCloseReason,
 } from "@/composables/useDirtyStateGuard";
+import { normalizeThemeMode } from "@/composables/useThemeMode";
 import { useUiFeedbackStore } from "@/stores/uiFeedback";
-import { toApiUrl } from "@/utils/runtimeUrls";
 import { getSiteIconUrl, normalizeSiteUrl } from "@/utils/siteMetadata";
+import {
+  DEFAULT_SEARCH_ENGINE_KEYS,
+  createDefaultSearchEngines,
+  createSearchEngineKey,
+  normalizeDefaultSearchEngine,
+  normalizeSearchEngines,
+} from "@/utils/searchEngines";
 
 const props = defineProps<{ show: boolean }>();
 const emit = defineEmits(["update:show"]);
@@ -192,17 +198,12 @@ const settingsChildModalZIndex = 140;
 const settingsBlockingModalZIndex = 150;
 const showWallpaperLibrary = ref(false);
 const wallpaperLibraryTab = ref<WallpaperLibraryTab>("pc");
-const currentHour = ref(new Date().getHours());
+const settingsPreviewNow = ref(new Date());
 let daylightTimer: number | null = null;
 const updateHour = () => {
-  currentHour.value = new Date().getHours();
+  const now = new Date();
+  settingsPreviewNow.value = now;
 };
-const isNightTime = computed(
-  () => currentHour.value >= 18 || currentHour.value < 6,
-);
-const isNightDaylightMode = computed(
-  () => store.appConfig.daylightModeEnabled && isNightTime.value,
-);
 const daylightMaskPercent = computed({
   get: () => Math.round((store.appConfig.daylightMask ?? 0.5) * 100),
   set: (val: number) => {
@@ -212,71 +213,6 @@ const daylightMaskPercent = computed({
     store.markDirty();
   },
 });
-const cardBorderHoverPreview = computed(() =>
-  store.appConfig.cardBorderColor &&
-  store.appConfig.cardBorderColor !== "transparent"
-    ? store.appConfig.cardBorderColor
-    : store.appConfig.background || store.appConfig.solidBackgroundColor
-      ? "rgba(255, 255, 255, 0.35)"
-      : "rgba(15, 23, 42, 0.12)",
-);
-const styleVariableRows = computed(() => [
-  {
-    name: "--group-title-color",
-    desc: "分组标题文字颜色",
-    value: store.appConfig.groupTitleColor || "#ffffff",
-  },
-  {
-    name: "--card-bg-color",
-    desc: "卡片背景颜色",
-    value: store.appConfig.cardBgColor || "transparent",
-  },
-  {
-    name: "--card-border-color",
-    desc: "卡片边框颜色",
-    value: store.appConfig.cardBorderColor || "transparent",
-  },
-  {
-    name: "--card-border-hover-color",
-    desc: "卡片边框悬停颜色",
-    value: cardBorderHoverPreview.value,
-  },
-  {
-    name: "--card-title-color",
-    desc: "卡片标题文字颜色",
-    value: store.appConfig.cardTitleColor || "#111827",
-  },
-]);
-const styleVariableStatus = {
-  contrast: "待校验",
-  visual: "未配置",
-};
-const solidBackgroundColorProxy = computed({
-  get: () => store.appConfig.solidBackgroundColor || "#f3f4f6",
-  set: (val: string) => {
-    store.appConfig.solidBackgroundColor = val;
-    store.markDirty();
-  },
-});
-
-const setSolidColorAsWallpaper = () => {
-  const color = store.appConfig.solidBackgroundColor || "#f3f4f6";
-  if (!color) return;
-
-  const canvas = document.createElement("canvas");
-  canvas.width = 1;
-  canvas.height = 1;
-  const ctx = canvas.getContext("2d");
-  if (ctx) {
-    ctx.fillStyle = color;
-    ctx.fillRect(0, 0, 1, 1);
-    const dataUrl = canvas.toDataURL("image/png");
-    store.appConfig.background = dataUrl;
-    store.appConfig.solidBackgroundColor = "";
-    store.markDirty();
-  }
-};
-
 const handleWallpaperSelect = (
   payload: { url: string; type: string } | string,
 ) => {
@@ -301,14 +237,16 @@ const openWallpaperLibrary = (tab: WallpaperLibraryTab) => {
 };
 
 type SettingsTabId =
-  | "style"
-  | "docker"
+  | "appearance"
+  | "wallpaper"
+  | "topbar"
+  | "cards"
+  | "footer"
   | "account"
   | "network"
-  | "lucky-stun"
   | "about";
 
-type SettingsTabGroup = "personalization" | "system" | "extensions";
+type SettingsTabGroup = "personalization" | "system";
 
 interface SettingsTabMeta {
   title: string;
@@ -324,19 +262,37 @@ interface SettingsNavGroup {
   items: Array<{ id: SettingsTabId } & SettingsTabMeta>;
 }
 
-const activeTab = ref<SettingsTabId>("style");
+const activeTab = ref<SettingsTabId>("appearance");
 const settingsTabMeta: Record<SettingsTabId, SettingsTabMeta> = {
-  style: {
-    title: "外观布局",
-    summary: "背景、壁纸、版式与页脚设置",
+  appearance: {
+    title: "桌面外观",
+    summary: "标题、日光模式与基础显示",
     glyph: "AP",
     group: "personalization",
   },
-  docker: {
-    title: "Docker 管理",
-    summary: "服务状态、容器诊断与系统能力",
-    glyph: "DK",
-    group: "system",
+  wallpaper: {
+    title: "壁纸背景",
+    summary: "桌面、移动端、API 与可读性",
+    glyph: "WP",
+    group: "personalization",
+  },
+  topbar: {
+    title: "顶部与搜索",
+    summary: "顶部栏、时间、搜索与引擎",
+    glyph: "TB",
+    group: "personalization",
+  },
+  cards: {
+    title: "分组交互",
+    summary: "分组布局、图标形状与悬停反馈",
+    glyph: "CI",
+    group: "personalization",
+  },
+  footer: {
+    title: "页脚统计",
+    summary: "访客统计、页脚尺寸与 HTML",
+    glyph: "FT",
+    group: "personalization",
   },
   account: {
     title: "账户管理",
@@ -350,38 +306,32 @@ const settingsTabMeta: Record<SettingsTabId, SettingsTabMeta> = {
     glyph: "NW",
     group: "system",
   },
-  "lucky-stun": {
-    title: "开放中心",
-    summary: "脚本、RSS、搜索与扩展入口",
-    glyph: "JS",
-    group: "extensions",
-  },
   about: {
     title: "关于",
     summary: "版本、技术栈与项目能力说明",
     glyph: "AB",
     group: "system",
-    danger: true,
   },
 };
 
 const settingsNavGroupLabels: Record<SettingsTabGroup, string> = {
   personalization: "Personalization",
   system: "System",
-  extensions: "Extensions",
 };
 
 const settingsNavOrder: SettingsTabId[] = [
-  "style",
-  "docker",
+  "appearance",
+  "wallpaper",
+  "topbar",
+  "cards",
+  "footer",
   "account",
   "network",
-  "lucky-stun",
   "about",
 ];
 
 const settingsNavGroups = computed<SettingsNavGroup[]>(() =>
-  (["personalization", "system", "extensions"] as SettingsTabGroup[])
+  (["personalization", "system"] as SettingsTabGroup[])
     .map((groupId) => ({
       id: groupId,
       label: settingsNavGroupLabels[groupId],
@@ -396,21 +346,29 @@ const settingsNavGroups = computed<SettingsNavGroup[]>(() =>
 );
 
 const currentSettingsTab = computed(
-  () => settingsTabMeta[activeTab.value] ?? settingsTabMeta.style,
+  () => settingsTabMeta[activeTab.value] ?? settingsTabMeta.appearance,
+);
+const personalizationTabIds = new Set<SettingsTabId>([
+  "appearance",
+  "wallpaper",
+  "topbar",
+  "cards",
+  "footer",
+]);
+const isPersonalizationTab = computed(() =>
+  personalizationTabIds.has(activeTab.value),
 );
 const { width: viewportWidth, height: viewportHeight } = useWindowSize();
 const settingsIsMobile = computed(() => viewportWidth.value < 768);
 const settingsShellSurfaceClass = computed(() =>
   settingsIsMobile.value
-    ? "settings-shell-window is-mobile"
-    : "settings-shell-window",
+    ? "settings-shell-window settings-shell-itab is-mobile"
+    : "settings-shell-window settings-shell-itab",
 );
 const settingsOverlayClass = computed(() => "settings-shell-overlay");
 const showSettingsInspector = computed(() => viewportWidth.value >= 1440);
 const settingsWindowTitle = computed(() =>
-  activeTab.value === "style"
-    ? "Appearance and Wallpaper"
-    : "StartDeck Settings",
+  isPersonalizationTab.value ? "Appearance and Layout" : "StartDeck Settings",
 );
 const settingsWindowSubtitle = computed(() =>
   settingsIsMobile.value ? currentSettingsTab.value.summary : "",
@@ -441,13 +399,161 @@ const settingsStatusBanner = computed(() => {
   return null;
 });
 
+const searchEngineEditorRows = ref<SearchEngine[]>([]);
+const searchEngineDraft = ref({ label: "", urlTemplate: "" });
+
+const loadSearchEngineEditorRows = () => {
+  searchEngineEditorRows.value = normalizeSearchEngines(
+    store.appConfig.searchEngines,
+  ).map((engine) => ({ ...engine }));
+};
+
+const persistSearchEngineEditorRows = () => {
+  const normalized = normalizeSearchEngines(searchEngineEditorRows.value);
+  searchEngineEditorRows.value = normalized.map((engine) => ({ ...engine }));
+  store.appConfig.searchEngines = normalized.map((engine) => ({ ...engine }));
+  store.appConfig.defaultSearchEngine = normalizeDefaultSearchEngine(
+    store.appConfig.defaultSearchEngine,
+    normalized,
+  );
+  store.markDirty();
+};
+
+const searchEngineDefaultKey = computed({
+  get: () =>
+    normalizeDefaultSearchEngine(
+      store.appConfig.defaultSearchEngine,
+      searchEngineEditorRows.value.length
+        ? searchEngineEditorRows.value
+        : normalizeSearchEngines(store.appConfig.searchEngines),
+    ),
+  set: (value: string) => {
+    store.appConfig.defaultSearchEngine = normalizeDefaultSearchEngine(
+      value,
+      searchEngineEditorRows.value,
+    );
+    store.markDirty();
+  },
+});
+
+const searchEngineDefaultPreview = computed(() => {
+  const key = searchEngineDefaultKey.value;
+  return (
+    searchEngineEditorRows.value.find((engine) => engine.key === key) ||
+    searchEngineEditorRows.value[0] ||
+    createDefaultSearchEngines()[0]
+  );
+});
+
+const searchEngineCustomCount = computed(
+  () =>
+    searchEngineEditorRows.value.filter(
+      (engine) => !isBuiltInSearchEngine(engine),
+    ).length,
+);
+
+const isBuiltInSearchEngine = (engine: SearchEngine) =>
+  DEFAULT_SEARCH_ENGINE_KEYS.has(engine.key);
+
+const moveSearchEngine = (index: number, step: -1 | 1) => {
+  const target = index + step;
+  if (target < 0 || target >= searchEngineEditorRows.value.length) return;
+  const rows = [...searchEngineEditorRows.value];
+  const [item] = rows.splice(index, 1);
+  if (!item) return;
+  rows.splice(target, 0, item);
+  searchEngineEditorRows.value = rows;
+  persistSearchEngineEditorRows();
+};
+
+const removeSearchEngine = (index: number) => {
+  const engine = searchEngineEditorRows.value[index];
+  if (!engine || searchEngineEditorRows.value.length <= 1) return;
+  searchEngineEditorRows.value = searchEngineEditorRows.value.filter(
+    (_, rowIndex) => rowIndex !== index,
+  );
+  persistSearchEngineEditorRows();
+};
+
+const addSearchEngine = () => {
+  const label = searchEngineDraft.value.label.trim();
+  const urlTemplate = searchEngineDraft.value.urlTemplate.trim();
+  if (!label || !urlTemplate) {
+    notify("请填写搜索引擎名称和搜索地址。", "warning", "搜索引擎");
+    return;
+  }
+  const key = createSearchEngineKey(label);
+  searchEngineEditorRows.value = [
+    ...searchEngineEditorRows.value,
+    {
+      id: key,
+      key,
+      label,
+      urlTemplate,
+      custom: true,
+    },
+  ];
+  searchEngineDraft.value = { label: "", urlTemplate: "" };
+  persistSearchEngineEditorRows();
+};
+
+const resetSearchEngines = () => {
+  searchEngineEditorRows.value = createDefaultSearchEngines();
+  store.appConfig.defaultSearchEngine = searchEngineEditorRows.value[0]?.key;
+  persistSearchEngineEditorRows();
+};
+
+watch(
+  () => props.show,
+  (visible) => {
+    if (visible) loadSearchEngineEditorRows();
+  },
+  { immediate: true },
+);
+
 const wallpaperSourceLabel = computed(() => {
   if (store.appConfig.empireMode) return "帝国模式背景";
   if (store.appConfig.background && inspectorPreviewImageFailed.value)
     return "桌面壁纸缺失";
   if (store.appConfig.background) return "已配置桌面壁纸";
-  if (store.appConfig.solidBackgroundColor) return "纯色背景";
+  if (store.appConfig.solidBackgroundColor) return "已配置桌面背景";
   return "渐变背景";
+});
+
+const settingsPreviewWeekNames = ["日", "一", "二", "三", "四", "五", "六"];
+const formatSettingsPreviewClock = (value: number) =>
+  String(value).padStart(2, "0");
+const settingsPreviewHourText = computed(() =>
+  formatSettingsPreviewClock(settingsPreviewNow.value.getHours()),
+);
+const settingsPreviewMinuteText = computed(() =>
+  formatSettingsPreviewClock(settingsPreviewNow.value.getMinutes()),
+);
+const settingsPreviewDateText = computed(() => {
+  const value = settingsPreviewNow.value;
+  const month = value.getMonth() + 1;
+  const day = value.getDate();
+  const weekday = settingsPreviewWeekNames[value.getDay()] || "";
+  try {
+    const lunarDay = SolarDay.fromYmd(
+      value.getFullYear(),
+      month,
+      day,
+    ).getLunarDay();
+    return `${month}月${day}日星期${weekday}${lunarDay
+      .getLunarMonth()
+      .getName()}${lunarDay.getName()}`;
+  } catch {
+    return `${month}月${day}日星期${weekday}`;
+  }
+});
+const settingsPreviewSearchEngineLabel = computed(() => {
+  const engines = normalizeSearchEngines(store.appConfig.searchEngines);
+  const key = normalizeDefaultSearchEngine(
+    store.appConfig.defaultSearchEngine,
+    engines,
+  );
+  return engines.find((engine) => engine.key === key)?.label || "百度";
 });
 
 const mobileWallpaperLabel = computed(() => {
@@ -456,12 +562,14 @@ const mobileWallpaperLabel = computed(() => {
   return "未配置移动端背景";
 });
 
-const settingsThemeLabel = computed(() =>
-  isNightDaylightMode.value ? "夜间强制深色" : "跟随系统深浅色",
-);
-
-const settingsModeLabel = computed(() =>
-  showSettingsInspector.value ? "宽屏三栏" : "紧凑两栏 / 移动单栏",
+const settingsThemeModeLabelMap = {
+  auto: "跟随系统",
+  light: "浅色",
+  dark: "深色",
+} as const;
+const settingsThemeLabel = computed(
+  () =>
+    settingsThemeModeLabelMap[normalizeThemeMode(store.appConfig.themeMode)],
 );
 
 const settingsSaveStateLabel = computed(() => {
@@ -519,7 +627,7 @@ const settingsPreviewSourceLabel = computed(() => {
   if (store.appConfig.empireMode) {
     label = "帝国模式背景";
   } else if (store.appConfig.solidBackgroundColor) {
-    label = `${store.appConfig.solidBackgroundColor} 纯色背景`;
+    label = "当前桌面使用自定义背景";
   } else if (!store.appConfig.background) {
     label = "当前桌面使用渐变背景";
   } else if (inspectorPreviewImageFailed.value) {
@@ -571,22 +679,10 @@ watch(
   },
   { immediate: true },
 );
-const inspectorPreviewItems = computed(() =>
-  store.items
-    .filter((item) => item.title || item.url)
-    .slice(0, 3)
-    .map((item) => item.title?.trim() || "链接"),
-);
-
 const headerLayoutOptions = [
   { label: "标准", value: "left" },
   { label: "居中", value: "center" },
   { label: "反转", value: "right" },
-];
-
-const webLayoutOptions = [
-  { label: "一栏页", value: "single" },
-  { label: "按组分页", value: "group" },
 ];
 
 const cardLayoutOptions = [
@@ -601,6 +697,12 @@ const iconShapeOptions = [
   { label: "隐藏", value: "hidden" },
 ];
 
+const themeModeOptions = [
+  { label: "自动", value: "auto" },
+  { label: "浅色", value: "light" },
+  { label: "深色", value: "dark" },
+];
+
 const handleNavWheel = (e: WheelEvent) => {
   if (window.innerWidth < 768) {
     const container = e.currentTarget as HTMLElement;
@@ -608,25 +710,9 @@ const handleNavWheel = (e: WheelEvent) => {
   }
 };
 
-const dockerWidget = computed(() =>
-  store.widgets.find((w) => w.type === "docker"),
-);
-const systemStatusWidget = computed(() =>
-  store.widgets.find((w) => w.type === "system-status"),
-);
-
-// Debug Active Tab
-watch(activeTab, (val) => {
-  console.log("Active Tab Changed:", val);
-});
-
-// Ensure Docker Widget Exists
 onMounted(async () => {
   if (import.meta.env.MODE === "test") return;
 
-  // 移除强制恢复逻辑，避免覆盖用户配置
-  // const hasDocker = store.widgets.some((w) => w.type === "docker");
-  // if (!hasDocker) { ... }
   updateHour();
   if (daylightTimer) window.clearInterval(daylightTimer);
   daylightTimer = window.setInterval(updateHour, 60 * 1000);
@@ -636,8 +722,6 @@ onUnmounted(() => {
   if (daylightTimer) window.clearInterval(daylightTimer);
   daylightTimer = null;
 });
-
-const showMarketplace = ref(false);
 
 const passwordInput = ref("");
 const newPasswordInput = ref("");
@@ -649,138 +733,8 @@ const hasAdminAccess = computed(
 const canManageUsers = computed(
   () => hasAdminAccess.value && store.systemConfig.authMode === "multi",
 );
-const isDockerSystemEnabled = computed(() =>
-  Boolean(store.systemConfig.enableDocker),
-);
-const isUpdatingDockerSystem = ref(false);
-
-const toggleDockerSystemEnabled = async (checked: boolean) => {
-  if (isUpdatingDockerSystem.value) return;
-  const current = Boolean(store.systemConfig.enableDocker);
-  if (current === checked) return;
-
-  isUpdatingDockerSystem.value = true;
-  try {
-    const success = await store.updateSystemConfig({ enableDocker: checked });
-    if (!success) {
-      void showFeedbackAlert("请确认当前账号具有管理员权限。", {
-        title: "Docker 服务切换失败",
-        tone: "warning",
-      });
-    }
-  } finally {
-    isUpdatingDockerSystem.value = false;
-  }
-};
-
-const toggleDockerMock = (checked: boolean) => {
-  const w = dockerWidget.value;
-  if (w) {
-    if (!w.data) w.data = {};
-    w.data.useMock = checked;
-    store.markDirty();
-  }
-};
 
 const fileInput = ref<HTMLInputElement | null>(null);
-const formatDockerConnectionError = (error: string, socketPath?: string) => {
-  const lower = error.toLowerCase();
-  if (lower.includes("docker is disabled")) {
-    return "Docker 服务已关闭。\n请先打开“Docker 服务”总开关，再进行连接测试。";
-  }
-  if (lower.includes("docker not available")) {
-    return `Docker 未启用或未配置连接地址。\n容器部署请挂载 /var/run/docker.sock 并设置 dockerHost=unix:///var/run/docker.sock\nSocket: ${socketPath || "-"}`;
-  }
-  if (
-    lower.includes("docker.sock") ||
-    lower.includes("unix:///var/run/docker.sock")
-  ) {
-    return `无法连接 Docker Socket，请确认宿主机 Docker 已启动，并在容器中挂载 /var/run/docker.sock\nSocket: ${socketPath || "-"}`;
-  }
-  return `连接失败: ${error}\nSocket: ${socketPath || "-"}`;
-};
-
-const checkDockerConnection = async () => {
-  if (!isDockerSystemEnabled.value) {
-    void showFeedbackAlert("开启总开关后才会尝试连接 Docker Engine。", {
-      title: "Docker 服务当前已关闭",
-      tone: "warning",
-    });
-    return;
-  }
-  try {
-    const headers = store.getHeaders();
-    const res = await fetch("/api/docker/info", { headers });
-    const data = await res.json();
-    if (data.success && data.state === "ready") {
-      void showFeedbackAlert(
-        `Socket: ${data.socketPath}\n版本: ${data.version.Version}\n系统: ${data.info.OSType} / ${data.info.Architecture}\n容器: ${data.info.Containers}\n名称: ${data.info.Name}`,
-        { title: "Docker 连接成功", tone: "success" },
-      );
-    } else if (data.state === "disabled") {
-      void showFeedbackAlert("请先打开“Docker 服务”总开关。", {
-        title: "Docker 服务已关闭",
-        tone: "warning",
-      });
-    } else {
-      void showFeedbackAlert(
-        formatDockerConnectionError(
-          data.error || "Docker 不可用",
-          data.socketPath,
-        ),
-        {
-          title: "Docker 连接失败",
-          tone: "danger",
-        },
-      );
-    }
-  } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : String(e);
-    void showFeedbackAlert("网络错误: " + msg, {
-      title: "Docker 连接失败",
-      tone: "danger",
-    });
-  }
-};
-
-const isExportingDockerLogs = ref(false);
-const exportDockerLogs = async () => {
-  if (isExportingDockerLogs.value) return;
-  if (!isDockerSystemEnabled.value) {
-    void showFeedbackAlert("已停止日志导出请求。", {
-      title: "Docker 服务当前已关闭",
-      tone: "warning",
-    });
-    return;
-  }
-  try {
-    isExportingDockerLogs.value = true;
-    const headers = store.getHeaders();
-    const res = await fetch("/api/docker/export-logs", { headers });
-    if (!res.ok) {
-      const data = await res.json().catch(() => ({}));
-      throw new Error(data.error || String(res.status));
-    }
-    const blob = await res.blob();
-    const url = URL.createObjectURL(blob);
-    const ts = new Date().toISOString().replace(/[:.]/g, "-");
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `docker-logs-${ts}.json`;
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
-  } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : String(e);
-    void showFeedbackAlert("导出失败: " + msg, {
-      title: "日志导出失败",
-      tone: "danger",
-    });
-  } finally {
-    isExportingDockerLogs.value = false;
-  }
-};
 
 // Password Confirm Logic
 const showPasswordConfirm = ref(false);
@@ -855,15 +809,6 @@ const handleChangePassword = () => {
     });
     newPasswordInput.value = "";
   }, "请输入当前密码以确认修改");
-};
-
-const onMobileDockerDisplayChange = (e: Event) => {
-  const checked = (e.target as HTMLInputElement | null)?.checked ?? false;
-  const w = dockerWidget.value;
-  if (w) {
-    w.hideOnMobile = !checked;
-    store.markDirty();
-  }
 };
 
 // Admin User Management
@@ -1126,126 +1071,6 @@ onMounted(() => {
   }
 });
 
-const getWebhookUrl = () => {
-  return toApiUrl("/api/webhook/lucky/stun");
-};
-
-const browserHelperHandshakeLink = computed(() => {
-  if (typeof window === "undefined") return "";
-  const token = localStorage.getItem("start-deck-token") || "";
-  if (!token) return "";
-
-  const origin = window.location.origin;
-  const url = new URL(`${origin}/`);
-  const params = new URLSearchParams();
-  params.set("startdeck-helper-handshake", "1");
-  params.set("origin", origin);
-  params.set("token", token);
-  params.set("source", "open-center");
-  url.hash = params.toString();
-  return url.toString();
-});
-
-const copyBrowserHelperHandshakeLink = async () => {
-  const link = browserHelperHandshakeLink.value;
-  if (!link) {
-    notify(
-      "请先登录 StartDeck，再生成浏览器助手握手链接。",
-      "warning",
-      "无法复制握手链接",
-    );
-    return;
-  }
-  await navigator.clipboard.writeText(link);
-  notify("浏览器助手握手链接已复制到剪贴板。", "success", "复制成功");
-};
-
-const openBrowserHelperHandshakeLink = () => {
-  const link = browserHelperHandshakeLink.value;
-  if (!link) {
-    notify(
-      "请先登录 StartDeck，再生成浏览器助手握手链接。",
-      "warning",
-      "无法打开握手链接",
-    );
-    return;
-  }
-  window.open(link, "_blank", "noopener,noreferrer");
-};
-
-const copyWebhookUrl = () => {
-  navigator.clipboard.writeText(getWebhookUrl()).then(() => {
-    notify("Webhook 地址已复制到剪贴板。", "success", "复制成功");
-  });
-};
-
-const formatTime = (ts?: number) => {
-  if (!ts) return "-";
-  return new Date(ts).toLocaleString();
-};
-
-onMounted(() => {
-  store.fetchLuckyStunData();
-});
-
-const enableDockerWidget = () => {
-  const def: WidgetConfig = {
-    id: "docker",
-    type: "docker",
-    enable: true,
-    isPublic: true,
-    colSpan: 1,
-    rowSpan: 1,
-    data: { useMock: false },
-  };
-  const exists = store.widgets.find((w) => w.type === "docker");
-  if (!exists) {
-    store.widgets.push(def);
-    store.markDirty();
-  } else {
-    exists.enable = true;
-    store.markDirty();
-  }
-};
-
-const toggleSystemStatusMock = (checked: boolean) => {
-  const w = systemStatusWidget.value;
-  if (w) {
-    if (!w.data) w.data = {};
-    w.data.useMock = checked;
-    store.markDirty();
-  }
-};
-
-const enableSystemStatusWidget = () => {
-  const def: WidgetConfig = {
-    id: "system-status",
-    type: "system-status",
-    enable: true,
-    isPublic: true,
-    colSpan: 1,
-    rowSpan: 1,
-    data: { useMock: false },
-  };
-  const exists = store.widgets.find((w) => w.type === "system-status");
-  if (!exists) {
-    store.widgets.push(def);
-    store.markDirty();
-  } else {
-    exists.enable = true;
-    store.markDirty();
-  }
-};
-
-const onMobileSystemStatusDisplayChange = (e: Event) => {
-  const checked = (e.target as HTMLInputElement | null)?.checked ?? false;
-  const w = systemStatusWidget.value;
-  if (w) {
-    w.hideOnMobile = !checked;
-    store.markDirty();
-  }
-};
-
 const handleExport = async () => {
   try {
     // 强制立即保存，确保后端数据也是最新的
@@ -1256,8 +1081,6 @@ const handleExport = async () => {
       widgets: store.widgets,
       appConfig: store.appConfig,
       groups: store.groups,
-      rssFeeds: store.rssFeeds,
-      rssCategories: store.rssCategories,
     };
     const jsonString = JSON.stringify(backupData, null, 2);
     const blob = new Blob([jsonString], { type: "application/json" });
@@ -1571,43 +1394,6 @@ const handleSaveAsDefault = async () => {
   }, "请输入密码以确认保存默认模板");
 };
 
-const normalizeFileTransferWidgets = () => {
-  const list = store.widgets;
-  const all = list.filter((w) => w.type === "file-transfer");
-  if (all.length === 0) return;
-
-  const keep = all.find((w) => w.id === "file-transfer") || all[0]!;
-  let changed = false;
-
-  for (let i = list.length - 1; i >= 0; i--) {
-    const w = list[i];
-    if (w && w.type === "file-transfer" && w.id !== keep.id) {
-      list.splice(i, 1);
-      changed = true;
-    }
-  }
-
-  if (
-    keep.id !== "file-transfer" &&
-    !list.some((w) => w.id === "file-transfer" && w.type !== "file-transfer")
-  ) {
-    keep.id = "file-transfer";
-    changed = true;
-  }
-
-  if (changed) store.markDirty();
-};
-
-// 修复：移除 computed 中的副作用，改用 onMounted 初始化
-onMounted(() => {
-  store.widgets.forEach((w: WidgetConfig) => {
-    if (w.type === "iframe" && !w.data) {
-      w.data = { url: "" };
-    }
-  });
-  normalizeFileTransferWidgets();
-});
-
 // Wallpaper Library Logic
 // Wallpaper logic moved to WallpaperLibrary.vue
 // Keeping minimal code if needed, or remove completely if unused.
@@ -1783,9 +1569,9 @@ watch(activeTab, (val) => {
     :subtitle="settingsWindowSubtitle"
     :close-on-overlay="!isImporting && !settingsNeedsCloseConfirm"
     :close-on-escape="!isImporting && !settingsNeedsCloseConfirm"
-    :show-close="!isImporting"
+    :show-close="false"
     :show-inspector="showSettingsInspector"
-    :scheme="isNightDaylightMode ? 'dark' : 'auto'"
+    scheme="auto"
     :overlay-class="settingsOverlayClass"
     :surface-class="settingsShellSurfaceClass"
     panel-class="w-full max-w-[1280px]"
@@ -1796,8 +1582,9 @@ watch(activeTab, (val) => {
     @close="requestSettingsClose"
   >
     <template #headerActions>
-      <div v-if="!settingsIsMobile" class="flex items-center gap-2">
+      <div class="settings-shell-header-actions">
         <AppButton
+          v-if="!settingsIsMobile"
           variant="primary"
           size="sm"
           :disabled="isImporting"
@@ -1806,6 +1593,13 @@ watch(activeTab, (val) => {
         >
           完成
         </AppButton>
+        <AppWindowControls
+          v-if="!isImporting"
+          class="settings-shell-window-controls"
+          aria-label="设置窗口控制"
+          close-label="关闭设置"
+          @close="requestSettingsClose('programmatic')"
+        />
       </div>
     </template>
 
@@ -1873,41 +1667,56 @@ watch(activeTab, (val) => {
           :message="settingsStatusBanner.message"
           :tone="settingsStatusBanner.tone"
         />
-        <div v-if="activeTab === 'style'" class="space-y-4">
+        <div v-if="isPersonalizationTab" class="space-y-4">
           <AppSectionCard
+            v-if="activeTab === 'appearance'"
             title="桌面外观"
-            description="网站标题、布局模式、组件区域、页脚、日光模式和天气效果保留在同一组，实时反映到右侧预览。"
+            description="只保留标题显示和日光模式这些基础视觉开关，实时反映到右侧预览。"
             body-class="space-y-4"
           >
             <AppFieldRow
+              label="显示标题"
+              hint="控制首页和右侧预览是否显示导航主标题。"
+              align="center"
+            >
+              <template #control>
+                <AppSwitch
+                  v-model="store.appConfig.showHomeTitle"
+                  label=""
+                  @change="store.markDirty()"
+                />
+              </template>
+            </AppFieldRow>
+
+            <AppFieldRow
               label="网站标题"
-              hint="导航主标题。修改后会立即进入待保存状态。"
+              :hint="
+                store.appConfig.showHomeTitle === false
+                  ? '标题已隐藏，打开显示标题后才能修改。'
+                  : '导航主标题。修改后会立即进入待保存状态。'
+              "
             >
               <template #control>
                 <input
                   v-model="store.appConfig.customTitle"
                   type="text"
                   class="sd-input w-full"
+                  :disabled="store.appConfig.showHomeTitle === false"
                 />
               </template>
             </AppFieldRow>
 
             <AppFieldRow
-              label="Web 端展现方式"
-              hint="一栏页按组分页，分页时可禁止翻页。"
+              label="界面主题"
+              hint="统一控制设置弹窗、首页组件和打开态面板的语义色。"
             >
               <template #control>
                 <AppSegmentedControl
-                  :model-value="
-                    store.appConfig.webGroupPagination ? 'group' : 'single'
-                  "
-                  :options="webLayoutOptions"
+                  :model-value="normalizeThemeMode(store.appConfig.themeMode)"
+                  :options="themeModeOptions"
                   @update:modelValue="
                     (value) => {
-                      store.appConfig.webGroupPagination = value === 'group';
-                      if (value !== 'group') {
-                        store.appConfig.webGroupPaginationDisableFlip = false;
-                      }
+                      store.appConfig.themeMode = normalizeThemeMode(value);
                       store.markDirty();
                     }
                   "
@@ -1917,7 +1726,7 @@ watch(activeTab, (val) => {
 
             <AppFieldRow
               label="白昼模式"
-              hint="白天 6:00-18:00，夜间 18:00-6:00 自动调整遮罩。"
+              hint="只调整夜间桌面背景遮罩，不再切换界面主题。"
               align="center"
             >
               <template #control>
@@ -1955,6 +1764,7 @@ watch(activeTab, (val) => {
           </AppSectionCard>
 
           <AppSectionCard
+            v-if="activeTab === 'wallpaper'"
             title="壁纸库"
             description="桌面、移动端与 API 来源分开管理，优先保证预览和切换路径清晰。"
             body-class="space-y-4"
@@ -2014,8 +1824,9 @@ watch(activeTab, (val) => {
           />
 
           <AppSectionCard
+            v-if="activeTab === 'wallpaper'"
             title="背景与可读性"
-            description="上传、裁剪与可读性参数仍保留在这里，避免打断设置首页的主信息流。"
+            description="上传、裁剪、模糊遮罩和移动端背景集中在壁纸背景页内管理。"
             body-class="space-y-4"
           >
             <AppFieldRow
@@ -2139,55 +1950,22 @@ watch(activeTab, (val) => {
                 </div>
               </template>
             </AppFieldRow>
-
-            <AppFieldRow
-              label="纯色背景"
-              hint="为空时使用上传背景；也可以直接设为当前壁纸。"
-            >
-              <template #control>
-                <div class="flex flex-wrap items-center gap-2">
-                  <input
-                    type="color"
-                    v-model="solidBackgroundColorProxy"
-                    class="h-10 w-10 cursor-pointer rounded-lg border border-[var(--sd-color-border-subtle)] bg-transparent p-0"
-                  />
-                  <input
-                    v-model="store.appConfig.solidBackgroundColor"
-                    @change="store.markDirty()"
-                    type="text"
-                    placeholder="#f3f4f6"
-                    class="sd-input min-w-[12rem] flex-1"
-                  />
-                  <AppButton
-                    variant="danger-soft"
-                    size="sm"
-                    title="清除纯色背景"
-                    @click="
-                      store.appConfig.solidBackgroundColor = '';
-                      store.markDirty();
-                    "
-                  >
-                    重置
-                  </AppButton>
-                  <AppButton
-                    variant="secondary"
-                    size="sm"
-                    title="设为壁纸"
-                    @click="setSolidColorAsWallpaper"
-                  >
-                    设为壁纸
-                  </AppButton>
-                </div>
-              </template>
-            </AppFieldRow>
           </AppSectionCard>
 
           <AppSectionCard
-            title="布局与组件外观"
-            description="顶部栏、组件区域尺寸、默认图标和卡片节奏。"
+            v-if="activeTab === 'topbar' || activeTab === 'cards'"
+            :title="activeTab === 'topbar' ? '顶部与搜索' : '分组交互'"
+            :description="
+              activeTab === 'topbar'
+                ? '顶部栏、时间、搜索框和搜索引擎单独维护。'
+                : '分组布局、图标形状和悬停反馈单独维护。'
+            "
             body-class="space-y-5"
           >
-            <section class="settings-layout-group">
+            <section
+              v-if="activeTab === 'topbar'"
+              class="settings-layout-group"
+            >
               <header class="settings-layout-group-head">
                 <h4 class="settings-layout-group-title">顶部与标题</h4>
                 <p class="settings-layout-group-summary">
@@ -2223,6 +2001,46 @@ watch(activeTab, (val) => {
                         </div>
                         <AppSwitch
                           v-model="store.appConfig.hideHeaderOnMobile"
+                          label=""
+                          @change="store.markDirty()"
+                        />
+                      </div>
+                    </div>
+                  </template>
+                </AppFieldRow>
+
+                <AppFieldRow
+                  label="源站顶部"
+                  hint="控制 iTab 风格时间和搜索框是否显示。"
+                >
+                  <template #control>
+                    <div class="settings-top-switch-grid">
+                      <div class="settings-inline-switch">
+                        <div class="settings-inline-switch-copy">
+                          <span class="settings-inline-switch-title"
+                            >显示时间</span
+                          >
+                          <span class="settings-inline-switch-summary"
+                            >显示大号时钟、日期和农历。</span
+                          >
+                        </div>
+                        <AppSwitch
+                          v-model="store.appConfig.showHomeTime"
+                          label=""
+                          @change="store.markDirty()"
+                        />
+                      </div>
+                      <div class="settings-inline-switch">
+                        <div class="settings-inline-switch-copy">
+                          <span class="settings-inline-switch-title"
+                            >显示搜索框</span
+                          >
+                          <span class="settings-inline-switch-summary"
+                            >显示源站同款顶部搜索入口。</span
+                          >
+                        </div>
+                        <AppSwitch
+                          v-model="store.appConfig.showHomeSearch"
                           label=""
                           @change="store.markDirty()"
                         />
@@ -2272,47 +2090,173 @@ watch(activeTab, (val) => {
                 </div>
 
                 <AppFieldRow
-                  label="WEB端布局"
-                  hint="统一控制一栏页与按组分页。"
+                  class="settings-search-engine-field"
+                  label="搜索引擎"
+                  hint="管理首页搜索来源、默认引擎和自定义地址。"
                 >
                   <template #control>
-                    <div class="space-y-3">
-                      <AppSegmentedControl
-                        :model-value="
-                          store.appConfig.webGroupPagination
-                            ? 'group'
-                            : 'single'
-                        "
-                        :options="webLayoutOptions"
-                        @update:modelValue="
-                          (value) => {
-                            store.appConfig.webGroupPagination =
-                              value === 'group';
-                            store.markDirty();
-                          }
-                        "
-                      />
-                      <div class="flex justify-end">
-                        <AppButton
-                          size="sm"
-                          :variant="
-                            store.appConfig.webGroupPaginationDisableFlip
-                              ? 'danger-soft'
-                              : 'secondary'
-                          "
-                          :disabled="!store.appConfig.webGroupPagination"
-                          @click="
-                            store.appConfig.webGroupPaginationDisableFlip =
-                              !store.appConfig.webGroupPaginationDisableFlip;
-                            store.markDirty();
-                          "
+                    <div class="settings-search-engine-panel">
+                      <div class="settings-search-engine-summary">
+                        <div class="settings-search-engine-current">
+                          <span>当前默认</span>
+                          <strong>{{
+                            searchEngineDefaultPreview?.label || "百度"
+                          }}</strong>
+                          <small>
+                            {{ searchEngineEditorRows.length }} 个引擎 ·
+                            {{ searchEngineCustomCount }} 个自定义
+                          </small>
+                        </div>
+                        <label class="settings-search-engine-default">
+                          <span>默认引擎</span>
+                          <select
+                            v-model="searchEngineDefaultKey"
+                            class="sd-select"
+                          >
+                            <option
+                              v-for="engine in searchEngineEditorRows"
+                              :key="`default-${engine.key}`"
+                              :value="engine.key"
+                            >
+                              {{ engine.label }}
+                            </option>
+                          </select>
+                        </label>
+                        <div class="settings-search-engine-global-actions">
+                          <div class="settings-inline-switch compact">
+                            <div class="settings-inline-switch-copy">
+                              <span class="settings-inline-switch-title"
+                                >记住上次选择</span
+                              >
+                              <span class="settings-inline-switch-summary">
+                                {{
+                                  store.appConfig.rememberLastEngine === false
+                                    ? "始终使用默认"
+                                    : "跟随首页选择"
+                                }}
+                              </span>
+                            </div>
+                            <AppSwitch
+                              v-model="store.appConfig.rememberLastEngine"
+                              label=""
+                              @change="store.markDirty()"
+                            />
+                          </div>
+                          <button
+                            class="settings-search-icon-button"
+                            type="button"
+                            title="恢复默认搜索引擎"
+                            aria-label="恢复默认搜索引擎"
+                            @click="resetSearchEngines"
+                          >
+                            <RotateCcw :size="16" />
+                          </button>
+                        </div>
+                      </div>
+
+                      <div
+                        class="settings-search-engine-table"
+                        role="group"
+                        aria-label="搜索引擎列表"
+                      >
+                        <div
+                          class="settings-search-engine-table-head"
+                          aria-hidden="true"
                         >
-                          {{
-                            store.appConfig.webGroupPaginationDisableFlip
-                              ? "禁止翻页中"
-                              : "禁止翻页"
-                          }}
-                        </AppButton>
+                          <span>名称</span>
+                          <span>搜索地址</span>
+                          <span>操作</span>
+                        </div>
+                        <article
+                          v-for="(engine, index) in searchEngineEditorRows"
+                          :key="engine.key"
+                          class="settings-search-engine-row"
+                        >
+                          <div class="settings-search-engine-name-cell">
+                            <input
+                              v-model="engine.label"
+                              class="sd-input"
+                              :aria-label="`${engine.label || '搜索引擎'}名称`"
+                              placeholder="名称"
+                              @change="persistSearchEngineEditorRows"
+                            />
+                            <span class="settings-search-engine-badges">
+                              <span
+                                v-if="engine.key === searchEngineDefaultKey"
+                                class="settings-search-engine-badge is-default"
+                                >默认</span
+                              >
+                              <span class="settings-search-engine-badge">
+                                {{
+                                  isBuiltInSearchEngine(engine)
+                                    ? "内置"
+                                    : "自定义"
+                                }}
+                              </span>
+                            </span>
+                          </div>
+                          <input
+                            v-model="engine.urlTemplate"
+                            class="sd-input settings-search-engine-url-input"
+                            :aria-label="`${engine.label || '搜索引擎'}搜索地址`"
+                            placeholder="https://example.com/search?q={q}"
+                            @change="persistSearchEngineEditorRows"
+                          />
+                          <div class="settings-search-engine-actions">
+                            <button
+                              type="button"
+                              title="上移"
+                              aria-label="上移搜索引擎"
+                              :disabled="index === 0"
+                              @click="moveSearchEngine(index, -1)"
+                            >
+                              <ArrowUp :size="15" />
+                            </button>
+                            <button
+                              type="button"
+                              title="下移"
+                              aria-label="下移搜索引擎"
+                              :disabled="
+                                index === searchEngineEditorRows.length - 1
+                              "
+                              @click="moveSearchEngine(index, 1)"
+                            >
+                              <ArrowDown :size="15" />
+                            </button>
+                            <button
+                              type="button"
+                              title="删除搜索引擎"
+                              aria-label="删除搜索引擎"
+                              :disabled="searchEngineEditorRows.length <= 1"
+                              @click="removeSearchEngine(index)"
+                            >
+                              <Trash2 :size="15" />
+                            </button>
+                          </div>
+                        </article>
+                      </div>
+
+                      <div class="settings-search-engine-add">
+                        <input
+                          v-model="searchEngineDraft.label"
+                          class="sd-input"
+                          placeholder="自定义名称"
+                        />
+                        <input
+                          v-model="searchEngineDraft.urlTemplate"
+                          class="sd-input"
+                          placeholder="搜索地址，建议包含 {q}"
+                          @keyup.enter="addSearchEngine"
+                        />
+                        <button
+                          class="settings-search-add-button"
+                          type="button"
+                          title="添加搜索引擎"
+                          @click="addSearchEngine"
+                        >
+                          <Plus :size="16" />
+                          <span>添加引擎</span>
+                        </button>
                       </div>
                     </div>
                   </template>
@@ -2320,95 +2264,18 @@ watch(activeTab, (val) => {
               </div>
             </section>
 
-            <section class="settings-layout-group">
+            <section v-if="activeTab === 'cards'" class="settings-layout-group">
               <header class="settings-layout-group-head">
-                <h4 class="settings-layout-group-title">组件区节奏</h4>
+                <h4 class="settings-layout-group-title">分组交互</h4>
                 <p class="settings-layout-group-summary">
-                  统一控制组件区密度、图标尺寸和分组呼吸感。
+                  统一管理分组项目布局、图标形状和悬停反馈。
                 </p>
               </header>
 
               <div class="settings-layout-group-body">
                 <AppFieldRow
-                  label="组件区整区尺寸"
-                  hint="控制组件区整体列宽与行高。"
-                >
-                  <template #control>
-                    <div class="settings-layout-metric-row">
-                      <input
-                        type="number"
-                        v-model.number="store.appConfig.widgetAreaCols"
-                        min="0.5"
-                        step="0.5"
-                        max="16"
-                        class="sd-input w-24"
-                      />
-                      <span class="text-xs text-[var(--sd-color-text-tertiary)]"
-                        >×</span
-                      >
-                      <input
-                        type="number"
-                        v-model.number="store.appConfig.widgetAreaRows"
-                        min="0.5"
-                        step="0.5"
-                        max="16"
-                        class="sd-input w-24"
-                      />
-                      <span class="settings-layout-metric-value">
-                        {{ store.appConfig.widgetAreaCols ?? 4 }}×{{
-                          store.appConfig.widgetAreaRows ?? 4
-                        }}
-                      </span>
-                    </div>
-                  </template>
-                </AppFieldRow>
-
-                <div class="settings-layout-pair-grid">
-                  <AppRangeField
-                    label="分组垂直间距"
-                    :model-value="store.appConfig.groupGap ?? 30"
-                    :min="0"
-                    :max="100"
-                    :step="5"
-                    :value-text="`${store.appConfig.groupGap ?? 30}`"
-                    @update:modelValue="
-                      (value) => {
-                        store.appConfig.groupGap = value;
-                        store.markDirty();
-                      }
-                    "
-                  />
-
-                  <AppRangeField
-                    label="默认图标大小"
-                    :model-value="store.appConfig.iconSize ?? 64"
-                    :min="32"
-                    :max="96"
-                    :step="4"
-                    :value-text="`${store.appConfig.iconSize ?? 64}px`"
-                    @update:modelValue="
-                      (value) => {
-                        store.appConfig.iconSize = value;
-                        store.markDirty();
-                      }
-                    "
-                  />
-                </div>
-              </div>
-            </section>
-
-            <section class="settings-layout-group">
-              <header class="settings-layout-group-head">
-                <h4 class="settings-layout-group-title">卡片与交互</h4>
-                <p class="settings-layout-group-summary">
-                  把默认卡片方向、图标形状和悬停反馈放在同一层看齐。
-                </p>
-              </header>
-
-              <div class="settings-layout-group-body">
-                <AppFieldRow
-                  label="卡片布局"
-                  hint="控制默认卡片纵向或横向排布。"
+                  label="分组布局"
+                  hint="控制分组项目默认纵向或横向排布。"
                 >
                   <template #control>
                     <AppSegmentedControl
@@ -2426,7 +2293,7 @@ watch(activeTab, (val) => {
 
                 <AppFieldRow
                   label="默认图标形状"
-                  hint="应用到默认卡片与组件预览。"
+                  hint="应用到分组项目与组件预览。"
                 >
                   <template #control>
                     <AppSegmentedControl
@@ -2442,7 +2309,10 @@ watch(activeTab, (val) => {
                   </template>
                 </AppFieldRow>
 
-                <AppFieldRow label="鼠标悬停效果" hint="卡片 hover 反馈样式。">
+                <AppFieldRow
+                  label="鼠标悬停效果"
+                  hint="分组项目 hover 反馈样式。"
+                >
                   <template #control>
                     <select
                       v-model="store.appConfig.mouseHoverEffect"
@@ -2461,6 +2331,7 @@ watch(activeTab, (val) => {
           </AppSectionCard>
 
           <AppSectionCard
+            v-if="activeTab === 'footer'"
             title="页脚与统计"
             description="访客统计、尺寸与自定义 HTML 输出。"
             body-class="space-y-4"
@@ -2541,435 +2412,31 @@ watch(activeTab, (val) => {
           </AppSectionCard>
         </div>
 
-        <div v-if="activeTab === 'docker'" class="space-y-4">
-          <div class="flex items-center justify-between mb-4 mr-8">
-            <h4
-              class="text-base font-bold text-gray-900 border-l-4 border-gray-900 pl-3"
-            >
-              Docker 管理 (内测中)
-            </h4>
-            <div
-              v-if="dockerWidget || isDockerSystemEnabled"
-              class="flex items-center gap-3 text-xs mr-[10px]"
-            >
-              <button
-                @click="exportDockerLogs"
-                :disabled="isExportingDockerLogs || !isDockerSystemEnabled"
-                class="text-gray-900 px-3 py-1 rounded-lg transition-colors font-bold disabled:opacity-60 glass-chip selectable-outline"
-              >
-                {{ isExportingDockerLogs ? "导出中" : "导出日志" }}
-              </button>
-              <button
-                @click="checkDockerConnection"
-                :disabled="!isDockerSystemEnabled || isUpdatingDockerSystem"
-                class="text-gray-900 px-3 py-1 rounded-lg transition-colors font-bold disabled:opacity-50 glass-chip selectable-outline"
-              >
-                测试连接
-              </button>
-            </div>
-          </div>
-
-          <div class="space-y-3 mb-6 pb-6 border-b border-gray-100">
-            <div class="flex items-center justify-between">
-              <div>
-                <div class="text-sm font-bold text-gray-900">Docker 服务</div>
-                <p class="mt-1 text-xs text-gray-500">
-                  控制后端是否访问 Docker Engine。Windows 默认使用
-                  <code>npipe:////./pipe/docker_engine</code>，Linux/macOS
-                  默认使用 <code>unix:///var/run/docker.sock</code>。
-                </p>
-              </div>
-              <label class="relative inline-flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  :checked="isDockerSystemEnabled"
-                  :disabled="isUpdatingDockerSystem || !hasAdminAccess"
-                  aria-label="Docker 服务启用"
-                  @change="
-                    (e) =>
-                      toggleDockerSystemEnabled(
-                        (e.target as HTMLInputElement).checked,
-                      )
-                  "
-                  class="sr-only peer"
-                />
-                <div
-                  class="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white peer-disabled:opacity-50 after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-green-500"
-                ></div>
-                <span class="text-sm text-gray-700 ml-3">
-                  {{
-                    isUpdatingDockerSystem
-                      ? "切换中"
-                      : isDockerSystemEnabled
-                        ? "已启用"
-                        : "已关闭"
-                  }}
-                </span>
-              </label>
-            </div>
-
-            <div
-              class="rounded-xl border px-3 py-2 text-xs"
-              :class="
-                isDockerSystemEnabled
-                  ? 'border-emerald-200 bg-emerald-50/70 text-emerald-700'
-                  : 'border-amber-200 bg-amber-50/70 text-amber-700'
-              "
-            >
-              <p>
-                {{
-                  isDockerSystemEnabled
-                    ? "当前会允许 Docker 管理、连接检测、容器状态读取和组件预览。"
-                    : "当前已停止 Docker 探测与接口轮询；下方组件设置仅控制展示，不会触发后端访问。"
-                }}
-              </p>
-              <p class="mt-1 text-[11px] opacity-80">
-                “Docker 服务”是系统级总开关，“显示 Docker
-                组件”只影响首页卡片显示，“模拟数据”只影响组件展示数据来源。
-              </p>
-              <p v-if="!hasAdminAccess" class="mt-1 text-[11px] opacity-80">
-                当前账号没有系统配置权限，仅可查看状态，不能切换 Docker
-                服务总开关。
+        <div v-if="activeTab === 'network'" class="settings-system-page">
+          <header class="settings-system-hero">
+            <div>
+              <p class="settings-system-kicker">System Rules</p>
+              <h4 class="settings-system-title">网络环境判定</h4>
+              <p class="settings-system-summary">
+                白名单和延迟阈值共同决定内网、外网和自动切换行为。
               </p>
             </div>
-          </div>
-
-          <!-- Host Status Widget Section -->
-          <div class="space-y-3 mb-6 pb-6 border-b border-gray-100">
-            <div class="flex items-center justify-between">
-              <span class="text-sm font-bold text-gray-900"
-                >宿主机状态组件</span
+            <div class="settings-system-metric">
+              <span>延迟阈值</span>
+              <strong
+                >{{
+                  store.appConfig.latencyThresholdMs ??
+                  DEFAULT_LATENCY_THRESHOLD_MS
+                }}ms</strong
               >
-              <div class="flex items-center gap-4">
-                <div
-                  v-if="systemStatusWidget && systemStatusWidget.enable"
-                  class="flex items-center gap-2 animate-fade-in"
-                >
-                  <div class="flex items-center gap-2">
-                    <span class="text-xs text-gray-700 font-medium"
-                      >公开访问</span
-                    >
-                    <label
-                      class="relative inline-flex items-center cursor-pointer"
-                    >
-                      <input
-                        type="checkbox"
-                        v-model="systemStatusWidget.isPublic"
-                        class="sr-only peer"
-                      />
-                      <div
-                        class="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-500"
-                      ></div>
-                    </label>
-                  </div>
-                  <div class="flex items-center gap-2">
-                    <span class="text-xs text-gray-700 font-medium"
-                      >手机端显示</span
-                    >
-                    <label
-                      class="relative inline-flex items-center cursor-pointer"
-                    >
-                      <input
-                        type="checkbox"
-                        :checked="!systemStatusWidget.hideOnMobile"
-                        @change="onMobileSystemStatusDisplayChange"
-                        class="sr-only peer"
-                      />
-                      <div
-                        class="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-orange-500"
-                      ></div>
-                    </label>
-                  </div>
-                </div>
-                <label class="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    :checked="systemStatusWidget?.enable"
-                    aria-label="启用"
-                    @change="
-                      (e) => {
-                        if ((e.target as HTMLInputElement).checked)
-                          enableSystemStatusWidget();
-                        else if (systemStatusWidget) {
-                          systemStatusWidget.enable = false;
-                          store.markDirty();
-                        }
-                      }
-                    "
-                    class="sr-only peer"
-                  />
-                  <div
-                    class="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-green-500"
-                  ></div>
-                  <span class="text-sm text-gray-700 ml-3">启用</span>
-                </label>
-              </div>
             </div>
-
-            <div
-              v-if="systemStatusWidget && systemStatusWidget.enable"
-              class="animate-fade-in space-y-3"
-            >
-              <div
-                class="flex flex-wrap items-center gap-4 border-t border-gray-100 pt-3"
-              >
-                <div class="flex items-center gap-2">
-                  <span class="text-xs text-gray-500">使用模拟数据</span>
-                  <label
-                    class="relative inline-flex items-center cursor-pointer"
-                  >
-                    <input
-                      type="checkbox"
-                      :checked="!!systemStatusWidget.data?.useMock"
-                      @change="
-                        (e) =>
-                          toggleSystemStatusMock(
-                            (e.target as HTMLInputElement).checked,
-                          )
-                      "
-                      class="sr-only peer"
-                    />
-                    <div
-                      class="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600"
-                    ></div>
-                  </label>
-                </div>
-              </div>
-              <div class="h-40 w-full max-w-sm">
-                <SystemStatusWidget :widget="systemStatusWidget" />
-              </div>
-            </div>
-          </div>
-
-          <div v-if="dockerWidget" class="space-y-3">
-            <div class="flex items-center justify-between">
-              <span class="text-sm font-bold text-gray-900">Docker 组件</span>
-              <div class="flex items-center gap-4">
-                <div
-                  v-if="dockerWidget.enable"
-                  class="flex items-center gap-2 animate-fade-in"
-                >
-                  <div class="flex items-center gap-2">
-                    <span class="text-xs text-gray-700 font-medium"
-                      >公开访问</span
-                    >
-                    <label
-                      class="relative inline-flex items-center cursor-pointer"
-                    >
-                      <input
-                        type="checkbox"
-                        v-model="dockerWidget.isPublic"
-                        class="sr-only peer"
-                      />
-                      <div
-                        class="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-500"
-                      ></div>
-                    </label>
-                  </div>
-                  <div class="flex items-center gap-2">
-                    <span class="text-xs text-gray-700 font-medium"
-                      >手机端显示</span
-                    >
-                    <label
-                      class="relative inline-flex items-center cursor-pointer"
-                    >
-                      <input
-                        type="checkbox"
-                        :checked="!dockerWidget.hideOnMobile"
-                        @change="onMobileDockerDisplayChange"
-                        class="sr-only peer"
-                      />
-                      <div
-                        class="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-orange-500"
-                      ></div>
-                    </label>
-                  </div>
-                </div>
-                <label class="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    v-model="dockerWidget.enable"
-                    aria-label="显示 Docker 组件"
-                    class="sr-only peer"
-                  />
-                  <div
-                    class="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-green-500"
-                  ></div>
-                  <span class="text-sm text-gray-700 ml-3">显示组件</span>
-                </label>
-              </div>
-            </div>
-
-            <p class="text-xs text-gray-500">
-              这里控制首页 Docker 卡片是否显示，不影响后端 Docker 服务是否连接。
-            </p>
-
-            <div
-              class="flex flex-wrap items-center gap-4 border-t border-gray-100 pt-3"
-            >
-              <div class="flex items-center gap-2">
-                <span class="text-xs text-gray-500">模拟数据启用</span>
-                <label class="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    :checked="!!dockerWidget.data?.useMock"
-                    @change="
-                      (e) =>
-                        toggleDockerMock((e.target as HTMLInputElement).checked)
-                    "
-                    class="sr-only peer"
-                  />
-                  <div
-                    class="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600"
-                  ></div>
-                </label>
-              </div>
-              <div class="flex items-center gap-2">
-                <span class="text-xs text-gray-500">自动升级镜像(每2小时)</span>
-                <label class="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    :checked="!!dockerWidget.data?.autoUpdate"
-                    @change="
-                      (e) => {
-                        if (dockerWidget) {
-                          if (!dockerWidget.data) dockerWidget.data = {};
-                          dockerWidget.data.autoUpdate = (
-                            e.target as HTMLInputElement
-                          ).checked;
-                          store.markDirty();
-                        }
-                      }
-                    "
-                    class="sr-only peer"
-                  />
-                  <div
-                    class="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600"
-                  ></div>
-                </label>
-              </div>
-              <div class="flex items-center gap-2">
-                <span class="text-[10px] text-gray-500">保留版本</span>
-                <input
-                  type="number"
-                  min="1"
-                  max="20"
-                  :disabled="!dockerWidget?.data?.autoUpdate"
-                  :value="dockerWidget?.data?.autoUpdateKeepImages ?? 2"
-                  @change="
-                    (e) => {
-                      if (dockerWidget) {
-                        if (!dockerWidget.data) dockerWidget.data = {};
-                        dockerWidget.data.autoUpdateKeepImages = Math.max(
-                          1,
-                          Math.min(
-                            20,
-                            Number((e.target as HTMLInputElement).value || 2),
-                          ),
-                        );
-                        store.markDirty();
-                      }
-                    }
-                  "
-                  class="w-16 px-2 py-1 border border-gray-200 rounded text-xs focus:border-gray-900 outline-none disabled:bg-gray-50 disabled:text-gray-400"
-                />
-                <span class="text-[10px] text-gray-500">个</span>
-              </div>
-              <div class="flex items-center gap-2">
-                <span class="text-[10px] text-gray-500">最小可用空间</span>
-                <input
-                  type="number"
-                  min="0"
-                  step="0.5"
-                  :disabled="!dockerWidget?.data?.autoUpdate"
-                  :value="dockerWidget?.data?.autoUpdateMinFreeGB ?? 5"
-                  @change="
-                    (e) => {
-                      if (dockerWidget) {
-                        if (!dockerWidget.data) dockerWidget.data = {};
-                        dockerWidget.data.autoUpdateMinFreeGB = Math.max(
-                          0,
-                          Number((e.target as HTMLInputElement).value || 5),
-                        );
-                        store.markDirty();
-                      }
-                    }
-                  "
-                  class="w-20 px-2 py-1 border border-gray-200 rounded text-xs focus:border-gray-900 outline-none disabled:bg-gray-50 disabled:text-gray-400"
-                />
-                <span class="text-[10px] text-gray-500">GB</span>
-              </div>
-              <div class="flex items-center gap-2">
-                <span class="text-xs text-gray-700 font-medium">内网主机</span>
-                <input
-                  :value="dockerWidget?.data?.lanHost"
-                  @change="
-                    (e) => {
-                      if (dockerWidget) {
-                        if (!dockerWidget.data) dockerWidget.data = {};
-                        dockerWidget.data.lanHost = (
-                          e.target as HTMLInputElement
-                        ).value;
-                        store.markDirty();
-                      }
-                    }
-                  "
-                  type="text"
-                  placeholder="例如：192.168.1.10"
-                  class="px-2 py-1 border border-gray-200 rounded text-xs focus:border-gray-900 outline-none"
-                />
-              </div>
-            </div>
-            <div
-              v-if="isDockerSystemEnabled && dockerWidget.enable"
-              class="h-[500px]"
-            >
-              <DockerWidget :widget="dockerWidget" :compact="true" />
-            </div>
-            <div
-              v-else
-              class="h-[160px] rounded-2xl border border-dashed border-gray-200 bg-gray-50/80 flex items-center justify-center text-center px-6"
-            >
-              <div class="text-sm text-gray-500 space-y-2">
-                <p v-if="!isDockerSystemEnabled">
-                  Docker 服务已关闭，组件预览已暂停。
-                </p>
-                <p v-else>Docker 组件当前未显示，打开“显示组件”后可预览。</p>
-                <p class="text-xs text-gray-400">
-                  关闭系统级总开关后，不会继续自动探测 Docker 或轮询容器状态。
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div v-else class="text-center py-8 text-gray-500">
-            <p class="mb-4">未启用 Docker 组件</p>
-            <button
-              @click="enableDockerWidget"
-              class="px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-black transition-colors shadow-sm"
-            >
-              启用 Docker 组件
-            </button>
-            <p class="mt-4 text-xs text-gray-500 max-w-xs mx-auto">
-              如果您的系统不支持
-              Docker（如旧版本），启用后可以在上方开启"使用模拟数据"以体验功能。
-            </p>
-          </div>
-        </div>
-
-        <div v-if="activeTab === 'network'" class="p-4 space-y-4">
-          <div class="flex items-center gap-3 mb-4">
-            <h4
-              class="text-base font-bold text-gray-900 border-l-4 border-gray-900 pl-3"
-            >
-              网络环境判定设置
-            </h4>
-          </div>
+          </header>
 
           <AppSectionCard
+            class="settings-system-card"
             title="域名白名单"
             description="域名按行维护，命中后可继续进入延迟阈值判定。"
-            bodyClass="space-y-4"
+            body-class="settings-system-stack"
           >
             <StatusBanner
               title="判定规则"
@@ -2983,19 +2450,20 @@ watch(activeTab, (val) => {
               <template #control>
                 <textarea
                   v-model="store.appConfig.internalDomains"
-                  @change="store.markDirty()"
                   rows="5"
                   class="sd-textarea w-full text-xs font-mono"
                   placeholder="每行一个域名（如 hp.fnos996.top 或 fnos996.top）"
+                  @change="store.markDirty()"
                 ></textarea>
               </template>
             </AppFieldRow>
           </AppSectionCard>
 
           <AppSectionCard
+            class="settings-system-card"
             title="白名单 + 延迟判定"
             description="对命中的白名单域名按 RTT 阈值判定内外网。"
-            bodyClass="space-y-4"
+            body-class="settings-system-stack"
           >
             <AppSwitch
               label="启用延迟判定"
@@ -3013,22 +2481,22 @@ watch(activeTab, (val) => {
               :hint="`默认 ${DEFAULT_LATENCY_THRESHOLD_MS} ms，低于该值视为内网。`"
             >
               <template #control>
-                <div class="flex flex-wrap items-center gap-2">
+                <div class="settings-system-inline-form">
                   <input
                     :value="latencyThresholdDraft"
                     inputmode="numeric"
+                    placeholder="20-30000"
+                    class="sd-input settings-system-small-input font-mono"
+                    :class="
+                      latencyThresholdTouched && !latencyThresholdValidation.ok
+                        ? 'is-invalid'
+                        : ''
+                    "
                     @input="onLatencyThresholdInput"
                     @blur="onLatencyThresholdBlur"
                     @keydown.enter.prevent="applyLatencyThreshold"
-                    placeholder="20–30000"
-                    class="sd-input w-32 text-xs font-mono"
-                    :class="
-                      latencyThresholdTouched && !latencyThresholdValidation.ok
-                        ? 'border-red-300'
-                        : ''
-                    "
                   />
-                  <span class="text-xs text-gray-500">ms</span>
+                  <span class="settings-system-unit">ms</span>
                   <AppButton
                     size="sm"
                     variant="primary"
@@ -3057,352 +2525,66 @@ watch(activeTab, (val) => {
               tone="success"
               :message="latencyThresholdAppliedToast"
             />
-            <p v-else class="text-[11px] text-gray-500">
+            <p v-else class="settings-system-note">
               白名单域名访问时，延迟低于此值判定为内网，高于此值判定为外网。默认
               {{ DEFAULT_LATENCY_THRESHOLD_MS }} ms。
             </p>
           </AppSectionCard>
         </div>
 
-        <div v-if="activeTab === 'lucky-stun'" class="p-4 space-y-4">
-          <div class="flex items-center gap-2 mb-4">
-            <h4
-              class="text-base font-bold text-gray-900 border-l-4 border-gray-900 pl-3"
-            >
-              开放中心
-            </h4>
-          </div>
-
-          <AppSectionCard
-            title="浏览器助手通信"
-            description="为 startdeck-helper 生成专用握手链接，插件会自动保存站点与令牌。"
-            bodyClass="space-y-3"
-          >
-            <template v-if="browserHelperHandshakeLink">
-              <a
-                :href="browserHelperHandshakeLink"
-                :data-startdeck-helper-link="browserHelperHandshakeLink"
-                target="_blank"
-                rel="noopener noreferrer"
-                class="block w-full px-3 py-2 rounded-lg border border-gray-200 bg-white text-[11px] text-blue-600 break-all hover:border-blue-300 transition-colors"
-              >
-                {{ browserHelperHandshakeLink }}
-              </a>
-              <div class="flex flex-wrap items-center gap-2">
-                <AppButton @click="copyBrowserHelperHandshakeLink">
-                  复制握手链接
-                </AppButton>
-                <AppButton
-                  @click="openBrowserHelperHandshakeLink"
-                  variant="secondary"
-                >
-                  打开握手页
-                </AppButton>
-                <a
-                  href="https://qdnas.icu/c/8/g/14"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  class="sd-btn sd-btn-primary min-h-9 px-3 text-xs inline-flex"
-                >
-                  下载浏览器助手
-                </a>
-              </div>
-              <p class="text-[11px] text-gray-500">
-                如果插件提示未连接，请先停留在这个页面，再点击浏览器助手图标进行自动配对。
-              </p>
-            </template>
-            <StatusBanner
-              v-else
-              tone="warning"
-              message="当前未检测到登录令牌。请先登录 StartDeck，随后这里会自动生成浏览器助手握手链接。"
-            />
-          </AppSectionCard>
-
-          <!-- Custom CSS Section -->
-          <div class="bg-gray-50 border border-gray-100 rounded-xl p-4 mb-6">
-            <h4 class="text-base font-bold mb-4 text-gray-900">自定义 CSS</h4>
+        <div v-if="activeTab === 'account'" class="settings-system-page">
+          <header class="settings-system-hero">
             <div>
-              <ScriptManager
-                v-if="store.appConfig.customCssList"
-                v-model="store.appConfig.customCssList"
-                type="css"
-                placeholder="/* 输入自定义 CSS 代码 */
-.card-item {
-  border-radius: 20px;
-}"
-                @change="store.updateCustomScripts()"
-              />
-              <div class="text-xs text-gray-500 mt-2">
-                提示：在此处输入的 CSS 将直接应用到页面，可用于微调样式。
-              </div>
-              <div class="mt-3 rounded-xl border border-gray-100 bg-white/70">
-                <div class="px-3 py-2 text-xs font-bold text-gray-700">
-                  样式变量表
-                </div>
-                <div
-                  class="grid grid-cols-[minmax(0,1fr)_minmax(0,2fr)_minmax(0,1fr)] gap-y-2 gap-x-3 px-3 pb-3 text-xs"
-                >
-                  <div class="text-[10px] font-semibold text-gray-400">
-                    变量
-                  </div>
-                  <div class="text-[10px] font-semibold text-gray-400">
-                    用途
-                  </div>
-                  <div class="text-[10px] font-semibold text-gray-400">
-                    当前值
-                  </div>
-                  <template v-for="row in styleVariableRows" :key="row.name">
-                    <div class="font-mono text-[11px] text-gray-700">
-                      {{ row.name }}
-                    </div>
-                    <div class="text-gray-500">{{ row.desc }}</div>
-                    <div class="font-mono text-[11px] text-gray-600">
-                      {{ row.value }}
-                    </div>
-                  </template>
-                </div>
-                <div
-                  class="flex items-center justify-between px-3 py-2 border-t border-gray-100 text-[10px] text-gray-500"
-                >
-                  <span>对比度：{{ styleVariableStatus.contrast }}</span>
-                  <span>视觉回归：{{ styleVariableStatus.visual }}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Custom JS Section -->
-          <div class="bg-gray-50 border border-gray-100 rounded-xl p-4 mb-6">
-            <h4 class="text-base font-bold mb-4 text-gray-900">自定义 JS</h4>
-
-            <div
-              v-if="!store.appConfig.customJsDisclaimerAgreed"
-              class="p-4 bg-white rounded-lg border border-gray-200 shadow-sm"
-            >
-              <h5 class="font-bold text-gray-700 mb-2 flex items-center gap-2">
-                安全免责声明
-              </h5>
-              <div class="text-sm text-gray-600 mb-3 leading-relaxed">
-                使用自定义 JavaScript 功能允许您向页面注入任意代码。这可能导致：
-                <ul class="list-disc list-inside ml-2 mt-1 space-y-1 text-xs">
-                  <li>XSS (跨站脚本) 攻击风险</li>
-                  <li>页面功能异常或崩溃</li>
-                  <li>敏感数据泄露</li>
-                </ul>
-              </div>
-              <p class="text-sm text-gray-600 mb-4 font-bold">
-                由此产生的一切后果由您自行承担。请确保您完全信任并理解您所添加的代码。
+              <p class="settings-system-kicker">Account Control</p>
+              <h4 class="settings-system-title">账户与数据</h4>
+              <p class="settings-system-summary">
+                认证模式、配置版本、用户和授权集中管理。
               </p>
-              <label class="flex items-center gap-2 cursor-pointer select-none">
-                <input
-                  type="checkbox"
-                  v-model="store.appConfig.customJsDisclaimerAgreed"
-                  class="w-4 h-4 text-gray-900 rounded border-gray-300 focus:ring-blue-400 accent-blue-400"
-                />
-                <span class="text-sm font-medium text-gray-700"
-                  >我已阅读并同意上述风险，确认启用此功能</span
-                >
-              </label>
             </div>
-
-            <div v-else>
-              <ScriptManager
-                v-if="store.appConfig.customJsList"
-                v-model="store.appConfig.customJsList"
-                type="js"
-                placeholder="// 输入自定义 JS 代码
-console.log('Hello from Custom JS!');
-document.querySelector('.card-item').addEventListener('click', () => {
-  console.log('Clicked!');
-});"
-                @change="store.updateCustomScripts()"
-              />
-              <div
-                class="text-xs text-gray-500 mt-2 flex justify-between items-center"
-              >
-                <span
-                  >提示：JS 代码将在页面加载时执行。可与自定义 CSS
-                  配合实现高级交互。</span
-                >
-                <button
-                  @click="store.appConfig.customJsDisclaimerAgreed = false"
-                  class="text-xs text-gray-500 hover:text-gray-600 underline"
-                >
-                  撤销免责声明并禁用
-                </button>
-              </div>
+            <div class="settings-system-metric">
+              <span>当前身份</span>
+              <strong>{{
+                store.isLogged ? store.username || "Admin" : "未登录"
+              }}</strong>
             </div>
-          </div>
+          </header>
 
-          <!-- Webhook Settings -->
-          <div class="bg-gray-50 border border-gray-100 rounded-xl p-4">
-            <div class="flex items-center justify-between mb-4">
-              <h4 class="text-base font-bold text-gray-900">
-                Webhook 设置 (内测中)
-              </h4>
-            </div>
-
-            <div class="mb-6">
-              <h5 class="font-bold text-gray-900 mb-2">Webhook 地址</h5>
-              <div
-                class="flex items-center gap-2 bg-white/60 p-2 rounded border border-gray-200"
-              >
-                <code class="text-xs text-gray-600 flex-1 break-all">{{
-                  getWebhookUrl()
-                }}</code>
-                <button
-                  @click="copyWebhookUrl"
-                  class="text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded hover:bg-blue-200 font-bold transition-colors"
-                >
-                  复制
-                </button>
-              </div>
-              <p class="text-xs text-gray-500 mt-2">
-                请在 STUN 穿透配置中，将全局 Webhook
-                的地址设置为上述地址，并使用以下配置：
-              </p>
-
-              <div
-                class="mt-3 space-y-3 bg-white/60 p-3 rounded-lg border border-gray-200"
-              >
-                <div>
-                  <div class="flex items-center gap-2 mb-1">
-                    <span class="text-xs font-bold text-gray-700"
-                      >请求头 (Header)</span
-                    >
-                  </div>
-                  <code
-                    class="block text-xs text-gray-600 font-mono bg-gray-50 p-1.5 rounded border border-gray-200"
-                    >Content-Type: application/json</code
-                  >
-                </div>
-                <div>
-                  <div class="flex items-center gap-2 mb-1">
-                    <span class="text-xs font-bold text-gray-700"
-                      >请求体 (Body)</span
-                    >
-                  </div>
-                  <pre
-                    class="text-xs text-gray-600 font-mono bg-gray-50 p-1.5 rounded border border-gray-200 whitespace-pre"
-                  >
-{
-  "stun": "success",
-  "ip": "#{ip}",
-  "port": "#{port}"
-}</pre
-                  >
-                </div>
-              </div>
-            </div>
-
-            <div class="space-y-3">
-              <h5 class="font-bold text-gray-900">最新状态</h5>
-              <div
-                v-if="store.luckyStunData && store.luckyStunData.data"
-                class="grid grid-cols-2 gap-3"
-              >
-                <div class="bg-white/60 p-3 rounded-lg border border-gray-200">
-                  <div class="text-xs text-gray-500 mb-1">状态</div>
-                  <div
-                    class="font-bold"
-                    :class="
-                      store.luckyStunData.data.stun === 'success'
-                        ? 'text-gray-900'
-                        : 'text-gray-500'
-                    "
-                  >
-                    {{ store.luckyStunData.data.stun || "未知" }}
-                  </div>
-                </div>
-                <div class="bg-white/60 p-3 rounded-lg border border-gray-200">
-                  <div class="text-xs text-gray-500 mb-1">公网 IP</div>
-                  <div class="font-bold text-gray-900 font-mono break-all">
-                    {{ store.luckyStunData.data.ip || "-" }}
-                  </div>
-                </div>
-                <div class="bg-white/60 p-3 rounded-lg border border-gray-200">
-                  <div class="text-xs text-gray-500 mb-1">端口</div>
-                  <div class="font-bold text-gray-900">
-                    {{ store.luckyStunData.data.port || "-" }}
-                  </div>
-                </div>
-                <div class="bg-white/60 p-3 rounded-lg border border-gray-200">
-                  <div class="text-xs text-gray-500 mb-1">更新时间</div>
-                  <div class="text-xs text-gray-900">
-                    {{ formatTime(store.luckyStunData.ts) }}
-                  </div>
-                </div>
-              </div>
-              <div
-                v-else
-                class="text-center py-8 text-gray-400 text-sm bg-white rounded-xl border border-dashed border-gray-200"
-              >
-                暂无数据，请等待 Webhook 触发...
-              </div>
-            </div>
-
-            <div class="flex justify-end mt-4">
-              <button
-                @click="store.fetchLuckyStunData"
-                class="text-sm text-gray-500 hover:text-gray-900 hover:underline flex items-center gap-1 font-bold transition-colors"
-              >
-                <span>🔄</span> 刷新数据
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <div
-          v-if="activeTab === 'account'"
-          class="min-h-full flex flex-col justify-center"
-        >
-          <div v-if="!store.isLogged" class="text-center">
-            <h4 class="text-xl font-bold mb-6 text-gray-900">管理员登录</h4>
+          <div v-if="!store.isLogged" class="settings-system-login-card">
+            <p class="settings-system-kicker">Admin Login</p>
+            <h4>管理员登录</h4>
             <input
               v-model="passwordInput"
               type="password"
               placeholder="密码..."
-              class="w-full max-w-xs px-4 py-3 border border-gray-200 rounded-xl mb-4 mx-auto text-center focus:border-gray-900 outline-none"
+              class="sd-input"
               @keyup.enter="handleLogin"
             />
-            <button
-              @click="handleLogin"
-              class="bg-gray-900 text-white px-10 py-3 rounded-xl font-bold hover:bg-gray-800 transition-colors"
-            >
-              登 录
-            </button>
+            <AppButton variant="primary" @click="handleLogin">登录</AppButton>
           </div>
-          <div v-else class="max-w-sm mx-auto w-full">
-            <div class="bg-gray-50 p-5 rounded-xl border border-gray-100 mb-6">
-              <h5 class="text-sm font-bold text-gray-900 mb-3">
-                📦 备份与恢复
-              </h5>
-              <div class="grid grid-cols-2 gap-3">
-                <button
-                  @click="handleExport"
-                  class="col-span-2 bg-white text-gray-700 border border-gray-200 px-4 py-2 rounded-lg text-sm font-bold hover:bg-gray-50 transition-colors"
-                >
-                  📤 导出配置
-                </button>
-                <button
-                  @click="triggerImport"
-                  class="col-span-2 bg-gray-900 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-gray-800 transition-colors"
-                >
-                  📥 导入配置
-                </button>
-                <button
+
+          <div v-else class="settings-system-grid">
+            <AppSectionCard
+              class="settings-system-card"
+              title="备份与恢复"
+              description="导入、导出、初始化和默认配置写入。"
+            >
+              <div class="settings-system-action-grid">
+                <AppButton variant="secondary" @click="handleExport">
+                  导出配置
+                </AppButton>
+                <AppButton variant="primary" @click="triggerImport">
+                  导入配置
+                </AppButton>
+                <AppButton
                   v-if="hasAdminAccess"
+                  variant="secondary"
                   @click="handleSaveAsDefault"
-                  class="bg-gray-800 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-gray-900 transition-all"
                 >
                   {{ saveDefaultBtnText }}
-                </button>
-                <button
-                  @click="handleReset"
-                  class="bg-white text-gray-600 border border-gray-200 px-4 py-2 rounded-lg text-sm font-bold hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-colors"
-                >
-                  🧹 恢复初始化
-                </button>
+                </AppButton>
+                <AppButton variant="danger-soft" @click="handleReset">
+                  恢复初始化
+                </AppButton>
                 <input
                   ref="fileInput"
                   type="file"
@@ -3411,388 +2593,331 @@ document.querySelector('.card-item').addEventListener('click', () => {
                   @change="handleFileChange"
                 />
               </div>
-            </div>
-            <div
+            </AppSectionCard>
+
+            <AppSectionCard
               v-if="hasAdminAccess"
-              class="bg-gray-50 p-5 rounded-xl border border-gray-200 mb-6"
+              class="settings-system-card"
+              title="系统模式"
+              :description="
+                store.systemConfig.authMode === 'single'
+                  ? '单用户模式下登录界面简化，仅需输入密码即可登录 Admin 账户。'
+                  : '多用户模式下允许多个用户注册和登录，数据相互隔离。'
+              "
             >
-              <h5 class="text-sm font-bold text-gray-900 mb-3">系统模式</h5>
-              <div class="flex items-center justify-between">
-                <span class="text-sm text-gray-700"
-                  >当前模式：{{
+              <div class="settings-system-mode-row">
+                <div>
+                  <span>当前模式</span>
+                  <strong>{{
                     store.systemConfig.authMode === "single"
                       ? "单用户模式"
                       : "多用户模式"
-                  }}</span
-                >
-                <button
-                  v-if="hasAdminAccess"
-                  @click="toggleAuthMode"
-                  class="px-4 py-2 rounded-lg text-sm font-bold text-white transition-all bg-gray-900 hover:bg-gray-800"
-                >
+                  }}</strong>
+                  <small
+                    >默认管理员为 admin；Docker 可通过 STARTDECK_ADMIN_PASSWORD
+                    指定启动密码。</small
+                  >
+                </div>
+                <AppButton variant="primary" @click="toggleAuthMode">
                   切换为{{
                     store.systemConfig.authMode === "single"
                       ? "多用户模式"
                       : "单用户模式"
                   }}
-                </button>
-                <span
-                  v-else
-                  class="px-4 py-2 rounded-lg text-sm font-bold text-gray-500 bg-gray-100"
-                >
-                  仅管理员可切换
-                </span>
+                </AppButton>
               </div>
-              <p class="text-xs text-gray-500 mt-2">
-                {{
-                  store.systemConfig.authMode === "single"
-                    ? "单用户模式下，登录界面简化，仅需输入密码即可登录 Admin 账户。"
-                    : "多用户模式下，允许多个用户注册和登录，数据相互隔离。"
-                }}
-              </p>
-              <p class="text-xs text-gray-500 mt-1">
-                默认管理员为 admin；Docker 可通过 STARTDECK_ADMIN_PASSWORD
-                指定启动密码。
-              </p>
-            </div>
-            <div class="bg-gray-50 p-5 rounded-xl border border-gray-200 mb-6">
-              <h5 class="text-sm font-bold text-gray-900 mb-3">🕘 配置版本</h5>
-              <div class="flex gap-2 items-center mb-2">
+            </AppSectionCard>
+
+            <AppSectionCard
+              class="settings-system-card settings-system-card-wide"
+              title="配置版本"
+              :description="
+                store.systemConfig.authMode === 'single'
+                  ? '保存位置：data/config_versions'
+                  : '保存位置：data/config_versions，仅当前用户可见。'
+              "
+            >
+              <div class="settings-system-inline-form">
                 <input
                   v-model="versionLabel"
                   placeholder="版本备注（可选）"
-                  class="flex-1 px-3 py-2 rounded-lg border border-gray-300 text-sm focus:border-gray-900 outline-none"
+                  class="sd-input"
                 />
-                <button
-                  @click="saveVersion"
-                  class="px-4 py-2 rounded-lg text-sm font-bold text-white transition-all bg-gray-900 hover:bg-gray-800"
-                >
+                <AppButton variant="primary" @click="saveVersion">
                   保存为版本
-                </button>
+                </AppButton>
               </div>
-              <div class="text-[10px] text-gray-500 mb-2">
-                {{
-                  store.systemConfig.authMode === "single"
-                    ? "保存位置：data/config_versions"
-                    : "保存位置：data/config_versions (仅当前用户可见)"
-                }}
-              </div>
-              <div class="max-h-40 overflow-y-auto space-y-1">
-                <div v-if="loadingVersions" class="text-xs text-gray-500">
+
+              <div class="settings-system-list">
+                <div v-if="loadingVersions" class="settings-system-empty">
                   加载中...
                 </div>
                 <div
                   v-else-if="versions.length === 0"
-                  class="text-xs text-gray-400 text-center py-4"
+                  class="settings-system-empty"
                 >
                   暂无保存的版本
                 </div>
-                <div
+                <article
                   v-for="v in versions"
                   :key="v.id"
-                  class="flex items-center justify-between bg-white px-3 py-2 rounded-lg border border-gray-200"
+                  class="settings-system-list-row"
                 >
-                  <div class="flex-1">
-                    <div class="text-sm font-medium text-gray-900 truncate">
-                      {{ v.label || "未命名版本" }}
-                    </div>
-                    <div class="text-[10px] text-gray-500">
+                  <div>
+                    <strong>{{ v.label || "未命名版本" }}</strong>
+                    <span>
                       {{ new Date(v.createdAt).toLocaleString() }} ·
                       {{ Math.round(v.size / 1024) }}KB
-                    </div>
+                    </span>
                   </div>
-                  <div class="flex gap-2">
-                    <button
-                      @click="restoreVersion(v.id)"
-                      class="text-xs px-2 py-1 rounded bg-gray-200 text-gray-700 hover:bg-gray-300 transition-colors"
-                    >
+                  <div class="settings-system-row-actions">
+                    <button type="button" @click="restoreVersion(v.id)">
                       恢复
                     </button>
-                    <button
-                      @click="deleteVersion(v.id)"
-                      class="text-xs px-2 py-1 rounded bg-gray-200 text-gray-700 hover:bg-gray-300 transition-colors"
-                    >
+                    <button type="button" @click="deleteVersion(v.id)">
                       删除
                     </button>
                   </div>
-                </div>
+                </article>
               </div>
-            </div>
-            <div class="bg-gray-50 p-5 rounded-xl border border-gray-200 mb-6">
-              <h5 class="text-sm font-medium text-gray-700 mb-1">
-                🔑 修改密码
-              </h5>
-              <p class="text-xs text-gray-500 mb-2">点击修改后请输入原来密码</p>
-              <div class="flex gap-2">
-                <div class="relative flex-1">
+            </AppSectionCard>
+
+            <AppSectionCard
+              class="settings-system-card"
+              title="修改密码"
+              description="点击修改后需要输入原密码完成确认。"
+            >
+              <div class="settings-system-password-row">
+                <div class="settings-system-password-input">
                   <input
                     v-model="newPasswordInput"
                     :type="showPassword ? 'text' : 'password'"
                     placeholder="新密码..."
-                    class="w-full px-3 py-2 rounded-lg border border-gray-300 pr-10 focus:border-gray-900 outline-none"
+                    class="sd-input"
                   />
                   <button
-                    @click="showPassword = !showPassword"
-                    class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none"
                     type="button"
                     tabindex="-1"
                     :title="showPassword ? '隐藏密码' : '显示密码'"
+                    @click="showPassword = !showPassword"
                   >
                     <svg
                       v-if="showPassword"
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
                       viewBox="0 0 24 24"
-                      stroke-width="1.5"
-                      stroke="currentColor"
-                      class="w-5 h-5"
+                      fill="none"
+                      aria-hidden="true"
                     >
                       <path
                         stroke-linecap="round"
                         stroke-linejoin="round"
                         d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88"
+                        stroke="currentColor"
+                        stroke-width="1.5"
                       />
                     </svg>
                     <svg
                       v-else
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
                       viewBox="0 0 24 24"
-                      stroke-width="1.5"
-                      stroke="currentColor"
-                      class="w-5 h-5"
+                      fill="none"
+                      aria-hidden="true"
                     >
                       <path
                         stroke-linecap="round"
                         stroke-linejoin="round"
                         d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"
+                        stroke="currentColor"
+                        stroke-width="1.5"
                       />
                       <path
                         stroke-linecap="round"
                         stroke-linejoin="round"
                         d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                        stroke="currentColor"
+                        stroke-width="1.5"
                       />
                     </svg>
                   </button>
                 </div>
-                <button
-                  @click="handleChangePassword"
-                  class="bg-gray-900 text-white px-4 py-2 rounded-lg text-sm hover:bg-gray-800 transition-colors"
-                >
+                <AppButton variant="primary" @click="handleChangePassword">
                   修改
-                </button>
+                </AppButton>
               </div>
-            </div>
-            <!-- Admin User Management UI -->
-            <div
+            </AppSectionCard>
+
+            <AppSectionCard
               v-if="canManageUsers"
-              class="bg-gray-50 p-5 rounded-xl border border-gray-200 mb-6"
+              class="settings-system-card settings-system-card-wide"
+              title="用户管理"
+              description="添加用户、删除普通用户并导入授权密钥。"
+              body-class="settings-system-stack"
             >
-              <h5 class="text-sm font-bold text-gray-900 mb-3">
-                👥 用户管理 (Admin)
-              </h5>
-
-              <!-- Add User -->
-              <div class="flex flex-col gap-2 mb-4">
-                <div class="flex gap-2">
-                  <input
-                    v-model="newUser"
-                    placeholder="用户名"
-                    class="flex-1 px-3 py-2 rounded-lg border border-gray-300 text-sm focus:border-gray-900 outline-none"
-                  />
-                  <input
-                    v-model="newPwd"
-                    type="password"
-                    placeholder="密码"
-                    class="flex-1 px-3 py-2 rounded-lg border border-gray-300 text-sm focus:border-gray-900 outline-none"
-                  />
-                </div>
-                <button
-                  @click="handleAddUser"
-                  class="bg-gray-900 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-gray-800 transition-colors"
-                >
+              <div class="settings-system-inline-form">
+                <input
+                  v-model="newUser"
+                  placeholder="用户名"
+                  class="sd-input"
+                />
+                <input
+                  v-model="newPwd"
+                  type="password"
+                  placeholder="密码"
+                  class="sd-input"
+                />
+                <AppButton variant="primary" @click="handleAddUser">
                   添加用户
-                </button>
+                </AppButton>
               </div>
 
-              <!-- User List -->
-              <div class="space-y-2 max-h-40 overflow-y-auto">
-                <div
+              <div class="settings-system-list">
+                <article
                   v-for="u in userList"
                   :key="u"
-                  class="flex justify-between items-center bg-white px-3 py-2 rounded-lg border border-gray-200"
+                  class="settings-system-list-row"
                 >
-                  <span class="text-sm text-gray-700 font-medium">
-                    {{ u }}
-                    <span v-if="u === 'admin'" class="text-xs text-gray-500"
-                      >(管理员)</span
-                    >
-                  </span>
+                  <div>
+                    <strong>
+                      {{ u }}
+                      <span v-if="u === 'admin'">(管理员)</span>
+                    </strong>
+                  </div>
                   <button
                     v-if="u !== 'admin'"
+                    type="button"
+                    class="settings-system-danger-link"
                     @click="handleDeleteUser(u)"
-                    class="text-gray-400 hover:text-gray-600 text-xs font-bold px-2"
                   >
                     删除
                   </button>
-                </div>
+                </article>
               </div>
 
-              <!-- License Management -->
-              <div class="mt-4 pt-4 border-t border-gray-200">
-                <h6 class="text-xs font-bold text-gray-900 mb-2">
-                  🔑 授权密钥 (License Key)
-                </h6>
-                <div class="flex gap-2">
-                  <input
-                    v-model="licenseKey"
-                    placeholder="输入密钥解除限制..."
-                    class="flex-1 px-3 py-2 rounded-lg border border-gray-300 text-sm focus:border-gray-900 outline-none"
-                  />
-                  <button
-                    @click="handleUploadLicense"
-                    class="bg-gray-900 text-white px-3 py-2 rounded-lg text-sm font-bold hover:bg-gray-800 whitespace-nowrap transition-colors"
-                  >
-                    导入
-                  </button>
-                </div>
-                <p class="text-[10px] text-gray-500 mt-1">
-                  导入有效密钥可解除5个用户的注册限制。
-                </p>
-              </div>
-            </div>
+              <div class="settings-system-divider"></div>
 
-            <button
+              <AppFieldRow
+                label="授权密钥"
+                hint="导入有效密钥可解除 5 个用户的注册限制。"
+              >
+                <template #control>
+                  <div class="settings-system-inline-form">
+                    <input
+                      v-model="licenseKey"
+                      placeholder="输入密钥解除限制..."
+                      class="sd-input"
+                    />
+                    <AppButton variant="primary" @click="handleUploadLicense">
+                      导入
+                    </AppButton>
+                  </div>
+                </template>
+              </AppFieldRow>
+            </AppSectionCard>
+
+            <AppButton
+              class="settings-system-card-wide"
+              variant="danger-soft"
+              block
               @click="store.logout"
-              class="w-full text-gray-700 py-3 rounded-xl font-bold border border-gray-200 transition-colors glass-chip selectable-outline"
             >
               退出登录
-            </button>
+            </AppButton>
           </div>
         </div>
-        <div
-          v-if="activeTab === 'about'"
-          class="min-h-full flex flex-col p-8 -mt-4"
-        >
-          <section class="bg-white/70 border border-gray-100 rounded-xl p-5">
-            <div
-              class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between"
-            >
-              <div>
-                <p class="text-xs font-semibold text-gray-500">项目介绍</p>
-                <h5 class="mt-1 text-2xl font-bold text-gray-900">StartDeck</h5>
-              </div>
-              <span class="text-sm text-gray-400 font-mono"
-                >v{{ store.currentVersion }}</span
-              >
-            </div>
-            <p class="mt-4 text-sm text-gray-600 leading-relaxed">
-              StartDeck 是面向
-              NAS、自托管和个人工作台场景的浏览器起始页。它把常用网站、
-              内网服务、文件传输、媒体播放、RSS、天气、系统状态和 Docker
-              管理集中到一个
-              可配置的仪表盘中，让家庭服务器、开发环境和日常信息入口可以在同一页面完成组织。
-            </p>
-          </section>
-
-          <section class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div class="bg-white/60 border border-gray-100 rounded-xl p-4">
-              <h6 class="text-sm font-bold text-gray-900">核心定位</h6>
-              <p class="mt-2 text-xs text-gray-600 leading-relaxed">
-                以“个人导航 + NAS
-                工具面板”为中心，提供分组书签、可拖拽布局、组件化信息区和
-                多端响应式访问体验，适合放在浏览器首页、内网入口或家庭服务控制台。
+        <div v-if="activeTab === 'about'" class="settings-system-page">
+          <header class="settings-system-hero settings-about-hero">
+            <div>
+              <p class="settings-system-kicker">About StartDeck</p>
+              <h4 class="settings-system-title">StartDeck</h4>
+              <p class="settings-system-summary">
+                面向 NAS、自托管和个人工作台场景的浏览器起始页。
               </p>
             </div>
-            <div class="bg-white/60 border border-gray-100 rounded-xl p-4">
-              <h6 class="text-sm font-bold text-gray-900">数据与运行</h6>
-              <p class="mt-2 text-xs text-gray-600 leading-relaxed">
-                配置、上传文件、壁纸、音乐和图标缓存都落在本地运行目录，便于迁移、备份和
-                Docker 卷挂载。后端负责 API、代理、文件服务和站点元数据解析。
-              </p>
+            <div class="settings-system-metric">
+              <span>当前版本</span>
+              <strong>v{{ store.currentVersion }}</strong>
             </div>
-          </section>
+          </header>
 
-          <section
-            class="mt-4 bg-white/60 border border-gray-100 rounded-xl p-4"
-          >
-            <h6 class="text-sm font-bold text-gray-900">主要能力</h6>
-            <div
-              class="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-3 text-xs text-gray-600"
+          <section class="settings-about-grid">
+            <AppSectionCard
+              class="settings-system-card"
+              title="核心定位"
+              description="个人导航和 NAS 工具面板集中在一个可配置桌面中。"
             >
-              <div>
-                <span class="font-semibold text-gray-800">导航组织：</span>
-                分组、卡片、内外网地址、图标库、搜索入口和自定义卡片样式。
-              </div>
-              <div>
-                <span class="font-semibold text-gray-800">桌面组件：</span>
-                时钟、天气、日历、倒计时、备忘录、待办、RSS、热榜和 iframe。
-              </div>
-              <div>
-                <span class="font-semibold text-gray-800">文件媒体：</span>
-                跨设备文件传输、桌面壁纸和移动端壁纸管理。
-              </div>
-              <div>
-                <span class="font-semibold text-gray-800">服务管理：</span>
-                Docker 容器管理、系统状态、代理转发和混合网络环境识别。
-              </div>
-              <div>
-                <span class="font-semibold text-gray-800">个性化：</span>
-                自定义 CSS、JavaScript、HTML 组件、布局尺寸和组件可见性。
-              </div>
-              <div>
-                <span class="font-semibold text-gray-800">站点元数据：</span>
-                独立 Go
-                图标服务负责抓取网站标题、描述和图标，并与前端卡片编辑联动。
-              </div>
-            </div>
+              <p class="settings-system-note">
+                分组导航、可拖拽布局、组件化信息区和多端响应式访问体验适合放在浏览器首页、内网入口或家庭服务控制台。
+              </p>
+            </AppSectionCard>
+
+            <AppSectionCard
+              class="settings-system-card"
+              title="数据与运行"
+              description="本地数据、缓存和运行服务分层管理。"
+            >
+              <p class="settings-system-note">
+                配置、壁纸、音乐和图标缓存都落在本地运行目录，便于迁移、备份和
+                Docker 卷挂载。
+              </p>
+            </AppSectionCard>
           </section>
 
-          <section
-            class="mt-4 bg-white/60 border border-gray-100 rounded-xl p-4"
+          <AppSectionCard
+            class="settings-system-card"
+            title="主要能力"
+            description="导航、组件、文件媒体、服务管理和站点元数据联动。"
           >
-            <h6 class="text-sm font-bold text-gray-900">技术组成</h6>
-            <div class="mt-3 flex flex-wrap gap-2">
-              <span
-                class="px-2.5 py-1 rounded-md bg-gray-900 text-white text-xs"
-                >Vue 3</span
-              >
-              <span
-                class="px-2.5 py-1 rounded-md bg-gray-100 text-gray-700 text-xs"
-                >TypeScript</span
-              >
-              <span
-                class="px-2.5 py-1 rounded-md bg-gray-100 text-gray-700 text-xs"
-                >Pinia</span
-              >
-              <span
-                class="px-2.5 py-1 rounded-md bg-gray-100 text-gray-700 text-xs"
-                >Vite</span
-              >
-              <span
-                class="px-2.5 py-1 rounded-md bg-gray-100 text-gray-700 text-xs"
-                >Go / Gin</span
-              >
-              <span
-                class="px-2.5 py-1 rounded-md bg-gray-100 text-gray-700 text-xs"
-                >Icon Service</span
-              >
-              <span
-                class="px-2.5 py-1 rounded-md bg-gray-100 text-gray-700 text-xs"
-                >Docker</span
-              >
-              <span
-                class="px-2.5 py-1 rounded-md bg-gray-100 text-gray-700 text-xs"
-                >Debian</span
-              >
+            <div class="settings-about-feature-grid">
+              <div>
+                <strong>导航组织</strong>
+                <span>分组、卡片、内外网地址、图标库和自定义卡片样式。</span>
+              </div>
+              <div>
+                <strong>桌面组件</strong>
+                <span>时钟、天气、日历、备忘录、待办和自定义组件。</span>
+              </div>
+              <div>
+                <strong>文件媒体</strong>
+                <span>桌面壁纸、移动端壁纸和本地音乐管理。</span>
+              </div>
+              <div>
+                <strong>服务管理</strong>
+                <span>Docker、系统状态、代理转发和混合网络环境识别。</span>
+              </div>
+              <div>
+                <strong>个性化</strong>
+                <span
+                  >自定义 CSS、JavaScript、HTML 组件、布局尺寸和可见性。</span
+                >
+              </div>
+              <div>
+                <strong>站点元数据</strong>
+                <span
+                  >图标服务抓取网站标题、描述和图标，并与卡片编辑联动。</span
+                >
+              </div>
             </div>
-            <p class="mt-3 text-xs text-gray-500 leading-relaxed">
-              前端负责仪表盘交互和组件配置，Go
-              后端负责本地数据持久化、系统能力和文件接口，
-              图标元数据服务独立运行，便于在 Docker、Debian
-              或本地开发环境中组合部署。
+          </AppSectionCard>
+
+          <AppSectionCard
+            class="settings-system-card"
+            title="技术组成"
+            description="前端、后端、图标服务和部署路径保持解耦。"
+          >
+            <div class="settings-about-chip-row">
+              <span>Vue 3</span>
+              <span>TypeScript</span>
+              <span>Pinia</span>
+              <span>Vite</span>
+              <span>Rust</span>
+              <span>SQLite</span>
+              <span>Icon Service</span>
+              <span>Docker</span>
+              <span>Debian</span>
+            </div>
+            <p class="settings-system-note">
+              前端负责仪表盘交互和组件配置；后端负责本地数据持久化、系统能力和文件接口；图标元数据服务独立运行，便于在
+              Docker、Debian 或本地开发环境中组合部署。
             </p>
-          </section>
+          </AppSectionCard>
         </div>
       </div>
     </div>
@@ -3801,7 +2926,7 @@ document.querySelector('.card-item').addEventListener('click', () => {
       <div class="settings-shell-inspector p-3 space-y-3">
         <AppInspectorPanel
           title="实时预览"
-          description="背景、标题、组件节奏与主题状态。"
+          description="背景、标题与主题状态。"
         >
           <div class="settings-preview-stage">
             <div
@@ -3830,31 +2955,55 @@ document.querySelector('.card-item').addEventListener('click', () => {
                 }"
               ></div>
               <div class="settings-preview-surface-copy">
-                <span class="settings-preview-pill">{{
-                  settingsThemeLabel
-                }}</span>
-                <strong class="settings-preview-title">{{
-                  store.appConfig.customTitle || "我的导航"
-                }}</strong>
-                <div class="settings-preview-card-row">
-                  <span
-                    v-for="item in inspectorPreviewItems"
-                    :key="item"
-                    class="settings-preview-card"
+                <div class="settings-preview-surface-header">
+                  <span class="settings-preview-pill">{{
+                    settingsThemeLabel
+                  }}</span>
+                </div>
+                <div
+                  v-if="
+                    store.appConfig.showHomeTitle !== false ||
+                    store.appConfig.showHomeTime !== false ||
+                    store.appConfig.showHomeSearch !== false
+                  "
+                  class="settings-preview-source-top"
+                  :class="{
+                    'has-title': store.appConfig.showHomeTitle !== false,
+                    'has-time': store.appConfig.showHomeTime !== false,
+                    'has-search': store.appConfig.showHomeSearch !== false,
+                  }"
+                >
+                  <strong
+                    v-if="store.appConfig.showHomeTitle !== false"
+                    class="settings-preview-title"
+                    >{{ store.appConfig.customTitle || "我的导航" }}</strong
                   >
-                    {{ item }}
-                  </span>
-                  <span
-                    v-if="inspectorPreviewItems.length === 0"
-                    class="settings-preview-card"
-                    >预览</span
+                  <div
+                    v-if="store.appConfig.showHomeTime !== false"
+                    class="settings-preview-clock"
                   >
+                    <strong>
+                      {{ settingsPreviewHourText }}:{{
+                        settingsPreviewMinuteText
+                      }}
+                    </strong>
+                    <span>{{ settingsPreviewDateText }}</span>
+                  </div>
+                  <div
+                    v-if="store.appConfig.showHomeSearch !== false"
+                    class="settings-preview-search"
+                  >
+                    <span class="settings-preview-search-icon"></span>
+                    <span class="settings-preview-search-placeholder"
+                      >输入搜索内容</span
+                    >
+                    <em>{{ settingsPreviewSearchEngineLabel }}</em>
+                  </div>
                 </div>
               </div>
             </div>
             <div class="settings-meta-stack mt-3">
               <span class="settings-meta-chip">{{ wallpaperSourceLabel }}</span>
-              <span class="settings-meta-chip">{{ settingsModeLabel }}</span>
             </div>
             <div class="mt-3 space-y-3">
               <div class="settings-inspector-row">
@@ -3884,15 +3033,9 @@ document.querySelector('.card-item').addEventListener('click', () => {
 
         <AppInspectorPanel
           title="规则摘要"
-          description="关闭契约、移动端策略与版本状态。"
+          description="关闭契约、版本与同步状态。"
         >
           <div class="space-y-3 text-sm text-[var(--sd-color-text-secondary)]">
-            <div class="settings-inspector-row">
-              <span class="settings-inspector-label">当前模式</span>
-              <span class="settings-inspector-value">{{
-                settingsModeLabel
-              }}</span>
-            </div>
             <div class="settings-inspector-row">
               <span class="settings-inspector-label">当前主题</span>
               <span class="settings-inspector-value">{{
@@ -3923,7 +3066,6 @@ document.querySelector('.card-item').addEventListener('click', () => {
             <ul class="settings-inspector-list">
               <li>阻断性流程禁止点遮罩关闭。</li>
               <li>普通弹窗仅在 clean 状态允许关闭。</li>
-              <li>移动端优先全屏设置流，不缩成桌面三栏。</li>
             </ul>
           </div>
         </AppInspectorPanel>
@@ -3946,7 +3088,7 @@ document.querySelector('.card-item').addEventListener('click', () => {
     :show-close="false"
     overlay-class="sd-overlay-strong"
     panel-class="w-full max-w-sm"
-    surface-class="max-w-sm"
+    surface-class="max-w-sm sd-compact-window"
   >
     <p class="text-sm leading-relaxed text-[var(--sd-color-text-secondary)]">
       请先导出配置！<br />
@@ -3988,18 +3130,52 @@ document.querySelector('.card-item').addEventListener('click', () => {
     @confirm="confirmSettingsClose"
     @cancel="dismissSettingsCloseConfirm"
   />
-
-  <MarketplaceModal
-    :show="showMarketplace"
-    :z-index="settingsChildModalZIndex"
-    @update:show="showMarketplace = $event"
-  />
 </template>
 
 <style scoped>
+:global(.settings-shell-overlay) {
+  background: var(--sd-shell-overlay);
+  -webkit-backdrop-filter: blur(10px) saturate(135%) brightness(0.7);
+  backdrop-filter: blur(10px) saturate(135%) brightness(0.7);
+}
+
+:global(.settings-shell-itab) {
+  overflow: hidden;
+  border: 1px solid var(--sd-shell-border);
+  border-radius: 20px;
+  background: var(--sd-shell-surface);
+  box-shadow: var(--sd-shadow-window);
+  -webkit-backdrop-filter: saturate(135%) blur(28px) brightness(0.62);
+  backdrop-filter: saturate(135%) blur(28px) brightness(0.62);
+}
+
+:global(.settings-shell-itab > .sd-window-bar) {
+  border-bottom-color: var(--sd-shell-border);
+  background: var(--sd-shell-surface-muted);
+}
+
+:global(.settings-shell-itab > .sd-window-bar .sd-window-traffic) {
+  display: none;
+}
+
+:global(.settings-shell-itab .sd-window-title) {
+  color: var(--sd-shell-text-primary);
+}
+
+:global(.settings-shell-itab .sd-window-subtitle) {
+  color: rgba(223, 221, 221, 0.58);
+}
+
 .settings-shell-window {
   color: var(--sd-color-text-primary);
 }
+
+.settings-shell-header-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+}
+
 .settings-shell-window.is-mobile {
   min-height: 100dvh;
   border-radius: 0;
@@ -4011,28 +3187,46 @@ document.querySelector('.card-item').addEventListener('click', () => {
   padding: 0.875rem;
 }
 .settings-shell-sidebar-copy {
+  display: flex;
+  height: 5rem;
+  flex-direction: column;
+  justify-content: flex-start;
   margin-bottom: 0.875rem;
   padding: 0 0.5rem;
+  overflow: hidden;
 }
 .settings-shell-sidebar-eyebrow {
+  min-height: 0.875rem;
   color: var(--sd-color-text-tertiary);
   font-size: 0.6875rem;
   font-weight: 700;
+  line-height: 0.875rem;
   letter-spacing: 0;
   text-transform: uppercase;
+  white-space: nowrap;
 }
 .settings-shell-sidebar-title {
   margin-top: 0.375rem;
+  min-height: 1.3rem;
   color: var(--sd-color-text-primary);
   font-size: 1rem;
   font-weight: 700;
   line-height: 1.3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .settings-shell-sidebar-summary {
   margin-top: 0.25rem;
   color: var(--sd-color-text-secondary);
   font-size: 0.8125rem;
   line-height: 1.35;
+  display: -webkit-box;
+  min-height: 2.1875rem;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
 }
 .settings-shell-nav {
   display: grid;
@@ -4277,8 +3471,14 @@ document.querySelector('.card-item').addEventListener('click', () => {
   display: flex;
   min-height: 11rem;
   flex-direction: column;
-  justify-content: space-between;
+  justify-content: flex-start;
+  gap: 0.75rem;
   padding: 0.875rem;
+}
+.settings-preview-surface-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-start;
 }
 .settings-preview-pill {
   display: inline-flex;
@@ -4294,31 +3494,109 @@ document.querySelector('.card-item').addEventListener('click', () => {
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
 }
-.settings-preview-title {
-  color: #ffffff;
-  font-size: 1.125rem;
-  font-weight: 700;
-  line-height: 1.35;
-  text-shadow: 0 2px 8px rgba(15, 23, 42, 0.32);
-}
-.settings-preview-card-row {
-  display: flex;
+.settings-preview-source-top {
+  display: grid;
   gap: 0.5rem;
+  align-self: stretch;
+  justify-items: center;
 }
-.settings-preview-card {
-  display: inline-flex;
-  min-width: 3rem;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  border-radius: 0.875rem;
-  background: rgba(255, 255, 255, 0.18);
-  padding: 0.5rem 0.75rem;
+.settings-preview-source-top.has-time.has-search {
+  gap: 0.375rem;
+}
+.settings-preview-clock {
+  display: grid;
+  justify-items: center;
+  gap: 0.0625rem;
   color: #ffffff;
-  font-size: 0.75rem;
+  text-align: center;
+  text-shadow: 0 2px 10px rgba(15, 23, 42, 0.45);
+}
+.settings-preview-clock strong {
+  font-size: clamp(1.875rem, 8vw, 2.625rem);
+  font-weight: 800;
+  line-height: 0.95;
+}
+.settings-preview-clock span {
+  max-width: 100%;
+  overflow: hidden;
+  color: rgba(255, 255, 255, 0.86);
+  font-size: 0.625rem;
   font-weight: 700;
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  line-height: 1.1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.settings-preview-search {
+  display: flex;
+  width: min(100%, 13.5rem);
+  min-height: 2rem;
+  align-items: center;
+  gap: 0.4375rem;
+  border: 1px solid rgba(255, 255, 255, 0.34);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.82);
+  padding: 0.25rem 0.375rem 0.25rem 0.625rem;
+  color: rgba(15, 23, 42, 0.52);
+  box-shadow: 0 0.75rem 1.875rem rgba(15, 23, 42, 0.18);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+.settings-preview-search-icon {
+  position: relative;
+  flex: 0 0 auto;
+  width: 0.6875rem;
+  height: 0.6875rem;
+  border: 2px solid rgba(15, 23, 42, 0.32);
+  border-radius: 999px;
+}
+.settings-preview-search-icon::after {
+  position: absolute;
+  right: -0.3125rem;
+  bottom: -0.25rem;
+  width: 0.375rem;
+  height: 0.125rem;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.32);
+  content: "";
+  transform: rotate(45deg);
+  transform-origin: left center;
+}
+.settings-preview-search-placeholder {
+  min-width: 0;
+  flex: 1 1 auto;
+  overflow: hidden;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  line-height: 1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.settings-preview-search em {
+  flex: 0 0 auto;
+  max-width: 4.5rem;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.08);
+  padding: 0.25rem 0.4375rem;
+  color: rgba(15, 23, 42, 0.72);
+  font-size: 0.625rem;
+  font-style: normal;
+  font-weight: 800;
+  line-height: 1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.settings-preview-title {
+  max-width: min(100%, 14rem);
+  overflow: hidden;
+  color: #ffffff;
+  font-size: 1rem;
+  font-weight: 800;
+  line-height: 1.2;
+  text-align: center;
+  text-shadow: 0 2px 8px rgba(15, 23, 42, 0.32);
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .settings-inspector-row {
   display: flex;
@@ -4412,6 +3690,632 @@ document.querySelector('.card-item').addEventListener('click', () => {
   box-shadow: var(--sd-focus-ring);
 }
 
+.settings-shell-sidebar {
+  background: rgba(255, 255, 255, 0.035);
+  border-right-color: rgba(255, 255, 255, 0.1);
+}
+
+.settings-shell-sidebar-eyebrow,
+.settings-shell-sidebar-summary {
+  color: rgba(223, 221, 221, 0.56);
+}
+
+.settings-shell-sidebar-title {
+  color: rgb(223, 221, 221);
+}
+
+.settings-shell-content,
+.settings-shell-scroll,
+.settings-shell-inspector {
+  background: transparent;
+}
+
+.settings-shell-scroll {
+  padding: 0.875rem;
+}
+
+.settings-inline-switch {
+  border-color: rgba(255, 255, 255, 0.11);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.settings-inline-switch-title {
+  color: rgb(223, 221, 221);
+}
+
+.settings-inline-switch-summary,
+.settings-layout-group-summary {
+  color: rgba(223, 221, 221, 0.62);
+}
+
+.settings-layout-group-title {
+  color: rgb(223, 221, 221);
+}
+
+.settings-system-page {
+  display: grid;
+  gap: 0.875rem;
+  padding: 0.25rem;
+}
+
+.settings-system-hero {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  min-height: 7rem;
+  border: 1px solid rgba(255, 255, 255, 0.11);
+  border-radius: 16px;
+  background:
+    radial-gradient(
+      circle at top right,
+      rgba(24, 144, 255, 0.18),
+      transparent 36%
+    ),
+    rgba(255, 255, 255, 0.065);
+  padding: 1rem;
+}
+
+.settings-system-kicker {
+  margin: 0;
+  color: rgba(223, 221, 221, 0.5);
+  font-size: 0.6875rem;
+  font-weight: 800;
+  line-height: 1rem;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.settings-system-title {
+  margin: 0.1875rem 0;
+  color: rgb(223, 221, 221);
+  font-size: 1.45rem;
+  font-weight: 800;
+  line-height: 1.15;
+}
+
+.settings-system-summary,
+.settings-system-note {
+  color: rgba(223, 221, 221, 0.68);
+  font-size: 0.8125rem;
+  line-height: 1.45;
+}
+
+.settings-system-metric {
+  display: grid;
+  min-width: 8.5rem;
+  justify-items: end;
+  gap: 0.125rem;
+  border: 1px solid rgba(255, 255, 255, 0.11);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.08);
+  padding: 0.75rem 0.875rem;
+}
+
+.settings-system-metric span,
+.settings-system-mode-row span {
+  color: rgba(223, 221, 221, 0.52);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.settings-system-metric strong,
+.settings-system-mode-row strong {
+  max-width: 12rem;
+  overflow: hidden;
+  color: rgb(223, 221, 221);
+  font-size: 1rem;
+  font-weight: 800;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.settings-system-grid,
+.settings-about-grid {
+  display: grid;
+  gap: 0.875rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.settings-system-card-wide {
+  grid-column: 1 / -1;
+}
+
+.settings-system-stack {
+  display: grid;
+  gap: 0.875rem;
+}
+
+.settings-system-page :deep(.sd-section-card) {
+  border-color: rgba(255, 255, 255, 0.11);
+  background: rgba(255, 255, 255, 0.075);
+  box-shadow: none;
+}
+
+.settings-system-page :deep(.sd-section-card-title),
+.settings-system-page :deep(.sd-field-label) {
+  color: rgb(223, 221, 221);
+}
+
+.settings-system-page :deep(.sd-section-card-description),
+.settings-system-page :deep(.sd-field-hint),
+.settings-system-page :deep(.sd-switch-hint) {
+  color: rgba(223, 221, 221, 0.62);
+}
+
+.settings-system-page :deep(.sd-input),
+.settings-system-page :deep(.sd-select),
+.settings-system-page :deep(.sd-textarea) {
+  border-color: rgba(255, 255, 255, 0.11);
+  background: rgba(255, 255, 255, 0.1);
+  color: rgb(223, 221, 221);
+}
+
+.settings-system-page :deep(.sd-input::placeholder),
+.settings-system-page :deep(.sd-textarea::placeholder) {
+  color: rgba(223, 221, 221, 0.4);
+}
+
+.settings-system-login-card {
+  display: grid;
+  gap: 0.875rem;
+  width: min(26rem, 100%);
+  justify-self: center;
+  align-self: center;
+  border: 1px solid rgba(255, 255, 255, 0.11);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.075);
+  padding: 1.25rem;
+}
+
+.settings-system-login-card h4 {
+  margin: 0;
+  color: rgb(223, 221, 221);
+  font-size: 1.25rem;
+  font-weight: 800;
+}
+
+.settings-system-action-grid {
+  display: grid;
+  gap: 0.625rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.settings-system-mode-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.settings-system-mode-row > div {
+  display: grid;
+  min-width: 0;
+  gap: 0.1875rem;
+}
+
+.settings-system-mode-row small {
+  color: rgba(223, 221, 221, 0.54);
+  font-size: 0.75rem;
+  line-height: 1.35;
+}
+
+.settings-system-inline-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.625rem;
+}
+
+.settings-system-small-input {
+  width: 8rem;
+}
+
+.settings-system-unit {
+  color: rgba(223, 221, 221, 0.62);
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+.settings-system-inline-form:has(.settings-system-unit) {
+  grid-template-columns: minmax(6rem, 8rem) auto auto auto;
+}
+
+.settings-system-list {
+  display: grid;
+  gap: 0.5rem;
+  max-height: 12rem;
+  overflow-y: auto;
+  padding-top: 0.75rem;
+}
+
+.settings-system-list-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.065);
+  padding: 0.625rem 0.75rem;
+}
+
+.settings-system-list-row > div {
+  display: grid;
+  min-width: 0;
+  gap: 0.125rem;
+}
+
+.settings-system-list-row strong {
+  min-width: 0;
+  overflow: hidden;
+  color: rgb(223, 221, 221);
+  font-size: 0.875rem;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.settings-system-list-row strong span,
+.settings-system-list-row span,
+.settings-system-empty {
+  color: rgba(223, 221, 221, 0.56);
+  font-size: 0.75rem;
+  line-height: 1.25;
+}
+
+.settings-system-empty {
+  border: 1px dashed rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  padding: 1rem;
+  text-align: center;
+}
+
+.settings-system-row-actions,
+.settings-system-list-row > button {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.settings-system-row-actions button,
+.settings-system-list-row > button {
+  min-height: 1.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(223, 221, 221, 0.74);
+  font-size: 0.75rem;
+  font-weight: 800;
+  padding: 0 0.625rem;
+}
+
+.settings-system-row-actions button:hover,
+.settings-system-list-row > button:hover {
+  border-color: rgba(24, 144, 255, 0.4);
+  color: rgb(223, 221, 221);
+}
+
+.settings-system-danger-link {
+  color: rgb(255, 143, 151) !important;
+}
+
+.settings-system-password-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.625rem;
+}
+
+.settings-system-password-input {
+  position: relative;
+  min-width: 0;
+}
+
+.settings-system-password-input .sd-input {
+  padding-right: 2.5rem;
+}
+
+.settings-system-password-input button {
+  position: absolute;
+  top: 50%;
+  right: 0.5rem;
+  display: grid;
+  width: 1.75rem;
+  height: 1.75rem;
+  place-items: center;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: rgba(223, 221, 221, 0.62);
+  transform: translateY(-50%);
+}
+
+.settings-system-password-input button:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: rgb(223, 221, 221);
+}
+
+.settings-system-password-input svg {
+  width: 1.125rem;
+  height: 1.125rem;
+}
+
+.settings-system-divider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.settings-about-hero {
+  min-height: 8.25rem;
+}
+
+.settings-about-feature-grid {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.settings-about-feature-grid div {
+  display: grid;
+  gap: 0.25rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.055);
+  padding: 0.75rem;
+}
+
+.settings-about-feature-grid strong {
+  color: rgb(223, 221, 221);
+  font-size: 0.8125rem;
+  font-weight: 800;
+}
+
+.settings-about-feature-grid span {
+  color: rgba(223, 221, 221, 0.64);
+  font-size: 0.75rem;
+  line-height: 1.35;
+}
+
+.settings-about-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.875rem;
+}
+
+.settings-about-chip-row span {
+  display: inline-flex;
+  min-height: 1.75rem;
+  align-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.11);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(223, 221, 221, 0.78);
+  font-size: 0.75rem;
+  font-weight: 800;
+  padding: 0 0.625rem;
+}
+
+.settings-system-page :deep(.sd-status-banner) {
+  border-color: rgba(255, 255, 255, 0.11);
+  background: rgba(255, 255, 255, 0.075);
+}
+
+.settings-top-switch-grid {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.settings-search-engine-panel {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.settings-search-engine-summary {
+  display: grid;
+  grid-template-columns: minmax(10rem, 0.85fr) minmax(12rem, 1fr) auto;
+  align-items: center;
+  gap: 0.75rem;
+  border: 1px solid var(--sd-color-border-subtle);
+  border-radius: 14px;
+  background: color-mix(
+    in srgb,
+    var(--sd-color-surface-muted) 58%,
+    transparent
+  );
+  padding: 0.625rem;
+}
+
+.settings-search-engine-current {
+  display: grid;
+  min-width: 0;
+  gap: 0.125rem;
+}
+
+.settings-search-engine-current span,
+.settings-search-engine-default span,
+.settings-search-engine-table-head {
+  color: var(--sd-color-text-tertiary);
+  font-size: 0.6875rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.settings-search-engine-current strong {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--sd-color-text-primary);
+  font-size: 1rem;
+  font-weight: 800;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.settings-search-engine-current small {
+  color: var(--sd-color-text-secondary);
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 1.15;
+}
+
+.settings-search-engine-default {
+  display: grid;
+  min-width: 0;
+  gap: 0.375rem;
+}
+
+.settings-search-engine-global-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.settings-search-engine-global-actions .settings-inline-switch {
+  min-height: 2.5rem;
+  padding: 0.5rem 0.625rem;
+  border-radius: 12px;
+}
+
+.settings-search-engine-table {
+  display: grid;
+  overflow: hidden;
+  border: 1px solid var(--sd-color-border-subtle);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--sd-color-surface) 72%, transparent);
+}
+
+.settings-search-engine-table-head,
+.settings-search-engine-row {
+  display: grid;
+  grid-template-columns: minmax(8rem, 0.68fr) minmax(14rem, 1.4fr) auto;
+  align-items: center;
+  gap: 0.625rem;
+}
+
+.settings-search-engine-table-head {
+  padding: 0.625rem 0.75rem;
+  background: color-mix(
+    in srgb,
+    var(--sd-color-surface-muted) 66%,
+    transparent
+  );
+}
+
+.settings-search-engine-row {
+  padding: 0.625rem 0.75rem;
+  border-top: 1px solid var(--sd-color-border-subtle);
+}
+
+.settings-search-engine-name-cell {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  min-width: 0;
+  gap: 0.5rem;
+}
+
+.settings-search-engine-badges {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.25rem;
+}
+
+.settings-search-engine-badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 0.125rem 0.4375rem;
+  background: color-mix(
+    in srgb,
+    var(--sd-color-surface-floating) 74%,
+    transparent
+  );
+  color: var(--sd-color-text-tertiary);
+  font-size: 0.6875rem;
+  font-weight: 800;
+}
+
+.settings-search-engine-badge.is-default {
+  background: color-mix(
+    in srgb,
+    var(--sd-color-accent-primary) 14%,
+    transparent
+  );
+  color: var(--sd-color-accent-primary);
+}
+
+.settings-search-engine-url-input {
+  min-width: 0;
+}
+
+.settings-search-engine-actions {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.375rem;
+}
+
+.settings-search-icon-button,
+.settings-search-engine-actions button,
+.settings-search-add-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  border: 1px solid var(--sd-color-border-subtle);
+  border-radius: 10px;
+  background: var(--sd-color-surface);
+  color: var(--sd-color-text-secondary);
+  font-size: 0.8125rem;
+  font-weight: 800;
+  white-space: nowrap;
+  transition:
+    border-color 160ms ease,
+    background 160ms ease,
+    color 160ms ease;
+}
+
+.settings-search-icon-button,
+.settings-search-engine-actions button {
+  width: 2rem;
+  height: 2rem;
+}
+
+.settings-search-engine-add {
+  display: grid;
+  grid-template-columns: minmax(8rem, 0.68fr) minmax(14rem, 1.4fr) auto;
+  gap: 0.625rem;
+}
+
+.settings-search-add-button {
+  height: 2.5rem;
+  min-width: 6.75rem;
+  padding: 0 0.875rem;
+}
+
+.settings-search-icon-button:hover:not(:disabled),
+.settings-search-engine-actions button:hover:not(:disabled),
+.settings-search-add-button:hover:not(:disabled) {
+  border-color: var(--sd-color-border-accent);
+  background: var(--sd-color-surface-muted);
+  color: var(--sd-color-text-primary);
+}
+
+.settings-search-icon-button:disabled,
+.settings-search-engine-actions button:disabled,
+.settings-search-add-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.42;
+}
+
 @media (max-width: 767px) {
   .settings-shell-nav {
     display: flex;
@@ -4426,6 +4330,7 @@ document.querySelector('.card-item').addEventListener('click', () => {
   }
 
   .settings-shell-sidebar-copy {
+    height: 3.25rem;
     margin-bottom: 0.625rem;
     padding: 0;
   }
@@ -4441,9 +4346,69 @@ document.querySelector('.card-item').addEventListener('click', () => {
   .settings-shell-inspector {
     display: none;
   }
+
+  .settings-system-hero,
+  .settings-system-mode-row,
+  .settings-system-password-row {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .settings-system-grid,
+  .settings-about-grid,
+  .settings-about-feature-grid,
+  .settings-system-action-grid,
+  .settings-system-inline-form,
+  .settings-system-inline-form:has(.settings-system-unit) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .settings-system-metric {
+    width: 100%;
+    justify-items: start;
+  }
+
+  .settings-system-list-row {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .settings-system-row-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .settings-search-engine-summary,
+  .settings-search-engine-name-cell,
+  .settings-search-engine-row,
+  .settings-search-engine-add {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .settings-search-engine-table-head {
+    display: none;
+  }
+
+  .settings-search-engine-global-actions,
+  .settings-search-engine-badges,
+  .settings-search-engine-actions {
+    justify-content: flex-start;
+  }
+
+  .settings-search-add-button {
+    width: 100%;
+  }
 }
 
 @media (min-width: 768px) {
+  .settings-search-engine-field {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .settings-search-engine-field :deep(.sd-field-copy) {
+    max-width: 32rem;
+  }
+
   .settings-layout-pair-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }

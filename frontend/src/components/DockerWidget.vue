@@ -1,8 +1,13 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, computed, watch } from "vue";
+import { ref, onMounted, onUnmounted, computed, watch, type Ref } from "vue";
 import { useMainStore } from "@/stores/main";
 import type { WidgetConfig } from "@/types";
 import { useResumeRefresh } from "@/composables/useResumeRefresh";
+import AppButton from "@/components/base/AppButton.vue";
+import AppModalShell from "@/components/base/AppModalShell.vue";
+import AppSwitch from "@/components/base/AppSwitch.vue";
+import { useWidgetDisplaySize } from "@/composables/useWidgetDisplaySize";
+import { useSharedDockerWidgetRuntimeState } from "@/features/widget-runtime/dockerWidgetRuntimeState";
 
 type DockerApiState = "disabled" | "unavailable" | "ready";
 
@@ -34,7 +39,6 @@ type DockerContainer = {
   Ports: DockerPort[];
   hasUpdate?: boolean;
   stats?: DockerStats;
-  mockStartAt?: number;
 };
 
 interface DockerInfo {
@@ -65,142 +69,181 @@ type DockerInfoResponse = {
 };
 
 const store = useMainStore();
+const showManualPortPrompt = ref(false);
+const manualPortValue = ref("");
+const manualPortError = ref("");
+const manualPortContainerName = ref("");
+let manualPortResolver: ((value: string | null) => void) | null = null;
+
+const closeManualPortPrompt = (value: string | null) => {
+  showManualPortPrompt.value = false;
+  manualPortValue.value = "";
+  manualPortError.value = "";
+  manualPortContainerName.value = "";
+  manualPortResolver?.(value);
+  manualPortResolver = null;
+};
+
+const requestManualPort = (container: DockerContainer) =>
+  new Promise<string | null>((resolve) => {
+    manualPortResolver = resolve;
+    manualPortValue.value = "";
+    manualPortError.value = "";
+    manualPortContainerName.value = normalizeContainerName(
+      container.Names?.[0] || "Container",
+    );
+    showManualPortPrompt.value = true;
+  });
+
+const confirmManualPort = () => {
+  const trimmed = manualPortValue.value.trim();
+  const portNum = Number.parseInt(trimmed, 10);
+  if (!Number.isFinite(portNum) || portNum <= 0 || portNum > 65535) {
+    manualPortError.value = "请输入 1-65535 之间的端口号。";
+    return;
+  }
+  closeManualPortPrompt(String(portNum));
+};
 
 // Polling intervals (ms)
 const POLL_INTERVAL_MIN = 12000;
 const POLL_INTERVAL_MAX = 17000;
 const POLL_INTERVAL_ERROR = 36000;
 
-const props = defineProps<{ widget?: WidgetConfig; compact?: boolean }>();
+const props = defineProps<{
+  widget?: WidgetConfig;
+  compact?: boolean;
+  variant?: "card" | "opened";
+  sizeKey?: string;
+  refreshToken?: number;
+}>();
+defineOptions({ inheritAttrs: false });
+defineEmits<{
+  updateData: [data: unknown];
+  "update-data": [data: unknown];
+}>();
+const isOpenedVariant = computed(() => props.variant === "opened");
+const { displaySize, displaySizeClass } = useWidgetDisplaySize(
+  () => props.widget,
+);
+const dockerWidgetModel = computed(() => {
+  if (!props.widget) return undefined;
+  return (
+    store.widgets.find((widget) => widget.id === props.widget!.id) ||
+    props.widget
+  );
+});
 
-const MB = 1024 * 1024;
-const dockerInfo = ref<DockerInfo | null>(null);
+const dockerRuntimeState = useSharedDockerWidgetRuntimeState(props.widget?.id);
+const dockerInfo = dockerRuntimeState.dockerInfo as Ref<DockerInfo | null>;
 const unhealthyCount = computed(
   () =>
-    containers.value.filter((c) => c.Status && c.Status.toLowerCase().includes("unhealthy")).length,
+    containers.value.filter(
+      (c) => c.Status && c.Status.toLowerCase().includes("unhealthy"),
+    ).length,
 );
 
-const MOCK_CONTAINERS: DockerContainer[] = [
-  ...[
-    {
-      Id: "mock-1",
-      Names: ["/nginx-proxy"],
-      Image: "nginx:latest",
-      State: "running",
-      Status: "Up 2 hours",
-      Ports: [{ PublicPort: 80, PrivatePort: 80 }],
-      stats: {
-        cpuPercent: 0.5,
-        memUsage: 50 * 1024 * 1024,
-        memLimit: 1024 * 1024 * 1024,
-        memPercent: 4.8,
-      },
-    },
-    {
-      Id: "mock-2",
-      Names: ["/redis-cache"],
-      Image: "redis:alpine",
-      State: "running",
-      Status: "Up 5 days",
-      Ports: [{ PublicPort: 6379, PrivatePort: 6379 }],
-      stats: {
-        cpuPercent: 0.1,
-        memUsage: 20 * 1024 * 1024,
-        memLimit: 1024 * 1024 * 1024,
-        memPercent: 1.9,
-      },
-    },
-    {
-      Id: "mock-3",
-      Names: ["/postgres-db"],
-      Image: "postgres:15",
-      State: "running",
-      Status: "Up 12 hours",
-      Ports: [{ PublicPort: 5432, PrivatePort: 5432 }],
-      stats: {
-        cpuPercent: 1.2,
-        memUsage: 120 * 1024 * 1024,
-        memLimit: 2048 * 1024 * 1024,
-        memPercent: 5.8,
-      },
-    },
-    {
-      Id: "mock-4",
-      Names: ["/stopped-service"],
-      Image: "busybox:latest",
-      State: "exited",
-      Status: "Exited (0) 3 hours ago",
-      Ports: [],
-    },
-    {
-      Id: "mock-5",
-      Names: ["/internal-worker"],
-      Image: "python:3.9-slim",
-      State: "running",
-      Status: "Up 45 mins",
-      Ports: [], // No public ports
-      stats: {
-        cpuPercent: 45.5,
-        memUsage: 300 * 1024 * 1024,
-        memLimit: 1024 * 1024 * 1024,
-        memPercent: 29.3,
-      },
-    },
-    {
-      Id: "mock-6",
-      Names: ["/very-long-container-name-for-testing-ui-layout-truncation"],
-      Image: "node:18-alpine",
-      State: "running",
-      Status: "Up 1 day",
-      Ports: [
-        { PublicPort: 3000, PrivatePort: 3000 },
-        { PublicPort: 8080, PrivatePort: 8080 },
-      ],
-      stats: {
-        cpuPercent: 2.5,
-        memUsage: 150 * 1024 * 1024,
-        memLimit: 1024 * 1024 * 1024,
-        memPercent: 14.6,
-      },
-    },
-  ],
-  ...Array.from({ length: 44 }, (_, i) => ({
-    Id: `mock-extra-${i + 7}`,
-    Names: [`/extra-container-${i + 7}`],
-    Image: "alpine:latest",
-    State: Math.random() > 0.2 ? "running" : "exited",
-    Status: "Up 1 hour",
-    Ports: [{ PublicPort: 9000 + i, PrivatePort: 80 }],
-    stats: {
-      cpuPercent: +(Math.random() * 5).toFixed(1),
-      memUsage: Math.round((20 + Math.random() * 100) * 1024 * 1024),
-      memLimit: 1024 * 1024 * 1024,
-      memPercent: 5.0,
-    },
-  })),
-];
+const autoUpdateEnabled = computed(() =>
+  Boolean(dockerWidgetModel.value?.data?.autoUpdate),
+);
+const dockerWidgetEnabled = computed(
+  () => dockerWidgetModel.value?.enable !== false,
+);
+const dockerWidgetPublic = computed(
+  () => dockerWidgetModel.value?.isPublic !== false,
+);
+const dockerWidgetMobileVisible = computed(
+  () => dockerWidgetModel.value?.hideOnMobile !== true,
+);
+const dockerKeepImages = computed(() => {
+  const value = Number(dockerWidgetModel.value?.data?.autoUpdateKeepImages);
+  return Number.isFinite(value) && value > 0 ? value : 2;
+});
+const dockerMinFreeGb = computed(() => {
+  const value = Number(dockerWidgetModel.value?.data?.autoUpdateMinFreeGB);
+  return Number.isFinite(value) && value >= 0 ? value : 1;
+});
+const dockerLanHost = computed(() => {
+  const value = dockerWidgetModel.value?.data?.lanHost;
+  return typeof value === "string" ? value : "";
+});
+const isDockerFeatureEnabled = computed(() =>
+  Boolean(store.systemConfig.enableDocker),
+);
+const containers = dockerRuntimeState.containers as Ref<DockerContainer[]>;
+const error = dockerRuntimeState.error;
+const dockerState = dockerRuntimeState.dockerState as Ref<DockerApiState>;
+if (!isDockerFeatureEnabled.value && dockerState.value !== "disabled") {
+  dockerState.value = "disabled";
+}
 
-const useMock = computed(() => Boolean(props.widget?.data?.useMock));
-const autoUpdateEnabled = computed(() => Boolean(props.widget?.data?.autoUpdate));
-const isDockerFeatureEnabled = computed(() => Boolean(store.systemConfig.enableDocker));
-const containers = ref<DockerContainer[]>([]);
-const error = ref("");
-const dockerState = ref<DockerApiState>(isDockerFeatureEnabled.value ? "unavailable" : "disabled");
-let pollTimer: ReturnType<typeof setInterval> | null = null;
+const isCompactLayout = computed(
+  () => props.compact ?? displaySize.value.isCompact,
+);
+const dockerSizeKey = computed(() => displaySize.value.sizeKey);
+const isTinyDockerLayout = computed(() => dockerSizeKey.value === "1x1");
+const isShortDockerLayout = computed(() => dockerSizeKey.value === "1x2");
+const isVerticalDockerLayout = computed(() => dockerSizeKey.value === "2x1");
+const isTwoByTwoLayout = computed(() => displaySize.value.sizeKey === "2x2");
+const showDockerDetailPanel = computed(
+  () => displaySize.value.isBoard && containers.value.length > 0,
+);
+const showDockerContainerList = computed(
+  () => displaySize.value.isBoard && containers.value.length > 0,
+);
+const showDockerSummary = computed(() => true);
+const showDockerBoardHint = computed(
+  () =>
+    displaySize.value.isBoard &&
+    !containers.value.length &&
+    (Boolean(error.value) ||
+      dockerState.value === "disabled" ||
+      dockerState.value !== "ready"),
+);
+const showDockerCounters = computed(
+  () =>
+    isShortDockerLayout.value ||
+    isVerticalDockerLayout.value ||
+    isTwoByTwoLayout.value ||
+    displaySize.value.isBoard,
+);
+const runningContainers = computed(() =>
+  containers.value.filter((c) => c.State === "running"),
+);
+const stoppedContainers = computed(
+  () => containers.value.length - runningContainers.value.length,
+);
+const visibleContainers = computed(() => {
+  if (!showDockerContainerList.value) return [];
+  const limit = displaySize.value.isBoard
+    ? 1
+    : displaySize.value.isLarge
+      ? 5
+      : displaySize.value.isWide
+        ? 3
+        : 2;
+  return containers.value.slice(0, limit);
+});
+const openedContainers = computed(() => containers.value.slice(0, 30));
+const showContainerDetails = computed(() => false);
+const showContainerActions = computed(() => false);
 
 const formatDockerError = (msg: string) => {
   if (!msg) return "";
   if (dockerState.value === "disabled") {
-    return "Docker 服务已关闭，请在设置中开启“Docker 服务”总开关。";
+    return "Docker 服务已关闭，可在组件内启用后再检测连接。";
   }
   const lower = msg.toLowerCase();
   if (lower.includes("docker is disabled")) {
-    return "Docker 服务已关闭，请在设置中开启“Docker 服务”总开关。";
+    return "Docker 服务已关闭，可在组件内启用后再检测连接。";
   }
   if (lower.includes("docker not available")) {
     return "Docker 未启用或未配置连接地址。容器部署请挂载 /var/run/docker.sock 并设置 dockerHost=unix:///var/run/docker.sock";
   }
-  if (lower.includes("docker.sock") || lower.includes("unix:///var/run/docker.sock")) {
+  if (
+    lower.includes("docker.sock") ||
+    lower.includes("unix:///var/run/docker.sock")
+  ) {
     return "无法连接 Docker Socket，请确认宿主机 Docker 已启动，并在容器中挂载 /var/run/docker.sock";
   }
   if (
@@ -217,17 +260,35 @@ const formatDockerError = (msg: string) => {
 };
 
 const errorDisplay = computed(() => formatDockerError(error.value));
-
-const formatDuration = (ms: number) => {
-  const s = Math.floor(ms / 1000);
-  const m = Math.floor(s / 60);
-  const h = Math.floor(m / 60);
-  const d = Math.floor(h / 24);
-  if (d > 0) return `${d} days`;
-  if (h > 0) return `${h} hours`;
-  if (m > 0) return `${m} mins`;
-  return `${s}s`;
-};
+const compactErrorTitle = computed(() => {
+  const message = errorDisplay.value || error.value;
+  const lower = message.toLowerCase();
+  if (dockerState.value === "disabled") return "已关闭";
+  if (lower.includes("socket") || lower.includes("docker.sock")) {
+    return "未连接";
+  }
+  if (lower.includes("engine") || lower.includes("desktop")) {
+    return "未检测到引擎";
+  }
+  return "连接失败";
+});
+const compactErrorHint = computed(() => {
+  const message = (errorDisplay.value || error.value).toLowerCase();
+  if (dockerState.value === "disabled") return "服务未启用";
+  if (message.includes("socket") || message.includes("docker.sock")) {
+    return "Socket 无法访问";
+  }
+  if (message.includes("engine") || message.includes("desktop")) {
+    return "引擎未响应";
+  }
+  return "打开查看连接诊断";
+});
+const dockerBoardHint = computed(() => {
+  if (dockerState.value === "ready" && !containers.value.length) {
+    return "暂无容器";
+  }
+  return compactErrorHint.value;
+});
 
 const formatBytes = (bytes: number) => {
   if (!bytes || bytes <= 0) return "0B";
@@ -238,38 +299,7 @@ const formatBytes = (bytes: number) => {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + (sizes[i] ?? "B");
 };
 
-const performMockAction = (id: string, action: string) => {
-  const idx = containers.value.findIndex((c) => c.Id === id);
-  if (idx < 0) return;
-  const c = containers.value[idx]!;
-  if (action === "start") {
-    c.State = "running";
-    c.mockStartAt = Date.now();
-    const memLimit = 1024 * MB;
-    const memUsage = Math.round(20 * MB + Math.random() * 80 * MB);
-    const cpuPercent = +(Math.random() * 2).toFixed(1);
-    const memPercent = +((memUsage / memLimit) * 100).toFixed(1);
-    c.stats = { cpuPercent, memUsage, memLimit, memPercent };
-    c.Status = `Up ${formatDuration(0)}`;
-  } else if (action === "stop") {
-    c.State = "exited";
-    c.stats = undefined;
-    c.Status = "Exited";
-  } else if (action === "restart") {
-    c.State = "running";
-    c.mockStartAt = Date.now();
-    const memLimit = 1024 * MB;
-    const memUsage = Math.round(20 * MB + Math.random() * 80 * MB);
-    const cpuPercent = +(Math.random() * 2).toFixed(1);
-    const memPercent = +((memUsage / memLimit) * 100).toFixed(1);
-    c.stats = { cpuPercent, memUsage, memLimit, memPercent };
-    c.Status = `Up ${formatDuration(0)}`;
-  }
-  containers.value = [...containers.value];
-};
-
-const errorCount = ref(0);
-const lastMockUpdate = ref(0);
+const errorCount = dockerRuntimeState.errorCount;
 
 interface UpdateCheckStatus {
   lastCheck: number;
@@ -280,8 +310,176 @@ interface UpdateCheckStatus {
   updateCount: number;
   failures?: { name: string; error: string }[];
 }
-const updateStatus = ref<UpdateCheckStatus | null>(null);
-const isCheckingUpdate = ref(false);
+const updateStatus =
+  dockerRuntimeState.updateStatus as Ref<UpdateCheckStatus | null>;
+const isCheckingUpdate = dockerRuntimeState.isCheckingUpdate;
+const statusLabel = computed(() => {
+  if (dockerState.value === "ready") return "运行中";
+  if (dockerState.value === "disabled") return "已关闭";
+  return isLoading.value ? "连接中" : "待连接";
+});
+const statusCaption = computed(() => {
+  if (dockerState.value === "ready") {
+    return `${runningContainers.value.length} 个运行，${stoppedContainers.value} 个停止`;
+  }
+  if (dockerState.value === "disabled") return "服务未启用";
+  return errorDisplay.value ? "等待连接" : "等待 Docker Engine 响应";
+});
+const updateLabel = computed(() => {
+  if (updateStatus.value?.isChecking) {
+    return `${updateStatus.value.checkedCount}/${updateStatus.value.totalCount || "?"}`;
+  }
+  if (updateStatus.value?.updateCount)
+    return `${updateStatus.value.updateCount} 可升级`;
+  if (updateStatus.value?.failures?.length) return "检测失败";
+  return "查更新";
+});
+const dockerEndpointLabel = computed(() => {
+  if (dockerLanHost.value) return dockerLanHost.value;
+  if (typeof window !== "undefined" && window.location.hostname) {
+    return window.location.hostname;
+  }
+  return "localhost";
+});
+const dockerEngineLabel = computed(() => {
+  if (!dockerInfo.value) return "Docker Engine";
+  return [
+    dockerInfo.value.Name,
+    dockerInfo.value.OSType,
+    dockerInfo.value.Architecture,
+  ]
+    .filter(Boolean)
+    .join(" · ");
+});
+const dockerCpuTotal = computed(() =>
+  runningContainers.value.reduce(
+    (total, container) => total + (container.stats?.cpuPercent || 0),
+    0,
+  ),
+);
+const dockerMemoryTotal = computed(() =>
+  runningContainers.value.reduce(
+    (total, container) => total + (container.stats?.memUsage || 0),
+    0,
+  ),
+);
+const canManageDockerSystem = computed(
+  () =>
+    store.isLogged &&
+    (store.systemConfig.authMode === "single" || store.username === "admin"),
+);
+const ensureDockerWidgetData = () => {
+  const widget = dockerWidgetModel.value;
+  if (!widget) return undefined;
+  if (!widget.data) widget.data = {};
+  return widget.data as Record<string, unknown>;
+};
+const setDockerWidgetEnabled = (enabled: boolean) => {
+  const widget = dockerWidgetModel.value;
+  if (!widget) return;
+  widget.enable = enabled;
+  store.markDirty();
+};
+const setDockerWidgetPublic = (enabled: boolean) => {
+  const widget = dockerWidgetModel.value;
+  if (!widget) return;
+  widget.isPublic = enabled;
+  store.markDirty();
+};
+const setDockerWidgetMobileVisible = (visible: boolean) => {
+  const widget = dockerWidgetModel.value;
+  if (!widget) return;
+  widget.hideOnMobile = !visible;
+  store.markDirty();
+};
+const setDockerAutoUpdate = (enabled: boolean) => {
+  const data = ensureDockerWidgetData();
+  if (!data) return;
+  data.autoUpdate = enabled;
+  store.markDirty();
+};
+const setDockerKeepImages = (rawValue: string) => {
+  const data = ensureDockerWidgetData();
+  if (!data) return;
+  const parsed = Number.parseInt(rawValue, 10);
+  data.autoUpdateKeepImages = Number.isFinite(parsed)
+    ? Math.max(0, Math.min(50, parsed))
+    : 2;
+  store.markDirty();
+};
+const setDockerMinFreeGb = (rawValue: string) => {
+  const data = ensureDockerWidgetData();
+  if (!data) return;
+  const parsed = Number.parseFloat(rawValue);
+  data.autoUpdateMinFreeGB = Number.isFinite(parsed)
+    ? Math.max(0, Math.min(1024, parsed))
+    : 1;
+  store.markDirty();
+};
+const setDockerLanHost = (value: string) => {
+  const data = ensureDockerWidgetData();
+  if (!data) return;
+  data.lanHost = value.trim();
+  store.markDirty();
+};
+const isUpdatingDockerSystem = ref(false);
+const setDockerSystemEnabled = async (enabled: boolean) => {
+  if (isUpdatingDockerSystem.value) return;
+  if (Boolean(store.systemConfig.enableDocker) === enabled) return;
+  if (!canManageDockerSystem.value) {
+    showToast("当前账号没有 Docker 服务配置权限");
+    return;
+  }
+  isUpdatingDockerSystem.value = true;
+  try {
+    const success = await store.updateSystemConfig({ enableDocker: enabled });
+    if (!success) {
+      showToast("Docker 服务切换失败");
+      return;
+    }
+    showToast(enabled ? "Docker 服务已启用" : "Docker 服务已关闭");
+    if (enabled) {
+      checkConnection(true);
+    } else {
+      applyDockerDisabledState();
+    }
+  } finally {
+    isUpdatingDockerSystem.value = false;
+  }
+};
+const isExportingDockerLogs = ref(false);
+const exportDockerLogs = async () => {
+  if (isExportingDockerLogs.value) return;
+  if (!isDockerFeatureEnabled.value) {
+    showToast("Docker 服务已关闭");
+    return;
+  }
+  try {
+    isExportingDockerLogs.value = true;
+    const headers = store.getHeaders();
+    const res = await fetch("/api/docker/export-logs", { headers });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.error || String(res.status));
+    }
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const ts = new Date().toISOString().replace(/[:.]/g, "-");
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `docker-logs-${ts}.json`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    showToast("日志已导出");
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : String(e);
+    showToast(`导出失败: ${msg}`);
+  } finally {
+    isExportingDockerLogs.value = false;
+  }
+};
 
 const applyDockerDisabledState = () => {
   dockerState.value = "disabled";
@@ -316,63 +514,11 @@ const triggerUpdateCheck = async () => {
   }
 };
 
-const isLoading = ref(false);
+const isLoading = dockerRuntimeState.isLoading;
 
 const fetchContainers = async () => {
   if (!isDockerFeatureEnabled.value) {
     applyDockerDisabledState();
-    return;
-  }
-  if (useMock.value) {
-    dockerState.value = "ready";
-    if (!containers.value.length) {
-      containers.value = JSON.parse(JSON.stringify(MOCK_CONTAINERS)) as DockerContainer[];
-      containers.value.forEach((c) => {
-        if (c.State === "running") c.mockStartAt = Date.now();
-      });
-      lastMockUpdate.value = Date.now();
-      // 模拟模式下也要触发 prefetch，确保逻辑一致性（虽然 mock 不发请求，但可能涉及状态处理）
-      prefetchInspectForContainers(containers.value);
-    } else {
-      const now = Date.now();
-      // Throttle mock updates to match real data frequency (5s)
-      if (now - lastMockUpdate.value < 4500) {
-        error.value = "";
-        return;
-      }
-      lastMockUpdate.value = now;
-
-      containers.value = containers.value.map((c) => {
-        if (c.State === "running") {
-          const memLimit = c.stats?.memLimit ?? 1024 * MB;
-          const baseMem = c.stats?.memUsage ?? 50 * MB;
-          const memUsage = Math.max(
-            20 * MB,
-            Math.min(memLimit * 0.8, Math.round(baseMem * (1 + (Math.random() - 0.5) * 0.1))),
-          );
-          const cpuBase = c.stats?.cpuPercent ?? 0.5;
-          const cpuPercent = Math.max(
-            0,
-            Math.min(100, +(cpuBase * (1 + (Math.random() - 0.5) * 0.2)).toFixed(1)),
-          );
-          const memPercent = +((memUsage / memLimit) * 100).toFixed(1);
-          const netIO = c.stats?.netIO || { rx: 0, tx: 0 };
-          const blockIO = c.stats?.blockIO || { read: 0, write: 0 };
-          // Randomly increase mock stats
-          if (Math.random() > 0.5) {
-            netIO.rx += Math.floor(Math.random() * 1024 * 10);
-            netIO.tx += Math.floor(Math.random() * 1024 * 10);
-            blockIO.read += Math.floor(Math.random() * 1024 * 10);
-            blockIO.write += Math.floor(Math.random() * 1024 * 10);
-          }
-
-          c.stats = { cpuPercent, memUsage, memLimit, memPercent, netIO, blockIO };
-          if (c.mockStartAt) c.Status = `Up ${formatDuration(Date.now() - c.mockStartAt)}`;
-        }
-        return c;
-      });
-    }
-    error.value = "";
     return;
   }
   try {
@@ -458,7 +604,6 @@ const fetchDockerInfo = async (silent = true) => {
     }
     return;
   }
-  if (useMock.value) return;
   try {
     const headers = store.getHeaders();
     const res = await fetch("/api/docker/info", { headers });
@@ -486,7 +631,7 @@ const fetchDockerInfo = async (silent = true) => {
   }
 };
 
-const retryDeadline = ref(0);
+const retryDeadline = dockerRuntimeState.retryDeadline;
 const RETRY_WINDOW = 3 * 60 * 1000; // 3分钟
 const RETRY_INTERVAL = 10000; // 10秒
 
@@ -508,10 +653,6 @@ const handleAction = async (id: string, action: string) => {
     showToast("Docker 服务已关闭");
     return;
   }
-  if (useMock.value) {
-    performMockAction(id, action);
-    return;
-  }
   try {
     const headers = store.getHeaders();
     const res = await fetch(`/api/docker/container/${id}/${action}`, {
@@ -526,7 +667,7 @@ const handleAction = async (id: string, action: string) => {
 
 const startPolling = () => {
   if (!isDockerFeatureEnabled.value) return;
-  if (pollTimer) clearTimeout(pollTimer);
+  dockerRuntimeState.clearPollingTimer();
 
   const poll = async () => {
     if (document.visibilityState === "hidden") return;
@@ -542,11 +683,11 @@ const startPolling = () => {
     //    a. 启动宽容期内：10秒 (RETRY_INTERVAL)
     //    b. 超过宽容期：30秒 (降频避险)
     // 2. 正常状态：12-17秒随机
-    let interval = POLL_INTERVAL_MIN + Math.random() * (POLL_INTERVAL_MAX - POLL_INTERVAL_MIN);
+    let interval =
+      POLL_INTERVAL_MIN +
+      Math.random() * (POLL_INTERVAL_MAX - POLL_INTERVAL_MIN);
 
-    if (useMock.value) {
-      interval = 5000;
-    } else if (errorCount.value > 0) {
+    if (errorCount.value > 0) {
       if (Date.now() < retryDeadline.value) {
         interval = RETRY_INTERVAL;
       } else {
@@ -554,19 +695,17 @@ const startPolling = () => {
       }
     }
 
-    // 重新调度下一次轮询
-    // 注意：这里必须重新赋值 pollTimer，否则 stopPolling 无法清除新的定时器
-    pollTimer = setTimeout(poll, interval);
+    // 重新调度下一次轮询，定时器由 widget-id keyed runtime state 统一持有。
+    dockerRuntimeState.setPollingTimer(setTimeout(poll, interval));
   };
 
   // 首次启动给一个 0~2秒 的随机延迟，避免多个组件同时请求
   const initialDelay = Math.random() * 2000;
-  pollTimer = setTimeout(poll, initialDelay);
+  dockerRuntimeState.setPollingTimer(setTimeout(poll, initialDelay));
 };
 
 const stopPolling = () => {
-  if (pollTimer) clearTimeout(pollTimer);
-  pollTimer = null;
+  dockerRuntimeState.clearPollingTimer();
 };
 
 useResumeRefresh({
@@ -582,6 +721,7 @@ useResumeRefresh({
 });
 
 onMounted(() => {
+  dockerRuntimeState.retain();
   if (isDockerFeatureEnabled.value) {
     // 恢复自动加载，确保添加到桌面后能自动显示内容
     checkConnection();
@@ -591,7 +731,7 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
-  stopPolling();
+  dockerRuntimeState.release();
 });
 
 watch(
@@ -607,9 +747,11 @@ watch(
   },
 );
 
-const inspectCache = ref<Record<string, { ts: number; data: InspectLite }>>({});
+const inspectCache = dockerRuntimeState.inspectCache as Ref<
+  Record<string, { ts: number; data: InspectLite }>
+>;
 const INSPECT_TTL = 60_000;
-const inflightInspect = new Set<string>();
+const inflightInspect = dockerRuntimeState.inflightInspect;
 
 const cleanupCache = () => {
   const now = Date.now();
@@ -635,13 +777,21 @@ const fetchInspectLite = async (id: string): Promise<InspectLite | null> => {
   inflightInspect.add(id);
   try {
     const headers = store.getHeaders();
-    const res = await fetch(`/api/docker/container/${encodeURIComponent(id)}/inspect-lite`, {
-      headers,
-    });
+    const res = await fetch(
+      `/api/docker/container/${encodeURIComponent(id)}/inspect-lite`,
+      {
+        headers,
+      },
+    );
     const payload = await res.json().catch(() => ({}));
-    if (!res.ok || !payload || !payload.success) return cached ? cached.data : null;
+    if (!res.ok || !payload || !payload.success)
+      return cached ? cached.data : null;
     const data = payload.data as InspectLite;
-    if (!data || typeof data.networkMode !== "string" || !Array.isArray(data.ports)) {
+    if (
+      !data ||
+      typeof data.networkMode !== "string" ||
+      !Array.isArray(data.ports)
+    ) {
       return cached ? cached.data : null;
     }
     inspectCache.value = { ...inspectCache.value, [id]: { ts: now, data } };
@@ -656,7 +806,10 @@ const fetchInspectLite = async (id: string): Promise<InspectLite | null> => {
 const getPublishedPorts = (c: DockerContainer): number[] =>
   (c.Ports || [])
     .map((p) => p.PublicPort)
-    .filter((x): x is number => typeof x === "number" && Number.isFinite(x) && x > 0 && x <= 65535);
+    .filter(
+      (x): x is number =>
+        typeof x === "number" && Number.isFinite(x) && x > 0 && x <= 65535,
+    );
 
 const getDetectedPorts = (c: DockerContainer): number[] => {
   const published = getPublishedPorts(c);
@@ -680,8 +833,12 @@ const getPreferredPort = (c: DockerContainer): number | null => {
     // 优先找 PrivatePort 在列表中的
     // 排序：优先列表中的 index 小的优先
     const sorted = [...c.Ports].sort((a, b) => {
-      const idxA = a.PrivatePort ? PREFERRED_PRIVATE_PORTS.indexOf(a.PrivatePort) : -1;
-      const idxB = b.PrivatePort ? PREFERRED_PRIVATE_PORTS.indexOf(b.PrivatePort) : -1;
+      const idxA = a.PrivatePort
+        ? PREFERRED_PRIVATE_PORTS.indexOf(a.PrivatePort)
+        : -1;
+      const idxB = b.PrivatePort
+        ? PREFERRED_PRIVATE_PORTS.indexOf(b.PrivatePort)
+        : -1;
       // 如果都在列表中，按列表顺序
       if (idxA !== -1 && idxB !== -1) return idxA - idxB;
       // 如果有一个在列表中，它优先
@@ -692,7 +849,10 @@ const getPreferredPort = (c: DockerContainer): number | null => {
     });
 
     const best = sorted.find(
-      (p) => typeof p.PublicPort === "number" && p.PublicPort > 0 && p.PublicPort <= 65535,
+      (p) =>
+        typeof p.PublicPort === "number" &&
+        p.PublicPort > 0 &&
+        p.PublicPort <= 65535,
     );
     if (best) return best.PublicPort!;
   }
@@ -724,8 +884,12 @@ const getPreferredPort = (c: DockerContainer): number | null => {
     const sorted = [...c.Ports]
       .filter((p) => p.PrivatePort)
       .sort((a, b) => {
-        const idxA = a.PrivatePort ? PREFERRED_PRIVATE_PORTS.indexOf(a.PrivatePort) : -1;
-        const idxB = b.PrivatePort ? PREFERRED_PRIVATE_PORTS.indexOf(b.PrivatePort) : -1;
+        const idxA = a.PrivatePort
+          ? PREFERRED_PRIVATE_PORTS.indexOf(a.PrivatePort)
+          : -1;
+        const idxB = b.PrivatePort
+          ? PREFERRED_PRIVATE_PORTS.indexOf(b.PrivatePort)
+          : -1;
         if (idxA !== -1 && idxB !== -1) return idxA - idxB;
         if (idxA !== -1) return -1;
         if (idxB !== -1) return 1;
@@ -740,7 +904,7 @@ const getPreferredPort = (c: DockerContainer): number | null => {
 };
 
 const prefetchInspectForContainers = (list: DockerContainer[]) => {
-  if (useMock.value || !isDockerFeatureEnabled.value) return;
+  if (!isDockerFeatureEnabled.value) return;
 
   // Cleanup cache: remove entries for containers that no longer exist
   const currentIds = new Set(list.map((c) => c.Id));
@@ -757,7 +921,9 @@ const prefetchInspectForContainers = (list: DockerContainer[]) => {
   }
 
   // 找出需要 Inspect 的容器（没有 PublicPort 的容器）
-  const targets = list.filter((c) => c && c.Id && getPublishedPorts(c).length === 0);
+  const targets = list.filter(
+    (c) => c && c.Id && getPublishedPorts(c).length === 0,
+  );
 
   // 批量处理策略：每 5 个一组，每组之间增加随机延迟
   // 避免一次性发起几十个请求导致浏览器或后端拥堵
@@ -806,8 +972,12 @@ const getContainerPublicUrl = (c: DockerContainer): string => {
 
   const map =
     (props.widget?.data &&
-    typeof (props.widget.data as Record<string, unknown>).publicHosts === "object"
-      ? ((props.widget!.data as Record<string, unknown>).publicHosts as Record<string, string>)
+    typeof (props.widget.data as Record<string, unknown>).publicHosts ===
+      "object"
+      ? ((props.widget!.data as Record<string, unknown>).publicHosts as Record<
+          string,
+          string
+        >)
       : {}) || {};
   const mapped = map[c.Id]?.trim() || "";
   const globalPublic =
@@ -909,7 +1079,7 @@ const addToHome = (c: DockerContainer) => {
     }
 
     if (!lanUrl && !publicUrl) {
-      const port = prompt("未检测到端口映射/暴露端口，请手动输入端口号 (例如 8080):")?.trim();
+      const port = await requestManualPort(c);
       if (!port) return;
       const portNum = parseInt(port, 10);
       if (!Number.isFinite(portNum) || portNum <= 0 || portNum > 65535) return;
@@ -962,8 +1132,12 @@ const publicHostTemp = ref("");
 const promptPublicHost = (c: DockerContainer) => {
   const map =
     (props.widget?.data &&
-    typeof (props.widget.data as Record<string, unknown>).publicHosts === "object"
-      ? ((props.widget!.data as Record<string, unknown>).publicHosts as Record<string, string>)
+    typeof (props.widget.data as Record<string, unknown>).publicHosts ===
+      "object"
+      ? ((props.widget!.data as Record<string, unknown>).publicHosts as Record<
+          string,
+          string
+        >)
       : {}) || {};
   publicHostTemp.value = map[c.Id] || "";
   editingPublicId.value = c.Id;
@@ -974,7 +1148,10 @@ const savePublicHost = (c: DockerContainer) => {
   if (!w.data) w.data = {};
   const map =
     typeof (w.data as Record<string, unknown>).publicHosts === "object"
-      ? ((w.data as Record<string, unknown>).publicHosts as Record<string, string>)
+      ? ((w.data as Record<string, unknown>).publicHosts as Record<
+          string,
+          string
+        >)
       : {};
   map[c.Id] = publicHostTemp.value.trim();
   (w.data as Record<string, unknown>).publicHosts = map;
@@ -984,433 +1161,1337 @@ const savePublicHost = (c: DockerContainer) => {
 const cancelPublicHost = () => {
   editingPublicId.value = null;
 };
-
-const getStatusColor = (state: string) => {
-  if (state === "running") return "bg-green-500";
-  if (state === "exited") return "bg-gray-400";
-  return "bg-yellow-500";
-};
 </script>
 
 <template>
   <div
-    :class="[
-      'w-full h-full flex flex-col overflow-hidden',
-      props.compact
-        ? ''
-        : 'bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-2xl p-4 relative',
-    ]"
+    v-if="isOpenedVariant"
+    class="docker-opened-workbench custom-scrollbar"
+    data-runtime-open-ignore="true"
   >
-    <div v-if="!props.compact" class="flex items-center justify-between mb-1 shrink-0">
-      <div class="flex items-center gap-2">
-        <span class="text-xl">🐳</span>
-        <span class="font-bold text-gray-700 dark:text-gray-200">Docker</span>
+    <header class="docker-opened-header">
+      <div>
+        <span class="docker-opened-kicker">Container workbench</span>
+        <h2>Docker</h2>
+        <p>{{ dockerEngineLabel }}</p>
       </div>
-      <div class="flex items-center gap-2">
+      <div class="docker-opened-actions">
         <button
-          @click="triggerUpdateCheck"
-          class="text-[10px] bg-gray-50 text-gray-600 px-2 py-1 rounded hover:bg-gray-100 transition-colors flex items-center"
-          :title="
-            updateStatus?.isChecking
-              ? `正在检测: ${updateStatus.checkedCount} / ${updateStatus.totalCount || '?'}`
-              : updateStatus?.lastCheck
-                ? `上次检测: ${new Date(updateStatus.lastCheck).toLocaleString()}${
-                    updateStatus.failures?.length
-                      ? '\n\n检测失败:\n' +
-                        updateStatus.failures.map((f) => `- ${f.name}: ${f.error}`).join('\n')
-                      : ''
-                  }`
-                : autoUpdateEnabled
-                  ? '检测镜像更新'
-                  : '请先开启自动升级镜像'
-          "
-          :disabled="updateStatus?.isChecking || !autoUpdateEnabled || !isDockerFeatureEnabled"
-        >
-          <span
-            v-if="updateStatus?.isChecking"
-            class="animate-spin inline-block w-3 h-3 border-2 border-gray-500 border-t-transparent rounded-full mr-1"
-          ></span>
-          <span v-if="updateStatus?.isChecking" class="mr-1">
-            {{ updateStatus.checkedCount }}/{{ updateStatus.totalCount || "?" }}
-          </span>
-          <span
-            v-else-if="updateStatus?.failures?.length"
-            class="text-yellow-600 flex items-center"
-          >
-            <span class="mr-1">⚠️</span>
-            <span>查更新</span>
-          </span>
-          <span v-else>
-            {{ updateStatus?.isChecking ? "检测中" : "查更新" }}
-          </span>
-        </button>
-        <button
+          type="button"
+          data-docker-action
+          :disabled="isLoading || dockerState === 'disabled'"
           @click="() => checkConnection(false)"
-          :disabled="dockerState === 'disabled'"
-          class="text-[10px] bg-blue-50 text-blue-500 px-2 py-1 rounded hover:bg-blue-100 transition-colors disabled:opacity-50"
-          title="点击获取 Docker 信息"
         >
-          <span
-            v-if="isLoading"
-            class="animate-spin inline-block w-3 h-3 border-2 border-blue-500 border-t-transparent rounded-full mr-1"
-          ></span>
-          {{
-            isLoading ? "加载中" : dockerState === "disabled" ? "已关闭" : dockerState !== "ready" ? "连接" : "刷新"
-          }}
+          {{ isLoading ? "刷新中" : dockerState === "ready" ? "刷新" : "检测" }}
         </button>
-        <div class="text-xs text-gray-500" v-if="containers.length">
-          {{ containers.filter((c) => c.State === "running").length }} / {{ containers.length }}
-        </div>
+        <button
+          type="button"
+          data-docker-action
+          :disabled="
+            updateStatus?.isChecking ||
+            !autoUpdateEnabled ||
+            !isDockerFeatureEnabled
+          "
+          @click="triggerUpdateCheck"
+        >
+          {{ updateLabel }}
+        </button>
+        <button
+          type="button"
+          data-docker-action
+          :disabled="isExportingDockerLogs || !isDockerFeatureEnabled"
+          @click="exportDockerLogs"
+        >
+          {{ isExportingDockerLogs ? "导出中" : "导出日志" }}
+        </button>
       </div>
+    </header>
+
+    <div class="docker-opened-layout">
+      <main class="docker-opened-main">
+        <section class="docker-opened-overview">
+          <article>
+            <span>状态</span>
+            <strong>{{ statusLabel }}</strong>
+            <em>{{ statusCaption }}</em>
+          </article>
+          <article>
+            <span>容器</span>
+            <strong
+              >{{ runningContainers.length }}/{{ containers.length }}</strong
+            >
+            <em>{{ stoppedContainers }} stopped</em>
+          </article>
+          <article>
+            <span>CPU</span>
+            <strong>{{ dockerCpuTotal.toFixed(1) }}%</strong>
+            <em>running total</em>
+          </article>
+          <article>
+            <span>内存</span>
+            <strong>{{ formatBytes(dockerMemoryTotal) }}</strong>
+            <em>{{ dockerEndpointLabel }}</em>
+          </article>
+        </section>
+
+        <section class="docker-opened-containers">
+          <div class="docker-opened-section-title">
+            <strong>容器列表</strong>
+            <span v-if="errorDisplay">{{ errorDisplay }}</span>
+            <span v-else>{{ openedContainers.length }} containers visible</span>
+          </div>
+          <div
+            v-if="dockerState === 'disabled'"
+            class="docker-opened-empty"
+            data-testid="docker-opened-disabled"
+          >
+            Docker 服务已关闭
+          </div>
+          <div
+            v-else-if="!openedContainers.length"
+            class="docker-opened-empty"
+            data-testid="docker-opened-empty"
+          >
+            {{ isLoading ? "正在读取容器" : "暂无容器" }}
+          </div>
+          <template v-else>
+            <article
+              v-for="container in openedContainers"
+              :key="container.Id"
+              class="docker-opened-container"
+              :class="{ 'is-running': container.State === 'running' }"
+            >
+              <div class="docker-opened-container-main">
+                <span class="docker-container-dot"></span>
+                <div class="docker-container-title">
+                  <strong
+                    :title="
+                      normalizeContainerName(
+                        container.Names?.[0] || 'Container',
+                      )
+                    "
+                  >
+                    {{
+                      normalizeContainerName(
+                        container.Names?.[0] || "Container",
+                      )
+                    }}
+                  </strong>
+                  <span :title="container.Image">{{ container.Image }}</span>
+                </div>
+                <div class="docker-container-state">
+                  <span>{{ container.Status }}</span>
+                  <em v-if="container.hasUpdate">可升级</em>
+                </div>
+              </div>
+              <div class="docker-opened-container-metrics">
+                <span>
+                  CPU
+                  {{
+                    container.stats
+                      ? `${container.stats.cpuPercent.toFixed(1)}%`
+                      : "--"
+                  }}
+                </span>
+                <span>
+                  MEM
+                  {{
+                    container.stats
+                      ? formatBytes(container.stats.memUsage)
+                      : "--"
+                  }}
+                </span>
+                <span>{{
+                  getPreferredPort(container)
+                    ? `:${getPreferredPort(container)}`
+                    : "no port"
+                }}</span>
+              </div>
+              <div class="docker-opened-container-actions" data-docker-action>
+                <button
+                  v-if="
+                    container.State === 'running' && getPreferredPort(container)
+                  "
+                  type="button"
+                  data-docker-action
+                  @click="openContainerUrl(container)"
+                >
+                  内网
+                </button>
+                <button
+                  v-if="
+                    container.State === 'running' && getPreferredPort(container)
+                  "
+                  type="button"
+                  data-docker-action
+                  @click="openContainerPublicUrl(container)"
+                >
+                  外网
+                </button>
+                <button
+                  v-if="container.State === 'running'"
+                  type="button"
+                  data-docker-action
+                  @click="addToHome(container)"
+                >
+                  添加
+                </button>
+                <button
+                  v-if="container.State !== 'running'"
+                  type="button"
+                  data-docker-action
+                  @click="handleAction(container.Id, 'start')"
+                >
+                  启动
+                </button>
+                <button
+                  v-if="container.State === 'running'"
+                  type="button"
+                  data-docker-action
+                  @click="handleAction(container.Id, 'stop')"
+                >
+                  停止
+                </button>
+                <button
+                  type="button"
+                  data-docker-action
+                  @click="handleAction(container.Id, 'restart')"
+                >
+                  重启
+                </button>
+              </div>
+            </article>
+          </template>
+        </section>
+      </main>
+
+      <aside class="docker-opened-settings" data-runtime-open-ignore="true">
+        <section class="docker-settings-section">
+          <div class="docker-settings-section-title">
+            <strong>Docker 组件设置</strong>
+            <span>{{
+              isDockerFeatureEnabled
+                ? "Docker API 已允许访问"
+                : "Docker API 当前关闭"
+            }}</span>
+          </div>
+          <AppSwitch
+            :model-value="isDockerFeatureEnabled"
+            label="Docker 服务"
+            hint="控制后端是否读取宿主机 Docker Socket。"
+            :disabled="!canManageDockerSystem || isUpdatingDockerSystem"
+            @change="setDockerSystemEnabled"
+          />
+          <AppSwitch
+            :model-value="dockerWidgetEnabled"
+            label="显示 Docker 组件"
+            hint="关闭后可从添加组件弹窗重新启用。"
+            @change="setDockerWidgetEnabled"
+          />
+          <AppSwitch
+            :model-value="dockerWidgetPublic"
+            label="公开显示"
+            hint="允许未登录访问者看到此组件。"
+            @change="setDockerWidgetPublic"
+          />
+          <AppSwitch
+            :model-value="dockerWidgetMobileVisible"
+            label="移动端显示"
+            hint="控制手机布局中是否保留此组件。"
+            @change="setDockerWidgetMobileVisible"
+          />
+        </section>
+
+        <section class="docker-settings-section">
+          <div class="docker-settings-section-title">
+            <strong>自动更新</strong>
+            <span>控制镜像更新检测和清理保护阈值。</span>
+          </div>
+          <AppSwitch
+            :model-value="autoUpdateEnabled"
+            label="自动检测镜像升级"
+            hint="开启后可手动触发后端更新检查。"
+            @change="setDockerAutoUpdate"
+          />
+          <div class="docker-settings-grid">
+            <label class="docker-settings-field">
+              <span>保留旧镜像</span>
+              <input
+                type="number"
+                min="0"
+                max="50"
+                :value="dockerKeepImages"
+                :disabled="!autoUpdateEnabled"
+                @change="
+                  (event) =>
+                    setDockerKeepImages(
+                      (event.target as HTMLInputElement).value,
+                    )
+                "
+              />
+            </label>
+            <label class="docker-settings-field">
+              <span>最小剩余空间 GB</span>
+              <input
+                type="number"
+                min="0"
+                max="1024"
+                step="0.5"
+                :value="dockerMinFreeGb"
+                :disabled="!autoUpdateEnabled"
+                @change="
+                  (event) =>
+                    setDockerMinFreeGb((event.target as HTMLInputElement).value)
+                "
+              />
+            </label>
+          </div>
+          <label class="docker-settings-field">
+            <span>内网主机</span>
+            <input
+              type="text"
+              placeholder="例如 192.168.1.10 或 nas.local"
+              :value="dockerLanHost"
+              @change="
+                (event) =>
+                  setDockerLanHost((event.target as HTMLInputElement).value)
+              "
+            />
+          </label>
+        </section>
+      </aside>
     </div>
 
-    <!-- 错误提示（如果有数据则只显示在顶部，没数据才全屏显示） -->
+    <div v-if="toastMessage" class="docker-toast">{{ toastMessage }}</div>
+  </div>
+
+  <div
+    v-else
+    class="docker-widget"
+    :class="[
+      displaySizeClass,
+      `is-${displaySize.tier}`,
+      {
+        'is-compact': isCompactLayout,
+        'is-tiny': isTinyDockerLayout,
+        'is-short': isShortDockerLayout,
+        'is-vertical': isVerticalDockerLayout,
+        'is-board': displaySize.isBoard,
+        'is-disabled': dockerState === 'disabled',
+      },
+    ]"
+    :data-widget-size="displaySize.sizeKey"
+  >
+    <section v-if="showDockerSummary" class="docker-widget-summary">
+      <div class="docker-widget-total">
+        <span>{{ statusLabel }}</span>
+        <strong>{{ runningContainers.length }}/{{ containers.length }}</strong>
+      </div>
+      <div v-if="showDockerCounters" class="docker-widget-counters">
+        <span :aria-label="`${runningContainers.length} 运行`">
+          <i class="is-ready"></i>
+          <b>{{ runningContainers.length }}</b>
+          <em>运行</em>
+        </span>
+        <span :aria-label="`${stoppedContainers} 停止`">
+          <i class="is-muted"></i>
+          <b>{{ stoppedContainers }}</b>
+          <em>停止</em>
+        </span>
+        <span v-if="unhealthyCount"
+          ><i class="is-danger"></i><b>{{ unhealthyCount }}</b
+          ><em>异常</em></span
+        >
+      </div>
+      <p v-if="showDockerBoardHint" class="docker-widget-board-hint">
+        {{ dockerBoardHint }}
+      </p>
+    </section>
+
     <div
-      v-if="error && !containers.length"
-      class="flex-1 flex flex-col items-center justify-start pt-10 text-red-500 text-xs text-center p-2 gap-2"
+      v-if="showDockerContainerList"
+      class="docker-container-list custom-scrollbar"
     >
-      <span>{{ errorDisplay }}</span>
-      <button
-        @click="() => checkConnection(false)"
-        :disabled="dockerState === 'disabled'"
-        class="px-3 py-1 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors text-xs"
-      >
-        {{ dockerState === "disabled" ? "已关闭" : "重新检测" }}
-      </button>
-    </div>
-
-    <div
-      v-else-if="!containers.length && !error"
-      class="flex-1 flex flex-col items-center justify-start pt-10 text-gray-400 text-xs text-center p-2 gap-2"
-    >
-      <span>{{ dockerState === "disabled" ? "Docker 服务已关闭" : "点击刷新获取容器列表" }}</span>
-      <button
-        @click="() => checkConnection(false)"
-        :disabled="dockerState === 'disabled'"
-        class="px-3 py-1 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors text-xs"
-      >
-        {{ dockerState === "disabled" ? "已关闭" : "获取列表" }}
-      </button>
-    </div>
-
-    <div v-else class="flex flex-col h-full overflow-hidden relative">
-      <!-- 弱网提示 -->
-      <div
-        v-if="error"
-        class="absolute top-0 left-0 right-0 z-10 bg-yellow-50/90 text-yellow-600 text-[10px] px-2 py-0.5 text-center backdrop-blur-sm border-b border-yellow-100"
-      >
+      <div v-if="error && !displaySize.isBoard" class="docker-widget-warning">
         {{ errorDisplay }}
       </div>
-      <!-- 容器列表 (滚动区域) -->
-      <div class="flex-1 overflow-y-auto space-y-1 pr-1 custom-scrollbar min-h-0 pt-1">
-        <div
-          class="flex items-center justify-between border-b border-gray-100 dark:border-gray-700 pb-1 mb-1"
-        >
-          <div class="flex gap-2">
-            <span
-              class="px-1.5 py-0.5 bg-green-100 text-green-700 rounded flex items-center gap-1 text-xs"
-              title="Running"
+      <article
+        v-for="container in visibleContainers"
+        :key="container.Id"
+        class="docker-container-card"
+        :class="{ 'is-running': container.State === 'running' }"
+      >
+        <div class="docker-container-main">
+          <span class="docker-container-dot"></span>
+          <div class="docker-container-title">
+            <strong
+              :title="
+                normalizeContainerName(container.Names?.[0] || 'Container')
+              "
             >
-              <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span>
-              {{ containers.filter((c) => c.State === "running").length }}
-            </span>
-            <span
-              class="px-1.5 py-0.5 bg-gray-100 text-gray-600 rounded flex items-center gap-1 text-xs"
-              title="Stopped"
-            >
-              <span class="w-1.5 h-1.5 rounded-full bg-gray-400"></span>
-              {{ containers.filter((c) => c.State !== "running").length }}
-            </span>
-            <span
-              v-if="unhealthyCount > 0"
-              class="px-1.5 py-0.5 bg-red-100 text-red-700 rounded flex items-center gap-1 text-xs"
-              title="Unhealthy"
-            >
-              <span class="w-1.5 h-1.5 rounded-full bg-red-500"></span>
-              {{ unhealthyCount }}
-            </span>
+              {{ normalizeContainerName(container.Names?.[0] || "Container") }}
+            </strong>
+            <span :title="container.Image">{{ container.Image }}</span>
           </div>
-          <div v-if="dockerInfo" class="flex gap-2 text-[10px] text-gray-400 items-center ml-1">
-            <span title="Images">IMG:{{ dockerInfo.Images }}</span>
+          <div class="docker-container-state">
+            <span>{{ container.Status }}</span>
+            <em v-if="container.hasUpdate">可升级</em>
           </div>
         </div>
+
+        <div v-if="showContainerDetails" class="docker-container-metrics">
+          <div>
+            <span>CPU</span>
+            <strong>{{
+              container.stats
+                ? `${container.stats.cpuPercent.toFixed(1)}%`
+                : "--"
+            }}</strong>
+            <i>
+              <b
+                :style="{
+                  width: container.stats
+                    ? `${Math.min(container.stats.cpuPercent, 100)}%`
+                    : '0%',
+                }"
+              ></b>
+            </i>
+          </div>
+          <div>
+            <span>MEM</span>
+            <strong>{{
+              container.stats ? formatBytes(container.stats.memUsage) : "--"
+            }}</strong>
+            <i>
+              <b
+                :style="{
+                  width: container.stats
+                    ? `${Math.min(container.stats.memPercent, 100)}%`
+                    : '0%',
+                }"
+              ></b>
+            </i>
+          </div>
+        </div>
+
         <div
-          v-for="c in containers"
-          :key="c.Id"
-          class="flex flex-col gap-1 p-1.5 bg-white rounded-lg border border-black"
+          v-if="showContainerActions"
+          class="docker-container-actions"
+          data-runtime-open-ignore="true"
         >
-          <div class="grid grid-cols-[1fr_auto] gap-2 items-start">
-            <div class="flex items-start gap-2 min-w-0">
-              <div :class="['w-2 h-2 rounded-full shrink-0 mt-1', getStatusColor(c.State)]"></div>
-              <div class="flex flex-col min-w-0 flex-1">
-                <div class="flex items-center gap-1 min-w-0">
-                  <span class="font-medium text-sm truncate text-black" :title="c.Names?.[0] || ''">
-                    {{ (c.Names?.[0] || "").replace(/^\//, "") }}
-                  </span>
-                  <span
-                    v-if="c.hasUpdate"
-                    class="text-[9px] bg-red-50 text-red-600 px-1 rounded border border-red-200 shrink-0"
-                  >
-                    可升级
-                  </span>
-                </div>
-                <div class="flex items-center gap-2 min-w-0">
-                  <span class="text-[10px] text-black truncate min-w-0 flex-1" :title="c.Image">
-                    {{ c.Image }}
-                  </span>
-                  <button
-                    @click="promptPublicHost(c)"
-                    class="text-[10px] text-black hover:underline px-1 shrink-0"
-                    title="添加外网地址"
-                  >
-                    添加外网地址
-                  </button>
-                </div>
-                <div v-if="editingPublicId === c.Id" class="flex items-center gap-1 mt-1">
-                  <input
-                    v-model="publicHostTemp"
-                    type="text"
-                    placeholder="nas.example.com"
-                    class="px-2 py-1 border border-gray-200 rounded text-[10px] focus:border-blue-500 outline-none w-36"
-                  />
-                  <button
-                    @click="savePublicHost(c)"
-                    class="text-[10px] text-green-600 hover:underline px-1"
-                    title="保存"
-                  >
-                    保存
-                  </button>
-                  <button
-                    @click="cancelPublicHost"
-                    class="text-[10px] text-gray-500 hover:underline px-1"
-                    title="取消"
-                  >
-                    取消
-                  </button>
-                </div>
-              </div>
-            </div>
-            <div class="flex flex-col items-end shrink-0">
-              <span class="text-[10px] text-black">{{ c.Status }}</span>
-              <div
-                class="flex flex-wrap justify-end gap-1 mt-0.5"
-                v-if="getDetectedPorts(c).length"
-              >
-                <span
-                  v-for="(p, i) in getDetectedPorts(c).slice(0, 2)"
-                  :key="i"
-                  class="text-[9px] bg-blue-50 text-blue-500 px-1 rounded border border-blue-100"
-                >
-                  {{ p }}
-                </span>
-                <span v-if="getDetectedPorts(c).length > 2" class="text-[9px] text-black"
-                  >+{{ getDetectedPorts(c).length - 2 }}</span
-                >
-              </div>
-            </div>
-          </div>
-
-          <div class="grid grid-cols-2 gap-2 mt-1">
-            <div class="flex flex-col gap-1">
-              <div
-                class="flex justify-between text-[10px] text-gray-500 dark:text-gray-300 items-end"
-              >
-                <span>CPU</span>
-                <span v-if="c.stats" class="font-mono">{{ c.stats.cpuPercent.toFixed(1) }}%</span>
-                <span v-else class="text-gray-300 dark:text-gray-500">--</span>
-              </div>
-              <div class="h-1.5 bg-gray-100 dark:bg-gray-600 rounded-full overflow-hidden">
-                <div
-                  class="h-full bg-blue-500 rounded-full transition-all duration-500"
-                  :style="{ width: c.stats ? Math.min(c.stats.cpuPercent, 100) + '%' : '0%' }"
-                ></div>
-              </div>
-              <div
-                class="flex justify-between text-[9px] text-gray-400 dark:text-gray-400 mt-0.5 font-mono items-center"
-              >
-                <span>NET</span>
-                <span v-if="c.stats && c.stats.netIO" class="tracking-tighter">
-                  ↓{{ formatBytes(c.stats.netIO.rx) }} ↑{{ formatBytes(c.stats.netIO.tx) }}
-                </span>
-                <span v-else class="text-gray-300 dark:text-gray-500">--</span>
-              </div>
-            </div>
-            <div class="flex flex-col gap-1">
-              <div
-                class="flex justify-between text-[10px] text-gray-500 dark:text-gray-300 items-end"
-              >
-                <span>MEM</span>
-                <span v-if="c.stats" class="font-mono"
-                  >{{ (c.stats.memUsage / 1024 / 1024).toFixed(0) }}MB</span
-                >
-                <span v-else class="text-gray-300 dark:text-gray-500">--</span>
-              </div>
-              <div class="h-1.5 bg-gray-100 dark:bg-gray-600 rounded-full overflow-hidden">
-                <div
-                  class="h-full bg-purple-500 rounded-full transition-all duration-500"
-                  :style="{ width: c.stats ? Math.min(c.stats.memPercent, 100) + '%' : '0%' }"
-                ></div>
-              </div>
-              <div
-                class="flex justify-between text-[9px] text-gray-400 dark:text-gray-400 mt-0.5 font-mono items-center"
-              >
-                <span>I/O</span>
-                <span v-if="c.stats && c.stats.blockIO" class="tracking-tighter">
-                  R{{ formatBytes(c.stats.blockIO.read) }} W{{ formatBytes(c.stats.blockIO.write) }}
-                </span>
-                <span v-else class="text-gray-300 dark:text-gray-500">--</span>
-              </div>
-            </div>
-          </div>
-
-          <div
-            class="flex items-center justify-end gap-2 mt-1 pt-1 border-t border-gray-100 dark:border-gray-700"
+          <button
+            v-if="container.State === 'running' && getPreferredPort(container)"
+            type="button"
+            data-docker-action
+            @click="openContainerUrl(container)"
           >
-            <div class="flex flex-wrap items-center gap-1 mr-auto min-w-0">
-              <button
-                v-if="c.State === 'running' && getPreferredPort(c)"
-                @click="openContainerUrl(c)"
-                class="px-2 py-1 hover:bg-gray-100 text-black rounded transition-colors text-xs flex items-center gap-1"
-                title="内网打开"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  fill="currentColor"
-                  class="w-4 h-4"
-                >
-                  <path
-                    fill-rule="evenodd"
-                    d="M15.75 2.25H21a.75.75 0 01.75.75v5.25a.75.75 0 01-1.5 0V4.81L8.03 17.03a.75.75 0 01-1.06-1.06L19.19 3.75h-3.44a.75.75 0 010-1.5zm-10.5 4.5a1.5 1.5 0 00-1.5 1.5v10.5a1.5 1.5 0 001.5 1.5h10.5a1.5 1.5 0 001.5-1.5V10.5a.75.75 0 011.5 0v8.25a3 3 0 01-3 3H5.25a3 3 0 01-3-3V8.25a3 3 0 013-3h8.25a.75.75 0 010 1.5H5.25z"
-                    clip-rule="evenodd"
-                  />
-                </svg>
-                <span>内网打开</span>
-              </button>
-              <button
-                v-if="c.State === 'running' && getPreferredPort(c)"
-                @click="openContainerPublicUrl(c)"
-                class="px-2 py-1 hover:bg-gray-100 text-black rounded transition-colors text-xs flex items-center gap-1"
-                title="外网打开"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  fill="currentColor"
-                  class="w-4 h-4"
-                >
-                  <path
-                    fill-rule="evenodd"
-                    d="M3 4.5A1.5 1.5 0 014.5 3h9A1.5 1.5 0 0115 4.5V9a1.5 1.5 0 01-1.5 1.5H9.31l2.44 2.44a.75.75 0 11-1.06 1.06L7.5 10.31V12a1.5 1.5 0 01-1.5 1.5H1.5A1.5 1.5 0 010 12V4.5A1.5 1.5 0 011.5 3H3v1.5z"
-                    clip-rule="evenodd"
-                  />
-                </svg>
-                <span>外网打开</span>
-              </button>
-              <button
-                v-if="c.State === 'running'"
-                @click="addToHome(c)"
-                class="px-2 py-1 hover:bg-gray-100 text-black rounded transition-colors text-xs flex items-center gap-1"
-                title="添加到桌面"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  fill="currentColor"
-                  class="w-4 h-4"
-                >
-                  <path
-                    fill-rule="evenodd"
-                    d="M12 2.25c-5.385 0-9.75 4.365-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25zM12.75 9a.75.75 0 00-1.5 0v2.25H9a.75.75 0 000 1.5h2.25V15a.75.75 0 001.5 0v-2.25H15a.75.75 0 000-1.5h-2.25V9z"
-                    clip-rule="evenodd"
-                  />
-                </svg>
-                <span>添加卡片</span>
-              </button>
-
-              <label
-                class="flex items-center gap-1 cursor-pointer hover:bg-gray-100 px-2 py-1 rounded select-none"
-                title="勾选后将跳过此容器的自动升级"
-              >
-                <input
-                  type="checkbox"
-                  class="rounded text-blue-600 focus:ring-blue-500 w-3 h-3 cursor-pointer"
-                  :checked="isAutoUpdateDisabled(c.Id)"
-                  @change="
-                    (e) => toggleAutoUpdateDisabled(c.Id, (e.target as HTMLInputElement).checked)
-                  "
-                />
-                <span class="text-xs text-black">禁止自动升级</span>
-              </label>
-            </div>
-            <div class="flex items-center gap-1 shrink-0">
-              <button
-                v-if="c.State !== 'running'"
-                @click="handleAction(c.Id, 'start')"
-                class="p-1 hover:bg-green-100 text-green-600 rounded transition-colors"
-                title="启动"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  fill="currentColor"
-                  class="w-4 h-4"
-                >
-                  <path
-                    fill-rule="evenodd"
-                    d="M4.5 5.653c0-1.426 1.529-2.33 2.779-1.643l11.54 6.348c1.295.712 1.295 2.573 0 3.285L7.28 19.991c-1.25.687-2.779-.217-2.779-1.643V5.653z"
-                    clip-rule="evenodd"
-                  />
-                </svg>
-              </button>
-
-              <button
-                v-if="c.State === 'running'"
-                @click="handleAction(c.Id, 'stop')"
-                class="p-1 hover:bg-red-100 text-red-600 rounded transition-colors"
-                title="停止"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  fill="currentColor"
-                  class="w-4 h-4"
-                >
-                  <path
-                    fill-rule="evenodd"
-                    d="M4.5 7.5a3 3 0 013-3h9a3 3 0 013 3v9a3 3 0 01-3 3h-9a3 3 0 01-3-3v-9z"
-                    clip-rule="evenodd"
-                  />
-                </svg>
-              </button>
-
-              <button
-                @click="handleAction(c.Id, 'restart')"
-                class="p-1 hover:bg-blue-100 text-blue-600 rounded transition-colors"
-                title="重启"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  fill="currentColor"
-                  class="w-4 h-4"
-                >
-                  <path
-                    fill-rule="evenodd"
-                    d="M4.755 10.059a7.5 7.5 0 0112.548-3.364l1.903 1.903h-3.183a.75.75 0 100 1.5h4.992a.75.75 0 00.75-.75V4.356a.75.75 0 00-1.5 0v3.18l-1.9-1.9A9 9 0 003.306 9.67a.75.75 0 101.45.388zm15.408 3.352a.75.75 0 00-.919.53 7.5 7.5 0 01-12.548 3.364l-1.902-1.903h3.183a.75.75 0 000-1.5H2.984a.75.75 0 00-.75.75v4.992a.75.75 0 001.5 0v-3.18l1.9 1.9a9 9 0 0015.059-4.035.75.75 0 00-.53-.919z"
-                    clip-rule="evenodd"
-                  />
-                </svg>
-              </button>
-            </div>
-          </div>
+            内网
+          </button>
+          <button
+            v-if="container.State === 'running' && getPreferredPort(container)"
+            type="button"
+            data-docker-action
+            @click="openContainerPublicUrl(container)"
+          >
+            外网
+          </button>
+          <button
+            v-if="container.State === 'running'"
+            type="button"
+            data-docker-action
+            @click="addToHome(container)"
+          >
+            添加
+          </button>
+          <button
+            v-if="container.State !== 'running'"
+            type="button"
+            data-docker-action
+            @click="handleAction(container.Id, 'start')"
+          >
+            启动
+          </button>
+          <button
+            v-if="container.State === 'running'"
+            type="button"
+            data-docker-action
+            @click="handleAction(container.Id, 'stop')"
+          >
+            停止
+          </button>
+          <button
+            type="button"
+            data-docker-action
+            @click="handleAction(container.Id, 'restart')"
+          >
+            重启
+          </button>
+          <button
+            type="button"
+            data-docker-action
+            @click="promptPublicHost(container)"
+          >
+            外网地址
+          </button>
+          <label data-docker-action>
+            <input
+              type="checkbox"
+              :checked="isAutoUpdateDisabled(container.Id)"
+              @change="
+                (event) =>
+                  toggleAutoUpdateDisabled(
+                    container.Id,
+                    (event.target as HTMLInputElement).checked,
+                  )
+              "
+            />
+            跳过升级
+          </label>
         </div>
-      </div>
+
+        <div
+          v-if="editingPublicId === container.Id"
+          class="docker-public-host-editor"
+          data-runtime-open-ignore="true"
+        >
+          <input
+            v-model="publicHostTemp"
+            type="text"
+            placeholder="nas.example.com"
+          />
+          <button type="button" @click="savePublicHost(container)">保存</button>
+          <button type="button" @click="cancelPublicHost">取消</button>
+        </div>
+      </article>
     </div>
   </div>
+
+  <AppModalShell
+    :show="showManualPortPrompt"
+    :z-index="120"
+    title="补充访问端口"
+    subtitle="未检测到端口映射时，手动补充一个可访问端口。"
+    blocking
+    :show-close="false"
+    overlay-class="sd-overlay-strong"
+    panel-class="w-full max-w-md"
+    surface-class="sd-compact-window"
+    body-class="space-y-4"
+    initial-focus="first"
+  >
+    <div class="space-y-2">
+      <p class="text-sm text-[var(--sd-color-text-secondary)]">
+        容器：<span class="font-semibold text-[var(--sd-color-text-primary)]">{{
+          manualPortContainerName
+        }}</span>
+      </p>
+      <label class="sd-label" for="docker-manual-port">端口号</label>
+      <input
+        id="docker-manual-port"
+        v-model="manualPortValue"
+        type="text"
+        inputmode="numeric"
+        class="sd-input"
+        placeholder="例如 8080"
+        @keyup.enter="confirmManualPort"
+      />
+      <p
+        v-if="manualPortError"
+        class="text-xs text-[var(--sd-color-accent-danger)]"
+      >
+        {{ manualPortError }}
+      </p>
+    </div>
+
+    <template #footer>
+      <AppButton
+        variant="secondary"
+        data-modal-cancel
+        @click="closeManualPortPrompt(null)"
+      >
+        取消
+      </AppButton>
+      <AppButton variant="primary" @click="confirmManualPort"
+        >继续添加</AppButton
+      >
+    </template>
+  </AppModalShell>
 </template>
 
 <style scoped>
+.docker-opened-workbench {
+  position: relative;
+  display: grid;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 1rem;
+  overflow: auto;
+  background: var(--sd-color-surface, #fff);
+  color: var(--sd-color-text-primary, #0f172a);
+  padding: 1.4rem;
+}
+
+.docker-opened-header,
+.docker-opened-actions,
+.docker-opened-container-main,
+.docker-opened-container-actions,
+.docker-opened-container-metrics {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.docker-opened-header {
+  justify-content: space-between;
+  gap: 1rem;
+  padding-right: 5.2rem;
+}
+
+.docker-opened-kicker {
+  color: var(--sd-color-accent-primary, #2563eb);
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.docker-opened-header h2 {
+  margin: 0.1rem 0;
+  color: var(--sd-color-text-primary, #0f172a);
+  font-size: 1.8rem;
+  font-weight: 820;
+  letter-spacing: 0;
+  line-height: 1;
+}
+
+.docker-opened-header p {
+  margin: 0;
+  color: var(--sd-color-text-secondary, #64748b);
+  font-size: 0.82rem;
+  font-weight: 650;
+}
+
+.docker-opened-actions {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.docker-opened-actions button,
+.docker-opened-container-actions button {
+  border: 1px solid var(--sd-color-border-subtle, rgb(203 213 225 / 0.9));
+  border-radius: 999px;
+  background: var(--sd-color-surface-muted, #f2f2f5);
+  color: var(--sd-color-accent-primary, #1d4ed8);
+  cursor: pointer;
+  font-size: 0.75rem;
+  font-weight: 760;
+  line-height: 1;
+  padding: 0.55rem 0.72rem;
+}
+
+.docker-opened-actions button:disabled {
+  cursor: default;
+  opacity: 0.44;
+}
+
+.docker-opened-layout {
+  display: grid;
+  min-height: 0;
+  grid-template-columns: minmax(0, 1fr) minmax(16rem, 21rem);
+  gap: 1rem;
+}
+
+.docker-opened-main,
+.docker-opened-settings,
+.docker-opened-containers {
+  min-width: 0;
+  min-height: 0;
+}
+
+.docker-opened-main {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 1rem;
+}
+
+.docker-opened-overview {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.72rem;
+}
+
+.docker-opened-overview article,
+.docker-opened-container,
+.docker-opened-settings .docker-settings-section {
+  border: 1px solid var(--sd-color-border-subtle, rgb(203 213 225 / 0.8));
+  border-radius: 1rem;
+  background: var(--sd-color-surface-muted, #f8fafc);
+  box-shadow: 0 14px 30px rgb(15 23 42 / 0.06);
+}
+
+.docker-opened-overview article {
+  display: grid;
+  min-width: 0;
+  gap: 0.28rem;
+  padding: 0.85rem;
+}
+
+.docker-opened-overview span,
+.docker-opened-overview em,
+.docker-opened-section-title span,
+.docker-opened-container-metrics,
+.docker-opened-empty {
+  color: var(--sd-color-text-secondary, #64748b);
+  font-size: 0.72rem;
+  font-style: normal;
+  font-weight: 680;
+}
+
+.docker-opened-overview strong {
+  overflow: hidden;
+  color: var(--sd-color-text-primary, #0f172a);
+  font-size: 1.18rem;
+  font-weight: 820;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.docker-opened-containers,
+.docker-opened-settings {
+  display: grid;
+  align-content: start;
+  gap: 0.7rem;
+  overflow: auto;
+}
+
+.docker-opened-section-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.docker-opened-section-title strong {
+  color: var(--sd-color-text-primary, #0f172a);
+  font-size: 0.96rem;
+  font-weight: 800;
+}
+
+.docker-opened-container {
+  display: grid;
+  gap: 0.65rem;
+  padding: 0.72rem;
+}
+
+.docker-opened-container-main {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 0.6rem;
+}
+
+.docker-opened-container .docker-container-title strong {
+  color: var(--sd-color-text-primary, #0f172a);
+}
+
+.docker-opened-container .docker-container-title span,
+.docker-opened-container .docker-container-state span {
+  color: var(--sd-color-text-secondary, #64748b);
+}
+
+.docker-opened-container-metrics {
+  flex-wrap: wrap;
+  gap: 0.48rem;
+}
+
+.docker-opened-container-metrics span {
+  border-radius: 999px;
+  background: var(--sd-color-surface, #fff);
+  padding: 0.32rem 0.5rem;
+}
+
+.docker-opened-container-actions {
+  flex-wrap: wrap;
+  gap: 0.38rem;
+}
+
+.docker-opened-empty {
+  display: grid;
+  min-height: 10rem;
+  place-items: center;
+  border: 1px dashed var(--sd-color-border-subtle, rgb(203 213 225 / 0.8));
+  border-radius: 1rem;
+}
+
+.docker-opened-settings .docker-settings-section {
+  background: var(--sd-color-surface-muted, #f8fafc);
+}
+
+.docker-opened-settings .docker-settings-section-title strong {
+  color: var(--sd-color-text-primary, #0f172a);
+}
+
+.docker-opened-settings .docker-settings-section-title span,
+.docker-opened-settings .docker-settings-field span {
+  color: var(--sd-color-text-secondary, #64748b);
+}
+
+.docker-opened-settings .docker-settings-field input {
+  border-color: var(--sd-color-border-subtle, rgb(203 213 225 / 0.9));
+  background: var(--sd-color-surface, #fff);
+  color: var(--sd-color-text-primary, #0f172a);
+}
+
+.docker-toast {
+  position: absolute;
+  right: 1.2rem;
+  bottom: 1rem;
+  border-radius: 999px;
+  background: rgb(15 23 42 / 0.92);
+  color: #f8fafc;
+  font-size: 0.78rem;
+  font-weight: 760;
+  padding: 0.55rem 0.8rem;
+}
+
+.docker-widget {
+  display: grid;
+  position: relative;
+  box-sizing: border-box;
+  grid-template-rows: auto minmax(0, 1fr);
+  height: 100%;
+  width: 100%;
+  min-width: 0;
+  gap: 0.62rem;
+  overflow: hidden;
+  border: 1px solid var(--sd-color-border-subtle, rgb(255 255 255 / 0.12));
+  border-radius: 1rem;
+  background: var(--sd-color-surface, rgb(255 255 255));
+  padding: 0.9rem;
+  color: var(--sd-color-text-primary, #111827);
+  box-shadow: var(--sd-shadow-widget, 0 16px 36px rgb(15 23 42 / 0.16));
+}
+
+:global(.dark) .docker-widget {
+  background: var(--sd-color-surface, rgb(17 24 39));
+}
+
+.docker-widget.is-compact {
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 0.52rem;
+  padding: 0.75rem;
+}
+
+.docker-widget[data-widget-size="2x2"] {
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 0.48rem;
+  padding: 0.74rem;
+}
+
+.docker-widget.is-tiny {
+  grid-template-rows: minmax(0, 1fr);
+  gap: 0;
+  place-items: center;
+  padding: 0.42rem;
+}
+
+.docker-widget.is-short {
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.48rem 0.58rem;
+}
+
+.docker-widget.is-vertical {
+  grid-template-rows: auto minmax(0, 1fr);
+  align-items: center;
+  justify-items: center;
+  gap: 0.46rem;
+  padding: 0.52rem 0.46rem;
+}
+
+.docker-widget-counters,
+.docker-widget-actions,
+.docker-container-main,
+.docker-container-actions,
+.docker-public-host-editor {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.docker-widget-counters,
+.docker-widget-empty span,
+.docker-widget-empty em,
+.docker-container-title span,
+.docker-container-state span {
+  color: var(--sd-color-text-secondary, #64748b);
+  font-size: 0.69rem;
+  font-weight: 650;
+}
+
+.docker-widget-counters i,
+.docker-container-dot {
+  display: block;
+  width: 0.45rem;
+  height: 0.45rem;
+  flex: 0 0 auto;
+  border-radius: 999px;
+  background: var(--sd-color-text-tertiary, #94a3b8);
+}
+
+.docker-widget-counters i.is-ready,
+.docker-container-card.is-running .docker-container-dot {
+  background: #22c55e;
+  box-shadow: 0 0 0 0.2rem rgb(34 197 94 / 0.14);
+}
+
+.docker-widget-counters i.is-danger {
+  background: #ef4444;
+}
+
+.docker-widget-summary {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.42rem;
+  grid-column: 1 / -1;
+}
+
+.docker-widget-total {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  min-width: 0;
+  gap: 0.7rem;
+}
+
+.docker-widget-total span {
+  color: var(--sd-color-text-tertiary, #94a3b8);
+  font-size: 0.68rem;
+  font-weight: 740;
+}
+
+.docker-widget-total strong {
+  color: var(--sd-color-text-primary, #111827);
+  font-size: 2.6rem;
+  font-weight: 780;
+  letter-spacing: 0;
+  line-height: 1.05;
+}
+
+.docker-widget.is-board .docker-widget-total strong {
+  font-size: 2.35rem;
+  line-height: 1;
+}
+
+.docker-widget.is-compact .docker-widget-total strong {
+  font-size: 2.2rem;
+}
+
+.docker-widget[data-widget-size="2x2"] .docker-widget-total strong {
+  font-size: 2rem;
+}
+
+.docker-widget.is-tiny .docker-widget-total strong {
+  font-size: 1.22rem;
+  line-height: 1;
+}
+
+.docker-widget.is-short .docker-widget-total strong,
+.docker-widget.is-vertical .docker-widget-total strong {
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+.docker-widget-counters {
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.docker-widget-board-hint {
+  min-width: 0;
+  overflow: hidden;
+  margin: -0.05rem 0 0;
+  color: var(--sd-color-text-secondary, #64748b);
+  font-size: 0.72rem;
+  font-weight: 720;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.docker-widget-counters span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.28rem;
+  border-radius: 999px;
+  background: var(--sd-color-surface-muted, rgb(241 245 249 / 0.74));
+  padding: 0.24rem 0.46rem;
+}
+
+.docker-widget-counters b,
+.docker-widget-counters em {
+  color: inherit;
+  font: inherit;
+}
+
+.docker-widget-counters b {
+  font-weight: 780;
+}
+
+.docker-widget-counters em {
+  font-style: normal;
+}
+
+.docker-widget-actions {
+  gap: 0.42rem;
+  overflow: hidden;
+}
+
+.docker-action,
+.docker-widget-empty button,
+.docker-container-actions button,
+.docker-public-host-editor button {
+  border: 0;
+  border-radius: 999px;
+  background: var(--sd-color-surface-muted, rgb(241 245 249 / 0.9));
+  color: var(--sd-color-text-primary, #111827);
+  cursor: pointer;
+  font-size: 0.7rem;
+  font-weight: 720;
+  line-height: 1;
+  padding: 0.42rem 0.62rem;
+  transition:
+    background-color 160ms ease,
+    color 160ms ease,
+    opacity 160ms ease;
+}
+
+.docker-action:hover,
+.docker-widget-empty button:hover,
+.docker-container-actions button:hover,
+.docker-public-host-editor button:hover {
+  background: color-mix(in srgb, #3b82f6 16%, var(--sd-color-surface-muted));
+  color: #2563eb;
+}
+
+.docker-action:disabled,
+.docker-widget-empty button:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
+.docker-widget-empty {
+  display: grid;
+  min-width: 0;
+  place-items: center;
+  align-content: center;
+  gap: 0.45rem;
+  border: 1px dashed var(--sd-color-border-subtle, rgb(226 232 240 / 0.78));
+  border-radius: 0.9rem;
+  background: var(--sd-color-surface-muted, rgb(248 250 252));
+  padding: 0.75rem;
+  text-align: center;
+}
+
+.docker-widget-empty strong {
+  color: var(--sd-color-text-primary, #111827);
+  font-size: 0.84rem;
+  font-weight: 760;
+  line-height: 1.25;
+}
+
+.docker-widget-empty.is-error strong {
+  color: var(--sd-color-accent-danger, #ef4444);
+}
+
+.docker-widget-empty.is-error span {
+  display: -webkit-box;
+  max-width: 100%;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.docker-widget.is-board .docker-widget-empty {
+  min-height: 0;
+  align-content: center;
+  gap: 0.34rem;
+  padding: 0.58rem 0.75rem;
+}
+
+.docker-widget[data-widget-size="2x2"] .docker-widget-empty {
+  min-height: 0;
+  gap: 0.34rem;
+  padding: 0.58rem;
+}
+
+.docker-widget.is-board .docker-widget-empty.is-error span {
+  -webkit-line-clamp: 1;
+}
+
+.docker-container-list {
+  display: grid;
+  min-height: 0;
+  gap: 0.48rem;
+  overflow: auto;
+  padding-right: 0.08rem;
+}
+
+.docker-widget.is-board .docker-container-list {
+  gap: 0.38rem;
+  overflow: hidden;
+  padding-right: 0;
+}
+
+.docker-widget-warning {
+  border-radius: 0.72rem;
+  background: rgb(245 158 11 / 0.12);
+  color: #b45309;
+  font-size: 0.68rem;
+  font-weight: 720;
+  padding: 0.42rem 0.55rem;
+}
+
+.docker-container-card {
+  display: grid;
+  min-width: 0;
+  gap: 0.46rem;
+  border: 1px solid var(--sd-color-border-subtle, rgb(226 232 240 / 0.7));
+  border-radius: 0.86rem;
+  background: var(--sd-color-surface-muted, rgb(248 250 252));
+  padding: 0.58rem;
+}
+
+.docker-widget.is-board .docker-container-card {
+  gap: 0;
+  padding: 0.36rem 0.5rem;
+}
+
+.docker-widget.is-board .docker-container-main {
+  align-items: center;
+}
+
+.docker-widget.is-board .docker-container-title {
+  gap: 0;
+}
+
+.docker-widget.is-board .docker-container-title span {
+  display: none;
+}
+
+.docker-container-main {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 0.5rem;
+}
+
+.docker-container-title {
+  display: grid;
+  min-width: 0;
+  gap: 0.16rem;
+}
+
+.docker-container-title strong {
+  overflow: hidden;
+  color: var(--sd-color-text-primary, #111827);
+  font-size: 0.78rem;
+  font-weight: 760;
+  line-height: 1.16;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.docker-container-title span,
+.docker-container-state span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.docker-container-state {
+  display: grid;
+  justify-items: end;
+  gap: 0.2rem;
+  min-width: 4rem;
+  max-width: 6.5rem;
+}
+
+.docker-widget.is-board .docker-container-state {
+  min-width: 3.6rem;
+}
+
+.docker-container-state em {
+  border-radius: 999px;
+  background: rgb(239 68 68 / 0.1);
+  color: #dc2626;
+  font-size: 0.62rem;
+  font-style: normal;
+  font-weight: 760;
+  padding: 0.18rem 0.36rem;
+  white-space: nowrap;
+}
+
+.docker-container-metrics {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+.docker-container-metrics div {
+  display: grid;
+  gap: 0.24rem;
+  min-width: 0;
+}
+
+.docker-container-metrics div > span,
+.docker-container-metrics strong {
+  color: var(--sd-color-text-secondary, #64748b);
+  font-size: 0.66rem;
+  font-weight: 700;
+}
+
+.docker-container-metrics strong {
+  color: var(--sd-color-text-primary, #111827);
+  text-align: right;
+}
+
+.docker-container-metrics i {
+  display: block;
+  height: 0.32rem;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--sd-color-surface, rgb(226 232 240 / 0.8));
+}
+
+.docker-container-metrics b {
+  display: block;
+  height: 100%;
+  max-width: 100%;
+  border-radius: inherit;
+  background: #3b82f6;
+}
+
+.docker-container-metrics div:nth-child(2) b {
+  background: #8b5cf6;
+}
+
+.docker-container-actions {
+  flex-wrap: wrap;
+  gap: 0.32rem;
+  border-top: 1px solid var(--sd-color-border-subtle, rgb(226 232 240 / 0.68));
+  padding-top: 0.45rem;
+}
+
+.docker-container-actions label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  border-radius: 999px;
+  background: var(--sd-color-surface-muted, rgb(241 245 249 / 0.9));
+  color: var(--sd-color-text-secondary, #64748b);
+  cursor: pointer;
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 0.36rem 0.54rem;
+}
+
+.docker-public-host-editor {
+  gap: 0.36rem;
+}
+
+.docker-public-host-editor input {
+  min-width: 0;
+  flex: 1 1 auto;
+  border: 1px solid var(--sd-color-border-subtle, rgb(226 232 240 / 0.8));
+  border-radius: 999px;
+  background: var(--sd-color-surface, rgb(255 255 255));
+  color: var(--sd-color-text-primary, #111827);
+  font-size: 0.72rem;
+  outline: none;
+  padding: 0.42rem 0.62rem;
+}
+
+.docker-widget.is-compact .docker-widget-actions,
+.docker-widget.is-compact .docker-container-state {
+  display: none;
+}
+
+.docker-widget[data-widget-size="2x2"] .docker-widget-empty span {
+  display: none;
+}
+
+.docker-widget.is-tiny .docker-widget-counters,
+.docker-widget.is-short .docker-widget-counters,
+.docker-widget.is-vertical .docker-widget-total > span {
+  display: none;
+}
+
+.docker-widget.is-tiny .docker-widget-summary,
+.docker-widget.is-vertical .docker-widget-summary {
+  align-self: center;
+  width: 100%;
+  gap: 0;
+  text-align: center;
+}
+
+.docker-widget.is-short .docker-widget-summary {
+  align-self: center;
+  min-width: 0;
+  gap: 0.28rem;
+}
+
+.docker-widget.is-tiny .docker-widget-total,
+.docker-widget.is-vertical .docker-widget-total {
+  display: grid;
+  justify-items: center;
+  gap: 0.18rem;
+}
+
+.docker-widget.is-vertical .docker-widget-counters {
+  display: grid;
+  justify-items: center;
+  gap: 0.28rem;
+  width: 100%;
+}
+
+.docker-widget.is-vertical .docker-widget-counters span {
+  gap: 0.16rem;
+  padding: 0.2rem 0.28rem;
+  font-size: 0.62rem;
+  line-height: 1;
+}
+
+.docker-widget.is-vertical .docker-widget-counters i {
+  width: 0.34rem;
+  height: 0.34rem;
+}
+
+.docker-widget.is-vertical .docker-widget-counters em {
+  display: none;
+}
+
+.docker-widget.is-short .docker-widget-total {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.docker-widget.is-compact .docker-container-main {
+  grid-template-columns: auto minmax(0, 1fr);
+}
+
+.docker-widget.is-compact .docker-container-card {
+  padding: 0.45rem 0.5rem;
+}
+
 .custom-scrollbar::-webkit-scrollbar {
   width: 4px;
 }
@@ -1423,5 +2504,104 @@ const getStatusColor = (state: string) => {
 }
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: #d1d5db;
+}
+
+.docker-settings-section {
+  display: grid;
+  min-width: 0;
+  gap: 0.75rem;
+  border: 1px solid var(--sd-color-border-subtle, rgb(226 232 240 / 0.76));
+  border-radius: 1rem;
+  background: var(--sd-color-surface-muted, rgb(248 250 252));
+  padding: 0.9rem;
+}
+
+.docker-settings-section + .docker-settings-section {
+  margin-top: 0.85rem;
+}
+
+.docker-settings-section-title {
+  display: grid;
+  min-width: 0;
+  gap: 0.18rem;
+}
+
+.docker-settings-section-title strong {
+  color: var(--sd-color-text-primary, #111827);
+  font-size: 0.98rem;
+  font-weight: 780;
+}
+
+.docker-settings-section-title span,
+.docker-settings-error,
+.docker-settings-field span {
+  color: var(--sd-color-text-secondary, #64748b);
+  font-size: 0.78rem;
+  font-weight: 650;
+}
+
+.docker-settings-actions,
+.docker-settings-grid {
+  display: flex;
+  flex-wrap: wrap;
+  min-width: 0;
+  gap: 0.55rem;
+}
+
+.docker-settings-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.docker-settings-field {
+  display: grid;
+  min-width: 0;
+  gap: 0.38rem;
+}
+
+.docker-settings-field input {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid var(--sd-color-border-subtle, rgb(226 232 240 / 0.86));
+  border-radius: 0.78rem;
+  background: var(--sd-color-surface, rgb(255 255 255));
+  color: var(--sd-color-text-primary, #111827);
+  font-size: 0.9rem;
+  font-weight: 680;
+  outline: none;
+  padding: 0.66rem 0.75rem;
+}
+
+.docker-settings-field input:disabled {
+  cursor: not-allowed;
+  opacity: 0.54;
+}
+
+.docker-settings-error {
+  border-radius: 0.78rem;
+  background: rgb(239 68 68 / 0.1);
+  color: var(--sd-color-accent-danger, #ef4444);
+  padding: 0.62rem 0.7rem;
+}
+
+@media (max-width: 640px) {
+  .docker-opened-workbench {
+    padding: 1rem;
+  }
+
+  .docker-opened-header {
+    align-items: flex-start;
+    flex-direction: column;
+    padding-right: 3.5rem;
+  }
+
+  .docker-opened-layout,
+  .docker-opened-overview {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .docker-settings-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 </style>

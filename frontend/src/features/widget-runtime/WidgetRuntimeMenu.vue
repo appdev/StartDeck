@@ -17,6 +17,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   close: [];
+  refresh: [widget: WidgetConfig];
   editIcon: [widget: WidgetConfig];
   editHome: [widget: WidgetConfig];
   delete: [widget: WidgetConfig];
@@ -34,10 +35,11 @@ const panelStyle = computed(() => ({
   top: `${Math.max(8, props.y)}px`,
 }));
 
-const runAction = (action: "editIcon" | "editHome" | "delete") => {
+const runAction = (action: "refresh" | "editIcon" | "editHome" | "delete") => {
   const widget = props.widget;
   if (!widget) return;
   emit("close");
+  if (action === "refresh") emit("refresh", widget);
   if (action === "editIcon") emit("editIcon", widget);
   if (action === "editHome") emit("editHome", widget);
   if (action === "delete") emit("delete", widget);
@@ -99,6 +101,15 @@ const selectSize = (sizeKey: RuntimeWidgetSizeKey) => {
       </section>
 
       <section class="sd-runtime-menu-actions" aria-label="组件操作">
+        <button type="button" role="menuitem" @click="runAction('refresh')">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M20 6v5h-5" />
+            <path d="M4 18v-5h5" />
+            <path d="M18.2 9A7 7 0 0 0 6.4 6.8L4 9" />
+            <path d="M5.8 15A7 7 0 0 0 17.6 17.2L20 15" />
+          </svg>
+          <span>刷新</span>
+        </button>
         <button type="button" role="menuitem" @click="runAction('editIcon')">
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <path d="M4 5.8A1.8 1.8 0 0 1 5.8 4h9.4A1.8 1.8 0 0 1 17 5.8V11" />

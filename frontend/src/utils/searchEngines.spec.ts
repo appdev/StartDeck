@@ -1,162 +1,117 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { SearchEngine } from "@/types";
+import { describe, expect, it, vi } from "vitest";
 import {
   buildSearchEngineUrl,
   createDefaultSearchEngines,
-  getSearchEngineIcon,
-  getSearchEngineSourceUrl,
-  hydrateSearchEngineIcon,
-  hydrateSearchEngineIcons,
-  resetSearchEngineMetadataCacheForTests,
-  shouldHydrateSearchEngineIcon,
+  createSearchEngineKey,
+  normalizeDefaultSearchEngine,
+  normalizeSearchEngines,
 } from "./searchEngines";
 
 describe("searchEngines", () => {
-  beforeEach(() => {
-    vi.restoreAllMocks();
-    resetSearchEngineMetadataCacheForTests();
+  it("uses the supported built-in search engines by default", () => {
+    expect(createDefaultSearchEngines().map((engine) => engine.label)).toEqual([
+      "百度",
+      "谷歌",
+      "Bing",
+    ]);
   });
 
-  it("derives the icon source from the search URL template", () => {
-    const engine: SearchEngine = {
-      id: "custom",
-      key: "custom",
-      label: "Custom",
-      urlTemplate: "example.com/search?q={q}",
-    };
+  it("keeps custom ordering without re-adding removed built-in engines", () => {
+    const engines = normalizeSearchEngines([
+      {
+        id: "custom",
+        key: "custom",
+        label: "站内",
+        urlTemplate: "https://example.com/search?q={q}",
+        custom: true,
+      },
+      {
+        id: "google",
+        key: "google",
+        label: "谷歌",
+        urlTemplate: "https://www.google.com/search?q={q}",
+      },
+    ]);
 
-    expect(getSearchEngineSourceUrl(engine)).toBe("https://example.com");
-    expect(getSearchEngineIcon(engine)).toBe("/api/site/icon?url=https%3A%2F%2Fexample.com&size=64");
+    expect(engines[0]?.key).toBe("custom");
+    expect(engines[1]?.key).toBe("google");
+    expect(engines.map((engine) => engine.key)).toEqual(["custom", "google"]);
   });
 
-  it("builds a search URL from a configured template", () => {
-    const engine: SearchEngine = {
-      id: "custom",
-      key: "custom",
-      label: "Custom",
-      urlTemplate: "https://example.com/search?q={q}",
-    };
+  it("drops deprecated built-in search engines from saved config", () => {
+    const engines = normalizeSearchEngines([
+      {
+        id: "so",
+        key: "so",
+        label: "综合搜索",
+        urlTemplate: "https://www.so.com/s?q={q}",
+      },
+      {
+        id: "metaso",
+        key: "metaso",
+        label: "秘塔AI",
+        urlTemplate: "https://metaso.cn/?q={q}",
+      },
+      {
+        id: "bing",
+        key: "bing",
+        label: "Bing",
+        urlTemplate: "https://cn.bing.com/search?q={q}",
+      },
+    ]);
 
-    expect(buildSearchEngineUrl(engine, "hello world")).toBe(
-      "https://example.com/search?q=hello%20world",
-    );
+    expect(engines.map((engine) => engine.key)).toEqual(["bing"]);
   });
 
-  it("persists metadata icon fields onto the search engine", async () => {
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async (input: string | URL | Request) => {
-        expect(String(input)).toContain("/api/site/metadata?url=");
-        return {
-          ok: true,
-          json: async () => ({
-            code: 200,
-            data: {
-              url: "https://example.com",
-              title: "Example",
-              icon: "/api/site/icon?url=https%3A%2F%2Fexample.com",
-              backgroundColor: "#ABC",
-              fetchedAt: "2026-05-14T00:00:00Z",
-            },
-          }),
-        };
-      }),
-    );
+  it("renames legacy built-in labels to the current product names", () => {
+    const engines = normalizeSearchEngines([
+      {
+        id: "google",
+        key: "google",
+        label: "Google",
+        urlTemplate: "https://www.google.com/search?q={q}",
+      },
+      {
+        id: "bing",
+        key: "bing",
+        label: "必应",
+        urlTemplate: "https://cn.bing.com/search?q={q}",
+      },
+    ]);
 
-    const engine: SearchEngine = {
-      id: "custom",
-      key: "custom",
-      label: "Custom",
-      urlTemplate: "https://example.com/search?q={q}",
-    };
-
-    await expect(hydrateSearchEngineIcon(engine)).resolves.toBe(true);
-    expect(engine.icon).toBe("/api/site/icon?url=https%3A%2F%2Fexample.com");
-    expect(engine.iconSourceUrl).toBe("https://example.com");
-    expect(engine.iconFetchedAt).toBe("2026-05-14T00:00:00Z");
-    expect(engine.iconBackgroundMode).toBe("auto");
-    expect(engine.iconAutoBackgroundColor).toBe("#aabbcc");
+    expect(engines.map((engine) => engine.label)).toEqual(["谷歌", "Bing"]);
   });
 
-  it("hydrates an existing icon when the background metadata is missing", async () => {
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async () => ({
-        ok: true,
-        json: async () => ({
-          code: 200,
-          data: {
-            url: "https://example.com",
-            icon: "/icons/example.svg",
-            backgroundColor: "#ffffff",
-          },
-        }),
-      })),
-    );
-
-    const engine: SearchEngine = {
-      id: "custom",
-      key: "custom",
-      label: "Custom",
-      urlTemplate: "https://example.com/search?q={q}",
-      icon: "/icons/old.svg",
-      iconSourceUrl: "https://example.com",
-    };
-
-    expect(shouldHydrateSearchEngineIcon(engine)).toBe(true);
-    await expect(hydrateSearchEngineIcon(engine)).resolves.toBe(true);
-    expect(engine.icon).toBe("/icons/example.svg");
-    expect(engine.iconBackgroundMode).toBe("auto");
-    expect(engine.iconAutoBackgroundColor).toBe("#ffffff");
-  });
-
-  it("skips metadata requests when icon and background mode are already hydrated", async () => {
-    const fetchMock = vi.fn();
-    vi.stubGlobal("fetch", fetchMock);
-
-    const engine: SearchEngine = {
-      id: "custom",
-      key: "custom",
-      label: "Custom",
-      urlTemplate: "https://example.com/search?q={q}",
-      icon: "/icons/example.svg",
-      iconSourceUrl: "https://example.com",
-      iconBackgroundMode: "auto",
-      iconAutoBackgroundColor: "#ffffff",
-    };
-
-    expect(shouldHydrateSearchEngineIcon(engine)).toBe(false);
-    await expect(hydrateSearchEngineIcon(engine)).resolves.toBe(false);
-    expect(fetchMock).not.toHaveBeenCalled();
-  });
-
-  it("hydrates default search engine icons in a startup pass", async () => {
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async (input: string | URL | Request) => {
-        const request = new URL(String(input), "http://localhost");
-        const targetUrl = request.searchParams.get("url") || "";
-        const host = new URL(targetUrl).hostname;
-        return {
-          ok: true,
-          json: async () => ({
-            code: 200,
-            data: {
-              url: targetUrl,
-              icon: `/icons/${host}.svg`,
-              backgroundColor: "#f8fafc",
-              fetchedAt: `2026-05-14T00:00:00Z:${host}`,
-            },
-          }),
-        };
-      }),
-    );
-
+  it("normalizes invalid default engine keys", () => {
     const engines = createDefaultSearchEngines();
+    expect(normalizeDefaultSearchEngine("missing", engines)).toBe("baidu");
+    expect(normalizeDefaultSearchEngine("bing", engines)).toBe("bing");
+  });
 
-    await expect(hydrateSearchEngineIcons(engines)).resolves.toBe(true);
-    expect(engines.every((engine) => engine.icon?.startsWith("/icons/"))).toBe(true);
-    expect(engines.every((engine) => engine.iconBackgroundMode === "auto")).toBe(true);
-    expect(engines.every((engine) => engine.iconAutoBackgroundColor === "#f8fafc")).toBe(true);
+  it("builds search URLs from placeholder and plain URL templates", () => {
+    const [engine] = createDefaultSearchEngines();
+    expect(buildSearchEngineUrl(engine, "天气 深圳")).toBe(
+      "https://www.baidu.com/s?wd=%E5%A4%A9%E6%B0%94%20%E6%B7%B1%E5%9C%B3",
+    );
+    expect(
+      buildSearchEngineUrl(
+        {
+          id: "plain",
+          key: "plain",
+          label: "Plain",
+          urlTemplate: "https://example.com/search",
+        },
+        "StartDeck",
+      ),
+    ).toBe("https://example.com/search?q=StartDeck");
+  });
+
+  it("creates stable custom keys from labels", () => {
+    vi.spyOn(Math, "random").mockReturnValue(0.12345);
+    vi.spyOn(Date, "now").mockReturnValue(1000);
+
+    expect(createSearchEngineKey("My Search")).toBe("my-search-4fzol");
+
+    vi.restoreAllMocks();
   });
 });

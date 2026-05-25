@@ -1,8 +1,11 @@
 // @vitest-environment jsdom
+import { readFileSync } from "node:fs";
 import { afterEach, describe, expect, it } from "vitest";
 import { mount, type VueWrapper } from "@vue/test-utils";
 import { nextTick } from "vue";
 import ConfirmDialog from "@/components/base/ConfirmDialog.vue";
+
+const mainCssSource = readFileSync("src/assets/main.css", "utf8");
 
 let wrapper: VueWrapper | null = null;
 
@@ -46,6 +49,21 @@ describe("ConfirmDialog", () => {
     expect(panel?.getAttribute("aria-describedby")).toBeTruthy();
     expect(document.body.querySelector("[aria-label='关闭']")).toBeNull();
     expect(document.activeElement?.textContent).toBe("取消");
+  });
+
+  it("uses a compact title layout instead of the shared wide-window title padding", async () => {
+    mountDialog({ title: "放弃未保存的修改？" });
+    await nextTick();
+
+    const surface = document.body.querySelector(".sd-confirm-dialog-surface");
+    expect(surface).not.toBeNull();
+    expect(surface?.classList.contains("sd-compact-window")).toBe(true);
+    expect(surface?.querySelector(".sd-window-title-layer")).not.toBeNull();
+    expect(mainCssSource).toContain(
+      ".sd-compact-window .sd-window-title-layer",
+    );
+    expect(mainCssSource).toContain("position: static");
+    expect(mainCssSource).toContain("word-break: keep-all");
   });
 
   it("ignores outside click and Escape in blocking mode", async () => {

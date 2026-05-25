@@ -1,19 +1,50 @@
 <script setup lang="ts">
-import { ref, onMounted, computed, watch, onBeforeUnmount } from "vue";
+import { ref, onMounted, computed, watch } from "vue";
 import { useMainStore } from "../stores/main";
 import { VueDraggable } from "vue-draggable-plus";
-import { cacheImage, getCachedImage } from "@/utils/imageCache";
-import { v4 as uuidv4 } from "uuid";
-import { acquireObjectUrl, releaseObjectUrl } from "@/utils/objectUrlRuntime";
-import OverlayMotion from "@/components/base/OverlayMotion.vue";
+import AppButton from "@/components/base/AppButton.vue";
+import AppModalShell from "@/components/base/AppModalShell.vue";
+import AppRangeField from "@/components/base/AppRangeField.vue";
+import AppSectionCard from "@/components/base/AppSectionCard.vue";
+import AppSegmentedControl from "@/components/base/AppSegmentedControl.vue";
+import AppSwitch from "@/components/base/AppSwitch.vue";
+import ConfirmDialog from "@/components/base/ConfirmDialog.vue";
+import StatusBanner from "@/components/base/StatusBanner.vue";
+import { fetchItabBingWallpapers } from "@/features/itab-wallpaper/itabWallpaperApi";
+import type { ItabWallpaperEntry } from "@/features/itab-wallpaper/itabWallpaperTypes";
+import { useUiFeedbackStore } from "@/stores/uiFeedback";
 
 const props = defineProps<{
   show: boolean;
   title?: string;
+  initialTab?: "pc" | "mobile" | "api";
+  zIndex?: number | string;
 }>();
 
 const emit = defineEmits(["update:show", "select"]);
 const store = useMainStore();
+const uiFeedback = useUiFeedbackStore();
+
+const notify = (
+  message: string,
+  tone: "info" | "success" | "warning" | "danger" = "info",
+  title?: string,
+) => {
+  uiFeedback.notify({ title, message, tone });
+};
+
+const showFeedbackAlert = (
+  message: string,
+  options: {
+    title?: string;
+    tone?: "info" | "success" | "warning" | "danger";
+  } = {},
+) =>
+  uiFeedback.alert({
+    title: options.title ?? "壁纸库提示",
+    message,
+    tone: options.tone ?? "info",
+  });
 
 /** GET / multipart：只带 Bearer，不设 Content-Type（避免破坏 FormData） */
 const authHeadersOnly = (): Record<string, string> => {
@@ -23,7 +54,18 @@ const authHeadersOnly = (): Record<string, string> => {
   return h;
 };
 
-const activeTab = ref<"pc" | "mobile" | "api">("pc");
+const activeTab = ref<"pc" | "mobile" | "api">(props.initialTab || "pc");
+const wallpaperTabOptions = computed(() => [
+  { label: "PC 壁纸", value: "pc" },
+  { label: "手机壁纸", value: "mobile" },
+  { label: "Bing API", value: "api" },
+]);
+const dialogSubtitle = computed(() => {
+  if (activeTab.value === "pc") return `${wallpapers.value.length} 张 PC 壁纸`;
+  if (activeTab.value === "mobile")
+    return `${mobileWallpapers.value.length} 张手机壁纸`;
+  return "Bing 历史壁纸接口";
+});
 const wallpapers = computed<string[]>({
   get: () => store.wallpaperListPc,
   set: (val) => {
@@ -123,7 +165,9 @@ const prependWallpaperToList = (name: string, type: "pc" | "mobile") => {
   const nextList = [
     DEFAULT_WALLPAPER,
     name,
-    ...currentList.filter((item) => item !== DEFAULT_WALLPAPER && item !== name),
+    ...currentList.filter(
+      (item) => item !== DEFAULT_WALLPAPER && item !== name,
+    ),
   ];
   if (type === "pc") {
     wallpapers.value = nextList;
@@ -152,7 +196,8 @@ const inferImageExtension = (blob: Blob, urlHint: string) => {
   return "jpg";
 };
 
-const getWallpaperErrorKey = (name: string, type: "pc" | "mobile") => `${type}:${name}`;
+const getWallpaperErrorKey = (name: string, type: "pc" | "mobile") =>
+  `${type}:${name}`;
 
 const getWallpaperPreviewError = (name: string, type: "pc" | "mobile") =>
   wallpaperPreviewErrors.value[getWallpaperErrorKey(name, type)] || "";
@@ -171,7 +216,8 @@ const handleWallpaperPreviewError = (
   event: Event,
 ) => {
   const img = event.target as HTMLImageElement | null;
-  const attemptedUrl = img?.currentSrc || img?.src || getWallpaperDisplayUrl(name, type);
+  const attemptedUrl =
+    img?.currentSrc || img?.src || getWallpaperDisplayUrl(name, type);
   wallpaperPreviewErrors.value = {
     ...wallpaperPreviewErrors.value,
     [getWallpaperErrorKey(name, type)]: attemptedUrl,
@@ -180,13 +226,20 @@ const handleWallpaperPreviewError = (
 
 const draggableList = computed({
   get() {
-    const list = activeTab.value === "pc" ? [...wallpapers.value] : [...mobileWallpapers.value];
+    const list =
+      activeTab.value === "pc"
+        ? [...wallpapers.value]
+        : [...mobileWallpapers.value];
     const currentBg =
-      activeTab.value === "pc" ? store.appConfig.background : store.appConfig.mobileBackground;
+      activeTab.value === "pc"
+        ? store.appConfig.background
+        : store.appConfig.mobileBackground;
 
     const type: "pc" | "mobile" = activeTab.value === "pc" ? "pc" : "mobile";
     const normalizedCurrentBg = stripTransientQueryParams(currentBg || "");
-    const index = list.findIndex((name) => getWallpaperPath(name, type) === normalizedCurrentBg);
+    const index = list.findIndex(
+      (name) => getWallpaperPath(name, type) === normalizedCurrentBg,
+    );
     if (index > -1) {
       const [item] = list.splice(index, 1);
       if (item) list.unshift(item);
@@ -206,7 +259,9 @@ const draggableList = computed({
     if (first) {
       const type: "pc" | "mobile" = activeTab.value === "pc" ? "pc" : "mobile";
       const currentBg =
-        type === "pc" ? store.appConfig.background : store.appConfig.mobileBackground;
+        type === "pc"
+          ? store.appConfig.background
+          : store.appConfig.mobileBackground;
       const firstUrl = getWallpaperPath(first, type);
 
       if (firstUrl !== stripTransientQueryParams(currentBg || "")) {
@@ -229,10 +284,13 @@ const handleUpload = (event: Event) => {
   pendingFiles.value = Array.from(input.files);
 
   // Check file size
-  const hasLargeFile = pendingFiles.value.some((f) => f.size > 10 * 1024 * 1024);
+  const hasLargeFile = pendingFiles.value.some(
+    (f) => f.size > 10 * 1024 * 1024,
+  );
 
   if (hasLargeFile) {
-    confirmMessage.value = "检测到文件超过 10MB，可能导致内存占用过高，是否继续上传？";
+    confirmMessage.value =
+      "检测到文件超过 10MB，可能导致内存占用过高，是否继续上传？";
     confirmAction.value = executeUpload;
     showConfirmModal.value = true;
   } else {
@@ -256,7 +314,8 @@ const executeUpload = async () => {
   const endpoint =
     activeTab.value === "pc"
       ? store.appConfig.wallpaperApiPcUpload || "/api/backgrounds/upload"
-      : store.appConfig.wallpaperApiMobileUpload || "/api/mobile_backgrounds/upload";
+      : store.appConfig.wallpaperApiMobileUpload ||
+        "/api/mobile_backgrounds/upload";
 
   try {
     const res = await fetch(endpoint, {
@@ -268,12 +327,19 @@ const executeUpload = async () => {
     if (res.ok) {
       await fetchWallpapers();
       store.refreshResources(); // 刷新资源版本号，更新图片缓存
+      notify("新壁纸已加入当前分类。", "success", "上传完成");
     } else {
-      alert("上传失败");
+      void showFeedbackAlert("上传失败", {
+        title: "壁纸上传失败",
+        tone: "danger",
+      });
     }
   } catch (e) {
     console.error(e);
-    alert("上传出错");
+    void showFeedbackAlert("请求过程中发生异常，请稍后重试。", {
+      title: "壁纸上传失败",
+      tone: "danger",
+    });
   } finally {
     uploading.value = false;
     pendingFiles.value = [];
@@ -282,7 +348,7 @@ const executeUpload = async () => {
 
 const handleDelete = (name: string, type: "pc" | "mobile") => {
   if (name === DEFAULT_WALLPAPER) {
-    alert("默认壁纸无法删除");
+    notify("默认壁纸不能删除。", "warning", "操作已拦截");
     return;
   }
   confirmMessage.value = "确定要删除这张壁纸吗？";
@@ -294,7 +360,9 @@ const executeDelete = async (name: string, type: "pc" | "mobile") => {
   // Check if active wallpaper is being deleted
   const url = getWallpaperPath(name, type);
   const currentBg = stripTransientQueryParams(
-    type === "pc" ? store.appConfig.background : store.appConfig.mobileBackground,
+    type === "pc"
+      ? store.appConfig.background
+      : store.appConfig.mobileBackground,
   );
 
   if (url === currentBg) {
@@ -307,7 +375,8 @@ const executeDelete = async (name: string, type: "pc" | "mobile") => {
   const base =
     type === "pc"
       ? store.appConfig.wallpaperApiPcDeleteBase || "/api/backgrounds"
-      : store.appConfig.wallpaperApiMobileDeleteBase || "/api/mobile_backgrounds";
+      : store.appConfig.wallpaperApiMobileDeleteBase ||
+        "/api/mobile_backgrounds";
   const trimmed = base.endsWith("/") ? base.slice(0, -1) : base;
   const endpoint = `${trimmed}/${encodeURIComponent(name)}`;
 
@@ -320,8 +389,12 @@ const executeDelete = async (name: string, type: "pc" | "mobile") => {
     if (res.ok) {
       await fetchWallpapers();
       store.refreshResources();
+      notify("壁纸已从本地库移除。", "success", "删除完成");
     } else {
-      alert("删除失败");
+      void showFeedbackAlert("删除失败", {
+        title: "壁纸删除失败",
+        tone: "danger",
+      });
     }
   } catch (e) {
     console.error(e);
@@ -331,7 +404,9 @@ const executeDelete = async (name: string, type: "pc" | "mobile") => {
 // Rotation Logic Helpers
 const currentRotationEnabled = computed({
   get: () =>
-    activeTab.value === "pc" ? store.appConfig.pcRotation : store.appConfig.mobileRotation,
+    activeTab.value === "pc"
+      ? store.appConfig.pcRotation
+      : store.appConfig.mobileRotation,
   set: (val) => {
     if (activeTab.value === "pc") store.appConfig.pcRotation = val;
     else store.appConfig.mobileRotation = val;
@@ -369,7 +444,8 @@ const toggleRotation = () => {
 };
 
 const togglePlayMode = () => {
-  currentRotationMode.value = currentRotationMode.value === "random" ? "sequential" : "random";
+  currentRotationMode.value =
+    currentRotationMode.value === "random" ? "sequential" : "random";
 };
 
 const stopAndLockRotation = () => {
@@ -381,299 +457,195 @@ const lockButtonLabel = computed(() =>
   isWallpaperLocked.value ? "已锁定" : "停止并锁定",
 );
 
-const customApiUrl = ref("");
-const currentGeneratorUrl = ref("");
-const resolvingUrl = ref(false);
-const previewBlob = ref<Blob | null>(null);
-const previewResolvedUrl = ref("");
-const previewDisplayUrl = ref("");
-const previewSourceUrl = ref("");
-const previewRequestId = ref(0);
-const previewObjectUrl = ref("");
-const previewKey = "wallpaper-preview";
+const applyingApi = ref(false);
+const apiApplyingTarget = ref("");
+const apiWallpapers = ref<ItabWallpaperEntry[]>([]);
+const apiPage = ref(1);
+const apiTotalPages = ref(1);
+const apiLoading = ref(false);
+const apiError = ref("");
+const apiPageSize = 24;
 
-const presetApis = [
-  {
-    name: "Bing 每日壁纸",
-    url: "https://bing.biturl.top/?resolution=1920&format=image&index=0&mkt=zh-CN",
-    autoUpdate: true,
-  },
-  { name: "随机风景 (Picsum)", url: "https://picsum.photos/1920/1080", autoUpdate: false },
-  { name: "随机二次元 (PC)", url: "https://www.loliapi.com/acg/pc/", autoUpdate: false },
-  { name: "随机二次元 (PE)", url: "https://www.loliapi.com/acg/pe/", autoUpdate: false },
-];
-
-const setPreviewUrl = (url: string) => {
-  if (previewObjectUrl.value) {
-    releaseObjectUrl(previewKey, true);
-    previewObjectUrl.value = "";
-  }
-  previewDisplayUrl.value = url;
-  if (url.startsWith("blob:")) {
-    previewObjectUrl.value = url;
-  }
-};
-
-const setPreviewBlob = (blob: Blob) => {
-  const url = acquireObjectUrl(previewKey, blob);
-  previewBlob.value = blob;
-  setPreviewUrl(url);
-};
-
-const cleanupPreview = () => {
-  if (previewObjectUrl.value) {
-    releaseObjectUrl(previewKey, true);
-    previewObjectUrl.value = "";
-  }
-  previewBlob.value = null;
-  previewResolvedUrl.value = "";
-  previewDisplayUrl.value = "";
-};
-
-watch(customApiUrl, (nextUrl) => {
-  const normalized = nextUrl.trim();
-  if (!normalized) {
-    currentGeneratorUrl.value = "";
-    previewSourceUrl.value = "";
-    cleanupPreview();
-    return;
-  }
-  if (normalized !== previewSourceUrl.value) {
-    currentGeneratorUrl.value = "";
-    cleanupPreview();
-  }
+const apiHasMoreWallpapers = computed(
+  () => apiPage.value < apiTotalPages.value,
+);
+const apiSourceSummary = computed(() => {
+  if (apiLoading.value && !apiWallpapers.value.length) return "正在加载";
+  if (apiError.value) return "接口暂不可用";
+  return `${apiWallpapers.value.length} 张 Bing 壁纸`;
 });
+
+const mergeApiWallpapers = (
+  previous: ItabWallpaperEntry[],
+  incoming: ItabWallpaperEntry[],
+) => {
+  const seen = new Set(previous.map((entry) => entry.id));
+  const merged = [...previous];
+  incoming.forEach((entry) => {
+    if (seen.has(entry.id)) return;
+    seen.add(entry.id);
+    merged.push(entry);
+  });
+  return merged;
+};
+
+const loadBingApiWallpapers = async (refresh = false, page = 1) => {
+  if (apiLoading.value) return;
+  apiLoading.value = true;
+  apiError.value = "";
+  try {
+    const result = await fetchItabBingWallpapers(
+      apiPageSize,
+      refresh,
+      undefined,
+      page,
+    );
+    apiWallpapers.value =
+      page <= 1
+        ? [...result.entries]
+        : mergeApiWallpapers(apiWallpapers.value, result.entries);
+    apiPage.value = result.currentPage;
+    apiTotalPages.value = result.totalPages;
+  } catch (error) {
+    apiError.value =
+      error instanceof Error && error.message
+        ? error.message
+        : "Bing wallpaper request failed";
+  } finally {
+    apiLoading.value = false;
+  }
+};
+
+const ensureBingApiWallpapers = () => {
+  if (apiWallpapers.value.length || apiLoading.value) return;
+  void loadBingApiWallpapers();
+};
 
 watch(
   () => props.show,
   (visible) => {
-    if (visible) {
-      fetchWallpapers();
-      return;
+    if (!visible) return;
+    activeTab.value = props.initialTab || "pc";
+    fetchWallpapers();
+    if (activeTab.value === "api") {
+      ensureBingApiWallpapers();
     }
-    cleanupPreview();
   },
 );
 
-const fetchPreviewImage = async (url: string, options?: { forceRefresh?: boolean }) => {
-  const normalizedUrl = url.trim();
-  if (!normalizedUrl) return;
-  const forceRefresh = !!options?.forceRefresh;
-  const cleanSourceUrl = stripTransientQueryParams(normalizedUrl);
-  const requestUrl = forceRefresh
-    ? `${cleanSourceUrl}${cleanSourceUrl.includes("?") ? "&" : "?"}v=${Date.now()}`
-    : cleanSourceUrl;
-  currentGeneratorUrl.value = normalizedUrl;
-  previewSourceUrl.value = normalizedUrl;
-  const requestId = ++previewRequestId.value;
-  resolvingUrl.value = true;
-  cleanupPreview();
-
-  try {
-    if (!forceRefresh) {
-      const cachedBlob = await getCachedImage(cleanSourceUrl);
-      if (requestId !== previewRequestId.value) return;
-      if (cachedBlob) {
-        previewResolvedUrl.value = cleanSourceUrl;
-        setPreviewBlob(cachedBlob);
-        resolvingUrl.value = false;
-        return;
+watch(
+  () => props.initialTab,
+  (value) => {
+    if (props.show && value) {
+      activeTab.value = value;
+      if (value === "api") {
+        ensureBingApiWallpapers();
       }
     }
-  } catch (e) {
-    console.warn("Cache lookup failed", e);
+  },
+);
+
+watch(activeTab, (value) => {
+  if (value === "api" && props.show) {
+    ensureBingApiWallpapers();
+  }
+});
+
+const wallpaperStatusBanner = computed(() => {
+  if (uploading.value) {
+    return {
+      title: "正在上传壁纸",
+      message: "上传完成后会刷新资源版本并更新当前列表。",
+      tone: "info" as const,
+    };
+  }
+  if (applyingApi.value) {
+    return {
+      title: "正在准备壁纸",
+      message: "正在获取高清壁纸并落盘到本地壁纸库。",
+      tone: "warning" as const,
+    };
+  }
+  if (activeTab.value === "api" && apiLoading.value) {
+    return {
+      title: "正在加载 Bing 壁纸",
+      message: "列表预览使用小图，应用时会获取高清图。",
+      tone: "info" as const,
+    };
+  }
+  return null;
+});
+
+const normalizeApiWallpaperFilename = (entry: ItabWallpaperEntry) =>
+  entry.id.replace(/[^a-z0-9-]+/gi, "-").replace(/^-+|-+$/g, "") ||
+  "bing-wallpaper";
+
+const fetchRemoteWallpaperBlob = async (
+  sourceUrl: string,
+  requestId: string,
+) => {
+  const proxyRes = await fetch(
+    `/api/wallpaper/proxy?url=${encodeURIComponent(sourceUrl)}&uuid=${requestId}`,
+    { headers: authHeadersOnly() },
+  );
+  if (proxyRes.ok) {
+    return proxyRes.blob();
   }
 
-  // 2. Try Proxy (Preferred for consistency)
-  try {
-    const uuid = uuidv4();
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
-
-    const res = await fetch(
-      `/api/wallpaper/proxy?url=${encodeURIComponent(requestUrl)}&uuid=${uuid}`,
-      {
-        signal: controller.signal,
-        headers: authHeadersOnly(),
-      },
-    );
-    clearTimeout(timeoutId);
-
-    if (requestId !== previewRequestId.value) return;
-    if (res.ok) {
-      const blob = await res.blob();
-      await cacheImage(cleanSourceUrl, blob, res.headers.get("ETag") || undefined);
-      previewResolvedUrl.value = requestUrl;
-      setPreviewBlob(blob);
-      resolvingUrl.value = false;
-      return;
-    }
-  } catch (e) {
-    console.warn("Proxy fetch failed, falling back to direct URL", e);
+  const directRes = await fetch(sourceUrl, { cache: "no-store" });
+  if (directRes.ok) {
+    return directRes.blob();
   }
-
-  // 3. Fallback to Direct URL (Resolve Redirects)
-  try {
-    const res = await fetch("/api/wallpaper/resolve", {
-      method: "POST",
-      headers: store.getHeaders(),
-      body: JSON.stringify({ url: requestUrl }),
-    });
-    if (requestId !== previewRequestId.value) return;
-    const resolvedUrl = res.ok ? (await res.json()).url : requestUrl;
-    previewResolvedUrl.value = resolvedUrl;
-    try {
-      const proxyRes = await fetch(
-        `/api/wallpaper/proxy?url=${encodeURIComponent(resolvedUrl)}&uuid=${requestId}`,
-        { headers: authHeadersOnly() },
-      );
-      if (requestId !== previewRequestId.value) return;
-      if (proxyRes.ok) {
-        const blob = await proxyRes.blob();
-        setPreviewBlob(blob);
-        return;
-      }
-    } catch (e) {
-      console.warn("Resolve proxy fetch failed, using URL preview", e);
-    }
-    previewBlob.value = null;
-    setPreviewUrl(resolvedUrl);
-  } catch {
-    if (requestId !== previewRequestId.value) return;
-    previewBlob.value = null;
-    previewResolvedUrl.value = requestUrl;
-    setPreviewUrl(requestUrl);
-  } finally {
-    if (requestId === previewRequestId.value) {
-      resolvingUrl.value = false;
-    }
-  }
+  return null;
 };
 
-const usePreset = async (url: string) => {
-  customApiUrl.value = url;
-  await fetchPreviewImage(url);
-};
-
-const handleRefresh = () => {
-  const url = customApiUrl.value.trim() || currentGeneratorUrl.value;
-  if (url) {
-    fetchPreviewImage(stripTransientQueryParams(url), { forceRefresh: true });
-  }
-};
-
-const applyingApi = ref(false);
-
-const applyCustomApi = async (type: "pc" | "mobile", apply: boolean = true) => {
-  const sourceUrl = customApiUrl.value.trim() || currentGeneratorUrl.value;
-  if (!sourceUrl) return;
+const applyBingApiWallpaper = async (
+  entry: ItabWallpaperEntry,
+  type: "pc" | "mobile",
+  apply: boolean = true,
+) => {
+  if (!entry.downloadUrl) return;
 
   applyingApi.value = true;
+  apiApplyingTarget.value = `${entry.id}:${type}:${apply ? "apply" : "save"}`;
   try {
     let backgroundPath = "";
     let uploadedFilename = "";
-
-    const getPreviewBlob = async () => {
-      if (resolvingUrl.value) {
-        for (let i = 0; i < 20 && resolvingUrl.value; i += 1) {
-          await new Promise((resolve) => setTimeout(resolve, 100));
-        }
-      }
-      const tryDirectFetch = async (url: string) => {
-        try {
-          const res = await fetch(url, { cache: "no-store" });
-          if (!res.ok) return null;
-          const blob = await res.blob();
-          setPreviewBlob(blob);
-          return blob;
-        } catch {
-          return null;
-        }
-      };
-      if (previewBlob.value) return previewBlob.value;
-      if (!previewResolvedUrl.value && !previewDisplayUrl.value && sourceUrl) {
-        await fetchPreviewImage(sourceUrl);
-      }
-      if (previewBlob.value) return previewBlob.value;
-      const urlToFetch =
-        previewResolvedUrl.value ||
-        stripTransientQueryParams(currentGeneratorUrl.value) ||
-        stripTransientQueryParams(sourceUrl);
-      if (urlToFetch) {
-        const proxyRes = await fetch(
-          `/api/wallpaper/proxy?url=${encodeURIComponent(urlToFetch)}&uuid=apply`,
-          { headers: authHeadersOnly() },
-        );
-        if (proxyRes.ok) {
-          const blob = await proxyRes.blob();
-          previewResolvedUrl.value = urlToFetch;
-          setPreviewBlob(blob);
-          return blob;
-        }
-        const directBlob = await tryDirectFetch(urlToFetch);
-        if (directBlob) return directBlob;
-      }
-      if (urlToFetch && urlToFetch.startsWith("http")) {
-        const separator = urlToFetch.includes("?") ? "&" : "?";
-        const timestampedUrl = `${urlToFetch}${separator}v=${Date.now()}`;
-        const res = await fetch("/api/wallpaper/resolve", {
-          method: "POST",
-          headers: store.getHeaders(),
-          body: JSON.stringify({ url: timestampedUrl }),
-        });
-        if (res.ok) {
-          const data = await res.json();
-          previewResolvedUrl.value = data.url;
-          const proxyRes = await fetch(
-            `/api/wallpaper/proxy?url=${encodeURIComponent(data.url)}&uuid=apply-resolve`,
-            { headers: authHeadersOnly() },
-          );
-          if (proxyRes.ok) {
-            const blob = await proxyRes.blob();
-            setPreviewBlob(blob);
-            return blob;
-          }
-          const directBlob = await tryDirectFetch(data.url);
-          if (directBlob) return directBlob;
-        }
-      }
-      if (customApiUrl.value.startsWith("blob:")) {
-        const blob = await fetch(customApiUrl.value).then((r) => r.blob());
-        setPreviewBlob(blob);
-        return blob;
-      }
-      return null;
-    };
-
-    const blob = await getPreviewBlob();
+    const cleanDownloadUrl = stripTransientQueryParams(entry.downloadUrl);
+    const blob = await fetchRemoteWallpaperBlob(
+      cleanDownloadUrl,
+      `bing-${entry.id}-${Date.now()}`,
+    );
 
     if (blob) {
       if (apply && type === "pc") {
-        document.body.style.backgroundImage = `url(${previewDisplayUrl.value || sourceUrl})`;
+        document.body.style.backgroundImage = `url(${entry.thumbnailUrl})`;
       }
 
       const formData = new FormData();
-      // Generate filename based on type and timestamp
-      const ext = inferImageExtension(
-        blob,
-        previewResolvedUrl.value || currentGeneratorUrl.value || sourceUrl,
-      );
-      const filename = `blob_${Date.now()}.${ext}`;
+      const ext = inferImageExtension(blob, cleanDownloadUrl);
+      const filename = `${normalizeApiWallpaperFilename(entry)}_${Date.now()}.${ext}`;
       formData.append("files", blob, filename);
-      
-      const endpoint = type === "pc" 
-        ? (store.appConfig.wallpaperApiPcUpload || "/api/backgrounds/upload")
-        : (store.appConfig.wallpaperApiMobileUpload || "/api/mobile_backgrounds/upload");
+
+      const endpoint =
+        type === "pc"
+          ? store.appConfig.wallpaperApiPcUpload || "/api/backgrounds/upload"
+          : store.appConfig.wallpaperApiMobileUpload ||
+            "/api/mobile_backgrounds/upload";
 
       const uploadRes = await fetch(endpoint, {
         method: "POST",
         headers: authHeadersOnly(),
         body: formData,
       });
-      
+
       if (uploadRes.ok) {
         const uploadData = await uploadRes.json();
-        if (uploadData.success && uploadData.files && uploadData.files.length > 0) {
+        if (
+          uploadData.success &&
+          uploadData.files &&
+          uploadData.files.length > 0
+        ) {
           backgroundPath = uploadData.files[0].path;
           uploadedFilename = uploadData.files[0].filename || "";
         } else {
@@ -688,23 +660,17 @@ const applyCustomApi = async (type: "pc" | "mobile", apply: boolean = true) => {
 
     // Now apply configuration
     if (apply) {
-      const preset = presetApis.find(
-        (p) => p.url === currentGeneratorUrl.value || p.url === sourceUrl,
-      );
-      const enableScheduler = preset ? preset.autoUpdate : false;
-      const urlToSave = enableScheduler ? (currentGeneratorUrl.value || sourceUrl) : backgroundPath;
-
       const config = {
         type: "api" as const,
-        url: urlToSave,
-        enabled: !!enableScheduler,
+        url: cleanDownloadUrl,
+        enabled: false,
         lastUpdated: Date.now(),
       };
 
       if (type === "pc") {
         store.appConfig.background = backgroundPath; // Use the server path
         store.appConfig.wallpaperConfig = config;
-      } else { 
+      } else {
         store.appConfig.mobileBackground = backgroundPath;
         store.appConfig.mobileWallpaperConfig = config;
       }
@@ -713,7 +679,7 @@ const applyCustomApi = async (type: "pc" | "mobile", apply: boolean = true) => {
       }
       store.refreshResources();
       store.markDirty();
-      alert("设置成功");
+      notify("当前设备的默认壁纸已经更新。", "success", "设置成功");
     } else {
       if (uploadedFilename) {
         prependWallpaperToList(uploadedFilename, type);
@@ -723,351 +689,344 @@ const applyCustomApi = async (type: "pc" | "mobile", apply: boolean = true) => {
         prependWallpaperToList(uploadedFilename, type);
       }
       store.refreshResources();
+      store.markDirty();
       activeTab.value = type;
-      alert(type === "pc" ? "已保存到 PC 壁纸库" : "已保存到手机壁纸库");
+      notify(
+        type === "pc" ? "已保存到 PC 壁纸库。" : "已保存到手机壁纸库。",
+        "success",
+        "保存完成",
+      );
     }
   } catch (e) {
     console.error(e);
-    alert("请求出错，请检查网络");
-    // Fallback logic as requested: "Failure -> Default icon"
-    if (type === "pc") {
-      store.appConfig.background = `/${DEFAULT_WALLPAPER}`;
-    }
+    void showFeedbackAlert("请求出错，请检查网络。", {
+      title: "壁纸请求失败",
+      tone: "danger",
+    });
   } finally {
     applyingApi.value = false;
+    apiApplyingTarget.value = "";
   }
 };
 
 onMounted(() => {
   fetchWallpapers();
-  if (store.appConfig.background?.startsWith("http")) {
-    previewSourceUrl.value = store.appConfig.background;
-    customApiUrl.value = store.appConfig.background;
-    previewResolvedUrl.value = store.appConfig.background;
-    setPreviewUrl(store.appConfig.background);
+  if (activeTab.value === "api") {
+    ensureBingApiWallpapers();
   }
-});
-
-onBeforeUnmount(() => {
-  cleanupPreview();
 });
 </script>
 
 <template>
-  <OverlayMotion
+  <AppModalShell
     :show="show"
-    :z-index="100"
+    :z-index="zIndex || 100"
     close-on-overlay
+    close-on-escape
+    trap-focus
+    restore-focus
+    :title="title || '壁纸库'"
+    :subtitle="dialogSubtitle"
     overlay-class="sd-overlay-strong"
-    panel-class="w-full md:max-w-5xl h-full md:h-[85vh]"
+    panel-class="w-full md:max-w-5xl h-full md:max-h-[85vh]"
+    body-class="p-0"
     @close="$emit('update:show', false)"
   >
-    <div class="bg-white md:rounded-2xl shadow-2xl w-full h-full flex flex-col overflow-hidden">
-        <!-- Header -->
-        <div
-          class="px-4 pb-3 pt-[calc(0.75rem+env(safe-area-inset-top))] md:px-6 md:py-4 border-b border-gray-100 flex justify-between items-center bg-white"
-        >
-          <div class="flex items-center gap-4">
-            <h3 class="text-lg font-bold text-gray-800">
-              {{ title || "壁纸库" }}
-            </h3>
+    <div
+      class="sd-theme-bridge w-full h-full flex flex-col overflow-hidden bg-[var(--sd-color-surface)] text-[var(--sd-color-text-primary)]"
+    >
+      <div
+        class="border-b border-[var(--sd-color-border-subtle)] bg-[var(--sd-color-surface)] px-4 py-3 md:px-6"
+      >
+        <AppSegmentedControl v-model="activeTab" :options="wallpaperTabOptions">
+          <template #option="{ option }">
+            <span class="inline-flex items-center gap-2">
+              <span>{{ option.label }}</span>
+              <span v-if="option.value === 'pc'" class="sd-value-badge">{{
+                wallpapers.length
+              }}</span>
+              <span
+                v-else-if="option.value === 'mobile'"
+                class="sd-value-badge"
+                >{{ mobileWallpapers.length }}</span
+              >
+            </span>
+          </template>
+        </AppSegmentedControl>
+      </div>
 
-            <div class="flex items-center bg-gray-100 rounded-lg p-1">
-              <button
-                @click="activeTab = 'pc'"
-                class="px-3 py-1.5 text-xs font-bold rounded-md transition-all flex items-center gap-2"
-                :class="
-                  activeTab === 'pc'
-                    ? 'bg-white text-blue-600 shadow-sm'
-                    : 'text-gray-500 hover:text-gray-700'
-                "
-              >
-                PC 壁纸
-                <span class="px-1.5 py-0.5 rounded-full bg-gray-200 text-gray-600 text-[10px]">{{
-                  wallpapers.length
-                }}</span>
-              </button>
-              <button
-                @click="activeTab = 'mobile'"
-                class="px-3 py-1.5 text-xs font-bold rounded-md transition-all flex items-center gap-2"
-                :class="
-                  activeTab === 'mobile'
-                    ? 'bg-white text-blue-600 shadow-sm'
-                    : 'text-gray-500 hover:text-gray-700'
-                "
-              >
-                手机壁纸
-                <span class="px-1.5 py-0.5 rounded-full bg-gray-200 text-gray-600 text-[10px]">{{
-                  mobileWallpapers.length
-                }}</span>
-              </button>
-              <button
-                @click="activeTab = 'api'"
-                class="px-3 py-1.5 text-xs font-bold rounded-md transition-all flex items-center gap-2"
-                :class="
-                  activeTab === 'api'
-                    ? 'bg-white text-blue-600 shadow-sm'
-                    : 'text-gray-500 hover:text-gray-700'
-                "
-              >
-                API 接口
-              </button>
-            </div>
-          </div>
-
-          <button
-            @click="$emit('update:show', false)"
-            class="w-8 h-8 rounded-full bg-red-100 hover:bg-red-200 flex items-center justify-center text-red-500 hover:text-red-900 transition-colors"
+      <div
+        class="border-b border-[var(--sd-color-border-subtle)] bg-[var(--sd-color-surface-muted)] px-4 py-3 md:px-6"
+      >
+        <div class="grid gap-3 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
+          <AppSectionCard
+            title="轮播与锁定"
+            description="轮播模式、播放状态与当前壁纸锁定统一放在同一组。"
+            body-class="space-y-3"
           >
-            ✕
-          </button>
-        </div>
-
-        <!-- Toolbar -->
-        <div
-          class="px-4 py-3 md:px-6 bg-white border-b border-gray-100 flex flex-col md:flex-row justify-between items-start md:items-center gap-3 md:gap-0"
-        >
-          <div class="text-xs text-gray-400 hidden md:block">请拖动选择</div>
-          <div class="flex flex-wrap gap-2 md:gap-3 items-center w-full md:w-auto">
-            <!-- Rotation Controls -->
-            <div
-              class="flex items-center gap-2 mr-2 bg-gray-50 p-1 rounded-lg border border-gray-100"
-            >
-              <button
-                @click="togglePlayMode"
-                class="px-2 py-1 text-xs font-medium rounded transition-colors flex items-center gap-1"
-                :class="
-                  currentRotationMode === 'random'
-                    ? 'text-purple-600 bg-purple-50'
-                    : 'text-blue-600 bg-blue-50'
+            <div class="flex flex-wrap items-center gap-2">
+              <AppButton
+                size="sm"
+                :variant="
+                  currentRotationMode === 'random' ? 'primary' : 'secondary'
                 "
                 :title="
                   currentRotationMode === 'random'
                     ? '播放方式：随机（仅轮播开启后生效）'
                     : '播放方式：顺序（仅轮播开启后生效）'
                 "
+                @click="togglePlayMode"
               >
-                <span>{{ currentRotationMode === "random" ? "随机" : "顺播" }}</span>
-              </button>
-              <div class="h-4 w-px bg-gray-300"></div>
-              <div class="flex items-center gap-1 px-1">
-                <button
-                  @click="toggleRotation"
-                  class="text-xs font-medium transition-colors flex items-center gap-1 px-2 py-1 rounded"
-                  :class="
-                    currentRotationEnabled
-                      ? 'bg-green-100 text-green-700'
-                      : 'text-gray-600 hover:bg-white'
-                  "
-                >
-                  <span>{{ currentRotationEnabled ? "轮播中" : "开启轮播" }}</span>
-                </button>
+                {{ currentRotationMode === "random" ? "随机播放" : "顺序播放" }}
+              </AppButton>
+              <AppButton
+                size="sm"
+                :variant="currentRotationEnabled ? 'primary' : 'secondary'"
+                @click="toggleRotation"
+              >
+                {{ currentRotationEnabled ? "轮播中" : "开启轮播" }}
+              </AppButton>
+              <div
+                v-if="!currentRotationEnabled"
+                class="flex items-center gap-2 rounded-lg border border-[var(--sd-color-border-subtle)] bg-[var(--sd-color-surface)] px-2 py-1.5"
+              >
                 <input
-                  v-if="!currentRotationEnabled"
-                  type="number"
                   v-model="currentRotationInterval"
+                  type="number"
                   min="5"
-                  class="w-10 text-xs border border-gray-200 rounded px-1 py-0.5 text-center outline-none focus:border-blue-500"
+                  class="w-12 bg-transparent text-center text-xs text-[var(--sd-color-text-primary)] outline-none"
                   title="轮播间隔(分钟)"
                 />
-                <span v-if="!currentRotationEnabled" class="text-[10px] text-gray-400">分</span>
+                <span class="text-xs text-[var(--sd-color-text-secondary)]"
+                  >分钟</span
+                >
               </div>
+              <AppButton
+                size="sm"
+                :variant="isWallpaperLocked ? 'primary' : 'ghost'"
+                @click="stopAndLockRotation"
+              >
+                {{ lockButtonLabel }}
+              </AppButton>
             </div>
+            <div class="text-xs text-[var(--sd-color-text-tertiary)]">
+              请拖动壁纸调整顺序。
+            </div>
+          </AppSectionCard>
 
-            <!-- Lock Wallpaper Button -->
-            <button
-              @click="stopAndLockRotation"
-              class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1 shadow-sm"
-              :class="
-                isWallpaperLocked
-                  ? 'bg-blue-500 text-white hover:bg-blue-600 shadow-blue-200'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              "
-              title="锁定当前壁纸（会停止 PC 与手机端自动轮播）"
-            >
-              <span>{{ lockButtonLabel }}</span>
-            </button>
+          <AppSectionCard
+            :title="activeTab === 'api' ? '接口模式' : '显示效果'"
+            :description="
+              activeTab === 'api'
+                ? 'Bing 历史壁纸统一通过同一个接口加载。'
+                : '统一调节模糊、遮罩和移动端优先壁纸策略。'
+            "
+            body-class="space-y-3"
+          >
+            <template v-if="activeTab === 'pc' || activeTab === 'mobile'">
+              <div class="grid gap-3 md:grid-cols-2">
+                <AppRangeField
+                  label="模糊"
+                  :model-value="
+                    activeTab === 'pc'
+                      ? (store.appConfig.backgroundBlur ?? 0)
+                      : (store.appConfig.mobileBackgroundBlur ?? 0)
+                  "
+                  :min="0"
+                  :max="20"
+                  :step="1"
+                  :value-text="`${activeTab === 'pc' ? (store.appConfig.backgroundBlur ?? 0) : (store.appConfig.mobileBackgroundBlur ?? 0)}px`"
+                  @update:modelValue="
+                    (value) => {
+                      if (activeTab === 'pc') {
+                        store.appConfig.backgroundBlur = value;
+                      } else {
+                        store.appConfig.mobileBackgroundBlur = value;
+                      }
+                      store.markDirty();
+                    }
+                  "
+                />
+                <AppRangeField
+                  label="遮罩"
+                  :model-value="
+                    activeTab === 'pc'
+                      ? (store.appConfig.backgroundMask ?? 0)
+                      : (store.appConfig.mobileBackgroundMask ?? 0)
+                  "
+                  :min="0"
+                  :max="1"
+                  :step="0.1"
+                  :value-text="`${Math.round(((activeTab === 'pc' ? (store.appConfig.backgroundMask ?? 0) : (store.appConfig.mobileBackgroundMask ?? 0)) as number) * 100)}%`"
+                  @update:modelValue="
+                    (value) => {
+                      if (activeTab === 'pc') {
+                        store.appConfig.backgroundMask = value;
+                      } else {
+                        store.appConfig.mobileBackgroundMask = value;
+                      }
+                      store.markDirty();
+                    }
+                  "
+                />
+              </div>
+
+              <AppSwitch
+                v-if="activeTab === 'mobile'"
+                v-model="store.appConfig.enableMobileWallpaper"
+                label="手机端优先壁纸"
+                hint="开启后，手机端优先使用手机壁纸；关闭后沿用 PC 端壁纸。"
+                @change="store.markDirty()"
+              />
+            </template>
+
+            <div v-else class="text-sm text-[var(--sd-color-text-secondary)]">
+              当前模式使用 Bing API 列表，不参与本地壁纸效果调节。
+            </div>
 
             <div
-              v-if="activeTab === 'pc'"
-              class="flex items-center gap-2 mr-2 bg-gray-50 p-1 rounded-lg border border-gray-100"
+              v-if="activeTab !== 'api'"
+              class="flex flex-wrap items-center gap-2"
             >
-              <div class="flex items-center gap-1 px-1">
-                <span class="text-[13px] text-gray-500">模糊</span>
-                <input
-                  type="range"
-                  v-model.number="store.appConfig.backgroundBlur"
-                  min="0"
-                  max="20"
-                  step="1"
-                  class="w-16 h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-500"
-                  title="模糊半径"
-                />
-              </div>
-              <div class="w-px h-3 bg-gray-300"></div>
-              <div class="flex items-center gap-1 px-1">
-                <span class="text-[13px] text-gray-500">遮罩</span>
-                <input
-                  type="range"
-                  v-model.number="store.appConfig.backgroundMask"
-                  min="0"
-                  max="1"
-                  step="0.1"
-                  class="w-16 h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-500"
-                  title="遮罩浓度"
-                />
-              </div>
+              <AppButton size="sm" variant="secondary" @click="fetchWallpapers"
+                >刷新</AppButton
+              >
+              <AppButton
+                size="sm"
+                variant="primary"
+                :busy="uploading"
+                @click="triggerUpload"
+              >
+                {{ uploading ? "上传中..." : "上传壁纸" }}
+              </AppButton>
+              <input
+                ref="fileInput"
+                type="file"
+                accept="image/*"
+                multiple
+                class="hidden"
+                @change="handleUpload"
+              />
             </div>
+          </AppSectionCard>
+        </div>
+      </div>
 
-            <div
-              v-if="activeTab === 'mobile'"
-              class="flex items-center gap-2 mr-2 bg-gray-50 p-1 rounded-lg border border-gray-100"
-            >
-              <div class="flex items-center gap-1 px-1">
-                <span class="text-[13px] text-gray-500">模糊</span>
-                <input
-                  type="range"
-                  v-model.number="store.appConfig.mobileBackgroundBlur"
-                  min="0"
-                  max="20"
-                  step="1"
-                  class="w-16 h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-400"
-                  title="模糊半径"
-                />
-              </div>
-              <div class="w-px h-3 bg-gray-300"></div>
-              <div class="flex items-center gap-1 px-1">
-                <span class="text-[13px] text-gray-500">遮罩</span>
-                <input
-                  type="range"
-                  v-model.number="store.appConfig.mobileBackgroundMask"
-                  min="0"
-                  max="1"
-                  step="0.1"
-                  class="w-16 h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-400"
-                  title="遮罩浓度"
-                />
-              </div>
-            </div>
+      <div v-if="wallpaperStatusBanner" class="px-4 pt-3 md:px-6">
+        <StatusBanner
+          :title="wallpaperStatusBanner.title"
+          :message="wallpaperStatusBanner.message"
+          :tone="wallpaperStatusBanner.tone"
+        />
+      </div>
 
-            <button
-              v-if="activeTab === 'mobile'"
-              @click="
-                store.appConfig.enableMobileWallpaper = !store.appConfig.enableMobileWallpaper
-              "
-              class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1 shadow-sm"
-              :class="
-                store.appConfig.enableMobileWallpaper
-                  ? 'bg-green-500 text-white hover:bg-green-600 shadow-green-200'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              "
-              title="开启后，手机端将优先使用手机壁纸；关闭后，手机端将使用 PC 端壁纸"
-            >
-              <span>{{
-                store.appConfig.enableMobileWallpaper ? "已启用手机壁纸" : "启用手机壁纸"
-              }}</span>
-            </button>
-
-            <button
-              @click="fetchWallpapers"
-              class="px-3 py-1.5 rounded-lg text-xs font-medium text-gray-600 hover:bg-gray-100 transition-colors flex items-center gap-1"
-            >
-              刷新
-            </button>
-            <button
-              @click="triggerUpload"
-              class="px-4 py-1.5 rounded-lg text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 shadow-sm shadow-blue-200 transition-all flex items-center gap-1"
-              :disabled="uploading"
-            >
-              <span v-if="uploading">上传中...</span>
-              <span v-else>上传壁纸</span>
-            </button>
-            <input
-              ref="fileInput"
-              type="file"
-              accept="image/*"
-              multiple
-              class="hidden"
-              @change="handleUpload"
-            />
-          </div>
+      <!-- Content -->
+      <div
+        class="flex-1 overflow-y-auto bg-[var(--sd-color-surface-muted)] p-6"
+      >
+        <!-- Resolving/Loading overlay for API tab -->
+        <div
+          v-if="activeTab === 'api' && applyingApi"
+          class="absolute inset-x-0 top-[120px] bottom-0 z-50 flex flex-col items-center justify-center gap-3 bg-[var(--sd-color-surface-floating)] text-[var(--sd-color-accent-primary)] backdrop-blur-[8px]"
+        >
+          <div
+            class="h-10 w-10 animate-spin rounded-full border-4 border-[color-mix(in_srgb,var(--sd-color-accent-primary)_18%,transparent)] border-t-[var(--sd-color-accent-primary)]"
+          ></div>
+          <span
+            class="rounded-full bg-[var(--sd-color-surface)] px-4 py-1.5 text-sm font-bold shadow-sm"
+            >正在获取高清壁纸并保存...</span
+          >
         </div>
 
-        <!-- Content -->
-        <div class="flex-1 overflow-y-auto p-6 bg-gray-50">
-          <!-- Resolving/Loading overlay for API tab -->
+        <div
+          v-if="loading"
+          class="flex h-full flex-col items-center justify-center text-[var(--sd-color-text-tertiary)]"
+        >
           <div
-            v-if="resolvingUrl"
-            class="absolute inset-x-0 top-[120px] bottom-0 z-50 bg-white/60 backdrop-blur-[2px] flex flex-col items-center justify-center text-blue-600 gap-3"
+            class="mb-2 h-8 w-8 animate-spin rounded-full border-4 border-[color-mix(in_srgb,var(--sd-color-accent-primary)_18%,transparent)] border-t-[var(--sd-color-accent-primary)]"
+          ></div>
+          <span class="text-xs">加载中...</span>
+        </div>
+
+        <div
+          v-else-if="
+            (activeTab === 'pc' && wallpapers.length === 0) ||
+            (activeTab === 'mobile' && mobileWallpapers.length === 0)
+          "
+          class="flex h-full flex-col items-center justify-center text-[var(--sd-color-text-tertiary)]"
+        >
+          <span class="text-4xl mb-2">🖼️</span>
+          <span class="text-sm">暂无壁纸，请先上传</span>
+        </div>
+
+        <VueDraggable
+          v-else-if="activeTab !== 'api'"
+          v-model="draggableList"
+          class="grid gap-2 md:gap-4"
+          :class="
+            activeTab === 'pc'
+              ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'
+              : 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4'
+          "
+          :animation="150"
+          :forceFallback="true"
+        >
+          <div
+            v-for="(img, index) in draggableList"
+            :key="img"
+            class="sd-gallery-card group cursor-grab border-2 border-transparent"
+            :class="activeTab === 'pc' ? 'aspect-video' : 'aspect-[9/16]'"
           >
+            <img
+              :src="
+                getWallpaperDisplayUrl(
+                  img,
+                  activeTab === 'pc' ? 'pc' : 'mobile',
+                )
+              "
+              v-show="
+                !getWallpaperPreviewError(
+                  img,
+                  activeTab === 'pc' ? 'pc' : 'mobile',
+                )
+              "
+              class="w-full h-full object-cover transition-all duration-300 group-hover:scale-110"
+              decoding="async"
+              @load="
+                clearWallpaperPreviewError(
+                  img,
+                  activeTab === 'pc' ? 'pc' : 'mobile',
+                )
+              "
+              @error="
+                handleWallpaperPreviewError(
+                  img,
+                  activeTab === 'pc' ? 'pc' : 'mobile',
+                  $event,
+                )
+              "
+            />
             <div
-              class="w-10 h-10 border-4 border-blue-100 border-t-blue-500 rounded-full animate-spin"
-            ></div>
-            <span class="text-sm font-bold bg-white/80 px-4 py-1.5 rounded-full shadow-sm"
-              >正在通过代理获取并优化壁纸一致性...</span
+              v-if="
+                getWallpaperPreviewError(
+                  img,
+                  activeTab === 'pc' ? 'pc' : 'mobile',
+                )
+              "
+              class="sd-gallery-card-fallback"
             >
-          </div>
+              <span class="text-2xl">🖼️</span>
+              <span class="text-xs font-medium break-all">{{ img }}</span>
+              <span class="text-[10px] break-all opacity-70">{{
+                getWallpaperPreviewError(
+                  img,
+                  activeTab === "pc" ? "pc" : "mobile",
+                )
+              }}</span>
+            </div>
 
-          <div
-            v-if="loading"
-            class="h-full flex flex-col items-center justify-center text-gray-400"
-          >
-            <div
-              class="w-8 h-8 border-4 border-blue-200 border-t-blue-500 rounded-full animate-spin mb-2"
-            ></div>
-            <span class="text-xs">加载中...</span>
-          </div>
-
-          <div
-            v-else-if="
-              (activeTab === 'pc' && wallpapers.length === 0) ||
-              (activeTab === 'mobile' && mobileWallpapers.length === 0)
-            "
-            class="h-full flex flex-col items-center justify-center text-gray-400"
-          >
-            <span class="text-4xl mb-2">🖼️</span>
-            <span class="text-sm">暂无壁纸，请先上传</span>
-          </div>
-
-          <VueDraggable
-            v-else-if="activeTab !== 'api'"
-            v-model="draggableList"
-            class="grid gap-2 md:gap-4"
-            :class="
-              activeTab === 'pc'
-                ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'
-                : 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4'
-            "
-            :animation="150"
-            :forceFallback="true"
-          >
-            <div
-              v-for="(img, index) in draggableList"
-              :key="img"
-              class="group relative rounded-xl overflow-hidden cursor-grab border-2 border-transparent hover:border-blue-500 transition-all shadow-sm hover:shadow-md bg-white"
-              :class="activeTab === 'pc' ? 'aspect-video' : 'aspect-[9/16]'"
-            >
-              <img
-                :src="getWallpaperDisplayUrl(img, activeTab === 'pc' ? 'pc' : 'mobile')"
-                v-show="!getWallpaperPreviewError(img, activeTab === 'pc' ? 'pc' : 'mobile')"
-                class="w-full h-full object-cover transition-all duration-300 group-hover:scale-110"
-                decoding="async"
-                @load="clearWallpaperPreviewError(img, activeTab === 'pc' ? 'pc' : 'mobile')"
-                @error="handleWallpaperPreviewError(img, activeTab === 'pc' ? 'pc' : 'mobile', $event)"
-              />
-              <div
-                v-if="getWallpaperPreviewError(img, activeTab === 'pc' ? 'pc' : 'mobile')"
-                class="absolute inset-0 flex flex-col items-center justify-center gap-2 px-3 text-center bg-gray-100 text-gray-500"
-              >
-                <span class="text-2xl">🖼️</span>
-                <span class="text-xs font-medium break-all">{{ img }}</span>
-                <span class="text-[10px] break-all opacity-70">{{
-                  getWallpaperPreviewError(img, activeTab === 'pc' ? 'pc' : 'mobile')
-                }}</span>
-              </div>
-
-              <!-- Mask Overlay for index 0 (Removed for better preview clarity) -->
-              <!-- <div
+            <!-- Mask Overlay for index 0 (Removed for better preview clarity) -->
+            <!-- <div
               v-if="index === 0"
               class="absolute inset-0 transition-all duration-300 pointer-events-none"
               :style="{
@@ -1079,356 +1038,197 @@ onBeforeUnmount(() => {
               }"
             ></div> -->
 
-              <!-- Current Wallpaper Badge -->
-              <div
-                v-if="index === 0"
-                class="absolute top-2 left-2 bg-green-500 text-white text-[10px] font-bold px-2 py-1 rounded-full shadow-sm z-10 flex items-center gap-1"
-              >
-                <span>默认壁纸</span>
-              </div>
-
-              <!-- Hover Overlay -->
-              <div
-                class="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors"
-              ></div>
-
-              <!-- Set as Default Overlay -->
-              <div
-                class="absolute inset-0 flex items-center justify-center bg-black/50 text-white text-lg font-bold opacity-0 group-hover:opacity-100 transition-opacity z-10"
-                @click="selectWallpaper(img, activeTab === 'pc' ? 'pc' : 'mobile')"
-              >
-                设为默认壁纸
-              </div>
-
-              <!-- Delete Button -->
-              <button
-                @click.stop="handleDelete(img, activeTab === 'pc' ? 'pc' : 'mobile')"
-                class="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600 shadow-sm z-20"
-                title="删除"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  class="w-3.5 h-3.5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                  />
-                </svg>
-              </button>
-            </div>
-          </VueDraggable>
-
-          <!-- API Management -->
-          <div v-if="activeTab === 'api'" class="space-y-6 p-1">
-            <div class="bg-blue-50 text-blue-800 p-4 rounded-xl text-sm leading-relaxed">
-              <ul class="list-disc list-inside space-y-1">
-                <li>在此处可以直接输入图片的 URL 地址，或使用第三方随机壁纸 API。</li>
-                <li>
-                  支持 <b>JSON 格式 API</b>（如 Unsplash/Bing），系统会自动解析并提取图片链接。
-                </li>
-                <li>支持 <b>局域网/自建 API</b>（如 http://192.168.x.x），不再受内网访问限制。</li>
-              </ul>
-              <div class="mt-2 text-xs opacity-80">
-                设置后，每次刷新页面可能会根据 API 返回不同的图片（取决于 API 行为）。
-              </div>
+            <!-- Current Wallpaper Badge -->
+            <div v-if="index === 0" class="sd-gallery-card-badge">
+              <span>默认壁纸</span>
             </div>
 
-            <div class="border border-gray-200 rounded-xl bg-white p-6 shadow-sm">
-              <h4 class="text-sm font-bold text-gray-800 mb-4 flex items-center gap-2">
-                <span>🔗</span> 自定义壁纸接口
-              </h4>
+            <!-- Hover Overlay -->
+            <div class="sd-gallery-card-scrim"></div>
 
-              <div class="space-y-4">
-                <!-- Preview Area -->
-                <div v-if="customApiUrl" class="grid grid-cols-2 gap-4">
-                  <!-- PC Preview -->
-                  <div class="space-y-2">
-                    <div class="text-[10px] text-gray-500 text-center font-bold">PC 端预览</div>
-                    <div
-                      class="relative h-48 w-full rounded-lg overflow-hidden border border-gray-200 bg-gray-100 group"
-                    >
-                      <img
-                        v-if="previewDisplayUrl"
-                        :src="previewDisplayUrl"
-                        class="w-full h-full object-cover transition-all duration-700"
-                        :style="{
-                          filter: `blur(${store.appConfig.backgroundBlur}px)`,
-                        }"
-                      />
-                      <div
-                        v-else
-                        class="absolute inset-0 flex items-center justify-center text-xs text-gray-400"
-                      >
-                        点击上方预设或刷新按钮获取预览
-                      </div>
-                      <!-- Mask Preview -->
-                      <div
-                        class="absolute inset-0 pointer-events-none transition-all duration-300"
-                        :style="{
-                          backgroundColor: `rgba(0,0,0,${store.appConfig.backgroundMask})`,
-                        }"
-                      ></div>
-                    </div>
-
-                    <!-- PC Controls -->
-                    <div
-                      class="bg-gray-50 p-2 rounded-lg border border-gray-100 flex items-center justify-center gap-4"
-                    >
-                      <div class="flex items-center gap-1">
-                        <span class="text-[10px] text-gray-500">模糊</span>
-                        <input
-                          type="range"
-                          v-model.number="store.appConfig.backgroundBlur"
-                          min="0"
-                          max="20"
-                          step="1"
-                          class="w-20 h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-500"
-                        />
-                      </div>
-                      <div class="w-px h-3 bg-gray-300"></div>
-                      <div class="flex items-center gap-1">
-                        <span class="text-[10px] text-gray-500">遮罩</span>
-                        <input
-                          type="range"
-                          v-model.number="store.appConfig.backgroundMask"
-                          min="0"
-                          max="1"
-                          step="0.1"
-                          class="w-20 h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-500"
-                        />
-                      </div>
-                      <div class="w-px h-3 bg-gray-300"></div>
-                      <button
-                        @click="applyCustomApi('pc', false)"
-                        class="p-1.5 text-blue-600 hover:bg-blue-50 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                        :disabled="!customApiUrl || applyingApi || resolvingUrl"
-                        title="下载到 PC 壁纸库"
-                      >
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          class="w-4 h-4"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                        >
-                          <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            stroke-width="2"
-                            d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-                          />
-                        </svg>
-                      </button>
-                    </div>
-                  </div>
-
-                  <!-- Mobile Preview -->
-                  <div class="space-y-2">
-                    <div class="text-[10px] text-gray-500 text-center font-bold">手机端预览</div>
-                    <div
-                      class="relative h-48 w-full flex justify-center rounded-lg border border-gray-200 bg-gray-100 overflow-hidden"
-                    >
-                      <!-- Inner Container for aspect ratio -->
-                      <div class="relative h-full aspect-[9/16]">
-                        <img
-                          v-if="previewDisplayUrl"
-                          :src="previewDisplayUrl"
-                          class="w-full h-full object-cover transition-all duration-700"
-                          :style="{
-                            filter: `blur(${store.appConfig.mobileBackgroundBlur}px)`,
-                          }"
-                        />
-                        <div
-                          v-else
-                          class="absolute inset-0 flex items-center justify-center text-xs text-gray-400"
-                        >
-                          点击上方预设或刷新按钮获取预览
-                        </div>
-                        <!-- Mask Preview -->
-                        <div
-                          class="absolute inset-0 pointer-events-none transition-all duration-300"
-                          :style="{
-                            backgroundColor: `rgba(0,0,0,${store.appConfig.mobileBackgroundMask})`,
-                          }"
-                        ></div>
-                      </div>
-                    </div>
-
-                    <!-- Mobile Controls -->
-                    <div
-                      class="bg-gray-50 p-2 rounded-lg border border-gray-100 flex items-center justify-center gap-4"
-                    >
-                      <div class="flex items-center gap-1">
-                        <span class="text-[10px] text-gray-500">模糊</span>
-                        <input
-                          type="range"
-                          v-model.number="store.appConfig.mobileBackgroundBlur"
-                          min="0"
-                          max="20"
-                          step="1"
-                          class="w-20 h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-500"
-                        />
-                      </div>
-                      <div class="w-px h-3 bg-gray-300"></div>
-                      <div class="flex items-center gap-1">
-                        <span class="text-[10px] text-gray-500">遮罩</span>
-                        <input
-                          type="range"
-                          v-model.number="store.appConfig.mobileBackgroundMask"
-                          min="0"
-                          max="1"
-                          step="0.1"
-                          class="w-20 h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-500"
-                        />
-                      </div>
-                      <div class="w-px h-3 bg-gray-300"></div>
-                      <button
-                        @click="applyCustomApi('mobile', false)"
-                        class="p-1.5 text-blue-600 hover:bg-blue-50 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                        :disabled="!customApiUrl || applyingApi || resolvingUrl"
-                        title="下载到 手机壁纸库"
-                      >
-                        <span
-                          v-if="applyingApi"
-                          class="block w-4 h-4 border-2 border-blue-200 border-t-blue-600 rounded-full animate-spin"
-                        ></span>
-                        <svg
-                          v-else
-                          xmlns="http://www.w3.org/2000/svg"
-                          class="w-4 h-4"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                        >
-                          <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            stroke-width="2"
-                            d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-                          />
-                        </svg>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                <div>
-                  <label class="block text-xs font-medium text-gray-600 mb-2"
-                    >图片 URL / API 地址</label
-                  >
-                  <div class="flex gap-2">
-                    <input
-                      v-model="customApiUrl"
-                      class="flex-1 px-4 py-3 border border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all"
-                      placeholder="https://example.com/image.jpg 或 随机图片API"
-                    />
-                    <button
-                      @click="handleRefresh"
-                      class="px-3 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-lg border border-gray-200 transition-colors disabled:opacity-50"
-                      title="刷新预览 (追加时间戳)"
-                      :disabled="resolvingUrl"
-                    >
-                      <span v-if="resolvingUrl" class="inline-block animate-spin">🔄</span>
-                      <span v-else>🔄</span>
-                    </button>
-                  </div>
-                </div>
-
-                <div class="flex flex-wrap gap-2">
-                  <button
-                    v-for="api in presetApis"
-                    :key="api.name"
-                    @click="usePreset(api.url)"
-                    class="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs rounded-lg transition-colors"
-                  >
-                    {{ api.name }}
-                  </button>
-                </div>
-
-                <div class="pt-4 flex items-center gap-3 border-t border-gray-100 mt-4">
-                  <button
-                    @click="applyCustomApi('pc')"
-                    class="flex-1 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-lg shadow-sm transition-all active:scale-95 flex items-center justify-center gap-2"
-                    :disabled="!customApiUrl || applyingApi || resolvingUrl"
-                    :class="!customApiUrl || applyingApi || resolvingUrl ? 'opacity-50 cursor-not-allowed' : ''"
-                  >
-                    <span
-                      v-if="applyingApi"
-                      class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"
-                    ></span>
-                    {{ applyingApi ? "保存中..." : "应用到 PC 壁纸" }}
-                  </button>
-                  <button
-                    @click="applyCustomApi('mobile')"
-                    class="flex-1 px-4 py-2.5 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 text-sm font-bold rounded-lg shadow-sm transition-all active:scale-95 flex items-center justify-center gap-2"
-                    :disabled="!customApiUrl || applyingApi || resolvingUrl"
-                    :class="!customApiUrl || applyingApi || resolvingUrl ? 'opacity-50 cursor-not-allowed' : ''"
-                  >
-                    <span
-                      v-if="applyingApi"
-                      class="w-4 h-4 border-2 border-gray-400 border-t-gray-600 rounded-full animate-spin"
-                    ></span>
-                    {{ applyingApi ? "保存中..." : "应用到 手机壁纸" }}
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-    </div>
-  </OverlayMotion>
-  <!-- Custom Confirm Modal -->
-  <OverlayMotion
-    :show="showConfirmModal"
-    :z-index="200"
-    close-on-overlay
-    overlay-class="sd-overlay-strong"
-    panel-class="max-w-sm"
-    @close="closeConfirmModal"
-  >
-      <div class="bg-white rounded-xl shadow-2xl w-full p-6">
-        <div class="flex items-start gap-4 mb-4">
-          <div class="p-2 bg-yellow-100 rounded-full text-yellow-600 shrink-0">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              class="h-6 w-6"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
+            <!-- Set as Default Overlay -->
+            <div
+              class="sd-gallery-card-action"
+              @click="
+                selectWallpaper(img, activeTab === 'pc' ? 'pc' : 'mobile')
+              "
             >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-              />
-            </svg>
+              设为默认壁纸
+            </div>
+
+            <!-- Delete Button -->
+            <button
+              @click.stop="
+                handleDelete(img, activeTab === 'pc' ? 'pc' : 'mobile')
+              "
+              class="sd-gallery-card-delete sd-btn sd-btn-danger opacity-0 transition-opacity group-hover:opacity-100"
+              title="删除"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="w-3.5 h-3.5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                />
+              </svg>
+            </button>
           </div>
-          <div>
-            <h3 class="text-lg font-bold text-gray-900 mb-2">提示</h3>
-            <p class="text-sm text-gray-600 leading-relaxed">{{ confirmMessage }}</p>
-          </div>
-        </div>
-        <div class="flex justify-end gap-3">
-          <button
-            @click="closeConfirmModal"
-            class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
-          >
-            取消
-          </button>
-          <button
-            @click="handleConfirm"
-            class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
-          >
-            确定
-          </button>
+        </VueDraggable>
+
+        <!-- API Management -->
+        <div v-if="activeTab === 'api'" class="space-y-6 p-1">
+          <AppSectionCard title="Bing 壁纸接口" body-class="space-y-4">
+            <div
+              class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between"
+            >
+              <div>
+                <div
+                  class="text-sm font-semibold text-[var(--sd-color-text-primary)]"
+                >
+                  {{ apiSourceSummary }}
+                </div>
+                <div class="mt-1 text-xs text-[var(--sd-color-text-tertiary)]">
+                  api.timelessq.com / bing/list
+                </div>
+              </div>
+              <div class="flex flex-wrap gap-2">
+                <AppButton
+                  variant="secondary"
+                  size="sm"
+                  :busy="apiLoading"
+                  :disabled="apiLoading || applyingApi"
+                  @click="loadBingApiWallpapers(true)"
+                >
+                  刷新
+                </AppButton>
+                <AppButton
+                  v-if="apiHasMoreWallpapers"
+                  variant="secondary"
+                  size="sm"
+                  :busy="apiLoading"
+                  :disabled="apiLoading || applyingApi"
+                  @click="loadBingApiWallpapers(false, apiPage + 1)"
+                >
+                  加载更多
+                </AppButton>
+              </div>
+            </div>
+
+            <StatusBanner
+              v-if="apiError"
+              title="Bing 壁纸接口失败"
+              :message="apiError"
+              tone="danger"
+            />
+
+            <div
+              v-if="apiWallpapers.length"
+              class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3"
+            >
+              <article
+                v-for="entry in apiWallpapers"
+                :key="entry.id"
+                class="overflow-hidden rounded-lg border border-[var(--sd-color-border-subtle)] bg-[var(--sd-color-surface)] shadow-sm"
+              >
+                <div
+                  class="relative aspect-video bg-[var(--sd-color-surface-muted)]"
+                >
+                  <img
+                    :src="entry.thumbnailUrl"
+                    :alt="entry.title"
+                    class="h-full w-full object-cover"
+                    loading="lazy"
+                  />
+                </div>
+                <div class="space-y-3 p-3">
+                  <div class="min-w-0">
+                    <h3
+                      class="truncate text-sm font-bold text-[var(--sd-color-text-primary)]"
+                      :title="entry.title"
+                    >
+                      {{ entry.title }}
+                    </h3>
+                    <p
+                      class="mt-1 truncate text-xs text-[var(--sd-color-text-secondary)]"
+                      :title="entry.location || entry.credit"
+                    >
+                      {{ entry.location || entry.credit }}
+                    </p>
+                  </div>
+                  <div class="grid grid-cols-2 gap-2">
+                    <AppButton
+                      size="sm"
+                      variant="primary"
+                      :busy="apiApplyingTarget === `${entry.id}:pc:apply`"
+                      :disabled="applyingApi"
+                      @click="applyBingApiWallpaper(entry, 'pc')"
+                    >
+                      应用到 PC
+                    </AppButton>
+                    <AppButton
+                      size="sm"
+                      variant="secondary"
+                      :busy="apiApplyingTarget === `${entry.id}:mobile:apply`"
+                      :disabled="applyingApi"
+                      @click="applyBingApiWallpaper(entry, 'mobile')"
+                    >
+                      应用到手机
+                    </AppButton>
+                    <AppButton
+                      size="sm"
+                      variant="ghost"
+                      :busy="apiApplyingTarget === `${entry.id}:pc:save`"
+                      :disabled="applyingApi"
+                      @click="applyBingApiWallpaper(entry, 'pc', false)"
+                    >
+                      存入 PC
+                    </AppButton>
+                    <AppButton
+                      size="sm"
+                      variant="ghost"
+                      :busy="apiApplyingTarget === `${entry.id}:mobile:save`"
+                      :disabled="applyingApi"
+                      @click="applyBingApiWallpaper(entry, 'mobile', false)"
+                    >
+                      存入手机
+                    </AppButton>
+                  </div>
+                </div>
+              </article>
+            </div>
+
+            <div
+              v-else-if="apiLoading"
+              class="flex min-h-48 items-center justify-center text-sm text-[var(--sd-color-text-tertiary)]"
+            >
+              正在加载 Bing 壁纸...
+            </div>
+
+            <div
+              v-else
+              class="flex min-h-48 items-center justify-center text-sm text-[var(--sd-color-text-tertiary)]"
+            >
+              暂无可用壁纸
+            </div>
+          </AppSectionCard>
         </div>
       </div>
-  </OverlayMotion>
+    </div>
+  </AppModalShell>
+
+  <ConfirmDialog
+    v-model:show="showConfirmModal"
+    title="提示"
+    :message="confirmMessage"
+    confirm-label="确定"
+    @confirm="handleConfirm"
+    @cancel="closeConfirmModal"
+  />
 </template>

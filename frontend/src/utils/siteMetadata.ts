@@ -15,11 +15,19 @@ type SiteMetadataResponse = {
 
 const isLocalHost = (host: string) => {
   const normalized = host.trim().toLowerCase();
-  if (normalized === "localhost" || normalized === "::1" || normalized.endsWith(".local")) return true;
-  const match = normalized.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
+  if (
+    normalized === "localhost" ||
+    normalized === "::1" ||
+    normalized.endsWith(".local")
+  )
+    return true;
+  const match = normalized.match(
+    /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/,
+  );
   if (!match) return false;
   const parts = match.slice(1).map((part) => Number.parseInt(part, 10));
-  if (parts.some((part) => Number.isNaN(part) || part < 0 || part > 255)) return false;
+  if (parts.some((part) => Number.isNaN(part) || part < 0 || part > 255))
+    return false;
   return (
     parts[0] === 10 ||
     parts[0] === 127 ||
@@ -64,11 +72,15 @@ export const normalizeSiteMetadataPayload = (
   };
 };
 
-export const fetchSiteMetadata = async (input: string): Promise<SiteMetadataData | null> => {
+export const fetchSiteMetadata = async (
+  input: string,
+): Promise<SiteMetadataData | null> => {
   const url = normalizeSiteUrl(input);
   if (!url) return null;
   const res = await fetch(`/api/site/metadata?url=${encodeURIComponent(url)}`);
   if (!res.ok) return null;
-  const payload = (await res.json().catch(() => null)) as SiteMetadataResponse | null;
+  const payload = (await res
+    .json()
+    .catch(() => null)) as SiteMetadataResponse | null;
   return payload ? normalizeSiteMetadataPayload(payload, url) : null;
 };

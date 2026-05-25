@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import { readFileSync } from "node:fs";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { flushPromises, mount, VueWrapper } from "@vue/test-utils";
 import GridPanel from "../GridPanel.vue";
@@ -6,8 +7,65 @@ import ConfirmDialog from "../base/ConfirmDialog.vue";
 import { createTestingPinia } from "@pinia/testing";
 import { useMainStore } from "../../stores/main";
 import { useUiFeedbackStore } from "../../stores/uiFeedback";
-import { useAuthStore } from "../../stores/auth";
 import type { AddComponentPayload } from "../../utils/addComponentTypes";
+import { ITAB_WALLPAPER_WIDGET_TYPE } from "../../features/itab-wallpaper/itabWallpaperTypes";
+import { ITAB_CALENDAR_WIDGET_TYPE } from "../../features/itab-calendar/itabCalendarTypes";
+import { ITAB_FOOD_PICKER_WIDGET_TYPE } from "../../features/itab-food-picker/itabFoodPickerTypes";
+import { ITAB_NUMBER_UPPERCASE_WIDGET_TYPE } from "../../features/itab-number-uppercase/itabNumberUppercaseTypes";
+
+const gridPanelSource = readFileSync("src/components/GridPanel.vue", "utf8");
+
+const gridStackMock = vi.hoisted(() => {
+  const handlers = new Map<string, (...args: unknown[]) => void>();
+  let root: HTMLElement | null = null;
+  const instance = {
+    on: vi.fn((eventName: string, handler: (...args: unknown[]) => void) => {
+      handlers.set(eventName, handler);
+      return instance;
+    }),
+    getGridItems: vi.fn(() =>
+      Array.from(
+        (root || document).querySelectorAll<HTMLElement>(".grid-stack-item"),
+      ),
+    ),
+    makeWidget: vi.fn((el: HTMLElement, options: Record<string, unknown>) => {
+      (
+        el as HTMLElement & {
+          gridstackNode?: Record<string, unknown>;
+        }
+      ).gridstackNode = { ...options, el };
+      return instance;
+    }),
+    update: vi.fn((el: HTMLElement, options: Record<string, unknown>) => {
+      const gridEl = el as HTMLElement & {
+        gridstackNode?: Record<string, unknown>;
+      };
+      gridEl.gridstackNode = {
+        ...(gridEl.gridstackNode || {}),
+        ...options,
+        el,
+      };
+      return instance;
+    }),
+    removeWidget: vi.fn(() => instance),
+    batchUpdate: vi.fn(() => instance),
+    enableMove: vi.fn(() => instance),
+    enableResize: vi.fn(() => instance),
+    column: vi.fn(() => instance),
+    cellHeight: vi.fn(() => instance),
+    margin: vi.fn(() => instance),
+    destroy: vi.fn(() => instance),
+  };
+
+  return {
+    handlers,
+    instance,
+    init: vi.fn((_options: unknown, el: HTMLElement) => {
+      root = el;
+      return instance;
+    }),
+  };
+});
 
 // Mock dependencies
 vi.mock("vue-draggable-plus", () => ({
@@ -27,35 +85,9 @@ vi.mock("vue-draggable-plus", () => ({
   },
 }));
 
-vi.mock("grid-layout-plus", () => ({
-  GridLayout: {
-    name: "GridLayout",
-    template: "<div><slot /></div>",
-    props: [
-      "layout",
-      "colNum",
-      "rowHeight",
-      "isDraggable",
-      "isResizable",
-      "verticalCompact",
-      "useCssTransforms",
-      "margin",
-    ],
-  },
-  GridItem: {
-    name: "GridItem",
-    template: '<div class="grid-item"><slot /></div>',
-    props: [
-      "x",
-      "y",
-      "w",
-      "h",
-      "i",
-      "dragAllowFrom",
-      "dragIgnoreFrom",
-      "dragOption",
-    ],
-    emits: ["move", "moved"],
+vi.mock("gridstack", () => ({
+  GridStack: {
+    init: gridStackMock.init,
   },
 }));
 
@@ -76,11 +108,12 @@ vi.mock("../utils/gridLayout", () => ({
     widgets.map((w: Record<string, unknown>) => ({
       ...w,
       i: w.id,
-      x: 0,
-      y: 0,
-      w: 1,
-      h: 1,
+      x: Number(w.x ?? 0),
+      y: Number(w.y ?? 0),
+      w: Number(w.w ?? w.colSpan ?? 1),
+      h: Number(w.h ?? w.rowSpan ?? 1),
     })),
+  resolveResizeLayout: (layout: unknown[]) => layout,
   compactVertical: (layout: unknown[]) => layout,
 }));
 vi.mock("@/utils/network", () => ({
@@ -104,6 +137,7 @@ describe("GridPanel Context Menu", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    gridStackMock.handlers.clear();
     vi.stubGlobal(
       "fetch",
       vi.fn(async (input: RequestInfo | URL) => {
@@ -150,25 +184,30 @@ describe("GridPanel Context Menu", () => {
               widgets: {
                 widgets: [
                   {
-                    id: "div-card-1",
-                    type: "div-card",
-                    data: { title: "Test Div Card" },
+                    id: "custom-1",
+                    type: "custom-css",
+                    data: {
+                      title: "Custom",
+                      html: "<strong>Custom</strong>",
+                      css: "strong { color: red; }",
+                      sizeKey: "1x1",
+                    },
                     x: 0,
                     y: 0,
                     w: 1,
                     h: 1,
-                    i: "div-card-1",
+                    i: "custom-1",
                     enable: true,
                     isPublic: true,
                   },
                   {
-                    id: "calculator-1",
-                    type: "calculator",
+                    id: "docker-1",
+                    type: "docker",
                     x: 1,
                     y: 0,
                     w: 1,
                     h: 1,
-                    i: "calculator-1",
+                    i: "docker-1",
                     enable: true,
                     isPublic: true,
                   },
@@ -184,20 +223,15 @@ describe("GridPanel Context Menu", () => {
           }),
         ],
         stubs: {
-          CalculatorWidget: true,
-          CountdownWidget: true,
-          CountUpWidget: true,
-          IframeWidget: true,
-          BookmarkWidget: true,
-          HotWidget: true,
-          RssWidget: true,
           DockerWidget: true,
           SystemStatusWidget: true,
           CustomCssWidget: true,
-          FileTransferWidget: true,
           IconShape: true,
-          AppSidebar: true,
-          EditModal: true,
+          EditModal: {
+            props: ["show", "data", "groupId"],
+            template:
+              '<div v-if="show" data-testid="edit-modal-stub">{{ data?.title }} {{ groupId }}</div>',
+          },
           SettingsModal: true,
           GroupSettingsModal: true,
           AddWidgetModal: {
@@ -219,69 +253,118 @@ describe("GridPanel Context Menu", () => {
     document.body.innerHTML = "";
   });
 
-  it("renders div-card widget correctly", () => {
-    const divCard = wrapper.find(".div-card-click-target");
-    expect(divCard.exists()).toBe(true);
-    expect(divCard.text()).toContain("Test Div Card");
-  });
+  it("initializes GridStack for logged-in whole-card dragging", async () => {
+    await flushPromises();
 
-  it("enables iTab-style whole-card dragging outside edit mode", () => {
-    const gridLayout = wrapper.findComponent({ name: "GridLayout" });
+    const gridLayout = wrapper.find(".sd-home-grid-stack");
     expect(gridLayout.exists()).toBe(true);
-    expect(gridLayout.props("isDraggable")).toBe(true);
 
-    const gridItem = wrapper.findComponent({ name: "GridItem" });
+    const gridItem = wrapper.find('[data-widget-grid-item="custom-1"]');
     expect(gridItem.exists()).toBe(true);
-    expect(gridItem.props("dragAllowFrom")).toBeUndefined();
-    expect(gridItem.props("dragIgnoreFrom")).toContain("button");
-    expect(gridItem.props("dragIgnoreFrom")).toContain(
-      "[data-grid-drag-ignore]",
-    );
-    expect(gridItem.props("dragIgnoreFrom")).toContain(
-      "[data-itab-inner-control]",
-    );
-    expect(gridItem.props("dragOption")).toMatchObject({
-      hold: 200,
-      delay: 200,
-    });
+    expect(gridItem.attributes("gs-id")).toBe("custom-1");
+    expect(gridItem.find(".grid-stack-item-content").exists()).toBe(true);
+
+    expect(gridStackMock.init).toHaveBeenCalled();
+    const options = (gridStackMock.init.mock.calls[0] as unknown[])?.[0] as {
+      animate?: boolean;
+      disableDrag?: boolean;
+      disableResize?: boolean;
+      draggable?: { handle?: string; cancel?: string; pause?: number };
+    };
+    expect(options.animate).toBe(false);
+    expect(options.disableDrag).toBe(false);
+    expect(options.disableResize).toBe(true);
+    expect(options.draggable?.handle).toBe(".grid-stack-item-content");
+    expect(options.draggable?.cancel).toContain("button");
+    expect(options.draggable?.cancel).toContain("[data-grid-drag-ignore]");
+    expect(options.draggable?.cancel).toContain("[data-itab-inner-control]");
+    expect(options.draggable).not.toHaveProperty("pause");
   });
 
-  it("closes widget context menus when a home widget drag begins", async () => {
-    const divCard = wrapper.find(".div-card-click-target");
-    await divCard.trigger("contextmenu", { clientX: 12, clientY: 16 });
-    await wrapper.vm.$nextTick();
+  it("gates whole-card dragging behind login state", () => {
+    const dragEnabledBlock =
+      /const isHomeWidgetDragEnabled = computed\([\s\S]*?\n\);/.exec(
+        gridPanelSource,
+      )?.[0];
 
-    expect(
-      document.body.querySelector("[data-grid-context-menu]"),
-    ).not.toBeNull();
+    expect(dragEnabledBlock).toBeTruthy();
+    expect(dragEnabledBlock).toContain("store.isLogged &&");
+  });
 
-    const gridItem = wrapper.findComponent({ name: "GridItem" });
-    gridItem.vm.$emit("move", "div-card-1", 1, 0);
+  it("removes the old drag moved shadow state", () => {
+    expect(gridPanelSource).not.toContain("sd-home-drag-moved");
+    expect(gridPanelSource).not.toContain("onHomeWidgetMove");
+    expect(gridPanelSource).not.toContain("onHomeWidgetMoved");
+  });
+
+  it("keeps GridStack dragging immediate and avoids invalid auto-placement coordinates", () => {
+    expect(gridPanelSource).not.toContain("pause: HOME_WIDGET_DRAG_HOLD_MS");
+    expect(gridPanelSource).not.toContain("grid-stack-item transition-all");
+    expect(gridPanelSource).not.toContain("y: widget.y ?? Infinity");
+  });
+
+  it("allows the number uppercase widget to enter the home grid layout", () => {
+    const gridWidgetTypesBlock =
+      /const gridWidgetTypes = new Set\(\[[\s\S]*?\]\);/.exec(
+        gridPanelSource,
+      )?.[0];
+
+    expect(gridWidgetTypesBlock).toBeTruthy();
+    expect(gridWidgetTypesBlock).toContain("ITAB_NUMBER_UPPERCASE_WIDGET_TYPE");
+    expect(ITAB_NUMBER_UPPERCASE_WIDGET_TYPE).toBe("itab-number-uppercase-35");
+  });
+
+  it("lets GridStack own drag start without custom long-press interception", () => {
+    expect(gridPanelSource).not.toContain("HOME_WIDGET_DRAG_HOLD_MS");
+    expect(gridPanelSource).not.toContain(
+      "HOME_WIDGET_LONG_PRESS_MOVE_CANCEL_PX",
+    );
+    expect(gridPanelSource).not.toContain("homeWidgetLongPress");
+    expect(gridPanelSource).not.toContain("armHomeWidgetLongPressDrag");
+    expect(gridPanelSource).not.toContain("releaseHomeWidgetLongPressDrag");
+    expect(gridPanelSource).not.toContain("blockHomeWidgetDragBeforeHold");
+    expect(gridPanelSource).not.toContain("@pointerdown.capture");
+    expect(gridPanelSource).not.toContain("@mousedown.capture");
+    expect(gridPanelSource).toContain('grid.on("dragstart"');
+    expect(gridPanelSource).toContain('grid.on("dragstop"');
+  });
+
+  it("saves whole-card drag immediately without holding the layout sync guard", async () => {
+    vi.mocked(store.saveData).mockResolvedValue("saved");
+    await flushPromises();
+
+    const gridItem = wrapper.find('[data-widget-grid-item="custom-1"]')
+      .element as HTMLElement & {
+      gridstackNode?: { x?: number; y?: number; w?: number; h?: number };
+    };
+    gridStackMock.handlers.get("dragstart")?.(new Event("dragstart"), gridItem);
+    gridItem.gridstackNode = { ...(gridItem.gridstackNode || {}), x: 1 };
+    gridStackMock.handlers.get("dragstop")?.(new Event("dragstop"), gridItem);
+
+    expect(store.layoutEditInProgress).toBe(false);
     await wrapper.vm.$nextTick();
     await flushPromises();
-    await new Promise((resolve) => setTimeout(resolve, 250));
 
-    expect(document.body.querySelector("[data-grid-context-menu]")).toBeNull();
+    expect(store.saveData).toHaveBeenCalledWith(true);
+    expect(store.layoutEditInProgress).toBe(false);
   });
 
-  it("opens context menu on right click on div-card", async () => {
-    const divCard = wrapper.find(".div-card-click-target");
-    await divCard.trigger("contextmenu", { clientX: 12, clientY: 16 });
+  it("does not save a drag when the final grid position is unchanged", async () => {
+    vi.mocked(store.saveData).mockResolvedValue("saved");
+    await flushPromises();
+
+    const gridItem = wrapper.find('[data-widget-grid-item="custom-1"]')
+      .element as HTMLElement;
+    gridStackMock.handlers.get("dragstart")?.(new Event("dragstart"), gridItem);
+    gridStackMock.handlers.get("dragstop")?.(new Event("dragstop"), gridItem);
+
     await wrapper.vm.$nextTick();
+    await flushPromises();
 
-    const menu = document.body.querySelector("[data-grid-context-menu]");
-    expect(menu).not.toBeNull();
-
-    // Check menu items
-    expect(menu?.textContent).toContain("编辑卡片");
-    expect(menu?.textContent).toContain("删除卡片");
-
-    // Check SVGs are present (w-4 h-4 class)
-    const svgs = menu?.querySelectorAll("svg.w-4.h-4") ?? [];
-    expect(svgs.length).toBeGreaterThan(0);
+    expect(store.saveData).not.toHaveBeenCalled();
   });
 
-  it("opens the iTab blank-area context menu without replacing card menus", async () => {
+  it("opens the iTab blank-area context menu", async () => {
     const homeSurface = wrapper.find(".flex-1");
     expect(homeSurface.exists()).toBe(true);
 
@@ -294,24 +377,8 @@ describe("GridPanel Context Menu", () => {
     expect(blankMenu).not.toBeNull();
     expect(blankMenu?.textContent).toContain("添加图标");
     expect(blankMenu?.textContent).toContain("换壁纸");
-    expect(blankMenu?.textContent).toContain("本地搜索");
     expect(blankMenu?.textContent).toContain("立即备份");
     expect(blankMenu?.textContent).toContain("设置");
-
-    const divCard = wrapper.find(".div-card-click-target");
-    await divCard.trigger("contextmenu", { clientX: 12, clientY: 16 });
-    await wrapper.vm.$nextTick();
-
-    const menus = Array.from(
-      document.body.querySelectorAll("[data-grid-context-menu]"),
-    );
-    expect(menus.some((menu) => menu.textContent?.includes("编辑卡片"))).toBe(
-      true,
-    );
-    await new Promise((resolve) => setTimeout(resolve, 250));
-    expect(
-      document.body.querySelector('[data-testid="itab-add-context-menu"]'),
-    ).toBeNull();
   });
 
   it("does not open the blank-area menu from excluded interactive targets", async () => {
@@ -371,6 +438,106 @@ describe("GridPanel Context Menu", () => {
     ).toBe(true);
   });
 
+  it("opens the link-card menu from contextmenu only and cancels the browser menu", async () => {
+    expect(gridPanelSource).not.toContain("@mousedown.right");
+    store.groups = [
+      {
+        id: "links",
+        title: "链接",
+        isPublic: true,
+        items: [
+          {
+            id: "link-1",
+            title: "Link Card",
+            url: "https://example.com",
+            icon: "",
+            isPublic: true,
+          },
+        ],
+      },
+    ];
+    await wrapper.vm.$nextTick();
+
+    const linkCard = wrapper.find('[data-card-item="link-1"]');
+    expect(linkCard.exists()).toBe(true);
+
+    const rightMouseDown = new MouseEvent("mousedown", {
+      button: 2,
+      bubbles: true,
+      cancelable: true,
+      clientX: 12,
+      clientY: 16,
+    });
+    expect(linkCard.element.dispatchEvent(rightMouseDown)).toBe(true);
+    await wrapper.vm.$nextTick();
+    expect(document.body.querySelector("[data-grid-context-menu]")).toBeNull();
+
+    const contextEvent = new MouseEvent("contextmenu", {
+      button: 2,
+      bubbles: true,
+      cancelable: true,
+      clientX: 12,
+      clientY: 16,
+    });
+    expect(linkCard.element.dispatchEvent(contextEvent)).toBe(false);
+    expect(contextEvent.defaultPrevented).toBe(true);
+    await wrapper.vm.$nextTick();
+
+    const menu = document.body.querySelector("[data-grid-context-menu]");
+    expect(menu).not.toBeNull();
+    expect(menu?.textContent).toContain("编辑卡片");
+
+    const menuContextEvent = new MouseEvent("contextmenu", {
+      button: 2,
+      bubbles: true,
+      cancelable: true,
+    });
+    expect(menu!.dispatchEvent(menuContextEvent)).toBe(false);
+    expect(menuContextEvent.defaultPrevented).toBe(true);
+  });
+
+  it("opens EditModal from the link-card context menu edit action", async () => {
+    store.groups = [
+      {
+        id: "links",
+        title: "链接",
+        isPublic: true,
+        items: [
+          {
+            id: "link-1",
+            title: "Link Card",
+            url: "https://example.com",
+            icon: "",
+            isPublic: true,
+          },
+        ],
+      },
+    ];
+    await wrapper.vm.$nextTick();
+
+    const linkCard = wrapper.find('[data-card-item="link-1"]');
+    expect(linkCard.exists()).toBe(true);
+    await linkCard.trigger("contextmenu", { clientX: 12, clientY: 16 });
+    await wrapper.vm.$nextTick();
+
+    const menu = document.body.querySelector("[data-grid-context-menu]");
+    const editBtn = Array.from(
+      menu!.querySelectorAll('[role="menuitem"]'),
+    ).find((item) => item.textContent?.includes("编辑卡片"));
+    if (!editBtn) throw new Error("Edit button not found");
+
+    editBtn.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    await wrapper.vm.$nextTick();
+
+    const editModal = wrapper.find('[data-testid="edit-modal-stub"]');
+    expect(editModal.exists()).toBe(true);
+    expect(editModal.text()).toContain("Link Card");
+    expect(editModal.text()).toContain("links");
+    await wrapper.vm.$nextTick();
+    await new Promise((resolve) => setTimeout(resolve, 200));
+    expect(document.body.querySelector("[data-grid-context-menu]")).toBeNull();
+  });
+
   it("applies selected size when adding a new widget payload", async () => {
     const vm = wrapper.vm as unknown as {
       addComponent: (payload: AddComponentPayload) => Promise<unknown>;
@@ -378,13 +545,15 @@ describe("GridPanel Context Menu", () => {
 
     const result = await vm.addComponent({
       kind: "widget",
-      catalogItemId: "iframe",
+      catalogItemId: "custom-css",
       destinationGroupId: "home",
       saveMode: "dirty",
       sizeKey: "2x4",
     });
 
-    const widget = store.widgets.find((item) => item.type === "iframe");
+    const widget = store.widgets.find(
+      (item) => item.type === "custom-css" && item.id !== "custom-1",
+    );
     expect(result).toMatchObject({ status: "success" });
     expect(widget).toMatchObject({ w: 4, h: 2, colSpan: 4, rowSpan: 2 });
     expect(store.markDirty).toHaveBeenCalled();
@@ -422,20 +591,163 @@ describe("GridPanel Context Menu", () => {
     });
   });
 
-  it("re-enables disabled singleton widgets with the selected size without duplicates", async () => {
+  it("clears the active runtime trigger before closing the opened panel", () => {
+    const closeRuntimeWidgetBlock =
+      /const closeRuntimeWidget = \(\) => \{[\s\S]*?\n\};/.exec(
+        gridPanelSource,
+      )?.[0];
+
+    expect(closeRuntimeWidgetBlock).toBeTruthy();
+    expect(closeRuntimeWidgetBlock).toContain(
+      'blurActiveElementMatching("[data-runtime-widget]")',
+    );
+    expect(
+      closeRuntimeWidgetBlock!.indexOf("blurActiveElementMatching"),
+    ).toBeLessThan(closeRuntimeWidgetBlock!.indexOf("openedRuntimeWidgetId"));
+  });
+
+  it("places the migrated iTab wallpaper widget into the home grid", async () => {
+    const vm = wrapper.vm as unknown as {
+      addComponent: (payload: AddComponentPayload) => Promise<unknown>;
+      layoutData: Array<{ i: string; w: number; h: number }>;
+    };
+
+    const result = await vm.addComponent({
+      kind: "widget",
+      catalogItemId: "wallpaper",
+      destinationGroupId: "home",
+      saveMode: "dirty",
+      sizeKey: "2x2",
+    });
+
+    const widget = store.widgets.find(
+      (item) => item.type === ITAB_WALLPAPER_WIDGET_TYPE,
+    );
+    expect(result).toMatchObject({ status: "success" });
+    expect(widget).toMatchObject({
+      type: ITAB_WALLPAPER_WIDGET_TYPE,
+      w: 2,
+      h: 2,
+      colSpan: 2,
+      rowSpan: 2,
+      data: expect.objectContaining({
+        sizeKey: "2x2",
+        itab: expect.objectContaining({
+          adapterKind: "wallpaper",
+          catalogId: ITAB_WALLPAPER_WIDGET_TYPE,
+          captureIndex: 16,
+        }),
+      }),
+    });
+    expect(vm.layoutData.some((item) => item.i === widget?.id)).toBe(true);
+  });
+
+  it("places the migrated iTab calendar widget into the home grid", async () => {
+    const vm = wrapper.vm as unknown as {
+      addComponent: (payload: AddComponentPayload) => Promise<unknown>;
+      layoutData: Array<{ i: string; w: number; h: number }>;
+    };
+
+    const result = await vm.addComponent({
+      kind: "widget",
+      catalogItemId: "calendar",
+      destinationGroupId: "home",
+      saveMode: "dirty",
+      sizeKey: "2x2",
+    });
+
+    const widget = store.widgets.find(
+      (item) => item.type === ITAB_CALENDAR_WIDGET_TYPE,
+    );
+    expect(result).toMatchObject({ status: "success" });
+    expect(widget).toMatchObject({
+      id: "calendar",
+      type: ITAB_CALENDAR_WIDGET_TYPE,
+      w: 2,
+      h: 2,
+      colSpan: 2,
+      rowSpan: 2,
+      data: expect.objectContaining({
+        runtime: "itab-calendar",
+        version: 1,
+        sizeKey: "2x2",
+      }),
+    });
+    expect(vm.layoutData.some((item) => item.i === widget?.id)).toBe(true);
+    expect(gridPanelSource).toContain("ITAB_CALENDAR_WIDGET_TYPE");
+  });
+
+  it("places the migrated iTab food picker widget into the home grid", async () => {
+    const vm = wrapper.vm as unknown as {
+      addComponent: (payload: AddComponentPayload) => Promise<unknown>;
+      layoutData: Array<{ i: string; w: number; h: number }>;
+    };
+
+    const result = await vm.addComponent({
+      kind: "widget",
+      catalogItemId: "food-picker",
+      destinationGroupId: "home",
+      saveMode: "dirty",
+      sizeKey: "2x2",
+    });
+
+    const widget = store.widgets.find(
+      (item) => item.type === ITAB_FOOD_PICKER_WIDGET_TYPE,
+    );
+    expect(result).toMatchObject({ status: "success" });
+    expect(widget).toMatchObject({
+      type: ITAB_FOOD_PICKER_WIDGET_TYPE,
+      w: 2,
+      h: 2,
+      colSpan: 2,
+      rowSpan: 2,
+      data: expect.objectContaining({
+        runtime: "itab-food-picker",
+        version: 1,
+        sizeKey: "2x2",
+      }),
+    });
+    expect(vm.layoutData.some((item) => item.i === widget?.id)).toBe(true);
+    expect(gridPanelSource).toContain("ITAB_FOOD_PICKER_WIDGET_TYPE");
+  });
+
+  it("does not create duplicate singleton runtime widgets", async () => {
     const vm = wrapper.vm as unknown as {
       addComponent: (payload: AddComponentPayload) => Promise<unknown>;
     };
     store.widgets.push({
-      id: "docker",
-      type: "docker",
-      enable: false,
+      id: "calendar",
+      type: ITAB_CALENDAR_WIDGET_TYPE,
+      enable: true,
       isPublic: true,
-      w: 1,
-      h: 1,
-      colSpan: 1,
-      rowSpan: 1,
+      w: 2,
+      h: 2,
+      colSpan: 2,
+      rowSpan: 2,
     });
+
+    const result = await vm.addComponent({
+      kind: "widget",
+      catalogItemId: "calendar",
+      destinationGroupId: "home",
+      saveMode: "dirty",
+      sizeKey: "2x2",
+    });
+
+    expect(result).toMatchObject({ status: "duplicate", id: "calendar" });
+    expect(
+      store.widgets.filter((item) => item.type === ITAB_CALENDAR_WIDGET_TYPE),
+    ).toHaveLength(1);
+  });
+
+  it("reuses the Docker singleton when adding from the catalog", async () => {
+    const vm = wrapper.vm as unknown as {
+      addComponent: (payload: AddComponentPayload) => Promise<unknown>;
+    };
+    const existingDocker = store.widgets.find((item) => item.type === "docker");
+    if (!existingDocker) throw new Error("expected docker fixture");
+    existingDocker.enable = false;
+    existingDocker.hideOnMobile = true;
 
     const result = await vm.addComponent({
       kind: "widget",
@@ -448,9 +760,17 @@ describe("GridPanel Context Menu", () => {
     const dockerWidgets = store.widgets.filter(
       (item) => item.type === "docker",
     );
-    expect(result).toMatchObject({ status: "success", id: "docker" });
+    expect(result).toMatchObject({ status: "success" });
     expect(dockerWidgets).toHaveLength(1);
-    expect(dockerWidgets[0]).toMatchObject({ enable: true, w: 4, h: 2 });
+    expect(dockerWidgets[0]).toMatchObject({
+      id: "docker-1",
+      enable: true,
+      hideOnMobile: false,
+      w: 4,
+      h: 2,
+      colSpan: 4,
+      rowSpan: 2,
+    });
   });
 
   it("rolls back site shortcut immediate save conflicts", async () => {
@@ -522,44 +842,52 @@ describe("GridPanel Context Menu", () => {
     const vm = wrapper.vm as unknown as {
       addComponent: (payload: AddComponentPayload) => Promise<unknown>;
     };
-    const auth = useAuthStore();
-    auth.token = "";
+    Object.defineProperty(store, "isLogged", {
+      configurable: true,
+      get: () => false,
+    });
+    expect(store.isLogged).toBe(false);
+    const customCssCount = store.widgets.filter(
+      (item) => item.type === "custom-css",
+    ).length;
 
     const result = await vm.addComponent({
       kind: "widget",
-      catalogItemId: "iframe",
+      catalogItemId: "custom-css",
       destinationGroupId: "home",
       saveMode: "dirty",
       sizeKey: "2x2",
     });
 
     expect(result).toMatchObject({ status: "unauthorized" });
-    expect(store.widgets.some((item) => item.type === "iframe")).toBe(false);
+    expect(
+      store.widgets.filter((item) => item.type === "custom-css"),
+    ).toHaveLength(customCssCount);
   });
 
-  it("clicking delete calls confirm delete logic", async () => {
-    const divCard = wrapper.find(".div-card-click-target");
-    await divCard.trigger("contextmenu", { clientX: 12, clientY: 16 });
+  it("keeps link-card delete confirmation open on outside click and Escape, then clears it on cancel", async () => {
+    store.groups = [
+      {
+        id: "links",
+        title: "链接",
+        isPublic: true,
+        items: [
+          {
+            id: "link-1",
+            title: "Link Card",
+            url: "https://example.com",
+            icon: "",
+            isPublic: true,
+          },
+        ],
+      },
+    ];
     await wrapper.vm.$nextTick();
 
-    const menu = document.body.querySelector("[data-grid-context-menu]");
-    expect(menu).not.toBeNull();
-    // Find delete button (last item usually)
-    const items = Array.from(menu!.querySelectorAll('[role="menuitem"]'));
-    const deleteBtn = items[items.length - 1];
+    const linkCard = wrapper.find('[data-card-item="link-1"]');
+    expect(linkCard.exists()).toBe(true);
 
-    if (!deleteBtn) throw new Error("Delete button not found");
-    expect(deleteBtn.textContent).toContain("删除卡片");
-    deleteBtn.dispatchEvent(new MouseEvent("click", { bubbles: true }));
-    await wrapper.vm.$nextTick();
-
-    // Check if delete confirm modal is shown
-    expect(document.body.textContent).toContain("删除确认");
-  });
-
-  it("keeps delete confirmation open on outside click and Escape, then clears it on cancel", async () => {
-    const divCard = wrapper.find(".div-card-click-target");
-    await divCard.trigger("contextmenu", { clientX: 12, clientY: 16 });
+    await linkCard.trigger("contextmenu", { clientX: 12, clientY: 16 });
     await wrapper.vm.$nextTick();
 
     const menu = document.body.querySelector("[data-grid-context-menu]");
@@ -614,37 +942,24 @@ describe("GridPanel Context Menu", () => {
     expect(disableButton.exists()).toBe(true);
     await disableButton.trigger("click");
 
-    expect(store.widgets.find((w) => w.id === "calculator-1")?.enable).toBe(
-      false,
-    );
+    expect(store.widgets.find((w) => w.id === "custom-1")?.enable).toBe(false);
   });
 
-  it("shows home group tabs only when web group pagination is enabled", async () => {
+  it("does not render legacy web group pagination tabs", async () => {
     store.groups = [
       { id: "g-common", title: "常用", items: [], isPublic: true },
       { id: "g-favorites", title: "收藏夹", items: [], isPublic: true },
     ];
-    store.appConfig.webGroupPagination = false;
-    await wrapper.vm.$nextTick();
-
-    expect(wrapper.find('[data-testid="home-group-tabs"]').exists()).toBe(
-      false,
-    );
-
+    // Legacy saved configs can still carry this flag, but the homepage no
+    // longer uses the one-page/group-pagination presentation mode.
     store.appConfig.webGroupPagination = true;
     await wrapper.vm.$nextTick();
 
-    const tabs = wrapper.find('[data-testid="home-group-tabs"]');
-    expect(tabs.exists()).toBe(true);
-    expect(tabs.text()).toContain("常用");
-    expect(tabs.text()).toContain("收藏夹");
-
-    store.appConfig.webGroupPagination = false;
-    await wrapper.vm.$nextTick();
-
     expect(wrapper.find('[data-testid="home-group-tabs"]').exists()).toBe(
       false,
     );
+    expect(wrapper.text()).toContain("常用");
+    expect(wrapper.text()).toContain("收藏夹");
   });
 
   it("cycles the home network control through auto, lan, and wan only", async () => {
@@ -678,8 +993,7 @@ describe("GridPanel Context Menu", () => {
     expect(store.logout).toHaveBeenCalledTimes(1);
   });
 
-  it("shows feedback when the home edit save has no changes", async () => {
-    const uiFeedback = useUiFeedbackStore();
+  it("saves and exits home edit mode from the single save action", async () => {
     vi.mocked(store.saveData).mockResolvedValue("no_change");
 
     const editButton = wrapper
@@ -700,11 +1014,13 @@ describe("GridPanel Context Menu", () => {
     await new Promise((resolve) => setTimeout(resolve, 0));
 
     expect(store.saveData).toHaveBeenCalledWith(true);
-    expect(uiFeedback.notify).toHaveBeenCalledWith({
-      title: "无需保存",
-      message: "当前没有新的修改。",
-      tone: "info",
-    });
+    expect(wrapper.find('[data-testid="home-action-bar"]').exists()).toBe(
+      false,
+    );
+    expect(wrapper.find('[data-testid="home-top-actions"]').exists()).toBe(
+      true,
+    );
+    expect(store.layoutEditInProgress).toBe(false);
   });
 
   it("hides edit chrome while the add widget modal is open", async () => {
@@ -719,7 +1035,7 @@ describe("GridPanel Context Menu", () => {
     expect(wrapper.find('[data-testid="home-action-bar"]').exists()).toBe(true);
     expect(wrapper.find('[aria-label="禁用组件"]').exists()).toBe(true);
     expect(wrapper.find(".widget-move-handle").exists()).toBe(false);
-    expect(wrapper.find(".widget-resize-grip").exists()).toBe(true);
+    expect(wrapper.find(".widget-resize-grip").exists()).toBe(false);
 
     const addWidgetButton = wrapper
       .findAll('[data-testid="home-action-bar"] button')

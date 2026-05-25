@@ -9,7 +9,7 @@ describe("useWidgetResize iTab finite size rules", () => {
 
   it("keeps iTab size options visible but disables widths over a one-column runtime", () => {
     const state = resolveWidgetSizeState({
-      widgetType: "file-transfer",
+      widgetType: "calculator",
       deviceKey: "mobile",
       runtimeCols: 1,
       currentSize: { colSpan: 2, rowSpan: 1 },
@@ -54,7 +54,7 @@ describe("useWidgetResize iTab finite size rules", () => {
 
   it("marks non-family sizes as unsupported and resolves to the nearest iTab size", () => {
     const state = resolveWidgetSizeState({
-      widgetType: "file-transfer",
+      widgetType: "calculator",
       deviceKey: "desktop",
       runtimeCols: 4,
       currentSize: { colSpan: 1, rowSpan: 1 },

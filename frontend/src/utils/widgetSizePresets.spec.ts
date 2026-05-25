@@ -13,23 +13,7 @@ import {
 
 const itabSizeKeys = ["1x1", "1x2", "2x1", "2x2", "2x4"] as const;
 
-const expectedDefaults: Record<string, WidgetSizeKey> = {
-  search: "1x2",
-  "div-card": "1x1",
-  bookmarks: "2x2",
-  iframe: "2x2",
-  "custom-css": "1x1",
-  countdown: "1x1",
-  countup: "1x1",
-  calculator: "2x2",
-  "file-transfer": "2x2",
-  hot: "2x2",
-  rss: "2x2",
-  docker: "2x2",
-  "system-status": "1x1",
-  ip: "1x2",
-  "status-monitor": "2x2",
-};
+const expectedDefaults: Record<string, WidgetSizeKey> = {};
 
 describe("widgetSizePresets", () => {
   it("defines the fixed iTab candidate size set", () => {
@@ -47,7 +31,7 @@ describe("widgetSizePresets", () => {
   });
 
   it("gives every main-project widget the same iTab size family", () => {
-    expect(WIDGET_SIZE_FAMILY_TYPES).toHaveLength(15);
+    expect(WIDGET_SIZE_FAMILY_TYPES).toHaveLength(0);
     expect(Object.keys(expectedDefaults).sort()).toEqual(
       [...WIDGET_SIZE_FAMILY_TYPES].sort(),
     );
@@ -85,11 +69,8 @@ describe("widgetSizePresets", () => {
     for (const faces of Object.values(WIDGET_FUNCTIONAL_FACE_MATRIX)) {
       expect(Object.keys(faces).every((key) => allowed.has(key))).toBe(true);
     }
-    expect(resolveWidgetFunctionalFace("search", "1x2")).toBe(
-      "search-active-input",
-    );
-    expect(resolveWidgetFunctionalFace("search", "2x4")).toBe(
-      "search-engine-menu-preview",
+    expect(resolveWidgetFunctionalFace("custom-css", "2x4")).toBe(
+      "custom-workbench",
     );
   });
 });

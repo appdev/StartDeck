@@ -1,6 +1,6 @@
 # Icon Service
 
-一个用于按 `host` 或 `url` 查询站点图标与 metadata 的 Go 服务。
+一个用于按 `host` 或 `url` 查询站点图标与 metadata 的 Rust 服务。
 
 ## 返回结构
 
@@ -68,7 +68,7 @@ curl 'http://icons.put.run/api/icon?url=https://apkdv.com/posts/implementing_ios
   "url": "https://example.com",
   "finalUrl": "https://example.com/",
   "title": "Example Domain",
-  "iconUrl": "http://127.0.0.1:8080/cache/example.com.png",
+  "iconUrl": "http://127.0.0.1:9002/cache/example.com.png",
   "description": "Example description",
   "fetchedAt": "2026-04-19T08:00:00Z"
 }
@@ -104,71 +104,27 @@ curl 'http://icons.put.run/api/icon?url=https://apkdv.com/posts/implementing_ios
 - 支持输出 StartDeck 兼容的 metadata 结构
 - 支持按指定 `host/url` 强制刷新缓存
 - 支持删除指定 `host/url` 的缓存并回退默认数据
-- 可通过配置文件控制端口、数据目录、图标前缀和图标对外地址
+- 通过 Rust 运行时环境变量控制端口和数据根目录
 
 ## 配置
 
-默认读取同目录下的 `config.json`，也可以通过环境变量 `CONFIG_FILE` 指定。
+Rust 图标服务读取仓库根目录下的 `icon-service/data`，默认监听 `9002`。常用环境变量：
 
-示例：
+- `BASE_DIR`: StartDeck 运行根目录，默认由当前工作目录推断。
+- `ICON_SERVICE_PORT`: 图标服务监听端口，默认 `9002`。
 
-```json
-{
-  "addr": ":8080",
-  "dataDir": "./data",
-  "seedIconDir": "./data/icons",
-  "cacheIconDir": "./data/cache",
-  "cacheFile": "./data/cache.json",
-  "seedJSON": "./data/seed.json",
-  "iconPrefix": "/icons/",
-  "cachePrefix": "/cache/",
-  "publicIconBaseURL": "",
-  "microlinkBaseURL": "https://api.microlink.io/",
-  "microlinkAPIKey": "",
-  "itabFP": "",
-  "itabSignatureKey": "",
-  "itabToken": ""
-}
-```
-
-字段说明：
-
-- `addr`: 服务监听地址，端口在这里配置，例如 `:8080`
-- `dataDir`: 数据目录
-- `seedIconDir`: 默认数据图标目录
-- `cacheIconDir`: 非默认缓存图标目录
-- `cacheFile`: 缓存文件路径
-- `seedJSON`: 初始种子数据文件
-- `iconPrefix`: 本地静态图标路由前缀
-- `cachePrefix`: 缓存图标静态路由前缀
-- `publicIconBaseURL`: 图标对外地址前缀
-- `microlinkBaseURL`: Microlink API 基地址，默认 `https://api.microlink.io/`
-- `microlinkAPIKey`: 可选的 Microlink API Key
-- `itabFP`: iTab 上游接口请求头 `fp`
-- `itabSignatureKey`: iTab 上游接口请求头 `signaturekey`
-- `itabToken`: iTab 上游接口请求头 `token`
-
-说明：
-
-- 示例配置不再内置任何敏感凭证
-- 生产环境建议通过 `config.json` 或环境变量注入 iTab 凭证
-- 若未配置上述凭证，服务仍可使用本地 seed / cache 数据；回源到 iTab 时是否成功取决于上游接口要求
-
-`publicIconBaseURL` 的行为：
-
-- 为空时，接口会根据当前请求自动返回完整 URL，例如 `http://127.0.0.1:8080/icons/www.youtube.com.svg`
-- 设为 `https://cdn.example.com` 时，默认图标返回 `https://cdn.example.com/icons/...`，缓存图标返回 `https://cdn.example.com/cache/...`
+服务不再读取旧版 `config.json`。若缓存未命中，服务会优先使用本地 seed/cache 数据；外部回源能力由 Rust 服务实现和部署环境决定。
 
 图标目录分层：
 
 - 默认种子数据图标保存在 `seedIconDir`
 - 非默认缓存图标保存在 `cacheIconDir`
-- 对外返回地址会保留这个分流，例如 `https://your-host/icons/www.youtube.com.svg` 或 `https://your-host/cache/apkdv.com.svg`
+- 对外返回地址会保留这个分流，例如 `/icons/www.youtube.com.svg` 或 `/cache/apkdv.com.svg`
 
 ## 运行
 
 ```bash
-go run .
+cargo run --bin startdeck-iconserver
 ```
 
 或：
@@ -182,13 +138,13 @@ go run .
 ### 1. 按 host 查询
 
 ```bash
-curl 'http://127.0.0.1:8080/api/icon?host=www.youtube.com'
+curl 'http://127.0.0.1:9002/api/icon?host=www.youtube.com'
 ```
 
 ### 2. 按 url 查询
 
 ```bash
-curl 'http://127.0.0.1:8080/api/icon?url=https://apkdv.com/posts/implementing_ios_liquid_glass_effect_in_android/'
+curl 'http://127.0.0.1:9002/api/icon?url=https://apkdv.com/posts/implementing_ios_liquid_glass_effect_in_android/'
 ```
 
 服务会自动按 host 归一化，因此同一 host 下不同路径会返回同一条图标配置。
@@ -196,7 +152,7 @@ curl 'http://127.0.0.1:8080/api/icon?url=https://apkdv.com/posts/implementing_io
 ### 3. 查询站点 metadata
 
 ```bash
-curl 'http://127.0.0.1:8080/api/site/metadata?url=https://example.com'
+curl 'http://127.0.0.1:9002/api/site/metadata?url=https://example.com'
 ```
 
 服务会先尝试抓取页面 title / description / finalUrl，再结合本地缓存或回源结果补全 iconUrl。
@@ -207,13 +163,13 @@ curl 'http://127.0.0.1:8080/api/site/metadata?url=https://example.com'
 如果该 host 属于默认种子数据，接口会直接返回失败，不能强制刷新。
 
 ```bash
-curl -X POST 'http://127.0.0.1:8080/api/icon/refresh?host=apkdv.com'
+curl -X POST 'http://127.0.0.1:9002/api/icon/refresh?host=apkdv.com'
 ```
 
 或：
 
 ```bash
-curl -X POST 'http://127.0.0.1:8080/api/icon/refresh?url=https://apkdv.com/posts/implementing_ios_liquid_glass_effect_in_android/'
+curl -X POST 'http://127.0.0.1:9002/api/icon/refresh?url=https://apkdv.com/posts/implementing_ios_liquid_glass_effect_in_android/'
 ```
 
 ### 5. 删除指定 host 的缓存
@@ -221,13 +177,13 @@ curl -X POST 'http://127.0.0.1:8080/api/icon/refresh?url=https://apkdv.com/posts
 删除缓存后，如果种子数据里存在该 host，会自动回退到默认数据。
 
 ```bash
-curl -X DELETE 'http://127.0.0.1:8080/api/icon/cache?host=apkdv.com'
+curl -X DELETE 'http://127.0.0.1:9002/api/icon/cache?host=apkdv.com'
 ```
 
 ## 构建 Linux x86_64
 
 ```bash
-GOOS=linux GOARCH=amd64 go build -o startdeck-iconserver .
+cargo build --release --locked --bin startdeck-iconserver
 ```
 
 ## StartDeck 接入
@@ -237,7 +193,7 @@ StartDeck server 保持前端 BFF，不直接让前端访问本服务。
 在 StartDeck server 环境中配置：
 
 ```bash
-ICON_SERVER_BASE_URL=http://127.0.0.1:8080
+ICON_SERVER_BASE_URL=http://127.0.0.1:9002
 ICON_SERVER_TIMEOUT_MS=5000
 ```
 

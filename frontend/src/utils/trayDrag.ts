@@ -1,6 +1,7 @@
 import type { NavItem } from "@/types";
 
-const clampIndex = (index: number, min: number, max: number) => Math.max(min, Math.min(max, index));
+const clampIndex = (index: number, min: number, max: number) =>
+  Math.max(min, Math.min(max, index));
 
 export const reorderTrayCards = (
   cards: NavItem[],

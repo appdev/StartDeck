@@ -38,32 +38,37 @@ import {
   ITAB_ANNIVERSARY_WIDGET_TYPE,
 } from "@/features/itab-anniversary/itabAnniversaryTypes";
 import {
+  ITAB_MOVIE_CALENDAR_CATALOG_ID,
+  ITAB_MOVIE_CALENDAR_WIDGET_TYPE,
+} from "@/features/itab-movie-calendar/itabMovieCalendarTypes";
+import {
+  ITAB_IP_CATALOG_ID,
+  ITAB_IP_WIDGET_TYPE,
+} from "@/features/itab-ip/itabIpTypes";
+import {
   ITAB_CALENDAR_CATALOG_ID,
   ITAB_CALENDAR_WIDGET_TYPE,
 } from "@/features/itab-calendar/itabCalendarTypes";
+import { ITAB_NUMBER_UPPERCASE_WIDGET_TYPE } from "@/features/itab-number-uppercase/itabNumberUppercaseTypes";
+import { ITAB_FOOD_PICKER_WIDGET_TYPE } from "@/features/itab-food-picker/itabFoodPickerTypes";
 import {
   applyItabWeatherSizeToWidget,
-  createDefaultItabWeatherWidget,
   normalizeItabWeatherWidgetData,
 } from "@/features/itab-weather/itabWeatherModel";
 import {
   applyItabTodoSizeToWidget,
-  createDefaultItabTodoWidget,
   normalizeItabTodoWidgetData,
 } from "@/features/itab-todo/itabTodoModel";
 import {
   applyItabMemoSizeToWidget,
-  createDefaultItabMemoWidget,
   normalizeItabMemoWidgetData,
 } from "@/features/itab-memo/itabMemoModel";
 import {
   applyItabClockSizeToWidget,
-  createDefaultItabClockWidget,
   normalizeItabClockWidgetData,
 } from "@/features/itab-clock/itabClockModel";
 import {
   applyItabDailyEnglishSizeToWidget,
-  createDefaultItabDailyEnglishWidget,
   normalizeItabDailyEnglishWidgetData,
 } from "@/features/itab-daily-english/itabDailyEnglishModel";
 import {
@@ -72,25 +77,51 @@ import {
 } from "@/features/itab-poem/itabPoemModel";
 import {
   applyItabPomodoroSizeToWidget,
-  createDefaultItabPomodoroWidget,
   normalizeItabPomodoroWidgetData,
 } from "@/features/itab-pomodoro/itabPomodoroModel";
 import {
   applyItabAnniversarySizeToWidget,
-  createDefaultItabAnniversaryWidget,
   normalizeItabAnniversaryWidgetData,
 } from "@/features/itab-anniversary/itabAnniversaryModel";
 import {
+  applyItabMovieCalendarSizeToWidget,
+  normalizeItabMovieCalendarWidgetData,
+} from "@/features/itab-movie-calendar/itabMovieCalendarModel";
+import {
+  applyItabIpSizeToWidget,
+  normalizeItabIpWidgetData,
+} from "@/features/itab-ip/itabIpModel";
+import {
   applyItabCalendarSizeToWidget,
-  createDefaultItabCalendarWidget,
   normalizeItabCalendarWidgetData,
 } from "@/features/itab-calendar/itabCalendarModel";
+import {
+  applyItabNumberUppercaseSizeToWidget,
+  normalizeItabNumberUppercaseWidgetData,
+} from "@/features/itab-number-uppercase/itabNumberUppercaseModel";
+import {
+  applyItabFoodPickerSizeToWidget,
+  normalizeItabFoodPickerWidgetData,
+} from "@/features/itab-food-picker/itabFoodPickerModel";
 import {
   hasItabGridSchema,
   withItabGridData,
 } from "@/features/itab-widgets/itabGrid";
+import {
+  applyDockerWidgetSizeToWidget,
+  applySystemStatusWidgetSizeToWidget,
+  normalizeDockerWidgetData,
+  normalizeSystemStatusWidgetData,
+} from "@/features/widget-runtime/systemComponentRuntimeModel";
+import {
+  applyCustomCssWidgetSizeToWidget,
+  normalizeCustomCssWidgetData,
+} from "@/features/widget-runtime/customCssRuntimeModel";
+import { resolveRuntimeWidgetSizeKey } from "@/features/widget-runtime/widgetRuntimeSizes";
 
 const REMOVED_WIDGET_TYPES = new Set([
+  "iframe",
+  "status-monitor",
   "memo",
   "todo",
   "pomodoro",
@@ -103,6 +134,16 @@ const REMOVED_WIDGET_TYPES = new Set([
   "anniversary",
   "poem",
   "quote",
+  "ip",
+  "search",
+  "div-card",
+  "bookmarks",
+  "countdown",
+  "countup",
+  "calculator",
+  "hot",
+  "rss",
+  "sidebar",
 ]);
 const REMOVED_WIDGET_IDS = new Set([
   ["mus", "ic"].join(""),
@@ -125,85 +166,18 @@ const withDefaultWidgetSize = <T extends WidgetConfig>(widget: T): T => {
  * Create default widget list when no widgets are provided.
  */
 export function createDefaultWidgetList(isLoggedIn: boolean): WidgetConfig[] {
+  if (!isLoggedIn) return [];
+
   const base: WidgetConfig[] = [
-    createDefaultItabClockWidget(),
-    createDefaultItabWeatherWidget(),
-    withDefaultWidgetSize({
-      id: "w5",
-      type: "search",
-      enable: true,
-      isPublic: true,
-    }),
-    withDefaultWidgetSize({
-      id: "sidebar",
-      type: "sidebar",
-      enable: false,
-      isPublic: true,
-    }),
     withDefaultWidgetSize({
       id: "docker",
       type: "docker",
-      enable: false,
-      isPublic: true,
-    }),
-    withDefaultWidgetSize({
-      id: "file-transfer",
-      type: "file-transfer",
       enable: true,
-      isPublic: true,
-    }),
-    withDefaultWidgetSize({
-      id: "system-status",
-      type: "system-status",
-      enable: false,
-      isPublic: true,
-      data: { useMock: false },
-    }),
-    createDefaultItabTodoWidget(),
-    createDefaultItabMemoWidget(),
-    createDefaultItabPomodoroWidget(),
-    createDefaultItabAnniversaryWidget(),
-    createDefaultItabCalendarWidget(),
-    createDefaultItabDailyEnglishWidget(),
-    withDefaultWidgetSize({
-      id: "calculator",
-      type: "calculator",
-      enable: true,
-      isPublic: true,
-    }),
-    withDefaultWidgetSize({
-      id: "ip",
-      type: "ip",
-      enable: true,
-      isPublic: true,
-    }),
-    withDefaultWidgetSize({
-      id: "hot",
-      type: "hot",
-      enable: true,
-      isPublic: true,
-    }),
-    withDefaultWidgetSize({
-      id: "status-monitor",
-      type: "status-monitor",
-      enable: false,
-      isPublic: true,
+      isPublic: false,
+      hideOnMobile: true,
+      data: normalizeDockerWidgetData({}),
     }),
   ];
-
-  // Filter out login-only widgets for guests
-  if (!isLoggedIn) {
-    return base.filter((w) => {
-      const loginOnly = [
-        "docker",
-        "file-transfer",
-        "system-status",
-        "sidebar",
-        "status-monitor",
-      ];
-      return !loginOnly.includes(w.id);
-    });
-  }
 
   return base;
 }
@@ -402,6 +376,47 @@ export function normalizeIncomingWidgets(
     applyItabAnniversarySizeToWidget(widget, normalizedData.sizeKey);
   }
 
+  const itabMovieCalendarCandidates = nextWidgets.filter(
+    (widget) => widget.type === ITAB_MOVIE_CALENDAR_WIDGET_TYPE,
+  );
+  if (itabMovieCalendarCandidates.length > 0) {
+    const keep =
+      itabMovieCalendarCandidates.find(
+        (widget) => widget.id === ITAB_MOVIE_CALENDAR_CATALOG_ID,
+      ) || itabMovieCalendarCandidates[0]!;
+    const normalizedData = normalizeItabMovieCalendarWidgetData(keep.data);
+    keep.id = ITAB_MOVIE_CALENDAR_CATALOG_ID;
+    keep.type = ITAB_MOVIE_CALENDAR_WIDGET_TYPE;
+    keep.enable = keep.enable !== false;
+    keep.isPublic = keep.isPublic ?? true;
+    applyItabMovieCalendarSizeToWidget(keep, normalizedData.sizeKey);
+    const withoutItabMovieCalendar = nextWidgets.filter(
+      (widget) => widget.type !== ITAB_MOVIE_CALENDAR_WIDGET_TYPE,
+    );
+    nextWidgets.length = 0;
+    nextWidgets.push(...withoutItabMovieCalendar, keep);
+  }
+
+  const itabIpCandidates = nextWidgets.filter(
+    (widget) => widget.type === ITAB_IP_WIDGET_TYPE,
+  );
+  if (itabIpCandidates.length > 0) {
+    const keep =
+      itabIpCandidates.find((widget) => widget.id === ITAB_IP_CATALOG_ID) ||
+      itabIpCandidates[0]!;
+    const normalizedData = normalizeItabIpWidgetData(keep.data);
+    keep.id = ITAB_IP_CATALOG_ID;
+    keep.type = ITAB_IP_WIDGET_TYPE;
+    keep.enable = keep.enable !== false;
+    keep.isPublic = keep.isPublic ?? true;
+    applyItabIpSizeToWidget(keep, normalizedData.sizeKey);
+    const withoutItabIp = nextWidgets.filter(
+      (widget) => widget.type !== ITAB_IP_WIDGET_TYPE,
+    );
+    nextWidgets.length = 0;
+    nextWidgets.push(...withoutItabIp, keep);
+  }
+
   const itabCalendarCandidates = nextWidgets.filter(
     (widget) => widget.type === ITAB_CALENDAR_WIDGET_TYPE,
   );
@@ -423,6 +438,39 @@ export function normalizeIncomingWidgets(
     nextWidgets.push(...withoutItabCalendar, keep);
   }
 
+  const itabNumberUppercaseCandidates = nextWidgets.filter(
+    (widget) => widget.type === ITAB_NUMBER_UPPERCASE_WIDGET_TYPE,
+  );
+  for (const widget of itabNumberUppercaseCandidates) {
+    const normalizedData = normalizeItabNumberUppercaseWidgetData(widget.data);
+    widget.type = ITAB_NUMBER_UPPERCASE_WIDGET_TYPE;
+    widget.enable = widget.enable !== false;
+    widget.isPublic = widget.isPublic ?? true;
+    applyItabNumberUppercaseSizeToWidget(widget, normalizedData.sizeKey);
+  }
+
+  const itabFoodPickerCandidates = nextWidgets.filter(
+    (widget) => widget.type === ITAB_FOOD_PICKER_WIDGET_TYPE,
+  );
+  for (const widget of itabFoodPickerCandidates) {
+    const normalizedData = normalizeItabFoodPickerWidgetData(widget.data);
+    widget.type = ITAB_FOOD_PICKER_WIDGET_TYPE;
+    widget.enable = widget.enable !== false;
+    widget.isPublic = widget.isPublic ?? true;
+    applyItabFoodPickerSizeToWidget(widget, normalizedData.sizeKey);
+  }
+
+  const customCssCandidates = nextWidgets.filter(
+    (widget) => widget.type === "custom-css",
+  );
+  for (const widget of customCssCandidates) {
+    const normalizedData = normalizeCustomCssWidgetData(widget.data);
+    widget.type = "custom-css";
+    widget.enable = widget.enable !== false;
+    widget.isPublic = widget.isPublic ?? true;
+    applyCustomCssWidgetSizeToWidget(widget, normalizedData.sizeKey);
+  }
+
   // Normalize Docker widget
   let dockerCandidate = nextWidgets.find((widget) => widget.id === "docker");
   if (!dockerCandidate) {
@@ -436,11 +484,24 @@ export function normalizeIncomingWidgets(
     finalDockerWidget = dockerCandidate;
     finalDockerWidget.id = "docker";
     finalDockerWidget.type = "docker";
-    const dockerSize = resolveWidgetDefaultSize("docker");
-    if (typeof finalDockerWidget.colSpan !== "number")
-      finalDockerWidget.colSpan = dockerSize.colSpan;
-    if (typeof finalDockerWidget.rowSpan !== "number")
-      finalDockerWidget.rowSpan = dockerSize.rowSpan;
+    const dockerData =
+      finalDockerWidget.data && typeof finalDockerWidget.data === "object"
+        ? (finalDockerWidget.data as Record<string, unknown>)
+        : {};
+    const dockerSizeKey =
+      resolveRuntimeWidgetSizeKey("docker", {
+        sizeKey:
+          typeof dockerData.sizeKey === "string"
+            ? dockerData.sizeKey
+            : undefined,
+        colSpan: finalDockerWidget.w ?? finalDockerWidget.colSpan,
+        rowSpan: finalDockerWidget.h ?? finalDockerWidget.rowSpan,
+      }) || "2x2";
+    finalDockerWidget.data = normalizeDockerWidgetData({
+      ...dockerData,
+      sizeKey: dockerSizeKey,
+    });
+    applyDockerWidgetSizeToWidget(finalDockerWidget, dockerSizeKey);
     if (typeof finalDockerWidget.enable !== "boolean")
       finalDockerWidget.enable = false;
     if (typeof finalDockerWidget.isPublic !== "boolean")
@@ -451,60 +512,67 @@ export function normalizeIncomingWidgets(
       type: "docker",
       enable: false,
       isPublic: true,
+      data: normalizeDockerWidgetData({}),
     });
   }
   if (finalDockerWidget) {
     listWithoutDocker.push(finalDockerWidget);
   }
 
-  // Normalize File Transfer widget (deduplicate)
-  const fileTransferList = listWithoutDocker.filter(
-    (widget) => widget.type === "file-transfer",
+  nextWidgets.length = 0;
+  nextWidgets.push(...listWithoutDocker);
+
+  // Normalize host system status widget
+  let systemStatusCandidate = nextWidgets.find(
+    (widget) => widget.id === "system-status",
   );
-  if (fileTransferList.length > 1) {
-    const keep =
-      fileTransferList.find((widget) => widget.id === "file-transfer") ||
-      fileTransferList[0]!;
-    const filtered = listWithoutDocker.filter(
-      (widget) => widget.type !== "file-transfer" || widget === keep,
+  if (!systemStatusCandidate) {
+    systemStatusCandidate = nextWidgets.find(
+      (widget) => widget.type === "system-status",
     );
-    if (
-      keep.id !== "file-transfer" &&
-      !filtered.some(
-        (widget) =>
-          widget.id === "file-transfer" && widget.type !== "file-transfer",
-      )
-    ) {
-      keep.id = "file-transfer";
-    }
-    nextWidgets.length = 0;
-    nextWidgets.push(...filtered);
-  } else if (
-    fileTransferList.length === 1 &&
-    fileTransferList[0]!.id !== "file-transfer" &&
-    !listWithoutDocker.some(
-      (widget) =>
-        widget.id === "file-transfer" && widget.type !== "file-transfer",
-    )
-  ) {
-    fileTransferList[0]!.id = "file-transfer";
-    nextWidgets.length = 0;
-    nextWidgets.push(...listWithoutDocker);
-  } else if (fileTransferList.length === 0 && isLoggedIn) {
-    listWithoutDocker.push(
-      withDefaultWidgetSize({
-        id: "file-transfer",
-        type: "file-transfer",
-        enable: true,
-        isPublic: true,
-      }),
-    );
-    nextWidgets.length = 0;
-    nextWidgets.push(...listWithoutDocker);
-  } else {
-    nextWidgets.length = 0;
-    nextWidgets.push(...listWithoutDocker);
   }
+  const listWithoutSystemStatus = nextWidgets.filter(
+    (widget) =>
+      widget.id !== "system-status" && widget.type !== "system-status",
+  );
+  let finalSystemStatusWidget: WidgetConfig | undefined;
+  if (systemStatusCandidate) {
+    finalSystemStatusWidget = systemStatusCandidate;
+    finalSystemStatusWidget.id = "system-status";
+    finalSystemStatusWidget.type = "system-status";
+    const systemStatusData =
+      finalSystemStatusWidget.data &&
+      typeof finalSystemStatusWidget.data === "object"
+        ? (finalSystemStatusWidget.data as Record<string, unknown>)
+        : {};
+    const systemStatusSizeKey =
+      resolveRuntimeWidgetSizeKey("system-status", {
+        sizeKey:
+          typeof systemStatusData.sizeKey === "string"
+            ? systemStatusData.sizeKey
+            : undefined,
+        colSpan: finalSystemStatusWidget.w ?? finalSystemStatusWidget.colSpan,
+        rowSpan: finalSystemStatusWidget.h ?? finalSystemStatusWidget.rowSpan,
+      }) || "1x1";
+    finalSystemStatusWidget.data = normalizeSystemStatusWidgetData({
+      ...systemStatusData,
+      sizeKey: systemStatusSizeKey,
+    });
+    applySystemStatusWidgetSizeToWidget(
+      finalSystemStatusWidget,
+      systemStatusSizeKey,
+    );
+    if (typeof finalSystemStatusWidget.enable !== "boolean")
+      finalSystemStatusWidget.enable = false;
+    if (typeof finalSystemStatusWidget.isPublic !== "boolean")
+      finalSystemStatusWidget.isPublic = true;
+  }
+  if (finalSystemStatusWidget) {
+    listWithoutSystemStatus.push(finalSystemStatusWidget);
+  }
+
+  nextWidgets.length = 0;
+  nextWidgets.push(...listWithoutSystemStatus);
 
   // 游客数据已经由后端按公开权限过滤，不能补齐缺失默认组件，避免私有组件被重新显示。
   if (isLoggedIn) {

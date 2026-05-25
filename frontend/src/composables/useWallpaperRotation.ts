@@ -8,11 +8,14 @@ export function useWallpaperRotation() {
   let mobileInterval: ReturnType<typeof setInterval> | null = null;
 
   const rotate = (type: "pc" | "mobile") => {
-    const list = type === "pc" ? store.wallpaperListPc : store.wallpaperListMobile;
+    const list =
+      type === "pc" ? store.wallpaperListPc : store.wallpaperListMobile;
     if (list.length === 0) return;
 
     const mode =
-      type === "pc" ? store.appConfig.pcRotationMode : store.appConfig.mobileRotationMode;
+      type === "pc"
+        ? store.appConfig.pcRotationMode
+        : store.appConfig.mobileRotationMode;
 
     let nextWallpaper = "";
 
@@ -22,7 +25,9 @@ export function useWallpaperRotation() {
     } else {
       // Sequential - we need to find current index
       const currentUrl =
-        type === "pc" ? store.appConfig.background : store.appConfig.mobileBackground;
+        type === "pc"
+          ? store.appConfig.background
+          : store.appConfig.mobileBackground;
       // Extract name from URL: /backgrounds/name.jpg or /mobile_backgrounds/name.jpg
       const prefix = type === "pc" ? "/backgrounds/" : "/mobile_backgrounds/";
       // Be careful with URL encoding if used, but usually it's plain
@@ -91,7 +96,10 @@ export function useWallpaperRotation() {
   );
 
   watch(
-    () => [store.appConfig.mobileRotation, store.appConfig.mobileRotationInterval],
+    () => [
+      store.appConfig.mobileRotation,
+      store.appConfig.mobileRotationInterval,
+    ],
     () => {
       updateMobileInterval();
     },

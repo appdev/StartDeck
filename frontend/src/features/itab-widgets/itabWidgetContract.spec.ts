@@ -23,6 +23,7 @@ const expectedKinds = [
   "countdown",
   "next-holiday",
   "anniversary-day",
+  "daily-quote",
   "poem",
   "wooden-fish",
   "clock",
@@ -85,12 +86,35 @@ describe("itab widget contract", () => {
     });
   });
 
+  it("keeps wallpaper as a source-sized Bing panel with the shared source dialog shell", () => {
+    expect(getItabReplicaWidgetDefinition("wallpaper")).toMatchObject({
+      defaultSize: "2x2",
+      sizeAdaptation: "source-sized-ui",
+      openSurface: "dialog",
+      requiresSizeSpecificUi: true,
+    });
+    expect(resolveItabReplicaOpenedShell("wallpaper")).toMatchObject({
+      width: 1000,
+      height: 602,
+      maxWidthInset: 32,
+      maxHeightInset: 32,
+      trafficVisible: true,
+    });
+  });
+
   it("resolves opened shell metadata with base, kind, instance, and caller precedence", () => {
     expect(resolveItabReplicaOpenedShell("hotsearch")).toEqual(
       ITAB_REPLICA_OPENED_SHELL_DEFAULTS,
     );
 
     expect(resolveItabReplicaOpenedShell("today-english")).toMatchObject({
+      width: 860,
+      height: 552,
+      maxWidthInset: 42,
+      maxHeightInset: 64,
+      trafficVisible: true,
+    });
+    expect(resolveItabReplicaOpenedShell("daily-quote")).toMatchObject({
       width: 860,
       height: 552,
       maxWidthInset: 42,

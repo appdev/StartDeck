@@ -38,9 +38,29 @@ import {
   ITAB_ANNIVERSARY_WIDGET_TYPE,
 } from "@/features/itab-anniversary/itabAnniversaryTypes";
 import {
+  ITAB_WALLPAPER_DEFAULT_SIZE,
+  ITAB_WALLPAPER_WIDGET_TYPE,
+} from "@/features/itab-wallpaper/itabWallpaperTypes";
+import {
+  ITAB_MOVIE_CALENDAR_DEFAULT_SIZE,
+  ITAB_MOVIE_CALENDAR_WIDGET_TYPE,
+} from "@/features/itab-movie-calendar/itabMovieCalendarTypes";
+import {
+  ITAB_IP_DEFAULT_SIZE,
+  ITAB_IP_WIDGET_TYPE,
+} from "@/features/itab-ip/itabIpTypes";
+import {
   ITAB_CALENDAR_DEFAULT_SIZE,
   ITAB_CALENDAR_WIDGET_TYPE,
 } from "@/features/itab-calendar/itabCalendarTypes";
+import {
+  ITAB_NUMBER_UPPERCASE_DEFAULT_SIZE,
+  ITAB_NUMBER_UPPERCASE_WIDGET_TYPE,
+} from "@/features/itab-number-uppercase/itabNumberUppercaseTypes";
+import {
+  ITAB_FOOD_PICKER_DEFAULT_SIZE,
+  ITAB_FOOD_PICKER_WIDGET_TYPE,
+} from "@/features/itab-food-picker/itabFoodPickerTypes";
 
 export type RuntimeWidgetSizeScope = "itab";
 export type RuntimeWidgetSizeKey = ItabWidgetSizeKey;
@@ -82,6 +102,9 @@ const createItabRuntimeSizeFamily = (
 });
 
 const runtimeWidgetSizeFamilies = new Map<string, RuntimeWidgetSizeFamily>([
+  ["docker", createItabRuntimeSizeFamily("docker", "2x2")],
+  ["system-status", createItabRuntimeSizeFamily("system-status", "1x1")],
+  ["custom-css", createItabRuntimeSizeFamily("custom-css", "1x1")],
   [
     ITAB_WEATHER_WIDGET_TYPE,
     createItabRuntimeSizeFamily(
@@ -130,10 +153,42 @@ const runtimeWidgetSizeFamilies = new Map<string, RuntimeWidgetSizeFamily>([
     ),
   ],
   [
+    ITAB_WALLPAPER_WIDGET_TYPE,
+    createItabRuntimeSizeFamily(
+      ITAB_WALLPAPER_WIDGET_TYPE,
+      ITAB_WALLPAPER_DEFAULT_SIZE,
+    ),
+  ],
+  [
+    ITAB_MOVIE_CALENDAR_WIDGET_TYPE,
+    createItabRuntimeSizeFamily(
+      ITAB_MOVIE_CALENDAR_WIDGET_TYPE,
+      ITAB_MOVIE_CALENDAR_DEFAULT_SIZE,
+    ),
+  ],
+  [
+    ITAB_IP_WIDGET_TYPE,
+    createItabRuntimeSizeFamily(ITAB_IP_WIDGET_TYPE, ITAB_IP_DEFAULT_SIZE),
+  ],
+  [
     ITAB_CALENDAR_WIDGET_TYPE,
     createItabRuntimeSizeFamily(
       ITAB_CALENDAR_WIDGET_TYPE,
       ITAB_CALENDAR_DEFAULT_SIZE,
+    ),
+  ],
+  [
+    ITAB_NUMBER_UPPERCASE_WIDGET_TYPE,
+    createItabRuntimeSizeFamily(
+      ITAB_NUMBER_UPPERCASE_WIDGET_TYPE,
+      ITAB_NUMBER_UPPERCASE_DEFAULT_SIZE,
+    ),
+  ],
+  [
+    ITAB_FOOD_PICKER_WIDGET_TYPE,
+    createItabRuntimeSizeFamily(
+      ITAB_FOOD_PICKER_WIDGET_TYPE,
+      ITAB_FOOD_PICKER_DEFAULT_SIZE,
     ),
   ],
 ]);

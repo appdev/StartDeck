@@ -3,7 +3,10 @@ set -eu
 
 ICON_SERVICE_DIR="${ICON_SERVICE_DIR:-/app/icon-service}"
 ICON_SERVICE_DEFAULTS_DIR="${ICON_SERVICE_DEFAULTS_DIR:-/app/icon-service-defaults}"
-ICON_SERVICE_CONFIG_FILE="${ICON_SERVICE_CONFIG_FILE:-${ICON_SERVICE_DIR}/config.json}"
+
+export PORT="${PORT:-9001}"
+export ICON_SERVICE_PORT="${ICON_SERVICE_PORT:-9002}"
+export ICON_SERVER_BASE_URL="${ICON_SERVER_BASE_URL:-http://127.0.0.1:${ICON_SERVICE_PORT}}"
 
 mkdir -p "${ICON_SERVICE_DIR}/data/icons" "${ICON_SERVICE_DIR}/data/cache"
 
@@ -23,10 +26,10 @@ if [ -d "${ICON_SERVICE_DEFAULTS_DIR}/data/cache" ] && [ -z "$(ls -A "${ICON_SER
   cp -R "${ICON_SERVICE_DEFAULTS_DIR}/data/cache/." "${ICON_SERVICE_DIR}/data/cache/"
 fi
 
-CONFIG_FILE="${ICON_SERVICE_CONFIG_FILE}" "${ICON_SERVICE_DIR}/startdeck-iconserver" &
+"${ICON_SERVICE_DIR}/startdeck-iconserver" &
 icon_pid="$!"
 
-./startdeck-backend &
+./startdeck-server &
 backend_pid="$!"
 
 shutdown() {

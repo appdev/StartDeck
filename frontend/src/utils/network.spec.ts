@@ -13,12 +13,15 @@ describe("network rules: ip:", () => {
   });
 
   it("matches full ipv4 exactly (does not behave like prefix)", () => {
-    expect(classifyNetworkTarget("11.22.33.44", "ip:11.22.33.44", "")).toBe("lan");
-    expect(classifyNetworkTarget("11.22.33.45", "ip:11.22.33.44", "")).toBe("wan");
+    expect(classifyNetworkTarget("11.22.33.44", "ip:11.22.33.44", "")).toBe(
+      "lan",
+    );
+    expect(classifyNetworkTarget("11.22.33.45", "ip:11.22.33.44", "")).toBe(
+      "wan",
+    );
   });
 
   it("does not match domains", () => {
     expect(classifyNetworkTarget("example.com", "ip:11.22.", "")).toBe("wan");
   });
 });
-

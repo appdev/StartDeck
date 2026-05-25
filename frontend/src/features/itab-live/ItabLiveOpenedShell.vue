@@ -151,7 +151,20 @@ const requestClose = () => {
 }
 
 .opened-window.opened-movie {
-  border: 0;
+  box-sizing: border-box;
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  border-radius: 20px;
+  background: transparent;
+  color: #fff;
+  box-shadow: rgba(0, 0, 0, 0.48) 0 12px 32px 0;
+  backdrop-filter: none;
+}
+
+.opened-window.opened-daily-quote {
+  box-sizing: border-box;
+  width: min(860px, calc(100vw - 42px));
+  height: min(552px, calc(100vh - 64px));
+  border: 1px solid rgba(255, 255, 255, 0.13);
   border-radius: 20px;
   background: transparent;
   color: #fff;
@@ -168,9 +181,40 @@ const requestClose = () => {
   backdrop-filter: none;
 }
 
+.opened-window.opened-eat-today {
+  border: 0;
+  border-radius: 20px;
+  background: rgb(255, 255, 255);
+  color: rgb(34, 34, 34);
+  box-shadow: rgba(0, 0, 0, 0.48) 0 12px 32px 0;
+  backdrop-filter: none;
+}
+
+.opened-window.opened-widget-ip-30 {
+  border: 0;
+  border-radius: 20px;
+  background: #fff;
+  color: #25272b;
+  box-shadow: rgba(0, 0, 0, 0.48) 0 12px 32px 0;
+  backdrop-filter: none;
+}
+
+.opened-window.opened-wallpaper {
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 20px;
+  background: rgba(232, 235, 234, 0.76);
+  color: #25262a;
+  box-shadow: rgba(0, 0, 0, 0.48) 0 12px 32px 0;
+  backdrop-filter: blur(28px);
+}
+
 .opened-window.opened-poem .traffic,
 .opened-window.opened-movie .traffic,
+.opened-window.opened-daily-quote .traffic,
 .opened-window.opened-converter .traffic,
+.opened-window.opened-eat-today .traffic,
+.opened-window.opened-widget-ip-30 .traffic,
+.opened-window.opened-wallpaper .traffic,
 .opened-window.opened-today-english .traffic,
 .opened-weather .traffic {
   top: 11px;
@@ -179,12 +223,24 @@ const requestClose = () => {
 
 .opened-window.opened-poem .traffic .yellow,
 .opened-window.opened-movie .traffic .yellow,
+.opened-window.opened-daily-quote .traffic .yellow,
+.opened-window.opened-wallpaper .traffic .yellow,
+.opened-window.opened-eat-today .traffic .yellow,
+.opened-window.opened-widget-ip-30 .traffic .yellow,
 .opened-window.opened-today-english .traffic .yellow,
 .opened-window.opened-calendar .traffic .yellow,
 .opened-window.opened-memo .traffic .yellow,
 .opened-window.opened-todo .traffic .yellow,
 .opened-window.opened-tomato .traffic .yellow,
 .opened-weather .traffic .yellow {
+  display: none;
+}
+
+.opened-window.opened-widget-ip-30 .traffic .yellow {
+  display: none;
+}
+
+.opened-window.opened-eat-today .traffic .yellow {
   display: none;
 }
 

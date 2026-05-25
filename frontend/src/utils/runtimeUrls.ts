@@ -24,9 +24,16 @@ const APP_LOCAL_PREFIXES = [
   "/favicon.ico",
   "/favicon.svg",
   "/default-wallpaper.svg",
-  "/rain-texture.png",
 ];
-const BACKEND_PREFIXES = ["/api", "/backgrounds", "/mobile_backgrounds", "/icon-cache", "/music", "/public", "/proxy", "/socket.io"];
+const BACKEND_PREFIXES = [
+  "/api",
+  "/backgrounds",
+  "/mobile_backgrounds",
+  "/icon-cache",
+  "/public",
+  "/proxy",
+  "/socket.io",
+];
 
 const isBlank = (value: unknown) => String(value ?? "").trim() === "";
 
@@ -40,16 +47,24 @@ const firstNonBlank = (...values: Array<unknown>) => {
 
 const hasScheme = (value: string) => /^[a-zA-Z][a-zA-Z\d+\-.]*:/.test(value);
 
-const isAbsoluteLike = (value: string) => hasScheme(value) || value.startsWith("//");
+const isAbsoluteLike = (value: string) =>
+  hasScheme(value) || value.startsWith("//");
 
 const isSpecialUrl = (value: string) =>
-  value.startsWith("data:") || value.startsWith("blob:") || value.startsWith("mailto:") || value.startsWith("tel:");
+  value.startsWith("data:") ||
+  value.startsWith("blob:") ||
+  value.startsWith("mailto:") ||
+  value.startsWith("tel:");
 
 const trimTrailingSlash = (value: string) => value.replace(/\/+$/, "");
 
 const trimLeadingSlash = (value: string) => value.replace(/^\/+/, "");
 
-const matchesPrefix = (value: string, prefix: string) => value === prefix || value.startsWith(`${prefix}/`) || value.startsWith(`${prefix}?`) || value.startsWith(`${prefix}#`);
+const matchesPrefix = (value: string, prefix: string) =>
+  value === prefix ||
+  value.startsWith(`${prefix}/`) ||
+  value.startsWith(`${prefix}?`) ||
+  value.startsWith(`${prefix}#`);
 
 const normalizeBasePath = (value: string) => {
   const raw = String(value || "").trim();
@@ -117,15 +132,24 @@ const detectBasePathFromLocation = () => {
   if (typeof window === "undefined") return "";
   let pathname = window.location.pathname || "/";
   if (pathname === "/" || pathname === "/index.html") return "";
-  if (pathname.endsWith("/index.html")) pathname = pathname.slice(0, -"/index.html".length) || "/";
+  if (pathname.endsWith("/index.html"))
+    pathname = pathname.slice(0, -"/index.html".length) || "/";
   return normalizeBasePath(pathname);
 };
 
 export const getAppBasePath = () => {
   const runtime = getRuntimeConfig();
-  const builtBase = typeof import.meta.env.BASE_URL === "string" ? import.meta.env.BASE_URL : "/";
+  const builtBase =
+    typeof import.meta.env.BASE_URL === "string"
+      ? import.meta.env.BASE_URL
+      : "/";
   return normalizeBasePath(
-    firstNonBlank(runtime.basePath, import.meta.env.VITE_APP_BASE_PATH, builtBase !== "./" ? builtBase : "", detectBasePathFromLocation()),
+    firstNonBlank(
+      runtime.basePath,
+      import.meta.env.VITE_APP_BASE_PATH,
+      builtBase !== "./" ? builtBase : "",
+      detectBasePathFromLocation(),
+    ),
   );
 };
 
@@ -136,26 +160,39 @@ export const getAppOrigin = () => {
 
 export const getBackendBaseUrl = () => {
   const runtime = getRuntimeConfig();
-  const explicitBackend = normalizeBaseUrl(firstNonBlank(runtime.backendBaseUrl, import.meta.env.VITE_BACKEND_BASE_URL));
+  const explicitBackend = normalizeBaseUrl(
+    firstNonBlank(
+      runtime.backendBaseUrl,
+      import.meta.env.VITE_BACKEND_BASE_URL,
+    ),
+  );
   if (explicitBackend) return explicitBackend;
-  const explicitApi = normalizeBaseUrl(firstNonBlank(runtime.apiBaseUrl, import.meta.env.VITE_API_BASE_URL));
+  const explicitApi = normalizeBaseUrl(
+    firstNonBlank(runtime.apiBaseUrl, import.meta.env.VITE_API_BASE_URL),
+  );
   if (explicitApi) return stripApiSuffix(explicitApi);
   return getAppBasePath();
 };
 
 export const getApiBaseUrl = () => {
   const runtime = getRuntimeConfig();
-  const explicitApi = normalizeBaseUrl(firstNonBlank(runtime.apiBaseUrl, import.meta.env.VITE_API_BASE_URL));
+  const explicitApi = normalizeBaseUrl(
+    firstNonBlank(runtime.apiBaseUrl, import.meta.env.VITE_API_BASE_URL),
+  );
   if (explicitApi) return explicitApi;
   return joinBaseAndPath(getBackendBaseUrl(), "/api");
 };
 
 const deriveWsBase = () => {
   const runtime = getRuntimeConfig();
-  const explicitWs = normalizeBaseUrl(firstNonBlank(runtime.wsBaseUrl, import.meta.env.VITE_WS_BASE_URL));
+  const explicitWs = normalizeBaseUrl(
+    firstNonBlank(runtime.wsBaseUrl, import.meta.env.VITE_WS_BASE_URL),
+  );
   if (explicitWs) return explicitWs;
 
-  const explicitApi = normalizeBaseUrl(firstNonBlank(runtime.apiBaseUrl, import.meta.env.VITE_API_BASE_URL));
+  const explicitApi = normalizeBaseUrl(
+    firstNonBlank(runtime.apiBaseUrl, import.meta.env.VITE_API_BASE_URL),
+  );
   if (explicitApi) {
     const derived = joinBaseAndPath(stripApiSuffix(explicitApi), "/ws");
     return derived.replace(/^http:/i, "ws:").replace(/^https:/i, "wss:");
@@ -170,25 +207,30 @@ const deriveWsBase = () => {
   }
 
   if (typeof window === "undefined") return "";
-  const wsOrigin = window.location.origin.replace(/^http:/i, "ws:").replace(/^https:/i, "wss:");
+  const wsOrigin = window.location.origin
+    .replace(/^http:/i, "ws:")
+    .replace(/^https:/i, "wss:");
   return joinBaseAndPath(wsOrigin, joinBaseAndPath(backendBase, "/ws"));
 };
 
 export const toAppUrl = (value: string) => {
   const raw = String(value || "").trim();
-  if (!raw || isSpecialUrl(raw) || isAbsoluteLike(raw) || !raw.startsWith("/")) return raw;
+  if (!raw || isSpecialUrl(raw) || isAbsoluteLike(raw) || !raw.startsWith("/"))
+    return raw;
   return joinBaseAndPath(getAppBasePath(), raw);
 };
 
 export const toBackendUrl = (value: string) => {
   const raw = String(value || "").trim();
-  if (!raw || isSpecialUrl(raw) || isAbsoluteLike(raw) || !raw.startsWith("/")) return raw;
+  if (!raw || isSpecialUrl(raw) || isAbsoluteLike(raw) || !raw.startsWith("/"))
+    return raw;
   return joinBaseAndPath(getBackendBaseUrl(), raw);
 };
 
 export const toApiUrl = (value: string) => {
   const raw = String(value || "").trim();
-  if (!raw || isSpecialUrl(raw) || isAbsoluteLike(raw) || !raw.startsWith("/")) return raw;
+  if (!raw || isSpecialUrl(raw) || isAbsoluteLike(raw) || !raw.startsWith("/"))
+    return raw;
   if (!matchesPrefix(raw, "/api")) return raw;
   const apiBase = getApiBaseUrl();
   const suffix = raw.slice("/api".length);
@@ -222,18 +264,29 @@ export const resolveManagedUrl = (value: string) => {
   if (!raw.startsWith("/")) return raw;
   if (matchesPrefix(raw, "/ws")) return toWsUrl(raw);
   if (matchesPrefix(raw, "/api")) return toApiUrl(raw);
-  if (BACKEND_PREFIXES.some((prefix) => matchesPrefix(raw, prefix))) return toBackendUrl(raw);
-  if (APP_LOCAL_PREFIXES.some((prefix) => matchesPrefix(raw, prefix))) return toAppUrl(raw);
+  if (BACKEND_PREFIXES.some((prefix) => matchesPrefix(raw, prefix)))
+    return toBackendUrl(raw);
+  if (APP_LOCAL_PREFIXES.some((prefix) => matchesPrefix(raw, prefix)))
+    return toAppUrl(raw);
   return toAppUrl(raw);
 };
 
 export const installFetchUrlPatch = () => {
-  if (typeof window === "undefined" || typeof window.fetch !== "function") return;
+  if (typeof window === "undefined" || typeof window.fetch !== "function")
+    return;
   const patchedFlag = "__startdeckFetchPatched__";
-  if ((window.fetch as typeof window.fetch & { [patchedFlag]?: boolean })[patchedFlag]) return;
+  if (
+    (window.fetch as typeof window.fetch & { [patchedFlag]?: boolean })[
+      patchedFlag
+    ]
+  )
+    return;
 
   const nativeFetch = window.fetch.bind(window);
-  const patchedFetch: typeof window.fetch & { [patchedFlag]?: boolean } = ((input: RequestInfo | URL, init?: RequestInit) => {
+  const patchedFetch: typeof window.fetch & { [patchedFlag]?: boolean } = ((
+    input: RequestInfo | URL,
+    init?: RequestInit,
+  ) => {
     if (typeof Request !== "undefined" && input instanceof Request) {
       const rewritten = resolveManagedUrl(input.url);
       if (rewritten !== input.url) {
@@ -257,6 +310,12 @@ export const installFetchUrlPatch = () => {
 
 export const hasExplicitRuntimeNetworkBase = () => {
   const runtime = getRuntimeConfig();
-  return !isBlank(runtime.backendBaseUrl) || !isBlank(runtime.apiBaseUrl) || !isBlank(runtime.wsBaseUrl) ||
-    !isBlank(import.meta.env.VITE_BACKEND_BASE_URL) || !isBlank(import.meta.env.VITE_API_BASE_URL) || !isBlank(import.meta.env.VITE_WS_BASE_URL);
+  return (
+    !isBlank(runtime.backendBaseUrl) ||
+    !isBlank(runtime.apiBaseUrl) ||
+    !isBlank(runtime.wsBaseUrl) ||
+    !isBlank(import.meta.env.VITE_BACKEND_BASE_URL) ||
+    !isBlank(import.meta.env.VITE_API_BASE_URL) ||
+    !isBlank(import.meta.env.VITE_WS_BASE_URL)
+  );
 };

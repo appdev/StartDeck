@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, ref } from "vue";
 import type { WidgetConfig } from "@/types";
 import MainWidgetShell from "@/components/home/MainWidgetShell.vue";
 import {
@@ -7,12 +7,17 @@ import {
   resolveWidgetRuntimeSizeKey,
   type WidgetRuntimeData,
 } from "./widgetRuntimeRegistry";
+import {
+  isRuntimeOpenKey,
+  shouldIgnoreRuntimeOpenEvent,
+} from "./runtimeOpenGuard";
 
 const props = defineProps<{
   widget: WidgetConfig;
   editing?: boolean;
   isDragging?: boolean;
   refreshToken?: number;
+  validateContract?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -24,6 +29,7 @@ const emit = defineEmits<{
 const definition = computed(() =>
   getWidgetRuntimeDefinition(props.widget.type),
 );
+const runtimeFrameRef = ref<HTMLElement | null>(null);
 const sizeKey = computed(
   () =>
     resolveWidgetRuntimeSizeKey(props.widget) ||
@@ -36,8 +42,14 @@ const open = () => {
   emit("open", props.widget);
 };
 
+const onClick = (event: MouseEvent) => {
+  if (shouldIgnoreRuntimeOpenEvent(event, runtimeFrameRef.value)) return;
+  open();
+};
+
 const onKeydown = (event: KeyboardEvent) => {
-  if (event.key !== "Enter" && event.key !== " ") return;
+  if (!isRuntimeOpenKey(event)) return;
+  if (shouldIgnoreRuntimeOpenEvent(event, runtimeFrameRef.value)) return;
   event.preventDefault();
   open();
 };
@@ -53,13 +65,14 @@ const onContextMenu = (event: MouseEvent) => {
 <template>
   <div
     v-if="definition"
+    ref="runtimeFrameRef"
     class="sd-widget-runtime-frame"
     data-runtime-widget
     :data-runtime-widget-type="widget.type"
     :data-runtime-name="definition.runtime"
     :role="editing ? undefined : 'button'"
     :tabindex="editing ? undefined : 0"
-    @click.stop="open"
+    @click.stop="onClick"
     @keydown="onKeydown"
     @contextmenu="onContextMenu"
   >
@@ -67,6 +80,7 @@ const onContextMenu = (event: MouseEvent) => {
       :widget-type="widget.type"
       :widget-size="sizeKey"
       :title="definition.title"
+      :validate-contract="validateContract ?? true"
     >
       <component
         :is="definition.component"

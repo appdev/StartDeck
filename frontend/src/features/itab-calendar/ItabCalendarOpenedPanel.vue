@@ -589,7 +589,11 @@ const selectFestivalEvent = (event: CalendarFestivalEvent) => {
 }
 
 .calendar-main-pane {
+  height: 100%;
   min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  box-sizing: border-box;
   padding: 44px 34px 30px;
   background: #fff;
 }
@@ -892,12 +896,25 @@ const selectFestivalEvent = (event: CalendarFestivalEvent) => {
   color: rgba(34, 34, 34, 0.42);
 }
 
+.day-cell.muted.rest:not(.today),
+.day-cell.muted.work:not(.today) {
+  background: rgba(0, 0, 0, 0.025);
+}
+
 .day-cell.weekend:not(.today) .solar-day {
   color: #d84a58;
 }
 
+.day-cell.muted.weekend:not(.today) .solar-day {
+  color: rgba(216, 74, 88, 0.56);
+}
+
+.day-cell.muted .holiday-badge {
+  opacity: 0.56;
+}
+
 .solar-day {
-  font-size: 22px;
+  font-size: 19px;
   font-weight: 500;
   line-height: 28px;
 }
@@ -947,6 +964,8 @@ const selectFestivalEvent = (event: CalendarFestivalEvent) => {
 
 .tool-card {
   min-width: 0;
+  min-height: 0;
+  overflow: hidden;
   border-radius: 16px;
   background: #f5f6f8;
   padding: 16px;
@@ -1113,11 +1132,29 @@ const selectFestivalEvent = (event: CalendarFestivalEvent) => {
 
 .festival-list {
   display: grid;
+  flex: 1 1 0;
   min-height: 0;
   grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-auto-rows: minmax(52px, max-content);
+  align-content: start;
   gap: 8px;
   overflow: hidden auto;
   padding-right: 2px;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+
+.festival-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.festival-list::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgba(48, 52, 59, 0.18);
+}
+
+.festival-list::-webkit-scrollbar-track {
+  background: transparent;
 }
 
 .festival-row {

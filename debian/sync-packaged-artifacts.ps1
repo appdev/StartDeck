@@ -13,36 +13,21 @@ $ErrorActionPreference = "Stop"
 $debianRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 $repoRoot = Split-Path -Parent $debianRoot
 
-if (-not $SkipBackend) {
-    Push-Location (Join-Path $repoRoot "backend")
+if ((-not $SkipBackend) -or (-not $SkipIconService)) {
+    Push-Location $repoRoot
     try {
-        $env:CGO_ENABLED = "0"
-        $env:GOOS = "linux"
-        $env:GOARCH = "amd64"
-        go build -ldflags="-s -w" -o startdeck-server .
+        cargo build --release --locked --workspace --bins
     } finally {
-        Remove-Item Env:GOARCH -ErrorAction SilentlyContinue
-        Remove-Item Env:GOOS -ErrorAction SilentlyContinue
-        Remove-Item Env:CGO_ENABLED -ErrorAction SilentlyContinue
         Pop-Location
     }
-    Copy-Item -Force (Join-Path $repoRoot "backend\startdeck-server") (Join-Path $debianRoot "startdeck-server")
+}
+
+if (-not $SkipBackend) {
+    Copy-Item -Force (Join-Path $repoRoot "target\release\startdeck-server") (Join-Path $debianRoot "startdeck-server")
 }
 
 if (-not $SkipIconService) {
-    Push-Location (Join-Path $repoRoot "icon-service")
-    try {
-        $env:CGO_ENABLED = "0"
-        $env:GOOS = "linux"
-        $env:GOARCH = "amd64"
-        go build -ldflags="-s -w" -o startdeck-iconserver .
-    } finally {
-        Remove-Item Env:GOARCH -ErrorAction SilentlyContinue
-        Remove-Item Env:GOOS -ErrorAction SilentlyContinue
-        Remove-Item Env:CGO_ENABLED -ErrorAction SilentlyContinue
-        Pop-Location
-    }
-    Copy-Item -Force (Join-Path $repoRoot "icon-service\startdeck-iconserver") (Join-Path $debianRoot "startdeck-iconserver")
+    Copy-Item -Force (Join-Path $repoRoot "target\release\startdeck-iconserver") (Join-Path $debianRoot "startdeck-iconserver")
 }
 
 if (-not $SkipFrontend) {
@@ -71,11 +56,5 @@ if (-not (Test-Path $srcIconData)) {
 New-Item -ItemType Directory -Force -Path $dstIconData | Out-Null
 robocopy $srcIconData $dstIconData /MIR /XD .gocache /XF .DS_Store /NFL /NDL /NJH /NJS /nc /ns /np | Out-Null
 if ($LASTEXITCODE -ge 8) { exit $LASTEXITCODE }
-
-$srcIconConfig = Join-Path $repoRoot "icon-service\config.example.json"
-$dstIconConfig = Join-Path $debianRoot "icon-service\config.example.json"
-if (Test-Path $srcIconConfig) {
-    Copy-Item -Force $srcIconConfig $dstIconConfig
-}
 
 Write-Host "已同步: startdeck-server + startdeck-iconserver + server/public + icon-service/data -> debian/"

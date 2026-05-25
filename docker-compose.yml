@@ -9,16 +9,17 @@ services:
     container_name: startdeck
     restart: unless-stopped
     ports:
-      - "23000:3000"
+      - "9001:9001"
     environment:
+      - PORT=9001
       - STARTDECK_ADMIN_PASSWORD=violet
-      - ICON_SERVER_BASE_URL=http://127.0.0.1:8080
+      - ICON_SERVICE_PORT=9002
+      - ICON_SERVER_BASE_URL=http://127.0.0.1:9002
       - ICON_SERVER_TIMEOUT_MS=5000
     volumes:
       - ./data:/app/server/data #指定路径下新建data
       - ./music:/app/server/music #映射播放器路径
       - ./PC:/app/server/PC #映射背景路径
       - ./APP:/app/server/APP #映射移动端背景路径
-      - ./doc:/app/server/doc #映射文件传输助手路径
       - ./icon-service-data:/app/icon-service/data #映射站点元数据与图标服务数据
       - /var/run/docker.sock:/var/run/docker.sock #映射Docker Socket

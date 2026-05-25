@@ -2,8 +2,7 @@
 import { onMounted, watch, computed, ref } from "vue";
 import GridPanel from "./components/GridPanel.vue";
 import ItabLiveReplica from "@/features/itab-live/ItabLiveReplica.vue";
-import ItabWidgetQaView from "@/features/itab-widgets/ItabWidgetQaView.vue";
-import StatusMonitor from "./components/StatusMonitor.vue";
+import WidgetCatalogPreviewFrame from "@/components/WidgetCatalogPreviewFrame.vue";
 import NetworkIndicator from "./components/NetworkIndicator.vue";
 import AppButton from "@/components/base/AppButton.vue";
 import AppModalShell from "@/components/base/AppModalShell.vue";
@@ -12,30 +11,29 @@ import StatusBanner from "@/components/base/StatusBanner.vue";
 import ToastHost from "@/components/base/ToastHost.vue";
 import { useMainStore } from "./stores/main";
 import { useUiFeedbackStore } from "./stores/uiFeedback";
+import { useThemeMode } from "@/composables/useThemeMode";
 import type { CustomScript, MarketplaceItem } from "@/types";
 import { useWindowScroll, useWindowSize } from "@vueuse/core";
 
 const store = useMainStore();
 const uiFeedback = useUiFeedbackStore();
+useThemeMode(() => store.appConfig.themeMode);
 const { y } = useWindowScroll();
 const { width: windowWidth, height: windowHeight } = useWindowSize();
 
 const showBackToTop = computed(() => y.value > windowHeight.value);
-const statusMonitorWidget = computed(() =>
-  store.widgets.find((w) => w.type === "status-monitor"),
-);
 const saveErrorMessage = ref("");
-const isItabQaRoute = computed(
-  () =>
-    typeof window !== "undefined" &&
-    window.location.pathname === "/qa/itab-widgets",
-);
 const isItabLiveRoute = computed(
   () =>
     typeof window !== "undefined" && window.location.pathname === "/itab-live",
 );
+const isWidgetPreviewRoute = computed(
+  () =>
+    typeof window !== "undefined" &&
+    window.location.pathname === "/widget-preview",
+);
 const isStandaloneRoute = computed(
-  () => isItabQaRoute.value || isItabLiveRoute.value,
+  () => isItabLiveRoute.value || isWidgetPreviewRoute.value,
 );
 let saveErrorTimer: number | null = null;
 
@@ -596,7 +594,7 @@ onMounted(() => {
   />
 
   <ItabLiveReplica v-if="isItabLiveRoute" />
-  <ItabWidgetQaView v-else-if="isItabQaRoute" />
+  <WidgetCatalogPreviewFrame v-else-if="isWidgetPreviewRoute" />
   <GridPanel v-else />
 
   <!-- 冲突提示：居中模态框 -->
@@ -721,11 +719,6 @@ onMounted(() => {
       </svg>
     </button>
   </Transition>
-
-  <StatusMonitor
-    v-if="!isStandaloneRoute && statusMonitorWidget?.enable"
-    :widget="statusMonitorWidget"
-  />
 
   <ToastHost
     v-if="!isItabLiveRoute"

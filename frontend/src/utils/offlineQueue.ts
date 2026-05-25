@@ -2,15 +2,15 @@
  * Offline Save Queue
  *
  * When network is unavailable, save requests are stored in IndexedDB.
- * Upon network recovery, items are replayed in order with version
- * conflict detection to prevent overwriting remote changes.
+ * Upon network recovery, items are replayed in operation timestamp order.
+ * Server-side last-write-wins arbitration ignores stale operations.
  *
  * Supports both full data saves and fine-grained widget saves.
  */
 
 export type SaveType = "full" | "widget";
 
-interface PendingSave {
+export interface PendingSave {
   id: string;
   timestamp: number;
   baseVersion: number;
@@ -42,10 +42,14 @@ function openDB(): Promise<IDBDatabase> {
 /**
  * Enqueue a full data save
  */
-export async function enqueue(data: Record<string, unknown>, baseVersion: number): Promise<void> {
+export async function enqueue(
+  data: Record<string, unknown>,
+  baseVersion: number,
+  operationTimestamp = Date.now(),
+): Promise<void> {
   return enqueueItem({
-    id: `full_${Date.now()}`,
-    timestamp: Date.now(),
+    id: `full_${operationTimestamp}_${Date.now()}`,
+    timestamp: operationTimestamp,
     baseVersion,
     data,
     type: "full",
@@ -61,13 +65,14 @@ export async function enqueueWidget(
   data: Record<string, unknown>,
   baseVersion: number,
   widgetVersion?: number,
+  operationTimestamp = Date.now(),
 ): Promise<void> {
   // Remove existing queued saves for same widget to avoid duplicates
   await removeByWidget(widgetId);
 
   return enqueueItem({
-    id: `widget_${widgetId}_${Date.now()}`,
-    timestamp: Date.now(),
+    id: `widget_${widgetId}_${operationTimestamp}_${Date.now()}`,
+    timestamp: operationTimestamp,
     baseVersion,
     data,
     type: "widget",
@@ -159,24 +164,26 @@ export async function size(): Promise<number> {
 
 /**
  * Replay queue items in order.
- * Checks server version before each item to detect version conflicts.
- * If serverVersion > item.baseVersion, calls onVersionConflict and stops.
  *
  * Distinguishes:
  * - Recoverable errors (network timeout) - will retry
  * - Non-recoverable errors (data format) - will abort and notify
  */
 export async function replay(
-  fetchVersion: () => Promise<number>,
-  onSave: (data: Record<string, unknown>) => Promise<boolean>,
-  onSaveWidget: (widgetId: string, data: Record<string, unknown>, widgetVersion?: number) => Promise<boolean>,
-  onVersionConflict: (pendingItem: PendingSave, serverVersion: number) => void,
+  onSave: (
+    data: Record<string, unknown>,
+    operationTimestamp: number,
+  ) => Promise<boolean>,
+  onSaveWidget: (
+    widgetId: string,
+    data: Record<string, unknown>,
+    operationTimestamp: number,
+    widgetVersion?: number,
+  ) => Promise<boolean>,
   onNonRecoverableError: (item: PendingSave, error: unknown) => void,
 ): Promise<void> {
   const items = await getAll();
   if (items.length === 0) return;
-
-  console.log(`[OfflineQueue] Replaying ${items.length} pending saves`);
 
   const REPLAY_EXPIRY_MS = 24 * 60 * 60 * 1000; // 24 hours
 
@@ -190,26 +197,24 @@ export async function replay(
       continue;
     }
 
-    const serverVersion = await fetchVersion();
-
-    if (serverVersion > item.baseVersion) {
-      console.warn(
-        `[OfflineQueue] Version conflict: server v${serverVersion} > item base v${item.baseVersion}`,
-      );
-      onVersionConflict(item, serverVersion);
-      return;
-    }
-
     let success: boolean;
     try {
       if (item.type === "widget" && item.widgetId) {
-        success = await onSaveWidget(item.widgetId, item.data, item.widgetVersion);
+        success = await onSaveWidget(
+          item.widgetId,
+          item.data,
+          item.timestamp,
+          item.widgetVersion,
+        );
       } else {
-        success = await onSave(item.data);
+        success = await onSave(item.data, item.timestamp);
       }
     } catch (e) {
       // Non-recoverable error (data format issue, etc.)
-      console.error(`[OfflineQueue] Non-recoverable error for item ${item.id}:`, e);
+      console.error(
+        `[OfflineQueue] Non-recoverable error for item ${item.id}:`,
+        e,
+      );
       onNonRecoverableError(item, e);
       return;
     }
@@ -221,6 +226,4 @@ export async function replay(
 
     await remove(item.id);
   }
-
-  console.log("[OfflineQueue] All pending saves replayed successfully");
 }

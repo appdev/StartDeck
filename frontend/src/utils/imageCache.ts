@@ -1,7 +1,6 @@
-
 // Utility for caching images in IndexedDB
-const DB_NAME = 'StartDeckImageCache';
-const STORE_NAME = 'images';
+const DB_NAME = "StartDeckImageCache";
+const STORE_NAME = "images";
 const DB_VERSION = 1;
 const MAX_CACHE_AGE = 24 * 60 * 60 * 1000;
 const MAX_CACHE_ENTRIES = 40;
@@ -23,7 +22,7 @@ const openDB = (): Promise<IDBDatabase> => {
     request.onupgradeneeded = (event) => {
       const db = (event.target as IDBOpenDBRequest).result;
       if (!db.objectStoreNames.contains(STORE_NAME)) {
-        db.createObjectStore(STORE_NAME, { keyPath: 'url' });
+        db.createObjectStore(STORE_NAME, { keyPath: "url" });
       }
     };
   });
@@ -31,7 +30,7 @@ const openDB = (): Promise<IDBDatabase> => {
 
 const pruneCache = async (): Promise<void> => {
   const db = await openDB();
-  const tx = db.transaction(STORE_NAME, 'readwrite');
+  const tx = db.transaction(STORE_NAME, "readwrite");
   const store = tx.objectStore(STORE_NAME);
   const entries: Array<{ url: string; timestamp: number }> = [];
   await new Promise<void>((resolve, reject) => {
@@ -45,7 +44,7 @@ const pruneCache = async (): Promise<void> => {
       const value = cursor.value as CachedImage;
       entries.push({
         url: value.url,
-        timestamp: typeof value.timestamp === 'number' ? value.timestamp : 0,
+        timestamp: typeof value.timestamp === "number" ? value.timestamp : 0,
       });
       cursor.continue();
     };
@@ -69,27 +68,34 @@ const pruneCache = async (): Promise<void> => {
   }
 };
 
-export const cacheImage = async (url: string, blob: Blob, etag?: string): Promise<void> => {
+export const cacheImage = async (
+  url: string,
+  blob: Blob,
+  etag?: string,
+): Promise<void> => {
   const db = await openDB();
-  const tx = db.transaction(STORE_NAME, 'readwrite');
+  const tx = db.transaction(STORE_NAME, "readwrite");
   const store = tx.objectStore(STORE_NAME);
-  
+
   await new Promise<void>((resolve, reject) => {
     const request = store.put({
       url,
       blob,
       timestamp: Date.now(),
-      etag
+      etag,
     });
     request.onsuccess = () => resolve();
     request.onerror = () => reject(request.error);
   });
-  
+
   // Also store key in localStorage for quick lookup/expiration check
-  localStorage.setItem(`cache_meta_${url}`, JSON.stringify({
-    timestamp: Date.now(),
-    etag
-  }));
+  localStorage.setItem(
+    `cache_meta_${url}`,
+    JSON.stringify({
+      timestamp: Date.now(),
+      etag,
+    }),
+  );
   await pruneCache();
 };
 
@@ -104,7 +110,7 @@ export const getCachedImage = async (url: string): Promise<Blob | null> => {
       localStorage.removeItem(`cache_meta_${url}`);
       try {
         const db = await openDB();
-        const tx = db.transaction(STORE_NAME, 'readwrite');
+        const tx = db.transaction(STORE_NAME, "readwrite");
         tx.objectStore(STORE_NAME).delete(url);
       } catch {
         return null;
@@ -117,7 +123,7 @@ export const getCachedImage = async (url: string): Promise<Blob | null> => {
   }
 
   const db = await openDB();
-  const tx = db.transaction(STORE_NAME, 'readonly');
+  const tx = db.transaction(STORE_NAME, "readonly");
   const store = tx.objectStore(STORE_NAME);
 
   return new Promise((resolve, reject) => {

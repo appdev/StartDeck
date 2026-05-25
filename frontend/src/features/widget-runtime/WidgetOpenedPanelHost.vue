@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from "vue";
+import AppWindowControls from "@/components/base/AppWindowControls.vue";
 import OverlayMotion from "@/components/base/OverlayMotion.vue";
 import type { WidgetConfig } from "@/types";
 import {
@@ -61,16 +62,13 @@ const panelStyle = computed(() => {
       data-widget-opened-host
       data-grid-drag-ignore="true"
     >
-      <div v-if="shell.trafficVisible" class="sd-widget-opened-traffic">
-        <button class="yellow" type="button" aria-label="minimize"></button>
-        <button class="green" type="button" aria-label="maximize"></button>
-        <button
-          class="red"
-          type="button"
-          aria-label="close"
-          @click="emit('close')"
-        ></button>
-      </div>
+      <AppWindowControls
+        v-if="shell.trafficVisible"
+        class="sd-widget-opened-traffic"
+        aria-label="小组件面板窗口控制"
+        close-label="关闭弹窗"
+        @close="emit('close')"
+      />
       <component
         :is="definition.openedPanel"
         :widget="widget"
@@ -84,7 +82,7 @@ const panelStyle = computed(() => {
 
 <style scoped>
 :global(.sd-widget-opened-overlay) {
-  background: rgba(0, 0, 0, 0.5);
+  background: var(--sd-shell-overlay);
   backdrop-filter: blur(10px);
 }
 
@@ -97,39 +95,39 @@ const panelStyle = computed(() => {
   width: 100%;
   height: 100%;
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.22);
+  border: 1px solid var(--sd-shell-border);
   border-radius: 20px;
-  background: linear-gradient(45deg, rgb(33, 30, 34) 20%, rgb(56, 58, 62));
-  color: #fff;
-  box-shadow: rgba(0, 0, 0, 0.48) 0 12px 32px 0;
+  background: var(--sd-shell-surface);
+  color: var(--sd-shell-text-primary);
+  box-shadow: var(--sd-shadow-window);
 }
 
 .sd-widget-opened-window.opened-itab-todo {
-  border: 1px solid rgba(0, 0, 0, 0.13);
-  background: #fff;
-  color: #222;
+  border: 1px solid var(--sd-component-border);
+  background: var(--sd-component-surface);
+  color: var(--sd-component-text-primary);
   font-size: 14px;
   line-height: 21px;
-  box-shadow: rgba(0, 0, 0, 0.48) 0 12px 32px 0;
+  box-shadow: var(--sd-shadow-window);
   backdrop-filter: none;
 }
 
 .sd-widget-opened-window.opened-itab-memo {
-  border: 1px solid rgba(0, 0, 0, 0.13);
-  background: #fff;
-  color: #222;
+  border: 1px solid var(--sd-component-border);
+  background: var(--sd-component-surface);
+  color: var(--sd-component-text-primary);
   font-size: 14px;
   line-height: 21px;
-  box-shadow: rgba(0, 0, 0, 0.48) 0 12px 32px 0;
+  box-shadow: var(--sd-shadow-window);
   backdrop-filter: none;
 }
 
 .sd-widget-opened-window.opened-itab-clock {
   overflow: auto;
-  border: 1px solid rgba(0, 0, 0, 0.13);
+  border: 1px solid var(--sd-component-border);
   background: transparent;
-  color: #222;
-  box-shadow: rgba(0, 0, 0, 0.48) 0 12px 32px 0;
+  color: var(--sd-component-text-primary);
+  box-shadow: var(--sd-shadow-window);
   backdrop-filter: none;
 }
 
@@ -166,13 +164,104 @@ const panelStyle = computed(() => {
   backdrop-filter: none;
 }
 
-.sd-widget-opened-window.opened-itab-calendar {
-  border: 1px solid rgba(0, 0, 0, 0.13);
-  background: #fff;
-  color: #222;
+.sd-widget-opened-window.opened-itab-wallpaper {
+  border: 1px solid var(--sd-component-border);
+  background: var(--sd-component-surface-raised);
+  color: var(--sd-component-text-primary);
+  box-shadow: var(--sd-shadow-window);
+  backdrop-filter: none;
+}
+
+.sd-widget-opened-window.opened-itab-movie-calendar {
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  background: transparent;
+  color: #f9d5ad;
+  box-shadow: rgba(0, 0, 0, 0.48) 0 12px 32px 0;
+  backdrop-filter: none;
+}
+
+.sd-widget-opened-window.opened-itab-ip {
+  border: 1px solid var(--sd-component-border);
+  background: var(--sd-component-surface);
+  color: var(--sd-component-text-primary);
   font-size: 14px;
   line-height: 21px;
-  box-shadow: rgba(0, 0, 0, 0.48) 0 12px 32px 0;
+  box-shadow: var(--sd-shadow-window);
+  backdrop-filter: none;
+}
+
+.sd-widget-opened-window.opened-itab-calendar {
+  border: 1px solid var(--sd-component-border);
+  background: var(--sd-component-surface);
+  color: var(--sd-component-text-primary);
+  font-size: 14px;
+  line-height: 21px;
+  box-shadow: var(--sd-shadow-window);
+  backdrop-filter: none;
+}
+
+.sd-widget-opened-window.opened-itab-number-uppercase {
+  border: 0;
+  border-radius: 15px;
+  background: transparent;
+  color: #facc15;
+  box-shadow: rgb(223, 223, 223) 0 0 2px 0;
+  backdrop-filter: none;
+}
+
+.sd-widget-opened-window.opened-itab-number-uppercase
+  .sd-widget-opened-traffic {
+  top: 15px;
+  right: 15px;
+  z-index: 5;
+  gap: 10px;
+}
+
+.sd-widget-opened-window.opened-itab-number-uppercase
+  .sd-widget-opened-traffic
+  .sd-window-control-dot {
+  display: block;
+  width: 17px;
+  height: 17px;
+}
+
+.sd-widget-opened-window.opened-itab-food-picker {
+  border: 1px solid var(--sd-component-border);
+  background: var(--sd-component-surface);
+  color: var(--sd-component-text-primary);
+  font-size: 14px;
+  line-height: 21px;
+  box-shadow: var(--sd-shadow-window);
+  backdrop-filter: none;
+}
+
+.sd-widget-opened-window.opened-docker {
+  overflow: hidden;
+  border: 1px solid var(--sd-component-border);
+  border-radius: 20px;
+  background: var(--sd-component-surface);
+  color: var(--sd-component-text-primary);
+  box-shadow: var(--sd-shadow-window);
+  backdrop-filter: none;
+}
+
+.sd-widget-opened-window.opened-system-status {
+  overflow: hidden;
+  border: 1px solid var(--sd-component-border);
+  border-radius: 20px;
+  background: var(--sd-component-surface);
+  color: var(--sd-component-text-primary);
+  box-shadow: var(--sd-shadow-window);
+  backdrop-filter: none;
+}
+
+.sd-widget-opened-window.opened-custom-css {
+  overflow: hidden;
+  border: 1px solid var(--sd-component-border);
+  border-radius: 20px;
+  background: var(--sd-component-surface);
+  color: var(--sd-component-text-primary);
+  box-shadow: var(--sd-shadow-window);
   backdrop-filter: none;
 }
 
@@ -180,29 +269,7 @@ const panelStyle = computed(() => {
   position: absolute;
   top: 11px;
   right: 17px;
-  z-index: 3;
-  display: flex;
-  gap: 12px;
-}
-
-.sd-widget-opened-traffic button {
-  width: 16px;
-  height: 16px;
-  padding: 0;
-  border: 0;
-  border-radius: 999px;
-}
-
-.sd-widget-opened-traffic .yellow {
-  display: none;
-  background: #ffbf2f;
-}
-
-.sd-widget-opened-traffic .green {
-  background: #1bd228;
-}
-
-.sd-widget-opened-traffic .red {
-  background: #ff5c59;
+  z-index: 20;
+  gap: 9px;
 }
 </style>

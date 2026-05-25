@@ -1,5 +1,6 @@
 const extractHost = (input) => {
-  const value = typeof input === "string" ? input.trim() : String(input ?? "").trim();
+  const value =
+    typeof input === "string" ? input.trim() : String(input ?? "").trim();
   if (!value) return "";
   if (value.startsWith("[") && value.includes("]")) {
     return value.slice(1, value.indexOf("]"));
@@ -22,7 +23,8 @@ const extractHost = (input) => {
 
 const isIpv4 = (host) => /^(\d{1,3}\.){3}\d{1,3}$/.test(host);
 
-const isIpv4PrefixLike = (value) => /^\d{1,3}(\.\d{1,3}){0,3}\.?$/.test(String(value || "").trim());
+const isIpv4PrefixLike = (value) =>
+  /^\d{1,3}(\.\d{1,3}){0,3}\.?$/.test(String(value || "").trim());
 
 const isPrivateIpv4 = (host) => {
   if (!isIpv4(host)) return false;
@@ -48,7 +50,9 @@ const parseNetworkRules = (rawRules) => {
 };
 
 const normalizeRuleHostLike = (value) => {
-  let v = String(value || "").trim().toLowerCase();
+  let v = String(value || "")
+    .trim()
+    .toLowerCase();
   if (!v) return "";
 
   v = v.replace(/^\*\./, "");
@@ -58,7 +62,10 @@ const normalizeRuleHostLike = (value) => {
     v = parsed.toLowerCase();
   }
 
-  v = v.replace(/^\[|\]$/g, "").replace(/^\./, "").replace(/\/$/, "");
+  v = v
+    .replace(/^\[|\]$/g, "")
+    .replace(/^\./, "")
+    .replace(/\/$/, "");
   return v;
 };
 
@@ -75,8 +82,13 @@ const classifyByRules = (host, rules) => {
     if (v.startsWith("domain_suffix:")) {
       const suffix = v.slice("domain_suffix:".length).trim();
       if (matchDomainSuffix(host, suffix)) {
-        if (suffix.includes("ts.net") || suffix.includes("zerotier")) return "overlay";
-        if (suffix.includes("trycloudflare.com") || suffix.includes("ngrok.io") || suffix.includes("ngrok-free.app"))
+        if (suffix.includes("ts.net") || suffix.includes("zerotier"))
+          return "overlay";
+        if (
+          suffix.includes("trycloudflare.com") ||
+          suffix.includes("ngrok.io") ||
+          suffix.includes("ngrok-free.app")
+        )
           return "wan";
         return "lan";
       }
@@ -91,9 +103,17 @@ const classifyByRules = (host, rules) => {
 
     if (v.startsWith("ip:")) {
       const rawTarget = v.slice("ip:".length).trim();
-      const target = rawTarget.endsWith(".") && isIpv4(rawTarget.slice(0, -1)) ? rawTarget.slice(0, -1) : rawTarget;
+      const target =
+        rawTarget.endsWith(".") && isIpv4(rawTarget.slice(0, -1))
+          ? rawTarget.slice(0, -1)
+          : rawTarget;
       if (target && host === target) return "lan";
-      if (target && isIpv4(host) && !isIpv4(target) && isIpv4PrefixLike(target)) {
+      if (
+        target &&
+        isIpv4(host) &&
+        !isIpv4(target) &&
+        isIpv4PrefixLike(target)
+      ) {
         const prefix = target.endsWith(".") ? target : `${target}.`;
         if (host.startsWith(prefix)) return "lan";
       }
@@ -129,31 +149,53 @@ export const DEFAULT_NETWORK_RULES = [
 
 const DEFAULT_LATENCY_THRESHOLD_MS = 50;
 
-export const classifyNetworkTarget = (url, networkRules = "", internalDomains = "") => {
+export const classifyNetworkTarget = (
+  url,
+  networkRules = "",
+  internalDomains = "",
+) => {
   const raw = typeof url === "string" ? url.trim() : String(url ?? "").trim();
   if (!raw) return "wan";
 
-  const host = extractHost(raw).toLowerCase().replace(/^\[|\]$/g, "");
+  const host = extractHost(raw)
+    .toLowerCase()
+    .replace(/^\[|\]$/g, "");
   if (!host) return "wan";
 
-  if (host === "::1" || host.includes("localhost") || /^fe[89ab][0-9a-f]:/i.test(host) || /^f[cd][0-9a-f]{2}:/i.test(host)) {
+  if (
+    host === "::1" ||
+    host.includes("localhost") ||
+    /^fe[89ab][0-9a-f]:/i.test(host) ||
+    /^f[cd][0-9a-f]{2}:/i.test(host)
+  ) {
     return "lan";
   }
 
   if (isPrivateIpv4(host) || host.endsWith(".local")) return "lan";
   if (isOverlayIpv4(host)) return "overlay";
 
-  const rules = [...parseNetworkRules(networkRules), ...parseNetworkRules(internalDomains)];
+  const rules = [
+    ...parseNetworkRules(networkRules),
+    ...parseNetworkRules(internalDomains),
+  ];
   return classifyByRules(host, rules);
 };
 
-export const detectNetworkByLatency = (measuredLatencyMs, thresholdMs = DEFAULT_LATENCY_THRESHOLD_MS) => {
-  if (!Number.isFinite(measuredLatencyMs) || measuredLatencyMs < 0) return "unknown";
+export const detectNetworkByLatency = (
+  measuredLatencyMs,
+  thresholdMs = DEFAULT_LATENCY_THRESHOLD_MS,
+) => {
+  if (!Number.isFinite(measuredLatencyMs) || measuredLatencyMs < 0)
+    return "unknown";
   if (measuredLatencyMs <= thresholdMs) return "lan";
   return "wan";
 };
 
-export const isInternalNetwork = (url, internalDomains = "", networkRules = "") => {
+export const isInternalNetwork = (
+  url,
+  internalDomains = "",
+  networkRules = "",
+) => {
   const type = classifyNetworkTarget(url, networkRules, internalDomains);
   return type === "lan" || type === "overlay";
 };
@@ -171,7 +213,10 @@ export const buildRulesFromPresets = (presets = {}) => {
 
 const isDomainInWhitelist = (hostname, whitelistStr) => {
   if (!hostname || !whitelistStr) return false;
-  const lines = whitelistStr.split("\n").map(l => l.trim().toLowerCase()).filter(Boolean);
+  const lines = whitelistStr
+    .split("\n")
+    .map((l) => l.trim().toLowerCase())
+    .filter(Boolean);
   for (const line of lines) {
     const domain = line.replace(/^\*\./, "").replace(/^https?:\/\//, "");
     if (hostname === domain || hostname.endsWith(`.${domain}`)) {
@@ -182,14 +227,26 @@ const isDomainInWhitelist = (hostname, whitelistStr) => {
 };
 
 export const getNetworkConfig = (appConfig = {}, localForceNetworkMode) => {
-  const internalDomains = typeof appConfig.internalDomains === "string" ? appConfig.internalDomains : "";
+  const internalDomains =
+    typeof appConfig.internalDomains === "string"
+      ? appConfig.internalDomains
+      : "";
   const whitelistLatencyMode = appConfig.whitelistLatencyMode === true;
-  const mode = typeof localForceNetworkMode === "string" ? localForceNetworkMode : "";
-  const forceNetworkMode = ["auto", "lan", "wan"].includes(mode) ? mode : "auto";
+  const mode =
+    typeof localForceNetworkMode === "string" ? localForceNetworkMode : "";
+  const forceNetworkMode = ["auto", "lan", "wan"].includes(mode)
+    ? mode
+    : "auto";
   const raw = appConfig.latencyThresholdMs;
-  const base = typeof raw === "number" && Number.isFinite(raw) ? Math.trunc(raw) : 50;
+  const base =
+    typeof raw === "number" && Number.isFinite(raw) ? Math.trunc(raw) : 50;
   const latencyThresholdMs = Math.min(30000, Math.max(10, base));
-  return { internalDomains, whitelistLatencyMode, forceNetworkMode, latencyThresholdMs };
+  return {
+    internalDomains,
+    whitelistLatencyMode,
+    forceNetworkMode,
+    latencyThresholdMs,
+  };
 };
 
 export const computeEffectiveNetworkMode = (
@@ -197,32 +254,54 @@ export const computeEffectiveNetworkMode = (
   clientIp,
   clientIpSource,
   measuredLatencyMs,
-  { internalDomains = "", whitelistLatencyMode = false, forceNetworkMode = "auto", latencyThresholdMs = 50 } = {},
+  {
+    internalDomains = "",
+    whitelistLatencyMode = false,
+    forceNetworkMode = "auto",
+    latencyThresholdMs = 50,
+  } = {},
 ) => {
   const hostnameIntrinsicLan = isInternalNetwork(hostname, "", "");
   const canTrustClientIp = clientIpSource === "header";
-  const clientIsLan = canTrustClientIp && !!clientIp && isInternalNetwork(clientIp, "", "");
-  const latencyBasedLan = Number.isFinite(measuredLatencyMs) && measuredLatencyMs > 0 && measuredLatencyMs <= latencyThresholdMs;
+  const clientIsLan =
+    canTrustClientIp && !!clientIp && isInternalNetwork(clientIp, "", "");
+  const latencyBasedLan =
+    Number.isFinite(measuredLatencyMs) &&
+    measuredLatencyMs > 0 &&
+    measuredLatencyMs <= latencyThresholdMs;
   const isInWhitelist = isDomainInWhitelist(hostname, internalDomains);
 
   // 强制模式优先级最高
-  if (forceNetworkMode === "lan") return { isLan: true, reason: "force_lan", measuredLatencyMs };
-  if (forceNetworkMode === "wan") return { isLan: false, reason: "force_wan", measuredLatencyMs };
+  if (forceNetworkMode === "lan")
+    return { isLan: true, reason: "force_lan", measuredLatencyMs };
+  if (forceNetworkMode === "wan")
+    return { isLan: false, reason: "force_wan", measuredLatencyMs };
 
   // 域名本身是内网地址
-  if (hostnameIntrinsicLan) return { isLan: true, reason: "hostname_intrinsic", measuredLatencyMs };
+  if (hostnameIntrinsicLan)
+    return { isLan: true, reason: "hostname_intrinsic", measuredLatencyMs };
 
   // 白名单域名：启用延迟判定时根据延迟判定，未启用则直接判定为外网
   if (isInWhitelist) {
     if (whitelistLatencyMode) {
-      if (latencyBasedLan) return { isLan: true, reason: "whitelist_latency_ok", measuredLatencyMs };
-      return { isLan: false, reason: "whitelist_latency_high", measuredLatencyMs };
+      if (latencyBasedLan)
+        return {
+          isLan: true,
+          reason: "whitelist_latency_ok",
+          measuredLatencyMs,
+        };
+      return {
+        isLan: false,
+        reason: "whitelist_latency_high",
+        measuredLatencyMs,
+      };
     }
     return { isLan: true, reason: "whitelist_matched", measuredLatencyMs };
   }
 
   // 客户端IP是内网
-  if (canTrustClientIp && clientIsLan) return { isLan: true, reason: "client_ip_header", measuredLatencyMs };
+  if (canTrustClientIp && clientIsLan)
+    return { isLan: true, reason: "client_ip_header", measuredLatencyMs };
 
   // 默认外网
   return { isLan: false, reason: "default_wan", measuredLatencyMs };

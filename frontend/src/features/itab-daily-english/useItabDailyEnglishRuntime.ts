@@ -3,9 +3,9 @@ import { fetchItabDailyEnglish } from "./itabDailyEnglishApi";
 import type { ItabDailyEnglishEntry } from "./itabDailyEnglishTypes";
 
 export const ITAB_DAILY_ENGLISH_API_REFERENCE =
-  "https://base.itab.link/itab/todayEnglish";
+  "https://api.timelessq.com/english-sentence";
 export const ITAB_DAILY_ENGLISH_PROVIDER_REFERENCE =
-  "https://open.iciba.com/dsapi/";
+  "https://api.timelessq.com";
 export const ITAB_DAILY_ENGLISH_FALLBACK_IMAGE =
   "/api/itab-resources/itab-itab-daily-english-14-body-2x4-background-86acdbf74c";
 

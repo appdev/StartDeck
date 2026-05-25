@@ -49,7 +49,9 @@ describe("useSmartIconMatch", () => {
 
   it("normalizes external and local URLs", () => {
     expect(normalizeUserUrl("example.com/app")).toBe("https://example.com/app");
-    expect(normalizeUserUrl("192.168.1.15/admin")).toBe("http://192.168.1.15/admin");
+    expect(normalizeUserUrl("192.168.1.15/admin")).toBe(
+      "http://192.168.1.15/admin",
+    );
   });
 
   it("extracts keyword from URL without scheme", () => {
@@ -58,9 +60,15 @@ describe("useSmartIconMatch", () => {
   });
 
   it("rejects non-image and tiny data URIs", async () => {
-    await expect(validateDataUriIcon("data:text/html;base64,VALID")).resolves.toBe(false);
-    await expect(validateDataUriIcon("data:image/png;base64,TINY")).resolves.toBe(false);
-    await expect(validateDataUriIcon("data:image/png;base64,VALID")).resolves.toBe(true);
+    await expect(
+      validateDataUriIcon("data:text/html;base64,VALID"),
+    ).resolves.toBe(false);
+    await expect(
+      validateDataUriIcon("data:image/png;base64,TINY"),
+    ).resolves.toBe(false);
+    await expect(
+      validateDataUriIcon("data:image/png;base64,VALID"),
+    ).resolves.toBe(true);
   });
 
   it("uses StartPage-style site metadata as the smart icon source", async () => {

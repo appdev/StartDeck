@@ -14,7 +14,6 @@ withDefaults(
 );
 
 defineEmits<{
-  complete: [];
   save: [];
   addWidget: [];
   addGroup: [];
@@ -28,19 +27,11 @@ defineEmits<{
     ariaLabel="首页编辑操作"
   >
     <HomeToolbarButton
-      variant="secondary"
-      aria-label="完成：保存并退出编辑"
-      title="完成：保存并退出编辑"
-      @click="$emit('complete')"
-    >
-      完成
-    </HomeToolbarButton>
-    <HomeToolbarButton
       variant="primary"
       :busy="isSaving"
       :data-dirty="hasUnsavedChanges ? 'true' : 'false'"
-      aria-label="保存：保存并继续编辑"
-      title="保存：保存并继续编辑"
+      aria-label="保存：保存并退出编辑"
+      title="保存：保存并退出编辑"
       @click="$emit('save')"
     >
       {{ isSaving ? "保存中..." : "保存" }}

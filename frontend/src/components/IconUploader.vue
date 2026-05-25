@@ -4,6 +4,8 @@ import { VueCropper } from "vue-cropper";
 import "vue-cropper/dist/index.css";
 import WallpaperLibrary from "./WallpaperLibrary.vue";
 import { useMainStore } from "../stores/main";
+import AppWindowControls from "@/components/base/AppWindowControls.vue";
+import { useUiFeedbackStore } from "@/stores/uiFeedback";
 
 const props = withDefaults(
   defineProps<{
@@ -22,6 +24,7 @@ const props = withDefaults(
 );
 const emit = defineEmits(["update:modelValue"]);
 const store = useMainStore();
+const uiFeedback = useUiFeedbackStore();
 
 const showCropper = ref(false);
 const showLibrary = ref(false);
@@ -51,7 +54,11 @@ const onFileChange = (event: Event) => {
   if (!file) return;
 
   if (file.size > 5 * 1024 * 1024) {
-    alert("图片太大啦，请上传小于 5MB 的图片");
+    uiFeedback.notify({
+      title: "图片过大",
+      message: "请上传小于 5MB 的图片。",
+      tone: "warning",
+    });
     return;
   }
 
@@ -106,7 +113,13 @@ const confirmCrop = () => {
 
 <template>
   <div class="w-full">
-    <input ref="fileInput" type="file" accept="image/*" class="hidden" @change="onFileChange" />
+    <input
+      ref="fileInput"
+      type="file"
+      accept="image/*"
+      class="hidden"
+      @change="onFileChange"
+    />
 
     <div
       class="w-full h-32 border-2 border-dashed border-gray-300 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition-all group relative overflow-hidden"
@@ -124,7 +137,10 @@ const confirmCrop = () => {
           :style="previewStyle"
         />
         <!-- 叠加遮罩层 -->
-        <div class="absolute inset-0 transition-all duration-300" :style="overlayStyle"></div>
+        <div
+          class="absolute inset-0 transition-all duration-300"
+          :style="overlayStyle"
+        ></div>
       </div>
 
       <div
@@ -135,7 +151,9 @@ const confirmCrop = () => {
             : ''
         "
       >
-        <span class="text-2xl text-gray-400 mb-1 group-hover:text-blue-500">+</span>
+        <span class="text-2xl text-gray-400 mb-1 group-hover:text-blue-500"
+          >+</span
+        >
         <span class="text-xs text-gray-500 group-hover:text-blue-600">{{
           uploadOnly ? "点击上传" : crop ? "点击上传 / 裁剪" : "从壁纸库选择"
         }}</span>
@@ -148,16 +166,14 @@ const confirmCrop = () => {
       v-if="showCropper"
       class="fixed inset-0 z-[999] sd-overlay-strong flex items-center justify-center"
     >
-      <div
-        class="sd-modal-surface max-w-lg flex flex-col h-[500px]"
-      >
+      <div class="sd-modal-surface max-w-lg flex flex-col h-[500px]">
         <div class="sd-modal-header">
           <h3 class="sd-modal-title text-base">裁剪图片</h3>
-          <button type="button" @click="showCropper = false" class="sd-icon-button" aria-label="关闭裁剪弹窗">
-            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 6l12 12M18 6L6 18" />
-            </svg>
-          </button>
+          <AppWindowControls
+            aria-label="裁剪弹窗窗口控制"
+            close-label="关闭裁剪弹窗"
+            @close="showCropper = false"
+          />
         </div>
         <div class="flex-1 bg-gray-900 relative">
           <VueCropper
@@ -174,7 +190,9 @@ const confirmCrop = () => {
         </div>
 
         <!-- Zoom Slider -->
-        <div class="px-4 py-2 bg-gray-800 flex items-center gap-3 border-t border-gray-700">
+        <div
+          class="px-4 py-2 bg-gray-800 flex items-center gap-3 border-t border-gray-700"
+        >
           <span class="text-gray-400 text-xs">🔍</span>
           <input
             type="range"
@@ -191,16 +209,10 @@ const confirmCrop = () => {
         </div>
 
         <div class="sd-modal-footer">
-          <button
-            @click="showCropper = false"
-            class="sd-btn sd-btn-secondary"
-          >
+          <button @click="showCropper = false" class="sd-btn sd-btn-secondary">
             取消
           </button>
-          <button
-            @click="confirmCrop"
-            class="sd-btn sd-btn-primary px-6"
-          >
+          <button @click="confirmCrop" class="sd-btn sd-btn-primary px-6">
             确认使用
           </button>
         </div>

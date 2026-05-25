@@ -5,32 +5,73 @@ export function md5sum(str: string) {
   function rol(num: number, cnt: number) {
     return (num << cnt) | (num >>> (32 - cnt));
   }
-  function cmn(q: number, a: number, b: number, x: number, s: number, t: number) {
+  function cmn(
+    q: number,
+    a: number,
+    b: number,
+    x: number,
+    s: number,
+    t: number,
+  ) {
     return add(rol(add(add(a, q), add(x, t)), s), b);
   }
-  function ff(a: number, b: number, c: number, d: number, x: number, s: number, t: number) {
+  function ff(
+    a: number,
+    b: number,
+    c: number,
+    d: number,
+    x: number,
+    s: number,
+    t: number,
+  ) {
     return cmn((b & c) | (~b & d), a, b, x, s, t);
   }
-  function gg(a: number, b: number, c: number, d: number, x: number, s: number, t: number) {
+  function gg(
+    a: number,
+    b: number,
+    c: number,
+    d: number,
+    x: number,
+    s: number,
+    t: number,
+  ) {
     return cmn((b & d) | (c & ~d), a, b, x, s, t);
   }
-  function hh(a: number, b: number, c: number, d: number, x: number, s: number, t: number) {
+  function hh(
+    a: number,
+    b: number,
+    c: number,
+    d: number,
+    x: number,
+    s: number,
+    t: number,
+  ) {
     return cmn(b ^ c ^ d, a, b, x, s, t);
   }
-  function ii(a: number, b: number, c: number, d: number, x: number, s: number, t: number) {
+  function ii(
+    a: number,
+    b: number,
+    c: number,
+    d: number,
+    x: number,
+    s: number,
+    t: number,
+  ) {
     return cmn(c ^ (b | ~d), a, b, x, s, t);
   }
   function toWordArray(str: string) {
     const n = (str.length + 8) >> 6;
     const wa = new Array(n * 16).fill(0);
-    for (let i = 0; i < str.length; i++) wa[i >> 2] |= (str.charCodeAt(i) & 0xff) << ((i % 4) * 8);
+    for (let i = 0; i < str.length; i++)
+      wa[i >> 2] |= (str.charCodeAt(i) & 0xff) << ((i % 4) * 8);
     wa[str.length >> 2] |= 0x80 << ((str.length % 4) * 8);
     wa[n * 16 - 2] = str.length * 8;
     return wa;
   }
   function toHex(a: number) {
     let h = "";
-    for (let i = 0; i < 4; i++) h += ("0" + ((a >> (i * 8)) & 0xff).toString(16)).slice(-2);
+    for (let i = 0; i < 4; i++)
+      h += ("0" + ((a >> (i * 8)) & 0xff).toString(16)).slice(-2);
     return h;
   }
   let a = 1732584193,
@@ -106,9 +147,13 @@ export async function encryptPayload(plain: string, password: string) {
   crypto.getRandomValues(salt);
   const iv = new Uint8Array(12);
   crypto.getRandomValues(iv);
-  const keyMaterial = await crypto.subtle.importKey("raw", enc.encode(password), "PBKDF2", false, [
-    "deriveKey",
-  ]);
+  const keyMaterial = await crypto.subtle.importKey(
+    "raw",
+    enc.encode(password),
+    "PBKDF2",
+    false,
+    ["deriveKey"],
+  );
   const key = await crypto.subtle.deriveKey(
     { name: "PBKDF2", salt, iterations: 100000, hash: "SHA-256" },
     keyMaterial,
@@ -116,8 +161,13 @@ export async function encryptPayload(plain: string, password: string) {
     true,
     ["encrypt"],
   );
-  const cipherBuf = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, enc.encode(plain));
-  const toB64 = (buf: ArrayBuffer) => btoa(String.fromCharCode(...new Uint8Array(buf)));
+  const cipherBuf = await crypto.subtle.encrypt(
+    { name: "AES-GCM", iv },
+    key,
+    enc.encode(plain),
+  );
+  const toB64 = (buf: ArrayBuffer) =>
+    btoa(String.fromCharCode(...new Uint8Array(buf)));
   return {
     v: 1,
     alg: "AES-GCM",
@@ -133,11 +183,16 @@ export async function encryptPayload(plain: string, password: string) {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function decryptPayload(payload: any, password: string) {
   if (!password) throw new Error("Password is required");
-  const fromB64 = (b: string) => Uint8Array.from(atob(b), (c) => c.charCodeAt(0)).buffer;
+  const fromB64 = (b: string) =>
+    Uint8Array.from(atob(b), (c) => c.charCodeAt(0)).buffer;
   const enc = new TextEncoder();
-  const keyMaterial = await crypto.subtle.importKey("raw", enc.encode(password), "PBKDF2", false, [
-    "deriveKey",
-  ]);
+  const keyMaterial = await crypto.subtle.importKey(
+    "raw",
+    enc.encode(password),
+    "PBKDF2",
+    false,
+    ["deriveKey"],
+  );
   const key = await crypto.subtle.deriveKey(
     {
       name: "PBKDF2",

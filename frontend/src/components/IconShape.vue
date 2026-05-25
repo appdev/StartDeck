@@ -68,7 +68,9 @@ const isCssColorValue = (value?: string) => {
   );
 };
 
-const textScale = computed(() => ((props.size ?? 48) >= 48 ? 0.52 : 0.56) * scaleVal.value);
+const textScale = computed(
+  () => ((props.size ?? 48) >= 48 ? 0.52 : 0.56) * scaleVal.value,
+);
 
 const resolvedFillClass = computed(() => {
   const cls = props.bgClass || "fill-gray-100";

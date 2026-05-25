@@ -126,10 +126,17 @@ icon-service/startdeck-iconserver
 icon-service/dist/
 
 # ----------------------
+# Rust
+# ----------------------
+target/
+
+# ----------------------
 # Frontend
 # ----------------------
 frontend/dist/
 frontend/tmp/vite-verify/
+frontend/test-results/
+.playwright-mcp/
 
 # Vite build outputs copied into runtime/package directories.
 # Static source assets live in frontend/public; release packaging should
@@ -217,3 +224,28 @@ LOG.md
 **/.codex/**/*.mp4
 **/.codex/**/*.webm
 **/.codex/**/*.har
+
+# Root-level local QA artifacts. Keep durable evidence under .codex/.
+/current-page.png
+/gridstack-*.png
+/home-*.png
+/itab-*.png
+/qa-*.png
+/shell-*.png
+/*weather*.txt
+/after-close-*.json
+/auth-cache-*.json
+/browser-console-*.json
+/buttons-after-*.json
+/cache-after-*.json
+/console-*.json
+/eval-*.json
+/itab-weather-*.json
+/localstorage-*.json
+/network-*.json
+/page-fetch-*.json
+/persist-*.json
+/weather-shell-*.json
+/console-*.md
+/network-*.md
+/snapshot-*.md

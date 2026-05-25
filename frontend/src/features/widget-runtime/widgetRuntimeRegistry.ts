@@ -1,5 +1,11 @@
 import type { Component } from "vue";
 import type { WidgetConfig } from "@/types";
+import DockerWidget from "@/components/DockerWidget.vue";
+import SystemStatusWidget from "@/components/SystemStatusWidget.vue";
+import CustomCssWidget from "@/components/CustomCssWidget.vue";
+import DockerOpenedPanel from "./DockerOpenedPanel.vue";
+import SystemStatusOpenedPanel from "./SystemStatusOpenedPanel.vue";
+import CustomCssOpenedPanel from "./CustomCssOpenedPanel.vue";
 import ItabWeatherOpenedPanel from "@/features/itab-weather/ItabWeatherOpenedPanel.vue";
 import ItabWeatherWidget from "@/features/itab-weather/ItabWeatherWidget.vue";
 import ItabTodoOpenedPanel from "@/features/itab-todo/ItabTodoOpenedPanel.vue";
@@ -16,8 +22,18 @@ import ItabPomodoroOpenedPanel from "@/features/itab-pomodoro/ItabPomodoroOpened
 import ItabPomodoroWidget from "@/features/itab-pomodoro/ItabPomodoroWidget.vue";
 import ItabAnniversaryOpenedPanel from "@/features/itab-anniversary/ItabAnniversaryOpenedPanel.vue";
 import ItabAnniversaryWidget from "@/features/itab-anniversary/ItabAnniversaryWidget.vue";
+import ItabWallpaperOpenedPanel from "@/features/itab-wallpaper/ItabWallpaperOpenedPanel.vue";
+import ItabWallpaperWidget from "@/features/itab-wallpaper/ItabWallpaperWidget.vue";
+import ItabMovieCalendarOpenedPanel from "@/features/itab-movie-calendar/ItabMovieCalendarOpenedPanel.vue";
+import ItabMovieCalendarWidget from "@/features/itab-movie-calendar/ItabMovieCalendarWidget.vue";
+import ItabIpOpenedPanel from "@/features/itab-ip/ItabIpOpenedPanel.vue";
+import ItabIpWidget from "@/features/itab-ip/ItabIpWidget.vue";
 import ItabCalendarOpenedPanel from "@/features/itab-calendar/ItabCalendarOpenedPanel.vue";
 import ItabCalendarWidget from "@/features/itab-calendar/ItabCalendarWidget.vue";
+import ItabNumberUppercaseOpenedPanel from "@/features/itab-number-uppercase/ItabNumberUppercaseOpenedPanel.vue";
+import ItabNumberUppercaseWidget from "@/features/itab-number-uppercase/ItabNumberUppercaseWidget.vue";
+import ItabFoodPickerOpenedPanel from "@/features/itab-food-picker/ItabFoodPickerOpenedPanel.vue";
+import ItabFoodPickerWidget from "@/features/itab-food-picker/ItabFoodPickerWidget.vue";
 import {
   ITAB_WEATHER_DEFAULT_SIZE,
   ITAB_WEATHER_RUNTIME,
@@ -67,11 +83,41 @@ import {
   type ItabAnniversaryWidgetData,
 } from "@/features/itab-anniversary/itabAnniversaryTypes";
 import {
+  ITAB_WALLPAPER_DEFAULT_SIZE,
+  ITAB_WALLPAPER_RUNTIME,
+  ITAB_WALLPAPER_WIDGET_TYPE,
+  type ItabWallpaperWidgetData,
+} from "@/features/itab-wallpaper/itabWallpaperTypes";
+import {
+  ITAB_MOVIE_CALENDAR_DEFAULT_SIZE,
+  ITAB_MOVIE_CALENDAR_RUNTIME,
+  ITAB_MOVIE_CALENDAR_WIDGET_TYPE,
+  type ItabMovieCalendarWidgetData,
+} from "@/features/itab-movie-calendar/itabMovieCalendarTypes";
+import {
+  ITAB_IP_DEFAULT_SIZE,
+  ITAB_IP_RUNTIME,
+  ITAB_IP_WIDGET_TYPE,
+  type ItabIpWidgetData,
+} from "@/features/itab-ip/itabIpTypes";
+import {
   ITAB_CALENDAR_DEFAULT_SIZE,
   ITAB_CALENDAR_RUNTIME,
   ITAB_CALENDAR_WIDGET_TYPE,
   type ItabCalendarWidgetData,
 } from "@/features/itab-calendar/itabCalendarTypes";
+import {
+  ITAB_NUMBER_UPPERCASE_DEFAULT_SIZE,
+  ITAB_NUMBER_UPPERCASE_RUNTIME,
+  ITAB_NUMBER_UPPERCASE_WIDGET_TYPE,
+  type ItabNumberUppercaseWidgetData,
+} from "@/features/itab-number-uppercase/itabNumberUppercaseTypes";
+import {
+  ITAB_FOOD_PICKER_DEFAULT_SIZE,
+  ITAB_FOOD_PICKER_RUNTIME,
+  ITAB_FOOD_PICKER_WIDGET_TYPE,
+  type ItabFoodPickerWidgetData,
+} from "@/features/itab-food-picker/itabFoodPickerTypes";
 import {
   normalizeItabWeatherWidgetData,
   applyItabWeatherSizeToWidget,
@@ -105,9 +151,51 @@ import {
   normalizeItabAnniversaryWidgetData,
 } from "@/features/itab-anniversary/itabAnniversaryModel";
 import {
+  applyItabWallpaperSizeToWidget,
+  normalizeItabWallpaperWidgetData,
+} from "@/features/itab-wallpaper/itabWallpaperModel";
+import {
+  applyItabMovieCalendarSizeToWidget,
+  normalizeItabMovieCalendarWidgetData,
+} from "@/features/itab-movie-calendar/itabMovieCalendarModel";
+import {
+  applyItabIpSizeToWidget,
+  normalizeItabIpWidgetData,
+} from "@/features/itab-ip/itabIpModel";
+import {
   applyItabCalendarSizeToWidget,
   normalizeItabCalendarWidgetData,
 } from "@/features/itab-calendar/itabCalendarModel";
+import {
+  applyItabNumberUppercaseSizeToWidget,
+  normalizeItabNumberUppercaseWidgetData,
+} from "@/features/itab-number-uppercase/itabNumberUppercaseModel";
+import {
+  applyItabFoodPickerSizeToWidget,
+  normalizeItabFoodPickerWidgetData,
+} from "@/features/itab-food-picker/itabFoodPickerModel";
+import {
+  DOCKER_DEFAULT_SIZE,
+  DOCKER_RUNTIME,
+  DOCKER_WIDGET_TYPE,
+  SYSTEM_STATUS_DEFAULT_SIZE,
+  SYSTEM_STATUS_RUNTIME,
+  SYSTEM_STATUS_WIDGET_TYPE,
+  applyDockerWidgetSizeToWidget,
+  applySystemStatusWidgetSizeToWidget,
+  normalizeDockerWidgetData,
+  normalizeSystemStatusWidgetData,
+  type DockerWidgetRuntimeData,
+  type SystemStatusWidgetRuntimeData,
+} from "./systemComponentRuntimeModel";
+import {
+  CUSTOM_CSS_DEFAULT_SIZE,
+  CUSTOM_CSS_RUNTIME,
+  CUSTOM_CSS_WIDGET_TYPE,
+  applyCustomCssWidgetSizeToWidget,
+  normalizeCustomCssWidgetData,
+  type CustomCssWidgetRuntimeData,
+} from "./customCssRuntimeModel";
 import {
   resolveRuntimeWidgetSizeFamily,
   resolveRuntimeWidgetSizeKey as resolveRuntimeSizeKey,
@@ -151,11 +239,32 @@ const itabPomodoroFamily = resolveRuntimeWidgetSizeFamily(
 const itabAnniversaryFamily = resolveRuntimeWidgetSizeFamily(
   ITAB_ANNIVERSARY_WIDGET_TYPE,
 );
+const itabWallpaperFamily = resolveRuntimeWidgetSizeFamily(
+  ITAB_WALLPAPER_WIDGET_TYPE,
+);
+const itabMovieCalendarFamily = resolveRuntimeWidgetSizeFamily(
+  ITAB_MOVIE_CALENDAR_WIDGET_TYPE,
+);
+const itabIpFamily = resolveRuntimeWidgetSizeFamily(ITAB_IP_WIDGET_TYPE);
 const itabCalendarFamily = resolveRuntimeWidgetSizeFamily(
   ITAB_CALENDAR_WIDGET_TYPE,
 );
+const itabNumberUppercaseFamily = resolveRuntimeWidgetSizeFamily(
+  ITAB_NUMBER_UPPERCASE_WIDGET_TYPE,
+);
+const itabFoodPickerFamily = resolveRuntimeWidgetSizeFamily(
+  ITAB_FOOD_PICKER_WIDGET_TYPE,
+);
+const dockerFamily = resolveRuntimeWidgetSizeFamily(DOCKER_WIDGET_TYPE);
+const systemStatusFamily = resolveRuntimeWidgetSizeFamily(
+  SYSTEM_STATUS_WIDGET_TYPE,
+);
+const customCssFamily = resolveRuntimeWidgetSizeFamily(CUSTOM_CSS_WIDGET_TYPE);
 
 export type WidgetRuntimeData =
+  | DockerWidgetRuntimeData
+  | SystemStatusWidgetRuntimeData
+  | CustomCssWidgetRuntimeData
   | ItabWeatherWidgetData
   | ItabTodoWidgetData
   | ItabMemoWidgetData
@@ -164,12 +273,65 @@ export type WidgetRuntimeData =
   | ItabPoemWidgetData
   | ItabPomodoroWidgetData
   | ItabAnniversaryWidgetData
-  | ItabCalendarWidgetData;
+  | ItabWallpaperWidgetData
+  | ItabMovieCalendarWidgetData
+  | ItabIpWidgetData
+  | ItabCalendarWidgetData
+  | ItabNumberUppercaseWidgetData
+  | ItabFoodPickerWidgetData;
 
 export const WIDGET_RUNTIME_DEFINITIONS: Record<
   string,
   WidgetRuntimeDefinition
 > = {
+  [DOCKER_WIDGET_TYPE]: {
+    type: DOCKER_WIDGET_TYPE,
+    runtime: DOCKER_RUNTIME,
+    title: "Docker",
+    component: DockerWidget,
+    openedPanel: DockerOpenedPanel,
+    defaultSizeKey: DOCKER_DEFAULT_SIZE,
+    supportedSizes: dockerFamily?.supported || [],
+    openedShell: {
+      width: 1000,
+      height: 602,
+      maxWidthInset: 42,
+      maxHeightInset: 18,
+      trafficVisible: true,
+    },
+  },
+  [SYSTEM_STATUS_WIDGET_TYPE]: {
+    type: SYSTEM_STATUS_WIDGET_TYPE,
+    runtime: SYSTEM_STATUS_RUNTIME,
+    title: "系统状态",
+    component: SystemStatusWidget,
+    openedPanel: SystemStatusOpenedPanel,
+    defaultSizeKey: SYSTEM_STATUS_DEFAULT_SIZE,
+    supportedSizes: systemStatusFamily?.supported || [],
+    openedShell: {
+      width: 1000,
+      height: 602,
+      maxWidthInset: 42,
+      maxHeightInset: 18,
+      trafficVisible: true,
+    },
+  },
+  [CUSTOM_CSS_WIDGET_TYPE]: {
+    type: CUSTOM_CSS_WIDGET_TYPE,
+    runtime: CUSTOM_CSS_RUNTIME,
+    title: "自定义组件",
+    component: CustomCssWidget,
+    openedPanel: CustomCssOpenedPanel,
+    defaultSizeKey: CUSTOM_CSS_DEFAULT_SIZE,
+    supportedSizes: customCssFamily?.supported || [],
+    openedShell: {
+      width: 1000,
+      height: 602,
+      maxWidthInset: 42,
+      maxHeightInset: 18,
+      trafficVisible: true,
+    },
+  },
   [ITAB_WEATHER_WIDGET_TYPE]: {
     type: ITAB_WEATHER_WIDGET_TYPE,
     runtime: ITAB_WEATHER_RUNTIME,
@@ -298,6 +460,54 @@ export const WIDGET_RUNTIME_DEFINITIONS: Record<
       trafficVisible: true,
     },
   },
+  [ITAB_WALLPAPER_WIDGET_TYPE]: {
+    type: ITAB_WALLPAPER_WIDGET_TYPE,
+    runtime: ITAB_WALLPAPER_RUNTIME,
+    title: "壁纸",
+    component: ItabWallpaperWidget,
+    openedPanel: ItabWallpaperOpenedPanel,
+    defaultSizeKey: ITAB_WALLPAPER_DEFAULT_SIZE,
+    supportedSizes: itabWallpaperFamily?.supported || [],
+    openedShell: {
+      width: 1000,
+      height: 602,
+      maxWidthInset: 42,
+      maxHeightInset: 18,
+      trafficVisible: true,
+    },
+  },
+  [ITAB_MOVIE_CALENDAR_WIDGET_TYPE]: {
+    type: ITAB_MOVIE_CALENDAR_WIDGET_TYPE,
+    runtime: ITAB_MOVIE_CALENDAR_RUNTIME,
+    title: "电影日历",
+    component: ItabMovieCalendarWidget,
+    openedPanel: ItabMovieCalendarOpenedPanel,
+    defaultSizeKey: ITAB_MOVIE_CALENDAR_DEFAULT_SIZE,
+    supportedSizes: itabMovieCalendarFamily?.supported || [],
+    openedShell: {
+      width: 860,
+      height: 552,
+      maxWidthInset: 42,
+      maxHeightInset: 64,
+      trafficVisible: true,
+    },
+  },
+  [ITAB_IP_WIDGET_TYPE]: {
+    type: ITAB_IP_WIDGET_TYPE,
+    runtime: ITAB_IP_RUNTIME,
+    title: "本机IP",
+    component: ItabIpWidget,
+    openedPanel: ItabIpOpenedPanel,
+    defaultSizeKey: ITAB_IP_DEFAULT_SIZE,
+    supportedSizes: itabIpFamily?.supported || [],
+    openedShell: {
+      width: 1000,
+      height: 602,
+      maxWidthInset: 42,
+      maxHeightInset: 18,
+      trafficVisible: true,
+    },
+  },
   [ITAB_CALENDAR_WIDGET_TYPE]: {
     type: ITAB_CALENDAR_WIDGET_TYPE,
     runtime: ITAB_CALENDAR_RUNTIME,
@@ -307,10 +517,42 @@ export const WIDGET_RUNTIME_DEFINITIONS: Record<
     defaultSizeKey: ITAB_CALENDAR_DEFAULT_SIZE,
     supportedSizes: itabCalendarFamily?.supported || [],
     openedShell: {
-      width: 1200,
-      height: 700,
+      width: 1000,
+      height: 602,
       maxWidthInset: 42,
       maxHeightInset: 18,
+      trafficVisible: true,
+    },
+  },
+  [ITAB_NUMBER_UPPERCASE_WIDGET_TYPE]: {
+    type: ITAB_NUMBER_UPPERCASE_WIDGET_TYPE,
+    runtime: ITAB_NUMBER_UPPERCASE_RUNTIME,
+    title: "金额换算",
+    component: ItabNumberUppercaseWidget,
+    openedPanel: ItabNumberUppercaseOpenedPanel,
+    defaultSizeKey: ITAB_NUMBER_UPPERCASE_DEFAULT_SIZE,
+    supportedSizes: itabNumberUppercaseFamily?.supported || [],
+    openedShell: {
+      width: 900,
+      height: 554,
+      maxWidthInset: 42,
+      maxHeightInset: 64,
+      trafficVisible: true,
+    },
+  },
+  [ITAB_FOOD_PICKER_WIDGET_TYPE]: {
+    type: ITAB_FOOD_PICKER_WIDGET_TYPE,
+    runtime: ITAB_FOOD_PICKER_RUNTIME,
+    title: "今天吃什么",
+    component: ItabFoodPickerWidget,
+    openedPanel: ItabFoodPickerOpenedPanel,
+    defaultSizeKey: ITAB_FOOD_PICKER_DEFAULT_SIZE,
+    supportedSizes: itabFoodPickerFamily?.supported || [],
+    openedShell: {
+      width: 998,
+      height: 600,
+      maxWidthInset: 42,
+      maxHeightInset: 64,
       trafficVisible: true,
     },
   },
@@ -324,15 +566,29 @@ export const isRuntimeWidget = (widget: Pick<WidgetConfig, "type">) =>
 
 export const resolveWidgetRuntimeSizeKey = (widget: WidgetConfig) =>
   resolveRuntimeSizeKey(widget.type, {
-    sizeKey: normalizeWidgetRuntimeData(widget.type, widget.data)?.sizeKey,
+    sizeKey:
+      widget.data &&
+      typeof widget.data === "object" &&
+      typeof widget.data.sizeKey === "string"
+        ? widget.data.sizeKey
+        : undefined,
     colSpan: widget.w ?? widget.colSpan,
     rowSpan: widget.h ?? widget.rowSpan,
-  });
+  }) || normalizeWidgetRuntimeData(widget.type, widget.data)?.sizeKey;
 
 export const normalizeWidgetRuntimeData = (
   type: string,
   data: unknown,
 ): WidgetRuntimeData | undefined => {
+  if (type === DOCKER_WIDGET_TYPE) {
+    return normalizeDockerWidgetData(data);
+  }
+  if (type === SYSTEM_STATUS_WIDGET_TYPE) {
+    return normalizeSystemStatusWidgetData(data);
+  }
+  if (type === CUSTOM_CSS_WIDGET_TYPE) {
+    return normalizeCustomCssWidgetData(data);
+  }
   if (type === ITAB_WEATHER_WIDGET_TYPE) {
     return normalizeItabWeatherWidgetData(data);
   }
@@ -357,8 +613,23 @@ export const normalizeWidgetRuntimeData = (
   if (type === ITAB_ANNIVERSARY_WIDGET_TYPE) {
     return normalizeItabAnniversaryWidgetData(data);
   }
+  if (type === ITAB_WALLPAPER_WIDGET_TYPE) {
+    return normalizeItabWallpaperWidgetData(data);
+  }
+  if (type === ITAB_MOVIE_CALENDAR_WIDGET_TYPE) {
+    return normalizeItabMovieCalendarWidgetData(data);
+  }
+  if (type === ITAB_IP_WIDGET_TYPE) {
+    return normalizeItabIpWidgetData(data);
+  }
   if (type === ITAB_CALENDAR_WIDGET_TYPE) {
     return normalizeItabCalendarWidgetData(data);
+  }
+  if (type === ITAB_NUMBER_UPPERCASE_WIDGET_TYPE) {
+    return normalizeItabNumberUppercaseWidgetData(data);
+  }
+  if (type === ITAB_FOOD_PICKER_WIDGET_TYPE) {
+    return normalizeItabFoodPickerWidgetData(data);
   }
   return undefined;
 };
@@ -367,6 +638,15 @@ export const applyRuntimeWidgetSize = (
   widget: WidgetConfig,
   sizeKey: RuntimeWidgetSizeKey,
 ) => {
+  if (widget.type === DOCKER_WIDGET_TYPE) {
+    applyDockerWidgetSizeToWidget(widget, sizeKey);
+  }
+  if (widget.type === SYSTEM_STATUS_WIDGET_TYPE) {
+    applySystemStatusWidgetSizeToWidget(widget, sizeKey);
+  }
+  if (widget.type === CUSTOM_CSS_WIDGET_TYPE) {
+    applyCustomCssWidgetSizeToWidget(widget, sizeKey);
+  }
   if (widget.type === ITAB_WEATHER_WIDGET_TYPE) {
     applyItabWeatherSizeToWidget(widget, sizeKey);
   }
@@ -391,7 +671,22 @@ export const applyRuntimeWidgetSize = (
   if (widget.type === ITAB_ANNIVERSARY_WIDGET_TYPE) {
     applyItabAnniversarySizeToWidget(widget, sizeKey);
   }
+  if (widget.type === ITAB_WALLPAPER_WIDGET_TYPE) {
+    applyItabWallpaperSizeToWidget(widget, sizeKey);
+  }
+  if (widget.type === ITAB_MOVIE_CALENDAR_WIDGET_TYPE) {
+    applyItabMovieCalendarSizeToWidget(widget, sizeKey);
+  }
+  if (widget.type === ITAB_IP_WIDGET_TYPE) {
+    applyItabIpSizeToWidget(widget, sizeKey);
+  }
   if (widget.type === ITAB_CALENDAR_WIDGET_TYPE) {
     applyItabCalendarSizeToWidget(widget, sizeKey);
+  }
+  if (widget.type === ITAB_NUMBER_UPPERCASE_WIDGET_TYPE) {
+    applyItabNumberUppercaseSizeToWidget(widget, sizeKey);
+  }
+  if (widget.type === ITAB_FOOD_PICKER_WIDGET_TYPE) {
+    applyItabFoodPickerSizeToWidget(widget, sizeKey);
   }
 };

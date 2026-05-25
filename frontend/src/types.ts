@@ -1,4 +1,5 @@
 export type IconBackgroundMode = "auto" | "custom";
+export type StartDeckThemeMode = "auto" | "light" | "dark";
 
 export interface NavItem {
   id: string;
@@ -85,6 +86,7 @@ export interface SearchEngine {
   iconBackgroundMode?: IconBackgroundMode;
   iconAutoBackgroundColor?: string;
   iconCustomBackgroundColor?: string;
+  custom?: boolean;
 }
 
 export interface WallpaperConfig {
@@ -108,15 +110,13 @@ export interface AppConfig {
   mobileRotationInterval?: number;
   mobileRotationMode?: "random" | "sequential";
   deviceMode?: "auto" | "desktop" | "tablet" | "mobile";
-  widgetAreaSize?: number;
-  widgetAreaCols?: number;
-  widgetAreaRows?: number;
   webGroupPagination?: boolean;
   webGroupPaginationDisableFlip?: boolean;
   backgroundBlur?: number;
   backgroundMask?: number;
   mobileBackgroundBlur?: number;
   mobileBackgroundMask?: number;
+  themeMode?: StartDeckThemeMode;
   daylightModeEnabled?: boolean;
   daylightMask?: number;
   internalDomains?: string;
@@ -136,8 +136,6 @@ export interface AppConfig {
   titleSize: number;
   titleColor: string;
   cardLayout: "vertical" | "horizontal" | string;
-  cardSize: number;
-  gridGap: number;
   cardBgColor: string;
   cardTitleColor: string;
   cardBorderColor: string;
@@ -154,12 +152,13 @@ export interface AppConfig {
     | "none"
     | "hidden"
     | string;
-  searchEngines: SearchEngine[];
-  defaultSearchEngine: string;
-  rememberLastEngine: boolean;
+  showHomeTitle?: boolean;
+  showHomeTime?: boolean;
+  showHomeSearch?: boolean;
+  searchEngines?: SearchEngine[];
+  defaultSearchEngine?: string;
+  rememberLastEngine?: boolean;
   groupTitleColor: string;
-  groupGap?: number;
-  iconSize?: number;
   showFooterStats?: boolean;
   footerHtml?: string;
   footerHeight?: number;
@@ -178,7 +177,6 @@ export interface AppConfig {
   // Wallpaper Sorting
   pcWallpaperOrder?: string[];
   mobileWallpaperOrder?: string[];
-  sidebarViewMode?: "bookmarks" | "groups";
   empireMode?: boolean;
   customCss?: string;
   customCssList?: CustomScript[];
@@ -260,42 +258,6 @@ export interface AliIcon {
   filename: string;
   url: string;
   downloadUrl: string;
-}
-
-export interface RssFeed {
-  id: string;
-  url: string;
-  title: string;
-  category?: string;
-  tags?: string[];
-  enable: boolean;
-  isPublic: boolean;
-}
-
-export interface RssCategory {
-  id: string;
-  name: string;
-  feeds: RssFeed[];
-}
-
-export interface BookmarkItem {
-  id: string;
-  title: string;
-  url: string;
-  icon?: string;
-  iconBackgroundMode?: IconBackgroundMode;
-  iconAutoBackgroundColor?: string;
-  iconCustomBackgroundColor?: string;
-  type?: "link";
-  pinned?: boolean;
-}
-
-export interface BookmarkCategory {
-  id: string;
-  title: string;
-  collapsed?: boolean;
-  children: (BookmarkItem | BookmarkCategory)[];
-  type?: "category";
 }
 
 export interface TodoItem {

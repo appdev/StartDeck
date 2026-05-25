@@ -12,7 +12,10 @@ export function useResumeRefresh(options: UseResumeRefreshOptions) {
 
   const handleVisibilityChange = () => {
     if (!canRun()) return;
-    if (typeof document !== "undefined" && document.visibilityState === "hidden") {
+    if (
+      typeof document !== "undefined" &&
+      document.visibilityState === "hidden"
+    ) {
       options.onHidden?.();
       return;
     }

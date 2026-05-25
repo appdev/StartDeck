@@ -661,11 +661,11 @@ install_flow() {
   
   # 1. 配置收集
   local frontend_port
-  frontend_port="$(prompt "前端访问端口" "23000")"
+  frontend_port="$(prompt "前端访问端口" "9003")"
   local backend_port
-  backend_port="$(prompt "后端服务端口 (内部)" "3000")"
+  backend_port="$(prompt "后端服务端口 (内部)" "9001")"
   local icon_port
-  icon_port="$(prompt "图标服务端口 (内部)" "8080")"
+  icon_port="$(prompt "图标服务端口 (内部)" "9002")"
   
   if ! validate_port "${frontend_port}" || ! validate_port "${backend_port}" || ! validate_port "${icon_port}"; then
     fail_with_tip "端口非法"

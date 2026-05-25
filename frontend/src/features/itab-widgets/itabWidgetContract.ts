@@ -10,6 +10,7 @@ export type ItabReplicaWidgetKind =
   | "countdown"
   | "next-holiday"
   | "anniversary-day"
+  | "daily-quote"
   | "poem"
   | "wooden-fish"
   | "clock"
@@ -205,6 +206,15 @@ export const ITAB_REPLICA_WIDGET_DEFINITIONS = {
     requiresSizeSpecificUi: true,
     openedShell: sourceWideOpenedShell,
   }),
+  "daily-quote": defineWidget({
+    kind: "daily-quote",
+    defaultSize: "2x2",
+    supportedSizes: allSizes,
+    sizeAdaptation: "source-sized-ui",
+    openSurface: "dialog",
+    requiresSizeSpecificUi: true,
+    openedShell: sourceCompactOpenedShell,
+  }),
   poem: defineWidget({
     kind: "poem",
     defaultSize: "2x2",
@@ -258,14 +268,16 @@ export const ITAB_REPLICA_WIDGET_DEFINITIONS = {
     sizeAdaptation: "shared-layout",
     openSurface: "dialog",
     requiresSizeSpecificUi: false,
+    openedShell: sourcePanelOpenedShell,
   }),
   wallpaper: defineWidget({
     kind: "wallpaper",
     defaultSize: "2x2",
     supportedSizes: allSizes,
-    sizeAdaptation: "shared-layout",
+    sizeAdaptation: "source-sized-ui",
     openSurface: "dialog",
-    requiresSizeSpecificUi: false,
+    requiresSizeSpecificUi: true,
+    openedShell: sourcePanelOpenedShell,
   }),
   todo: defineWidget({
     kind: "todo",

@@ -7,6 +7,7 @@ import { useCacheStore } from "./cache";
 import { useWidgetsStore } from "./widgets";
 import { useGroupsStore } from "./groups";
 import type { WidgetConfig } from "@/types";
+import { ITAB_CLOCK_WIDGET_TYPE } from "@/features/itab-clock/itabClockTypes";
 
 const privateWidget: WidgetConfig = {
   id: "private-todo",
@@ -45,7 +46,7 @@ describe("cache store auth scope", () => {
     widgets.widgets = [];
     auth.logout();
 
-    const loaded = cache.loadFromCache(ref([]), ref([]), ref(0));
+    const loaded = cache.loadFromCache(ref(0));
     expect(loaded).toBe(false);
     expect(widgets.widgets).toEqual([]);
   });
@@ -56,8 +57,12 @@ describe("cache store auth scope", () => {
     const groups = useGroupsStore();
 
     cache.saveToCache({
-      groups: [{ id: "public-group", title: "Public", items: [], isPublic: true }],
-      widgets: [{ ...privateWidget, id: "public-clock", type: "clock", isPublic: true }],
+      groups: [
+        { id: "public-group", title: "Public", items: [], isPublic: true },
+      ],
+      widgets: [
+        { ...privateWidget, id: "public-clock", type: "clock", isPublic: true },
+      ],
       appConfig: {},
       systemConfig: { authMode: "single" },
       version: 2,
@@ -66,11 +71,18 @@ describe("cache store auth scope", () => {
     widgets.widgets = [];
     groups.groups = [];
     const version = ref(0);
-    const loaded = cache.loadFromCache(ref([]), ref([]), version);
+    const loaded = cache.loadFromCache(version);
 
     expect(loaded).toBe(true);
-    expect(widgets.widgets.some((widget) => widget.id === "public-clock")).toBe(true);
-    expect(widgets.widgets.some((widget) => widget.id === "private-todo")).toBe(false);
+    expect(
+      widgets.widgets.some(
+        (widget) =>
+          widget.id === "clock" && widget.type === ITAB_CLOCK_WIDGET_TYPE,
+      ),
+    ).toBe(true);
+    expect(widgets.widgets.some((widget) => widget.id === "private-todo")).toBe(
+      false,
+    );
     expect(version.value).toBe(2);
   });
 });

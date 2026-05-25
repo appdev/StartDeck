@@ -2,14 +2,23 @@
 import { computed, onMounted, onUnmounted, ref } from "vue";
 import { useMainStore } from "../stores/main";
 import type { MarketplaceItem } from "@/types";
-import OverlayMotion from "@/components/base/OverlayMotion.vue";
+import AppModalShell from "@/components/base/AppModalShell.vue";
+import StatusBanner from "@/components/base/StatusBanner.vue";
+import { useUiFeedbackStore } from "@/stores/uiFeedback";
 import { getApiBaseUrl } from "@/utils/runtimeUrls";
 
-defineProps<{ show: boolean }>();
+const props = withDefaults(
+  defineProps<{
+    show: boolean;
+    zIndex?: number | string;
+  }>(),
+  {
+    zIndex: 50,
+  },
+);
 const emit = defineEmits(["update:show"]);
 const store = useMainStore();
-
-const close = () => emit("update:show", false);
+const uiFeedback = useUiFeedbackStore();
 
 const defaultUrl = "http://qdnas.icu:23111/";
 const isLocalLikeHost = (hostname: string) => {
@@ -33,7 +42,11 @@ const isUpgradedToHttps = computed(() => {
   if (typeof window === "undefined") return false;
   try {
     const parsed = new URL(openUrl.value);
-    return window.location.protocol === "https:" && parsed.protocol === "http:" && !isLocalLikeHost(parsed.hostname);
+    return (
+      window.location.protocol === "https:" &&
+      parsed.protocol === "http:" &&
+      !isLocalLikeHost(parsed.hostname)
+    );
   } catch {
     return false;
   }
@@ -50,37 +63,22 @@ const iframeUrl = computed(() => {
 });
 const iframeRef = ref<HTMLIFrameElement | null>(null);
 
-// ─── In-component notification state (replaces native alert/confirm) ──────────
-type NoticeType = "confirm" | "success" | "error";
-const notice = ref<{
-  show: boolean;
-  type: NoticeType;
-  title: string;
-  message: string;
-  onConfirm?: () => void;
-  onCancel?: () => void;
-}>({ show: false, type: "success", title: "", message: "" });
-
 const showConfirm = (title: string, message: string): Promise<boolean> => {
-  return new Promise((resolve) => {
-    notice.value = {
-      show: true,
-      type: "confirm",
-      title,
-      message,
-      onConfirm: () => { notice.value.show = false; resolve(true); },
-      onCancel: () => { notice.value.show = false; resolve(false); },
-    };
+  return uiFeedback.confirm({
+    title,
+    message,
+    confirmLabel: "确认安装",
+    cancelLabel: "取消",
+    blocking: true,
   });
 };
 
 const showSuccess = (title: string, message: string) => {
-  notice.value = { show: true, type: "success", title, message };
-  window.setTimeout(() => { notice.value.show = false; }, 3000);
+  uiFeedback.notify({ title, message, tone: "success" });
 };
 
 const showError = (title: string, message: string) => {
-  notice.value = { show: true, type: "error", title, message };
+  void uiFeedback.alert({ title, message, tone: "danger" });
 };
 
 // ─── postMessage handshake ────────────────────────────────────────────────────
@@ -109,7 +107,10 @@ const handleMessage = async (event: MessageEvent) => {
     return;
   }
 
-  const { type, payload } = event.data as { type?: string; payload?: MarketplaceItem };
+  const { type, payload } = event.data as {
+    type?: string;
+    payload?: MarketplaceItem;
+  };
   if (type !== "INSTALL_COMPONENT" || !payload) return;
 
   const item = payload;
@@ -128,7 +129,10 @@ const handleMessage = async (event: MessageEvent) => {
     store.applyMarketplaceItem(item);
     showSuccess("安装成功", `组件 "${item.name}" 已添加到仪表盘。`);
     if (event.source) {
-      (event.source as Window).postMessage({ type: "INSTALL_SUCCESS", id: item.id }, event.origin);
+      (event.source as Window).postMessage(
+        { type: "INSTALL_SUCCESS", id: item.id },
+        event.origin,
+      );
     }
   } catch (e) {
     showError("安装失败", e instanceof Error ? e.message : String(e));
@@ -140,108 +144,60 @@ onUnmounted(() => window.removeEventListener("message", handleMessage));
 </script>
 
 <template>
-  <OverlayMotion
-    :show="show"
-    :z-index="50"
-    overlay-class="sd-overlay-strong"
-    panel-class="max-w-5xl"
+  <AppModalShell
+    :show="props.show"
+    :z-index="props.zIndex"
+    close-on-overlay
+    close-on-escape
+    overlay-class="sd-overlay-strong p-3 md:p-4"
+    panel-class="w-full max-w-5xl max-h-[85vh]"
+    title="组件商城"
+    body-class="flex min-h-0 flex-1 flex-col p-0"
+    @update:show="emit('update:show', $event)"
   >
-    <div class="bg-white w-full h-full max-h-[85vh] rounded-2xl shadow-2xl flex flex-col overflow-hidden">
-      <!-- Header -->
-      <div class="flex justify-between items-center px-4 py-3 border-b border-gray-100 bg-gray-50/50 flex-shrink-0">
-        <h3 class="text-base font-bold text-gray-800 flex items-center gap-2">
-          <span class="text-lg">🛒</span> 组件商城
-        </h3>
-        <div class="flex items-center gap-4">
-          <a
-            :href="openUrl"
-            target="_blank"
-            rel="noopener noreferrer"
-            class="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1"
-          >
-            <span>在新窗口打开</span>
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-            </svg>
-          </a>
-          <button @click="close" class="p-2 hover:bg-gray-100 rounded-full transition-colors">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-      </div>
-
-      <!-- Iframe content -->
-      <div class="flex-1 bg-gray-50 relative">
-        <div
-          v-if="isUpgradedToHttps"
-          class="px-4 py-2 text-xs bg-amber-50 text-amber-800 border-b border-amber-100"
-        >
-          当前通过 HTTPS 访问。为避免浏览器拦截 HTTP 的内嵌页面（混合内容），已尝试用 HTTPS 加载组件商城；
-          若页面空白/打不开，请点右上角“在新窗口打开”使用 HTTP 打开。
-        </div>
-        <iframe
-          ref="iframeRef"
-          :src="iframeUrl"
-          @load="onIframeLoad"
-          class="w-full h-full border-0"
-          allowfullscreen
-          allow="clipboard-write"
-          sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-downloads allow-modals"
-        ></iframe>
-      </div>
-    </div>
-
-    <!-- In-component notice overlay -->
-    <Transition name="notice-fade">
-      <div
-        v-if="notice.show"
-        class="fixed inset-0 z-[60] flex items-center justify-center bg-black/30"
-        @click.self="notice.type !== 'confirm' && (notice.show = false)"
+    <template #headerActions>
+      <a
+        :href="openUrl"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="inline-flex items-center gap-1 text-sm text-[var(--sd-color-accent-primary)] hover:text-[var(--sd-color-accent-primary-hover)]"
       >
-        <div class="bg-white rounded-2xl shadow-2xl p-6 max-w-sm w-full mx-4">
-          <!-- Icon -->
-          <div class="flex items-center gap-3 mb-3">
-            <span v-if="notice.type === 'confirm'" class="text-2xl">⚠️</span>
-            <span v-else-if="notice.type === 'success'" class="text-2xl">✅</span>
-            <span v-else class="text-2xl">❌</span>
-            <h4 class="font-bold text-gray-800 text-base">{{ notice.title }}</h4>
-          </div>
-          <!-- Message -->
-          <p class="text-sm text-gray-600 whitespace-pre-line mb-5">{{ notice.message }}</p>
-          <!-- Actions -->
-          <div class="flex gap-2 justify-end">
-            <template v-if="notice.type === 'confirm'">
-              <button
-                @click="notice.onCancel?.()"
-                class="px-4 py-2 rounded-lg text-sm text-gray-600 bg-gray-100 hover:bg-gray-200 transition-colors"
-              >取消</button>
-              <button
-                @click="notice.onConfirm?.()"
-                class="px-4 py-2 rounded-lg text-sm text-white bg-blue-500 hover:bg-blue-600 transition-colors"
-              >确认安装</button>
-            </template>
-            <template v-else>
-              <button
-                @click="notice.show = false"
-                class="px-4 py-2 rounded-lg text-sm text-white bg-blue-500 hover:bg-blue-600 transition-colors"
-              >好的</button>
-            </template>
-          </div>
-        </div>
-      </div>
-    </Transition>
-  </OverlayMotion>
-</template>
+        <span>在新窗口打开</span>
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="h-4 w-4"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+          />
+        </svg>
+      </a>
+    </template>
 
-<style scoped>
-.notice-fade-enter-active,
-.notice-fade-leave-active {
-  transition: opacity 0.15s ease;
-}
-.notice-fade-enter-from,
-.notice-fade-leave-to {
-  opacity: 0;
-}
-</style>
+    <StatusBanner
+      v-if="isUpgradedToHttps"
+      title="混合内容提醒"
+      message="当前通过 HTTPS 访问。为避免浏览器拦截 HTTP 内嵌页面，已尝试用 HTTPS 加载组件商城；若页面空白或打不开，请改用右上角的新窗口打开。"
+      tone="warning"
+      class="mx-6 mt-6"
+    />
+
+    <div class="flex min-h-0 flex-1 bg-[var(--sd-color-surface-muted)]">
+      <iframe
+        ref="iframeRef"
+        :src="iframeUrl"
+        @load="onIframeLoad"
+        class="min-h-[520px] w-full border-0 bg-[var(--sd-color-surface)]"
+        allowfullscreen
+        allow="clipboard-write"
+        sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-downloads allow-modals"
+      ></iframe>
+    </div>
+  </AppModalShell>
+</template>

@@ -25,7 +25,6 @@ PUBLIC_DIR="${SERVER_DIR}/public"
 BIN_DIR="${INSTALL_DIR}/bin"
 ICON_SERVICE_DIR="${INSTALL_DIR}/icon-service"
 ICON_DATA_DIR="${ICON_SERVICE_DIR}/data"
-ICON_CONFIG_FILE="${ICON_SERVICE_DIR}/config.json"
 CONFIG_DIR="/etc/${APP_NAME}"
 CONFIG_FILE="${CONFIG_DIR}/${APP_NAME}.env"
 NGINX_CONF="/etc/nginx/sites-available/${APP_NAME}"
@@ -123,9 +122,9 @@ require_free_port() {
 
 load_config() {
   # 默认值
-  FRONTEND_PORT="23000"
-  BACKEND_PORT="3000"
-  ICON_SERVER_PORT="8080"
+  FRONTEND_PORT="9003"
+  BACKEND_PORT="9001"
+  ICON_SERVER_PORT="9002"
   HTTPS_ENABLED="no"
   SSL_CERT=""
   SSL_KEY=""
@@ -157,9 +156,9 @@ load_config() {
   fi
   
   # 确保变量有值
-  FRONTEND_PORT="${FRONTEND_PORT:-23000}"
-  BACKEND_PORT="${BACKEND_PORT:-3000}"
-  ICON_SERVER_PORT="${ICON_SERVER_PORT:-8080}"
+  FRONTEND_PORT="${FRONTEND_PORT:-9003}"
+  BACKEND_PORT="${BACKEND_PORT:-9001}"
+  ICON_SERVER_PORT="${ICON_SERVER_PORT:-9002}"
   PORT="${BACKEND_PORT}"
 }
 
@@ -171,6 +170,7 @@ PUBLIC_DIR=${PUBLIC_DIR}
 FRONTEND_PORT=${FRONTEND_PORT}
 BACKEND_PORT=${BACKEND_PORT}
 ICON_SERVER_PORT=${ICON_SERVER_PORT}
+ICON_SERVICE_PORT=${ICON_SERVER_PORT}
 ICON_SERVER_BASE_URL=http://127.0.0.1:${ICON_SERVER_PORT}
 ICON_SERVER_TIMEOUT_MS=5000
 HTTPS_ENABLED=${HTTPS_ENABLED}
@@ -304,7 +304,7 @@ EOF
 write_systemd_service() {
   cat > "${SYSTEMD_SERVICE}" <<EOF
 [Unit]
-Description=StartDeck Go Service
+Description=StartDeck Rust Service
 Wants=${ICON_SERVICE_NAME}.service
 After=network.target ${ICON_SERVICE_NAME}.service
 
@@ -332,28 +332,9 @@ EOF
   systemctl daemon-reload
 }
 
-write_icon_service_config() {
+ensure_icon_service_data_dirs() {
   mkdir -p "${ICON_SERVICE_DIR}" "${ICON_DATA_DIR}/icons" "${ICON_DATA_DIR}/cache"
-  cat > "${ICON_CONFIG_FILE}" <<EOF
-{
-  "addr": ":${ICON_SERVER_PORT}",
-  "dataDir": "${ICON_DATA_DIR}",
-  "seedIconDir": "${ICON_DATA_DIR}/icons",
-  "cacheIconDir": "${ICON_DATA_DIR}/cache",
-  "cacheFile": "${ICON_DATA_DIR}/cache.json",
-  "seedJSON": "${ICON_DATA_DIR}/seed-data.json",
-  "iconPrefix": "/icons/",
-  "cachePrefix": "/cache/",
-  "publicIconBaseURL": "",
-  "microlinkBaseURL": "https://api.microlink.io/",
-  "microlinkAPIKey": "",
-  "itabFP": "",
-  "itabSignatureKey": "",
-  "itabToken": ""
-}
-EOF
   chown -R "${APP_USER}:${APP_USER}" "${ICON_SERVICE_DIR}"
-  chmod 644 "${ICON_CONFIG_FILE}"
 }
 
 write_icon_systemd_service() {
@@ -367,7 +348,9 @@ Type=simple
 User=${APP_USER}
 Group=${APP_USER}
 WorkingDirectory=${ICON_SERVICE_DIR}
-Environment=CONFIG_FILE=${ICON_CONFIG_FILE}
+EnvironmentFile=-${CONFIG_FILE}
+Environment=BASE_DIR=${INSTALL_DIR}
+Environment=ICON_SERVICE_PORT=${ICON_SERVER_PORT}
 ExecStart=${BIN_DIR}/${ICON_SERVICE_BINARY}
 Restart=on-failure
 RestartSec=5
@@ -442,7 +425,7 @@ change_ports_flow() {
   log_info "正在更新配置..."
   save_config
   write_nginx_config
-  write_icon_service_config
+  ensure_icon_service_data_dirs
   write_icon_systemd_service
   write_systemd_service
   

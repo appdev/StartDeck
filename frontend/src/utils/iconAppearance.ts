@@ -27,7 +27,9 @@ const CSS_FUNCTION_COLOR_RE =
 
 const BLOCKED_LEGACY_BACKGROUNDS = new Set(["#000000", "bg-black"]);
 
-export const normalizeIconBackgroundColor = (value?: string | null): string | null => {
+export const normalizeIconBackgroundColor = (
+  value?: string | null,
+): string | null => {
   const raw = value?.trim();
   if (!raw) return null;
 
@@ -52,7 +54,9 @@ export const normalizeIconBackgroundColor = (value?: string | null): string | nu
   return null;
 };
 
-export const normalizeLegacyIconBackground = (value?: string | null): string | null => {
+export const normalizeLegacyIconBackground = (
+  value?: string | null,
+): string | null => {
   const raw = value?.trim();
   if (!raw) return null;
   if (raw.includes("sky") || BLOCKED_LEGACY_BACKGROUNDS.has(raw)) return null;
@@ -69,7 +73,8 @@ export const resolveIconBackground = (
 ): ResolvedIconBackground => {
   const fallback = options.fallback || "bg-gray-100";
   const shape = options.shape || "";
-  const mode: IconBackgroundMode = item.iconBackgroundMode === "custom" ? "custom" : "auto";
+  const mode: IconBackgroundMode =
+    item.iconBackgroundMode === "custom" ? "custom" : "auto";
   const visible = shape !== "hidden" && shape !== "none";
   const legacy = normalizeLegacyIconBackground(item.color);
 

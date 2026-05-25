@@ -4,8 +4,20 @@ import { useMainStore } from "../stores/main";
 import type { NavGroup } from "../types";
 import IconShape from "./IconShape.vue";
 import IconUploader from "./IconUploader.vue";
+import AppButton from "@/components/base/AppButton.vue";
+import AppFieldRow from "@/components/base/AppFieldRow.vue";
+import AppModalShell from "@/components/base/AppModalShell.vue";
+import AppRangeField from "@/components/base/AppRangeField.vue";
+import AppSectionCard from "@/components/base/AppSectionCard.vue";
+import AppSegmentedControl from "@/components/base/AppSegmentedControl.vue";
+import AppSwitch from "@/components/base/AppSwitch.vue";
+import AppWindowControls from "@/components/base/AppWindowControls.vue";
 import ConfirmDialog from "@/components/base/ConfirmDialog.vue";
-import OverlayMotion from "@/components/base/OverlayMotion.vue";
+import {
+  DEFAULT_NAV_CARD_SIZE,
+  DEFAULT_NAV_GRID_GAP,
+  DEFAULT_NAV_ICON_SIZE,
+} from "@/utils/layoutDefaults";
 
 const props = defineProps<{
   show: boolean;
@@ -156,472 +168,501 @@ const bgAlpha = computed({
     updateGroup({ cardBgColor: `rgba(${r}, ${g}, ${b}, ${val})` });
   },
 });
+
+const layoutOptions = [
+  { label: "垂直", value: "vertical" },
+  { label: "水平", value: "horizontal" },
+] as const;
+
+const groupItemCount = computed(() => group.value?.items?.length ?? 0);
+const groupVisibilityLabel = computed(() =>
+  group.value?.isPublic ? "访客可见" : "仅管理员",
+);
+const groupTitleValue = computed(() => group.value?.title || "未命名分组");
+const isLayoutCustomized = computed(
+  () =>
+    !!group.value?.cardLayout ||
+    group.value?.gridGap !== undefined ||
+    group.value?.cardSize !== undefined ||
+    group.value?.iconSize !== undefined ||
+    group.value?.cardTitleSize !== undefined,
+);
+const isStyleCustomized = computed(
+  () =>
+    !!group.value?.cardBgColor ||
+    group.value?.showCardBackground !== undefined ||
+    !!group.value?.iconShape ||
+    !!group.value?.cardTitleColor,
+);
+const isMediaCustomized = computed(() => !!group.value?.backgroundImage);
 </script>
 
 <template>
-  <OverlayMotion
+  <AppModalShell
     :show="show && !!group"
     :z-index="50"
     close-on-overlay
-    overlay-class="sd-overlay"
-    panel-class="max-w-md"
+    close-on-escape
+    overlay-class="group-settings-overlay"
+    panel-class="group-settings-panel"
+    surface-class="group-settings-surface"
+    body-class="group-settings-body"
+    aria-label="分组设置"
+    :show-close="false"
     @close="close"
   >
-    <div class="sd-modal-surface">
-      <!-- Header -->
-      <div class="sd-modal-header">
-        <h3 class="sd-modal-title">分组设置</h3>
-        <button type="button" @click="close" class="sd-icon-button" aria-label="关闭分组设置">
-          <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 6l12 12M18 6L6 18" />
-          </svg>
-        </button>
-      </div>
+    <div
+      v-if="group"
+      data-testid="group-settings-modal"
+      class="group-settings-layout"
+    >
+      <AppWindowControls
+        class="group-settings-window-controls"
+        aria-label="分组设置窗口控制"
+        close-label="关闭分组设置"
+        @close="close"
+      />
 
-      <!-- Body -->
-      <div class="sd-modal-body space-y-6 max-h-[70vh]">
-        <!-- Group Title -->
-        <div>
-          <label class="sd-label">分组标题</label>
-          <div class="flex gap-3 mb-3">
-            <input
-              :value="group.title"
-              @input="(e) => updateGroup({ title: (e.target as HTMLInputElement).value })"
-              type="text"
-              class="sd-input flex-1"
-            />
-            <input
-              type="color"
-              :value="group.titleColor || store.appConfig.titleColor || '#374151'"
-              @input="(e) => updateGroup({ titleColor: (e.target as HTMLInputElement).value })"
-              class="w-10 h-10 rounded cursor-pointer border-0 p-0"
-              title="标题颜色"
-            />
-          </div>
-
-          <!-- Is Public Toggle -->
-          <div
-            class="sd-section flex items-center justify-between gap-3 p-3"
-          >
-            <div class="flex flex-col">
-              <span class="text-xs font-bold text-slate-700">公开此分组（一次性执行）</span>
-              <span class="text-[10px] text-gray-400">允许未登录访客查看此分组内容</span>
-            </div>
-            <div class="flex gap-2">
-              <button
-                @click="handleBatchUnpublish"
-                class="sd-btn sd-btn-danger-soft min-h-0 px-3 py-1.5 text-xs"
-              >
-                不公开
-              </button>
-              <button
-                @click="handleBatchPublish"
-                class="sd-btn sd-btn-secondary min-h-0 px-3 py-1.5 text-xs hover:text-blue-600"
-              >
-                公开
-              </button>
-            </div>
-          </div>
-
-          <!-- Auto Hide Title Toggle -->
-          <div
-            class="sd-section mt-3 flex items-center justify-between gap-3 p-3"
-          >
-            <div class="flex flex-col">
-              <span class="text-xs font-bold text-slate-700">自动隐藏标题</span>
-              <span class="text-[10px] text-gray-400">鼠标悬停时才显示组名和操作按钮</span>
-            </div>
-            <label class="relative inline-flex items-center cursor-pointer">
-              <input
-                type="checkbox"
-                :checked="!!group.autoHideTitle"
-                @change="
-                  (e) => updateGroup({ autoHideTitle: (e.target as HTMLInputElement).checked })
-                "
-                class="sr-only peer"
-              />
-              <div
-                class="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-500"
-              ></div>
-            </label>
-          </div>
+      <aside class="group-settings-sidebar">
+        <div class="group-settings-profile">
+          <p class="group-settings-kicker">Group Settings</p>
+          <h3 class="group-settings-title">{{ groupTitleValue }}</h3>
+          <p class="group-settings-summary">
+            {{ groupItemCount }} 个项目 · {{ groupVisibilityLabel }}
+          </p>
         </div>
 
-        <div class="border-t border-gray-100"></div>
-
-        <!-- Layout & Spacing -->
-        <div>
-          <h4 class="text-sm font-bold text-gray-800 mb-4 flex items-center gap-2">
-            <span>布局与间距</span>
-            <span
-              v-if="
-                group.cardLayout ||
-                group.gridGap !== undefined ||
-                group.cardSize !== undefined ||
-                group.iconSize !== undefined ||
-                group.cardTitleSize !== undefined
-              "
-              class="sd-value-badge text-[10px]"
-              >已自定义</span
-            >
-          </h4>
-
-          <div class="space-y-4">
-            <!-- Card Layout -->
-            <div>
-              <label class="sd-label">卡片布局</label>
-              <div class="sd-segmented">
-                <button
-                  @click="updateGroup({ cardLayout: 'vertical' })"
-                  class="sd-segment-button"
-                  :class="
-                    (group.cardLayout || store.appConfig.cardLayout) === 'vertical'
-                      ? 'is-active'
-                      : ''
-                  "
-                >
-                  垂直
-                </button>
-                <button
-                  @click="updateGroup({ cardLayout: 'horizontal' })"
-                  class="sd-segment-button"
-                  :class="
-                    (group.cardLayout || store.appConfig.cardLayout) === 'horizontal'
-                      ? 'is-active'
-                      : ''
-                  "
-                >
-                  水平
-                </button>
-              </div>
-            </div>
-
-            <!-- Grid Gap -->
-            <div>
-              <div class="flex justify-between mb-2">
-                <label class="sd-label sd-label-inline">卡片间距</label>
-                <span class="sd-value-badge"
-                  >{{ group.gridGap ?? store.appConfig.gridGap }}px</span
-                >
-              </div>
-              <input
-                type="range"
-                :value="group.gridGap ?? store.appConfig.gridGap"
-                @input="
-                  (e) => updateGroup({ gridGap: parseInt((e.target as HTMLInputElement).value) })
-                "
-                @change="flushGroupChanges"
-                min="4"
-                max="32"
-                step="2"
-                class="sd-range"
-              />
-            </div>
-
-            <!-- Card Size -->
-            <div>
-              <div class="flex justify-between mb-2">
-                <label class="sd-label sd-label-inline">卡片大小</label>
-                <span class="sd-value-badge"
-                  >{{ group.cardSize ?? store.appConfig.cardSize ?? 120 }}px</span
-                >
-              </div>
-              <input
-                type="range"
-                :value="group.cardSize ?? store.appConfig.cardSize ?? 120"
-                @input="
-                  (e) => updateGroup({ cardSize: parseInt((e.target as HTMLInputElement).value) })
-                "
-                @change="flushGroupChanges"
-                min="60"
-                max="216"
-                step="4"
-                class="sd-range"
-              />
-            </div>
-
-            <!-- Icon Size -->
-            <div>
-              <div class="flex justify-between mb-2">
-                <label class="sd-label sd-label-inline">图标大小</label>
-                <span class="sd-value-badge"
-                  >{{ group.iconSize ?? store.appConfig.iconSize ?? 48 }}px</span
-                >
-              </div>
-              <input
-                type="range"
-                :value="group.iconSize ?? store.appConfig.iconSize ?? 48"
-                @input="
-                  (e) => updateGroup({ iconSize: parseInt((e.target as HTMLInputElement).value) })
-                "
-                @change="flushGroupChanges"
-                min="20"
-                max="100"
-                step="2"
-                class="sd-range"
-              />
-            </div>
-
-            <!-- Text Size -->
-            <div>
-              <div class="flex justify-between mb-2">
-                <label class="sd-label sd-label-inline">文字大小</label>
-                <span class="sd-value-badge">
-                  {{ group.cardTitleSize == null ? "默认" : group.cardTitleSize + "px" }}
-                </span>
-              </div>
-              <input
-                type="range"
-                :value="group.cardTitleSize ?? 13"
-                @input="
-                  (e) =>
-                    updateGroup({
-                      cardTitleSize: parseInt((e.target as HTMLInputElement).value, 10),
-                    })
-                "
-                @change="flushGroupChanges"
-                min="10"
-                max="22"
-                step="1"
-                class="sd-range"
-              />
-            </div>
-          </div>
+        <div class="group-settings-quick-actions" aria-label="分组公开操作">
+          <button type="button" @click="handleBatchPublish">公开</button>
+          <button type="button" class="is-danger" @click="handleBatchUnpublish">
+            不公开
+          </button>
         </div>
 
-        <div class="border-t border-gray-100"></div>
+        <div class="group-settings-overview" aria-label="分组设置摘要">
+          <div class="group-settings-overview-row">
+            <span>布局</span>
+            <strong>{{ isLayoutCustomized ? "已自定义" : "默认" }}</strong>
+          </div>
+          <div class="group-settings-overview-row">
+            <span>样式</span>
+            <strong>{{ isStyleCustomized ? "已自定义" : "默认" }}</strong>
+          </div>
+          <div class="group-settings-overview-row">
+            <span>背景</span>
+            <strong>{{ isMediaCustomized ? "已设置" : "未设置" }}</strong>
+          </div>
+        </div>
+      </aside>
 
-        <!-- Card Style -->
-        <div>
-          <h4 class="text-sm font-bold text-gray-800 mb-4 flex items-center gap-2">
-            <span>卡片样式</span>
-            <span
-              v-if="group.cardBgColor || group.showCardBackground !== undefined || group.iconShape"
-              class="sd-value-badge text-[10px]"
-              >已自定义</span
+      <section class="group-settings-main">
+        <header class="group-settings-section-head">
+          <div>
+            <p class="group-settings-section-kicker">分组设置</p>
+            <h3 class="group-settings-section-title">常用设置</h3>
+            <p class="group-settings-section-summary">
+              标题、公开状态、布局、样式和背景集中在同一页。
+            </p>
+          </div>
+          <div class="group-settings-status-badges" aria-label="自定义状态">
+            <span v-if="isLayoutCustomized" class="group-settings-status-badge">
+              布局已自定义
+            </span>
+            <span v-if="isStyleCustomized" class="group-settings-status-badge">
+              样式已自定义
+            </span>
+            <span v-if="isMediaCustomized" class="group-settings-status-badge">
+              背景已设置
+            </span>
+          </div>
+        </header>
+
+        <div class="group-settings-scroll">
+          <div class="group-settings-stack">
+            <AppSectionCard
+              title="基础与公开状态"
+              description="标题、标题颜色和访客可见状态会立即同步到首页分组。"
+              body-class="group-settings-field-stack"
             >
-          </h4>
+              <AppFieldRow label="分组标题" hint="显示在首页分组标题区。">
+                <template #control>
+                  <div class="group-settings-title-control">
+                    <input
+                      :value="group.title"
+                      type="text"
+                      class="sd-input"
+                      @input="
+                        (e) =>
+                          updateGroup({
+                            title: (e.target as HTMLInputElement).value,
+                          })
+                      "
+                    />
+                    <input
+                      type="color"
+                      :value="
+                        group.titleColor ||
+                        store.appConfig.titleColor ||
+                        '#374151'
+                      "
+                      class="group-settings-color-swatch"
+                      title="标题颜色"
+                      @input="
+                        (e) =>
+                          updateGroup({
+                            titleColor: (e.target as HTMLInputElement).value,
+                          })
+                      "
+                    />
+                  </div>
+                </template>
+              </AppFieldRow>
 
-          <div class="space-y-4">
-            <!-- Background Toggle & Color & Title Color -->
-            <div class="flex items-center justify-between">
-              <div>
-                <div class="text-xs font-bold text-gray-600">卡片外观</div>
-                <div class="text-[10px] text-gray-400">背景色 / 字体颜色</div>
+              <AppFieldRow
+                label="自动隐藏标题"
+                hint="开启后，鼠标悬停时才显示组名和操作按钮。"
+                align="center"
+              >
+                <template #control>
+                  <AppSwitch
+                    :model-value="!!group.autoHideTitle"
+                    label=""
+                    @update:model-value="
+                      (value) => updateGroup({ autoHideTitle: value })
+                    "
+                  />
+                </template>
+              </AppFieldRow>
+
+              <div class="group-settings-visibility-card">
+                <div>
+                  <span>当前状态</span>
+                  <strong>{{ groupVisibilityLabel }}</strong>
+                </div>
+                <div class="group-settings-action-row">
+                  <AppButton
+                    size="sm"
+                    variant="secondary"
+                    @click="handleBatchPublish"
+                  >
+                    公开
+                  </AppButton>
+                  <AppButton
+                    size="sm"
+                    variant="danger-soft"
+                    @click="handleBatchUnpublish"
+                  >
+                    不公开
+                  </AppButton>
+                </div>
               </div>
-              <div class="flex items-center gap-3">
-                <!-- Card Title Color -->
-                <div class="flex flex-col items-center gap-1" title="卡片标题颜色">
-                  <span class="text-[10px] text-gray-400">文字</span>
+            </AppSectionCard>
+
+            <AppSectionCard
+              title="布局与密度"
+              description="控制分组内项目的默认排列、尺寸和间距。"
+              body-class="group-settings-field-stack"
+            >
+              <AppFieldRow
+                label="卡片布局"
+                hint="继承全局设置，或为当前分组单独指定。"
+              >
+                <template #control>
+                  <AppSegmentedControl
+                    :model-value="
+                      group.cardLayout || store.appConfig.cardLayout
+                    "
+                    :options="layoutOptions"
+                    @update:model-value="
+                      (value) =>
+                        updateGroup({
+                          cardLayout: value as 'vertical' | 'horizontal',
+                        })
+                    "
+                  />
+                </template>
+              </AppFieldRow>
+
+              <div class="group-settings-range-grid">
+                <AppRangeField
+                  label="卡片间距"
+                  :model-value="group.gridGap ?? DEFAULT_NAV_GRID_GAP"
+                  :value-text="`${group.gridGap ?? DEFAULT_NAV_GRID_GAP}px`"
+                  :min="4"
+                  :max="32"
+                  :step="2"
+                  @update:model-value="
+                    (value) => updateGroup({ gridGap: value })
+                  "
+                  @change="flushGroupChanges"
+                />
+
+                <AppRangeField
+                  label="卡片大小"
+                  :model-value="group.cardSize ?? DEFAULT_NAV_CARD_SIZE"
+                  :value-text="`${group.cardSize ?? DEFAULT_NAV_CARD_SIZE}px`"
+                  :min="60"
+                  :max="216"
+                  :step="4"
+                  @update:model-value="
+                    (value) => updateGroup({ cardSize: value })
+                  "
+                  @change="flushGroupChanges"
+                />
+
+                <AppRangeField
+                  label="图标大小"
+                  :model-value="group.iconSize ?? DEFAULT_NAV_ICON_SIZE"
+                  :value-text="`${group.iconSize ?? DEFAULT_NAV_ICON_SIZE}px`"
+                  :min="20"
+                  :max="100"
+                  :step="2"
+                  @update:model-value="
+                    (value) => updateGroup({ iconSize: value })
+                  "
+                  @change="flushGroupChanges"
+                />
+
+                <AppRangeField
+                  label="文字大小"
+                  :model-value="group.cardTitleSize ?? 13"
+                  :value-text="
+                    group.cardTitleSize == null
+                      ? '默认'
+                      : `${group.cardTitleSize}px`
+                  "
+                  :min="10"
+                  :max="22"
+                  :step="1"
+                  @update:model-value="
+                    (value) => updateGroup({ cardTitleSize: value })
+                  "
+                  @change="flushGroupChanges"
+                />
+              </div>
+            </AppSectionCard>
+
+            <AppSectionCard
+              title="卡片外观"
+              description="颜色、透明度和图标形状只作用于当前分组。"
+              body-class="group-settings-field-stack"
+            >
+              <AppFieldRow
+                label="显示卡片背景"
+                hint="关闭后只保留图标和文字。"
+                align="center"
+              >
+                <template #control>
+                  <AppSwitch
+                    :model-value="
+                      group.showCardBackground ??
+                      store.appConfig.showCardBackground
+                    "
+                    label=""
+                    @update:model-value="
+                      (value) => updateGroup({ showCardBackground: value })
+                    "
+                  />
+                </template>
+              </AppFieldRow>
+
+              <div class="group-settings-swatch-grid">
+                <label class="group-settings-swatch-field">
+                  <span>文字</span>
                   <input
                     type="color"
-                    :value="group.cardTitleColor || store.appConfig.cardTitleColor || '#111827'"
-                    @input="
-                      (e) => updateGroup({ cardTitleColor: (e.target as HTMLInputElement).value })
+                    :value="
+                      group.cardTitleColor ||
+                      store.appConfig.cardTitleColor ||
+                      '#111827'
                     "
-                    class="w-6 h-6 rounded-full cursor-pointer border-0 p-0 overflow-hidden shadow-sm"
+                    class="group-settings-color-swatch"
+                    @input="
+                      (e) =>
+                        updateGroup({
+                          cardTitleColor: (e.target as HTMLInputElement).value,
+                        })
+                    "
                   />
-                </div>
+                </label>
 
-                <div class="w-px h-8 bg-gray-200 mx-1"></div>
-
-                <!-- Card Background Color -->
-                <div class="flex flex-col items-center gap-1" title="卡片背景颜色">
-                  <span class="text-[10px] text-gray-400">背景</span>
+                <label class="group-settings-swatch-field">
+                  <span>背景</span>
                   <input
-                    v-if="group.showCardBackground ?? store.appConfig.showCardBackground"
                     type="color"
                     v-model="bgHex"
-                    class="w-6 h-6 rounded-full cursor-pointer border-0 p-0 overflow-hidden shadow-sm"
+                    class="group-settings-color-swatch"
+                    :disabled="
+                      !(
+                        group.showCardBackground ??
+                        store.appConfig.showCardBackground
+                      )
+                    "
                   />
-                </div>
+                </label>
+              </div>
 
-                <!-- Opacity Slider -->
-                <div
-                  class="flex flex-col items-center gap-1 w-16"
-                  v-if="group.showCardBackground ?? store.appConfig.showCardBackground"
-                >
-                  <span class="text-[10px] text-gray-400"
-                    >透明度 {{ Math.round(bgAlpha * 100) }}%</span
-                  >
-                  <input
-                    type="range"
-                    min="0"
-                    max="1"
-                    step="0.05"
-                    v-model.number="bgAlpha"
-                    class="sd-range"
-                  />
-                </div>
+              <AppRangeField
+                v-if="
+                  group.showCardBackground ?? store.appConfig.showCardBackground
+                "
+                label="背景透明度"
+                v-model="bgAlpha"
+                :value-text="`${Math.round(bgAlpha * 100)}%`"
+                :min="0"
+                :max="1"
+                :step="0.05"
+                @change="flushGroupChanges"
+              />
 
-                <!-- Show Background Toggle -->
-                <div class="flex flex-col items-center gap-1">
-                  <span class="text-[10px] text-gray-400">显示</span>
-                  <label class="relative inline-flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      :checked="group.showCardBackground ?? store.appConfig.showCardBackground"
+              <AppFieldRow label="图标形状" hint="图标外框形状和隐藏图标策略。">
+                <template #control>
+                  <div class="group-settings-icon-shape-row">
+                    <select
+                      :value="group.iconShape || store.appConfig.iconShape"
+                      class="sd-select"
                       @change="
                         (e) =>
                           updateGroup({
-                            showCardBackground: (e.target as HTMLInputElement).checked,
+                            iconShape: (e.target as HTMLInputElement).value,
                           })
                       "
-                      class="sr-only peer"
+                    >
+                      <option value="none">无形状</option>
+                      <option value="hidden">不使用图标</option>
+                      <option value="rounded">圆角矩形</option>
+                      <option value="square">方形</option>
+                      <option value="circle">圆形</option>
+                      <option value="leaf">叶形</option>
+                      <option value="diamond">菱形</option>
+                      <option value="pentagon">五角形</option>
+                      <option value="hexagon">六边形</option>
+                      <option value="octagon">八边形</option>
+                    </select>
+                    <div class="group-settings-icon-preview">
+                      <IconShape
+                        :shape="group.iconShape || store.appConfig.iconShape"
+                        :size="24"
+                        bgClass="fill-blue-500"
+                        icon=""
+                      />
+                    </div>
+                  </div>
+                </template>
+              </AppFieldRow>
+            </AppSectionCard>
+
+            <AppSectionCard
+              title="卡片背景图"
+              description="背景图会应用到当前分组内所有卡片。"
+              body-class="group-settings-field-stack"
+            >
+              <AppFieldRow label="图片地址" hint="支持上传结果或远程图片 URL。">
+                <template #control>
+                  <div class="group-settings-url-row">
+                    <input
+                      :value="group.backgroundImage"
+                      type="text"
+                      placeholder="背景图 URL..."
+                      class="sd-input"
+                      @input="
+                        (e) =>
+                          updateGroup({
+                            backgroundImage: (e.target as HTMLInputElement)
+                              .value,
+                          })
+                      "
                     />
-                    <div
-                      class="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-500"
-                    ></div>
-                  </label>
-                </div>
-              </div>
-            </div>
+                    <button
+                      v-if="group.backgroundImage"
+                      type="button"
+                      class="group-settings-icon-button"
+                      title="清除背景"
+                      aria-label="清除背景"
+                      @click="updateGroup({ backgroundImage: '' })"
+                    >
+                      <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                        <path
+                          d="m5 5 10 10M15 5 5 15"
+                          stroke="currentColor"
+                          stroke-width="1.8"
+                          stroke-linecap="round"
+                        />
+                      </svg>
+                    </button>
+                  </div>
+                </template>
+              </AppFieldRow>
 
-            <!-- Group Card Background Image -->
-            <div class="border-t border-gray-100 pt-4">
-              <label class="text-xs font-bold text-gray-500 mb-2 block">
-                卡片背景图
-                <span class="text-[10px] font-normal text-gray-400">(应用到组内所有卡片)</span>
-              </label>
-              <div class="space-y-3">
-                <div class="flex items-center gap-2">
-                  <input
-                    :value="group.backgroundImage"
-                    @input="
-                      (e) => updateGroup({ backgroundImage: (e.target as HTMLInputElement).value })
-                    "
-                    type="text"
-                    placeholder="背景图 URL..."
-                    class="sd-input flex-1 text-sm"
-                  />
-                  <button
-                    v-if="group.backgroundImage"
-                    @click="updateGroup({ backgroundImage: '' })"
-                    class="text-gray-400 hover:text-red-500 px-2"
-                    title="清除背景"
-                  >
-                    ✕
-                  </button>
-                </div>
+              <IconUploader
+                :modelValue="group.backgroundImage"
+                :crop="false"
+                :uploadOnly="true"
+                :previewStyle="{
+                  filter: `blur(${group.backgroundBlur ?? 6}px)`,
+                  transform: 'scale(1.1)',
+                }"
+                :overlayStyle="{
+                  backgroundColor: `rgba(0,0,0,${group.backgroundMask ?? 0.3})`,
+                }"
+                @update:modelValue="
+                  (val) => updateGroup({ backgroundImage: val })
+                "
+              />
 
-                <IconUploader
-                  :modelValue="group.backgroundImage"
-                  @update:modelValue="(val) => updateGroup({ backgroundImage: val })"
-                  :crop="false"
-                  :uploadOnly="true"
-                  :previewStyle="{
-                    filter: `blur(${group.backgroundBlur ?? 6}px)`,
-                    transform: 'scale(1.1)',
-                  }"
-                  :overlayStyle="{
-                    backgroundColor: `rgba(0,0,0,${group.backgroundMask ?? 0.3})`,
-                  }"
+              <div
+                v-if="group.backgroundImage"
+                class="group-settings-range-grid"
+              >
+                <AppRangeField
+                  label="模糊半径"
+                  :model-value="group.backgroundBlur ?? 6"
+                  :value-text="`${group.backgroundBlur ?? 6}px`"
+                  :min="0"
+                  :max="20"
+                  :step="1"
+                  @update:model-value="
+                    (value) => updateGroup({ backgroundBlur: value })
+                  "
+                  @change="flushGroupChanges"
                 />
-
-                <div
-                  v-if="group.backgroundImage"
-                  class="grid grid-cols-2 gap-4 mt-2 p-3 bg-gray-50 rounded-lg"
-                >
-                  <div>
-                    <label class="block text-[10px] text-gray-400 mb-1 flex justify-between">
-                      <span>模糊半径</span>
-                      <span>{{ group.backgroundBlur ?? 6 }}px</span>
-                    </label>
-                    <input
-                      type="range"
-                      :value="group.backgroundBlur ?? 6"
-                      @input="
-                        (e) =>
-                          updateGroup({
-                            backgroundBlur: parseInt((e.target as HTMLInputElement).value),
-                          })
-                      "
-                      @change="flushGroupChanges"
-                      min="0"
-                      max="20"
-                      step="1"
-                      class="sd-range"
-                    />
-                  </div>
-                  <div>
-                    <label class="block text-[10px] text-gray-400 mb-1 flex justify-between">
-                      <span>遮罩浓度</span>
-                      <span>{{ Math.round((group.backgroundMask ?? 0.3) * 100) }}%</span>
-                    </label>
-                    <input
-                      type="range"
-                      :value="group.backgroundMask ?? 0.3"
-                      @input="
-                        (e) =>
-                          updateGroup({
-                            backgroundMask: parseFloat((e.target as HTMLInputElement).value),
-                          })
-                      "
-                      @change="flushGroupChanges"
-                      min="0"
-                      max="1"
-                      step="0.1"
-                      class="sd-range"
-                    />
-                  </div>
-                </div>
+                <AppRangeField
+                  label="遮罩浓度"
+                  :model-value="group.backgroundMask ?? 0.3"
+                  :value-text="`${Math.round((group.backgroundMask ?? 0.3) * 100)}%`"
+                  :min="0"
+                  :max="1"
+                  :step="0.1"
+                  @update:model-value="
+                    (value) => updateGroup({ backgroundMask: value })
+                  "
+                  @change="flushGroupChanges"
+                />
               </div>
-            </div>
+            </AppSectionCard>
 
-            <!-- Icon Shape -->
-            <div>
-              <label class="sd-label">图标形状</label>
-              <div class="flex gap-3 items-center">
-                <select
-                  :value="group.iconShape || store.appConfig.iconShape"
-                  @change="(e) => updateGroup({ iconShape: (e.target as HTMLInputElement).value })"
-                  class="sd-select flex-1 text-sm"
+            <AppSectionCard
+              title="维护操作"
+              description="恢复默认会清除当前分组外观自定义；删除分组需要二次确认。"
+            >
+              <div class="group-settings-maintenance-actions">
+                <AppButton variant="secondary" block @click="handleReset">
+                  恢复默认设置
+                </AppButton>
+                <AppButton
+                  variant="danger-soft"
+                  block
+                  @click="handleDeleteGroup"
                 >
-                  <option value="none">无形状</option>
-                  <option value="hidden">不使用图标</option>
-                  <option value="rounded">圆角矩形</option>
-                  <option value="square">方形</option>
-                  <option value="circle">圆形</option>
-                  <option value="leaf">叶形</option>
-                  <option value="diamond">菱形</option>
-                  <option value="pentagon">五角形</option>
-                  <option value="hexagon">六边形</option>
-                  <option value="octagon">八边形</option>
-                </select>
-                <div class="w-10 h-10 flex items-center justify-center bg-gray-100 rounded-lg">
-                  <IconShape
-                    :shape="group.iconShape || store.appConfig.iconShape"
-                    :size="24"
-                    bgClass="fill-blue-500"
-                    icon=""
-                  />
-                </div>
+                  删除此分组
+                </AppButton>
               </div>
-            </div>
+            </AppSectionCard>
           </div>
         </div>
-
-        <div class="border-t border-gray-100"></div>
-
-        <!-- Actions -->
-        <div class="space-y-3">
-          <button
-            @click="handleReset"
-            class="sd-btn sd-btn-secondary w-full"
-          >
-            恢复默认设置
-          </button>
-
-          <button
-            @click="handleDeleteGroup"
-            class="sd-btn sd-btn-danger-soft w-full"
-          >
-            删除此分组
-          </button>
-        </div>
-      </div>
+      </section>
     </div>
-  </OverlayMotion>
+  </AppModalShell>
 
   <ConfirmDialog
     v-model:show="showResetConfirm"
@@ -642,6 +683,382 @@ const bgAlpha = computed({
 </template>
 
 <style scoped>
+:global(.group-settings-overlay) {
+  background: var(--sd-shell-overlay);
+  -webkit-backdrop-filter: blur(10px) saturate(135%) brightness(0.7);
+  backdrop-filter: blur(10px) saturate(135%) brightness(0.7);
+}
+
+:global(.group-settings-panel) {
+  width: min(900px, calc(100vw - 32px));
+}
+
+:global(.group-settings-surface) {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--sd-shell-border);
+  border-radius: 20px;
+  background: var(--sd-shell-surface);
+  box-shadow: var(--sd-shadow-window);
+  -webkit-backdrop-filter: saturate(135%) blur(28px) brightness(0.62);
+  backdrop-filter: saturate(135%) blur(28px) brightness(0.62);
+}
+
+:global(.group-settings-surface > .sd-window-bar) {
+  display: none;
+}
+
+:global(.group-settings-body) {
+  padding: 0;
+  overflow: hidden;
+}
+
+.group-settings-layout {
+  position: relative;
+  display: grid;
+  grid-template-columns: 176px minmax(0, 1fr);
+  height: min(620px, calc(100vh - 96px));
+  min-height: min(560px, calc(100vh - 96px));
+  color: var(--sd-shell-text-primary);
+}
+
+.group-settings-window-controls {
+  position: absolute;
+  z-index: 4;
+  top: 11px;
+  right: 20px;
+}
+
+.group-settings-sidebar {
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  flex-direction: column;
+  gap: 12px;
+  padding: 68px 12px 18px;
+}
+
+.group-settings-profile {
+  display: grid;
+  gap: 4px;
+  padding: 0 6px 6px;
+}
+
+.group-settings-kicker,
+.group-settings-section-kicker {
+  margin: 0;
+  color: rgba(223, 221, 221, 0.48);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 14px;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.group-settings-title {
+  min-width: 0;
+  overflow: hidden;
+  color: rgb(223, 221, 221);
+  font-size: 17px;
+  font-weight: 800;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.group-settings-summary,
+.group-settings-section-summary {
+  color: rgba(223, 221, 221, 0.68);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.35;
+}
+
+.group-settings-quick-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  padding: 0 6px 4px;
+}
+
+.group-settings-quick-actions button {
+  min-height: 26px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(223, 221, 221, 0.86);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.group-settings-quick-actions button:hover {
+  border-color: rgba(24, 144, 255, 0.42);
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.group-settings-quick-actions button.is-danger {
+  color: rgb(255, 143, 151);
+}
+
+.group-settings-overview {
+  display: grid;
+  gap: 8px;
+  padding: 4px 6px 0;
+}
+
+.group-settings-overview-row {
+  display: flex;
+  min-height: 34px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 11px;
+  background: rgba(255, 255, 255, 0.075);
+  padding: 0 10px;
+}
+
+.group-settings-overview-row span {
+  color: rgba(223, 221, 221, 0.58);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.group-settings-overview-row strong {
+  overflow: hidden;
+  color: rgb(223, 221, 221);
+  font-size: 12px;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.group-settings-main {
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  flex-direction: column;
+}
+
+.group-settings-section-head {
+  display: flex;
+  min-height: 82px;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 20px 24px 12px;
+}
+
+.group-settings-section-title {
+  margin: 2px 0;
+  color: rgb(223, 221, 221);
+  font-size: 22px;
+  font-weight: 800;
+  line-height: 1.15;
+}
+
+.group-settings-status-badges {
+  display: flex;
+  max-width: 280px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 7px;
+}
+
+.group-settings-status-badge {
+  display: inline-flex;
+  min-height: 24px;
+  align-items: center;
+  border-radius: 999px;
+  background: rgba(24, 144, 255, 0.18);
+  color: rgb(118, 188, 255);
+  font-size: 12px;
+  font-weight: 800;
+  padding: 0 10px;
+  white-space: nowrap;
+}
+
+.group-settings-scroll {
+  min-height: 0;
+  flex: 1 1 auto;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 0 18px 20px;
+}
+
+.group-settings-stack,
+:deep(.group-settings-field-stack) {
+  display: grid;
+  gap: 14px;
+}
+
+.group-settings-title-control,
+.group-settings-url-row,
+.group-settings-icon-shape-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+}
+
+.group-settings-color-swatch {
+  width: 36px;
+  height: 36px;
+  flex: 0 0 auto;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 12px;
+  background: transparent;
+  cursor: pointer;
+  padding: 0;
+}
+
+.group-settings-color-swatch:disabled {
+  cursor: not-allowed;
+  opacity: 0.44;
+}
+
+.group-settings-visibility-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.group-settings-visibility-card span,
+.group-settings-swatch-field span {
+  color: rgba(223, 221, 221, 0.54);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.group-settings-visibility-card strong {
+  display: block;
+  margin-top: 2px;
+  color: rgb(223, 221, 221);
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.group-settings-action-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.group-settings-maintenance-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.group-settings-range-grid,
+.group-settings-swatch-grid {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.group-settings-swatch-field {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.11);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.06);
+  padding: 10px 12px;
+}
+
+.group-settings-icon-preview {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.11);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.group-settings-icon-button {
+  display: inline-grid;
+  width: 36px;
+  height: 36px;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(223, 221, 221, 0.72);
+}
+
+.group-settings-icon-button:hover {
+  border-color: rgba(255, 70, 82, 0.32);
+  color: rgb(255, 143, 151);
+}
+
+.group-settings-icon-button svg {
+  width: 18px;
+  height: 18px;
+}
+
+.group-settings-layout :deep(.sd-section-card) {
+  border-color: rgba(255, 255, 255, 0.11);
+  background: rgba(255, 255, 255, 0.075);
+  box-shadow: none;
+}
+
+.group-settings-layout :deep(.sd-section-card-header) {
+  padding: 15px 16px 0;
+}
+
+.group-settings-layout :deep(.sd-section-card-body) {
+  padding: 15px 16px 16px;
+}
+
+.group-settings-layout :deep(.sd-section-card-title),
+.group-settings-layout :deep(.sd-field-label),
+.group-settings-layout :deep(.sd-range-field-value) {
+  color: rgb(223, 221, 221);
+}
+
+.group-settings-layout :deep(.sd-section-card-description),
+.group-settings-layout :deep(.sd-field-hint),
+.group-settings-layout :deep(.sd-range-field-title),
+.group-settings-layout :deep(.sd-switch-hint) {
+  color: rgba(223, 221, 221, 0.62);
+}
+
+.group-settings-layout :deep(.sd-input),
+.group-settings-layout :deep(.sd-select) {
+  border-color: rgba(255, 255, 255, 0.11);
+  background: rgba(255, 255, 255, 0.1);
+  color: rgb(223, 221, 221);
+}
+
+.group-settings-layout :deep(.sd-input::placeholder) {
+  color: rgba(223, 221, 221, 0.4);
+}
+
+.group-settings-layout :deep(.sd-segmented) {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.group-settings-layout :deep(.sd-segment-button.is-active) {
+  background: rgb(24, 144, 255);
+  color: #ffffff;
+  box-shadow: none;
+}
+
+.group-settings-layout :deep(.sd-switch:not(.is-checked)) {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.group-settings-layout :deep(.sd-range) {
+  background: rgba(255, 255, 255, 0.18);
+}
+
 input[type="range"]::-webkit-slider-thumb {
   -webkit-appearance: none;
   height: 16px;
@@ -657,5 +1074,70 @@ input[type="range"]::-webkit-slider-runnable-track {
   cursor: pointer;
   background: #e5e7eb;
   border-radius: 2px;
+}
+
+@media (max-width: 767px) {
+  :global(.group-settings-panel) {
+    width: min(100vw, calc(100vw - 16px));
+  }
+
+  :global(.group-settings-surface) {
+    border-radius: 18px;
+  }
+
+  .group-settings-layout {
+    grid-template-columns: minmax(0, 1fr);
+    height: min(760px, calc(100dvh - 24px));
+  }
+
+  .group-settings-sidebar {
+    min-height: auto;
+    padding: 54px 12px 10px;
+  }
+
+  .group-settings-profile {
+    padding-right: 70px;
+  }
+
+  .group-settings-section-head {
+    min-height: auto;
+    align-items: flex-start;
+    flex-direction: column;
+    padding: 8px 16px 12px;
+  }
+
+  .group-settings-status-badges {
+    max-width: none;
+    justify-content: flex-start;
+  }
+
+  .group-settings-scroll {
+    padding: 0 12px 16px;
+  }
+
+  .group-settings-range-grid,
+  .group-settings-swatch-grid,
+  .group-settings-title-control,
+  .group-settings-url-row,
+  .group-settings-icon-shape-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .group-settings-visibility-card {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .group-settings-action-row {
+    justify-content: stretch;
+  }
+
+  .group-settings-action-row :deep(.sd-btn) {
+    flex: 1 1 0;
+  }
+
+  .group-settings-maintenance-actions {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 </style>

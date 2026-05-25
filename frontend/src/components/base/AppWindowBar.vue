@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from "vue";
+import AppWindowControls from "@/components/base/AppWindowControls.vue";
 
 const props = withDefaults(
   defineProps<{
@@ -71,27 +72,11 @@ const showTrailingClose = computed(
 
     <div class="sd-window-bar-edge is-trailing">
       <slot name="actions" />
-      <button
+      <AppWindowControls
         v-if="showTrailingClose"
-        type="button"
-        class="sd-icon-button"
-        :aria-label="closeLabel"
-        @click="emit('close')"
-      >
-        <svg
-          class="h-4 w-4"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M6 6l12 12M18 6L6 18"
-          />
-        </svg>
-      </button>
+        :close-label="closeLabel"
+        @close="emit('close')"
+      />
     </div>
   </div>
 </template>

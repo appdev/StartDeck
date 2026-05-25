@@ -65,6 +65,7 @@ const confirm = () => {
     :aria-describedby="messageId"
     :overlay-class="tone === 'danger' ? 'sd-overlay-strong' : 'sd-overlay'"
     panel-class="w-full max-w-sm"
+    surface-class="sd-confirm-dialog-surface sd-compact-window"
     @close="close"
   >
     <p
