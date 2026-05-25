@@ -50,13 +50,15 @@ COPY rust ./rust
 RUN cargo build --release --locked --workspace --bins
 
 # Stage 3: Final Image
-FROM alpine:latest
+FROM debian:bookworm-slim
 
 WORKDIR /app
 
-# Install necessary runtime dependencies
-# tzdata is important for correct timezone handling
-RUN apk --no-cache add ca-certificates tzdata
+# Install necessary runtime dependencies.
+# The Rust binaries are built on Debian and dynamically link against glibc.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends ca-certificates tzdata \
+    && rm -rf /var/lib/apt/lists/*
 
 # 设置时区和 Gin 模式
 ENV TZ=Asia/Shanghai \
