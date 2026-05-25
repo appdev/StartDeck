@@ -27,7 +27,7 @@ RUN npm ci
 # Copy source code
 COPY frontend/ .
 
-# Build frontend (使用 server/public 作为 publicDir，与上方 COPY 一致)
+# Build frontend into a temporary dist; Rust-owned resource defaults are copied later.
 ENV TAILWIND_DISABLE_NATIVE=1
 ENV VITE_DOCKER_BUILD=1
 RUN npm run build-only
@@ -62,6 +62,8 @@ RUN apk --no-cache add ca-certificates tzdata
 ENV TZ=Asia/Shanghai \
     GIN_MODE=release \
     BASE_DIR=/app \
+    STARTDECK_SERVER_RESOURCE_DIR=/app/startdeck-server-defaults \
+    ICON_SERVICE_DATA_DIR=/app/icon-service/data \
     PORT=9001 \
     ICON_SERVICE_PORT=9002 \
     ICON_SERVER_BASE_URL=http://127.0.0.1:9002 \
@@ -72,11 +74,12 @@ COPY --from=rust-builder /app/target/release/startdeck-server .
 
 # Copy Rust icon service binary, seed data, and startup script.
 COPY --from=rust-builder /app/target/release/startdeck-iconserver ./icon-service/startdeck-iconserver
-COPY icon-service/data ./icon-service-defaults/data
+COPY rust/crates/startdeck-server/resources ./startdeck-server-defaults
+COPY rust/crates/startdeck-iconserver/resources/data ./icon-service-defaults/data
 COPY scripts/docker-entrypoint.sh ./scripts/docker-entrypoint.sh
 
 # Copy frontend dist to public directory
-# This includes the built assets and the static files copied from server/public during build
+# This includes the built assets and static files copied from frontend/public during build.
 COPY --from=frontend-builder /app/frontend/dist ./server/public
 
 # Create necessary directories for volumes

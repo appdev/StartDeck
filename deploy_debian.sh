@@ -18,7 +18,8 @@ IFS=$'\n\t'
 #
 # 前置要求：
 #   - 确保 GitHub 仓库 (Garry-QD/StartDeck) 发布了包含 release.zip 的 Release。
-#   - release.zip 应包含 startdeck-server、startdeck-iconserver、server/public 和 icon-service/data。
+#   - release.zip 应包含 startdeck-server、startdeck-iconserver、server/public，
+#     以及 Rust crate 下的 startdeck-server/startdeck-iconserver resources 数据。
 
 MODE="${1:-install}"
 
@@ -195,13 +196,18 @@ init_data_dir() {
   local source_root="$3" # 外部传入源根目录
   
   local src_path=""
-  # 1. 检查脚本所在目录下的 server/NAME
-  if [ -d "${BASE_DIR}/server/${src_name}" ]; then
-    src_path="${BASE_DIR}/server/${src_name}"
-  # 2. 检查传入源根目录下的 server/NAME
-  elif [ -n "${source_root}" ] && [ -d "${source_root}/server/${src_name}" ]; then
-    src_path="${source_root}/server/${src_name}"
-  fi
+  for candidate in \
+    "${BASE_DIR}/rust/crates/startdeck-server/resources/${src_name}" \
+    "${BASE_DIR}/startdeck-server/resources/${src_name}" \
+    "${BASE_DIR}/server/${src_name}" \
+    "${source_root}/rust/crates/startdeck-server/resources/${src_name}" \
+    "${source_root}/startdeck-server/resources/${src_name}" \
+    "${source_root}/server/${src_name}"; do
+    if [ -n "${candidate}" ] && [ -d "${candidate}" ]; then
+      src_path="${candidate}"
+      break
+    fi
+  done
   
   if [ -n "${src_path}" ]; then
     mkdir -p "${dest_path}"
@@ -225,11 +231,18 @@ init_icon_service_data() {
   local source_root="$1"
   local src_path=""
 
-  if [ -d "${BASE_DIR}/icon-service/data" ]; then
-    src_path="${BASE_DIR}/icon-service/data"
-  elif [ -n "${source_root}" ] && [ -d "${source_root}/icon-service/data" ]; then
-    src_path="${source_root}/icon-service/data"
-  fi
+  for candidate in \
+    "${BASE_DIR}/rust/crates/startdeck-iconserver/resources/data" \
+    "${BASE_DIR}/startdeck-iconserver/resources/data" \
+    "${BASE_DIR}/icon-service/data" \
+    "${source_root}/rust/crates/startdeck-iconserver/resources/data" \
+    "${source_root}/startdeck-iconserver/resources/data" \
+    "${source_root}/icon-service/data"; do
+    if [ -n "${candidate}" ] && [ -d "${candidate}" ]; then
+      src_path="${candidate}"
+      break
+    fi
+  done
 
   mkdir -p "${ICON_DATA_DIR}/icons" "${ICON_DATA_DIR}/cache"
 
@@ -249,7 +262,7 @@ init_icon_service_data() {
       cp -a "${src_path}/cache/." "${ICON_DATA_DIR}/cache/"
     fi
   else
-    log_warn "未找到 icon-service/data，图标服务将以空种子数据启动"
+    log_warn "未找到 Rust 图标服务资源目录，图标服务将以空种子数据启动"
   fi
 
   chown -R "${APP_USER}:${APP_USER}" "${ICON_SERVICE_DIR}"
@@ -262,7 +275,7 @@ write_systemd_service() {
   
   cat > "${SYSTEMD_SERVICE}" <<EOF
 [Unit]
-Description=StartDeck Go Service
+Description=StartDeck Rust Service
 Wants=${ICON_SERVICE_NAME}.service
 After=network.target ${ICON_SERVICE_NAME}.service
 
@@ -331,7 +344,11 @@ Type=simple
 User=${APP_USER}
 Group=${APP_USER}
 WorkingDirectory=${ICON_SERVICE_DIR}
+EnvironmentFile=-${CONFIG_FILE}
+Environment=BASE_DIR=${INSTALL_DIR}
 Environment=CONFIG_FILE=${ICON_CONFIG_FILE}
+Environment=ICON_SERVICE_PORT=${ICON_SERVER_PORT}
+Environment=ICON_SERVICE_DATA_DIR=${ICON_DATA_DIR}
 ExecStart=${BIN_DIR}/${ICON_SERVICE_BINARY}
 Restart=${restart_policy}
 RestartSec=5
@@ -491,9 +508,16 @@ write_config_file() {
   cat > "${CONFIG_FILE}" <<EOF
 PORT=${backend_port}
 PUBLIC_DIR=${PUBLIC_DIR}
+DATA_DIR=${DATA_DIR}
+MUSIC_DIR=${MUSIC_DIR}
+PC_DIR=${PC_DIR}
+APP_DIR=${APP_DIR}
+STARTDECK_DEFAULT_TEMPLATE_FILE=${DATA_DIR}/default.json
 FRONTEND_PORT=${frontend_port}
 BACKEND_PORT=${backend_port}
 ICON_SERVER_PORT=${icon_port}
+ICON_SERVICE_PORT=${icon_port}
+ICON_SERVICE_DATA_DIR=${ICON_DATA_DIR}
 ICON_SERVER_BASE_URL=http://127.0.0.1:${icon_port}
 ICON_SERVER_TIMEOUT_MS=5000
 EOF
@@ -744,14 +768,13 @@ install_flow() {
     fail_with_tip "未找到图标服务二进制文件: ${ICON_SERVICE_BINARY}"
   fi
   if [ ! -d "${static_src}" ]; then
-    # 尝试兼容打包结构差异，有时可能在上一级? 不，标准结构应为同级
-    # 再次尝试寻找 server/public
+    # 兼容 release 运行时目录和 Rust crate 资源目录。
     local found_public
-    found_public="$(find "${tmp_dir}/source" -maxdepth 3 -type d -path "*/server/public" | head -n 1)"
+    found_public="$(find "${tmp_dir}/source" -maxdepth 6 -type d \( -path "*/server/public" -o -path "*/startdeck-server/resources/public" \) | head -n 1)"
     if [ -n "${found_public}" ]; then
        static_src="${found_public}"
     else
-       fail_with_tip "未找到静态文件目录 (server/public)"
+       fail_with_tip "未找到静态文件目录 (server/public 或 startdeck-server/resources/public)"
     fi
   fi
   

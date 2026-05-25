@@ -13,6 +13,7 @@ pub struct RuntimeConfig {
     pub mobile_backgrounds_dir: PathBuf,
     pub icon_cache_dir: PathBuf,
     pub icon_service_data_dir: PathBuf,
+    pub default_template_file: PathBuf,
     pub host: String,
     pub port: u16,
     pub admin_password: String,
@@ -28,9 +29,25 @@ impl RuntimeConfig {
     }
 
     pub fn from_base_dir(base_dir: PathBuf) -> Self {
-        let data_dir = env::var_os("STARTDECK_DATA_DIR")
-            .map(PathBuf::from)
+        let server_resource_dir = env_path(&["STARTDECK_SERVER_RESOURCE_DIR"])
+            .unwrap_or_else(|| default_server_resource_dir(&base_dir));
+        let data_dir = env_path(&["STARTDECK_DATA_DIR", "DATA_DIR"])
             .unwrap_or_else(|| base_dir.join("server").join("data"));
+        let public_dir =
+            env_path(&["STARTDECK_PUBLIC_DIR", "PUBLIC_DIR"]).unwrap_or_else(|| {
+                first_existing_path([
+                    server_resource_dir.join("public"),
+                    base_dir.join("server").join("public"),
+                ])
+            });
+        let default_template_file =
+            env_path(&["STARTDECK_DEFAULT_TEMPLATE_FILE", "DEFAULT_TEMPLATE_FILE"])
+                .unwrap_or_else(|| {
+                    first_existing_path([
+                        server_resource_dir.join("data").join("default.json"),
+                        data_dir.join("default.json"),
+                    ])
+                });
         let port = env::var("PORT")
             .ok()
             .and_then(|value| value.parse::<u16>().ok())
@@ -41,12 +58,17 @@ impl RuntimeConfig {
         Self {
             users_dir: data_dir.join("users"),
             sqlite_file: data_dir.join("startdeck.sqlite3"),
-            public_dir: base_dir.join("server").join("public"),
-            music_dir: base_dir.join("server").join("music"),
-            backgrounds_dir: base_dir.join("server").join("PC"),
-            mobile_backgrounds_dir: base_dir.join("server").join("APP"),
+            public_dir,
+            music_dir: env_path(&["STARTDECK_MUSIC_DIR", "MUSIC_DIR"])
+                .unwrap_or_else(|| base_dir.join("server").join("music")),
+            backgrounds_dir: env_path(&["STARTDECK_PC_DIR", "PC_DIR"])
+                .unwrap_or_else(|| base_dir.join("server").join("PC")),
+            mobile_backgrounds_dir: env_path(&["STARTDECK_APP_DIR", "APP_DIR"])
+                .unwrap_or_else(|| base_dir.join("server").join("APP")),
             icon_cache_dir: data_dir.join("icon-cache"),
-            icon_service_data_dir: base_dir.join("icon-service").join("data"),
+            icon_service_data_dir: env_path(&["ICON_SERVICE_DATA_DIR", "ICON_DATA_DIR"])
+                .unwrap_or_else(|| default_icon_service_data_dir(&base_dir)),
+            default_template_file,
             data_dir,
             base_dir,
             host,
@@ -73,11 +95,72 @@ impl RuntimeConfig {
 }
 
 fn infer_base_dir(cwd: &Path) -> PathBuf {
+    if let Some(root) = workspace_root_from(cwd) {
+        return root;
+    }
     match cwd.file_name().and_then(|value| value.to_str()) {
-        Some("backend") | Some("frontend") | Some("icon-service") => cwd
+        Some("backend") | Some("frontend") | Some("icon-service") | Some("startdeck-server")
+        | Some("startdeck-iconserver") => cwd
             .parent()
             .map(Path::to_path_buf)
             .unwrap_or_else(|| cwd.to_path_buf()),
         _ => cwd.to_path_buf(),
     }
+}
+
+fn env_path(keys: &[&str]) -> Option<PathBuf> {
+    keys.iter().find_map(|key| {
+        env::var(key)
+            .ok()
+            .map(|value| value.trim().to_string())
+            .filter(|value| !value.is_empty())
+            .map(PathBuf::from)
+    })
+}
+
+fn default_server_resource_dir(base_dir: &Path) -> PathBuf {
+    first_existing_path([
+        base_dir
+            .join("rust")
+            .join("crates")
+            .join("startdeck-server")
+            .join("resources"),
+        base_dir.join("server"),
+    ])
+}
+
+fn default_icon_service_data_dir(base_dir: &Path) -> PathBuf {
+    first_existing_path([
+        base_dir
+            .join("rust")
+            .join("crates")
+            .join("startdeck-iconserver")
+            .join("resources")
+            .join("data"),
+        base_dir.join("icon-service").join("data"),
+    ])
+}
+
+fn first_existing_path<const N: usize>(paths: [PathBuf; N]) -> PathBuf {
+    paths
+        .iter()
+        .find(|path| path.exists())
+        .cloned()
+        .unwrap_or_else(|| paths[0].clone())
+}
+
+fn workspace_root_from(cwd: &Path) -> Option<PathBuf> {
+    cwd.ancestors().find_map(|candidate| {
+        if candidate.join("Cargo.toml").is_file()
+            && candidate
+                .join("rust")
+                .join("crates")
+                .join("startdeck-core")
+                .is_dir()
+        {
+            Some(candidate.to_path_buf())
+        } else {
+            None
+        }
+    })
 }

@@ -1852,7 +1852,7 @@ async fn load_default_template(state: &AppState) -> Result<Value, ApiError> {
     {
         return Ok(parse_json(row.get::<String, _>("value_json")));
     }
-    let default_file = state.config.data_dir.join("default.json");
+    let default_file = state.config.default_template_file.clone();
     let bytes = fs::read(&default_file)
         .await
         .map_err(|_| ApiError::not_found("default_template_not_found"))?;
