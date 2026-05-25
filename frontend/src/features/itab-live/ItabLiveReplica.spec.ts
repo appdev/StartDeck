@@ -2612,7 +2612,7 @@ describe("ItabLiveReplica clock replica", () => {
 
     await panel.trigger("scroll");
     await flushReplicaAsync();
-    expect(panel.findAll(".wallpaper-bing-grid article")).toHaveLength(28);
+    expect(panel.findAll(".wallpaper-bing-grid article")).toHaveLength(36);
     expect(panel.findAll(".wallpaper-thumb")[24].attributes("aria-label")).toBe(
       "选中 后端壁纸 25",
     );
