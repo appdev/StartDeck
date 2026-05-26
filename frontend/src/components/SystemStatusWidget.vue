@@ -136,6 +136,14 @@ const uptimeText = computed(() => {
   if (days >= 1) return `${days.toFixed(1)} 天`;
   return `${Math.max(1, Math.round(uptime / 3600))} 小时`;
 });
+const uptimeDaysText = computed(() => {
+  const uptime = systemStats.value?.uptime ?? 0;
+  if (uptime <= 0) return "--";
+  const days = uptime / 86400;
+  if (days < 0.1) return "< 0.1 天";
+  if (days < 10) return `${days.toFixed(1)} 天`;
+  return `${Math.round(days)} 天`;
+});
 const osSummary = computed(() => {
   const os = systemStats.value?.os;
   if (!os) return "Host";
@@ -350,6 +358,10 @@ onUnmounted(() => {
               <div>
                 <dt>温度</dt>
                 <dd>{{ systemStats?.temp?.main || "--" }}°C</dd>
+              </div>
+              <div>
+                <dt>运行天数</dt>
+                <dd>{{ uptimeDaysText }}</dd>
               </div>
               <div>
                 <dt>系统</dt>
