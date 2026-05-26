@@ -57,7 +57,14 @@ RUN apt-get update \
     && apt-get install -y --no-install-recommends ca-certificates tzdata \
     && rm -rf /var/lib/apt/lists/*
 
-# Stage 4: Final Image
+# Stage 4: Keep server fallback resources without duplicating public icons.
+FROM busybox:1.37.0-glibc AS server-resource-filter
+
+WORKDIR /server-resources
+COPY rust/crates/startdeck-server/resources .
+RUN rm -rf public/icons
+
+# Stage 5: Final Image
 FROM busybox:1.37.0-glibc
 
 WORKDIR /app
@@ -89,7 +96,7 @@ COPY --from=rust-builder /app/target/release/startdeck-server .
 
 # Copy Rust icon service binary, seed data, and startup script.
 COPY --from=rust-builder /app/target/release/startdeck-iconserver ./icon-service/startdeck-iconserver
-COPY rust/crates/startdeck-server/resources ./startdeck-server-defaults
+COPY --from=server-resource-filter /server-resources/. ./startdeck-server-defaults
 COPY rust/crates/startdeck-iconserver/resources/data ./icon-service-defaults/data
 COPY scripts/docker-entrypoint.sh ./scripts/docker-entrypoint.sh
 
