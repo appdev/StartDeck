@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::io::Read;
 use std::net::IpAddr;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -669,6 +669,9 @@ async fn icon_service_icon_asset(
     State(state): State<AppState>,
     AxumPath(path): AxumPath<String>,
 ) -> Result<Response, ApiError> {
+    if let Some(response) = public_icon_asset(&state, &path).await? {
+        return Ok(response);
+    }
     proxy_icon_service_asset(&state, "icons", &path).await
 }
 
@@ -722,6 +725,35 @@ async fn proxy_icon_service_asset(
     *res.status_mut() = StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::BAD_GATEWAY);
     *res.headers_mut() = headers;
     Ok(res)
+}
+
+async fn public_icon_asset(state: &AppState, path: &str) -> Result<Option<Response>, ApiError> {
+    let Some(path) = safe_static_asset_path(&state.config.public_dir.join("icons"), path) else {
+        return Err(ApiError::not_found("icon_not_found"));
+    };
+    if !path.is_file() {
+        return Ok(None);
+    }
+    let bytes = fs::read(&path).await?;
+    let content_type = mime_guess::from_path(&path).first_or_octet_stream();
+    let mut response = Response::new(Body::from(bytes));
+    response.headers_mut().insert(
+        header::CONTENT_TYPE,
+        HeaderValue::from_str(content_type.as_ref())
+            .unwrap_or_else(|_| HeaderValue::from_static("application/octet-stream")),
+    );
+    Ok(Some(response))
+}
+
+fn safe_static_asset_path(root: &Path, path: &str) -> Option<PathBuf> {
+    let mut resolved = root.to_path_buf();
+    for segment in path.trim_start_matches('/').split('/') {
+        if segment.is_empty() || segment == "." || segment == ".." || segment.contains('\\') {
+            return None;
+        }
+        resolved.push(segment);
+    }
+    Some(resolved)
 }
 
 async fn cache_icon(

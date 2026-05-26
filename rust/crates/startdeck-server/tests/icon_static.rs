@@ -45,8 +45,13 @@ async fn main_app(icon_service_base: String, base: &std::path::Path) -> axum::Ro
     let data_dir = main_base.join("Data/data");
     let public_dir = main_base.join("Data/public");
     std::fs::create_dir_all(&data_dir).unwrap();
-    std::fs::create_dir_all(&public_dir).unwrap();
+    std::fs::create_dir_all(public_dir.join("icons")).unwrap();
     std::fs::write(public_dir.join("index.html"), "<main>StartDeck</main>").unwrap();
+    std::fs::write(
+        public_dir.join("icons/main-public.svg"),
+        r#"<svg id="main-public"/>"#,
+    )
+    .unwrap();
     std::fs::write(data_dir.join("system.json"), r#"{"authMode":"single"}"#).unwrap();
 
     let config = RuntimeConfig::from_base_dir(main_base);
@@ -68,6 +73,7 @@ async fn proxies_icon_service_static_resources_over_http() {
     let app = main_app(icon_service_base, &base).await;
 
     for (uri, expected) in [
+        ("/icons/main-public.svg", r#"<svg id="main-public"/>"#),
         ("/icons/resource.svg", r#"<svg id="resource"/>"#),
         ("/cache/runtime-cache.svg", r#"<svg id="runtime-cache"/>"#),
     ] {
