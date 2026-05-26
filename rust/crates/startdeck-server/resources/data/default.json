@@ -2,9 +2,9 @@
   "appConfig": {
     "autoPlayMusic": false,
     "autoUltrawide": false,
-    "background": "https://bing.biturl.top/?resolution=1920&format=image&index=0&mkt=zh-CN",
-    "backgroundBlur": 0,
-    "backgroundMask": 0,
+    "background": "https://cn.bing.com/th?id=OHR.SichuanTea_ZH-CN6703437873_UHD.jpg",
+    "backgroundBlur": 1,
+    "backgroundMask": 0.05,
     "backupUrls": {
       "default": {
         "url_0": "https://v.baidu.com/"
@@ -38,7 +38,7 @@
     "customJs": "",
     "customJsDisclaimerAgreed": false,
     "customJsList": [],
-    "customTitle": "StartDeck",
+    "customTitle": "我的导航",
     "daylightMask": 0.7,
     "daylightModeEnabled": true,
     "deviceMode": "auto",
@@ -58,7 +58,7 @@
     "iconShape": "rounded",
     "internalDomains": "",
     "latencyThresholdMs": 200,
-    "marketplaceListUrl": "http://38.147.186.176:23111/",
+    "marketplaceListUrl": "http://qdnas.icu:23111/",
     "mobileBackground": "/mobile_backgrounds/104933-1741661373383a.jpg",
     "mobileBackgroundBlur": 0,
     "mobileBackgroundMask": 0,
@@ -91,12 +91,12 @@
       "unnamed-(2)_01.gif",
       "unnamed-2_02-1765141374406.gif"
     ],
-    "showCardBackground": true,
+    "showCardBackground": false,
     "showFooterStats": false,
     "solidBackgroundColor": "",
     "titleAlign": "left",
     "titleColor": "#ffffff",
-    "titleSize": 48,
+    "titleSize": 34,
     "wallpaperApiMobileDeleteBase": "/api/mobile_backgrounds",
     "wallpaperApiMobileList": "/api/mobile_backgrounds",
     "wallpaperApiMobileUpload": "/api/mobile_backgrounds/upload",
@@ -104,10 +104,10 @@
     "wallpaperApiPcList": "/api/backgrounds",
     "wallpaperApiPcUpload": "/api/backgrounds/upload",
     "wallpaperConfig": {
-      "enabled": false,
-      "lastUpdated": 1768881498725,
       "type": "api",
-      "url": "https://www.loliapi.com/acg/"
+      "url": "https://cn.bing.com/th?id=OHR.SichuanTea_ZH-CN6703437873_UHD.jpg",
+      "enabled": false,
+      "lastUpdated": 1779729878117
     },
     "wallpaperMobileImageBase": "/mobile_backgrounds",
     "wallpaperPcImageBase": "/backgrounds",
@@ -115,7 +115,11 @@
     "webGroupPaginationDisableFlip": true,
     "widgetAreaCols": 4,
     "widgetAreaRows": 4,
-    "widgetAreaSize": 4
+    "widgetAreaSize": 4,
+    "themeMode": "auto",
+    "showHomeTitle": true,
+    "showHomeTime": true,
+    "showHomeSearch": true
   },
   "authMode": "single",
   "enableDocker": true,
@@ -444,26 +448,298 @@
   "version": 10183,
   "widgets": [
     {
-      "colSpan": 2,
-      "data": {},
-      "enable": true,
+      "w": 2,
       "h": 2,
+      "colSpan": 2,
+      "rowSpan": 2,
+      "id": "calendar",
+      "type": "itab-calendar-01",
+      "enable": true,
+      "isPublic": true,
+      "data": {
+        "runtime": "itab-calendar",
+        "layoutSystem": "itab-grid/2026-05-22",
+        "version": 1,
+        "sizeKey": "2x2"
+      }
+    },
+    {
+      "w": 2,
+      "h": 2,
+      "colSpan": 2,
+      "rowSpan": 2,
+      "id": "anniversary",
+      "type": "itab-anniversary-03",
+      "enable": true,
+      "isPublic": true,
+      "data": {
+        "runtime": "itab-anniversary",
+        "layoutSystem": "itab-grid/2026-05-22",
+        "version": 1,
+        "sizeKey": "2x2",
+        "title": "纪念日",
+        "label": "你在世界已经",
+        "eventName": "你在世界已经",
+        "date": "1997-10-1",
+        "mode": "elapsed",
+        "repeat": "不重复",
+        "textColor": "#ffffff",
+        "backgroundColor": "#8e726f",
+        "backgroundImage": "/itab-live-assets/anniversary/yiyan-12.webp",
+        "backgroundMode": "image",
+        "mask": 0
+      }
+    },
+    {
+      "w": 2,
+      "h": 2,
+      "colSpan": 2,
+      "rowSpan": 2,
+      "id": "wallpaper",
+      "type": "itab-wallpaper-16",
+      "enable": true,
+      "isPublic": true,
+      "data": {
+        "runtime": "itab-wallpaper",
+        "layoutSystem": "itab-grid/2026-05-22",
+        "version": 1,
+        "sizeKey": "2x2",
+        "itab": {
+          "namespace": "itab",
+          "captureIndex": 16,
+          "catalogId": "itab-wallpaper-16",
+          "localStateKey": "itab.wallpaper.16",
+          "adapterKind": "wallpaper",
+          "state": {
+            "progress": 0.8,
+            "updatedAt": "2026-05-20T23:40:00+08:00",
+            "selectedWallpaperId": "bing-6a0dda80f934430af9271322",
+            "selectedWallpaperTitle": "酿造传承",
+            "wallpaperUrl": "https://cn.bing.com/th?id=OHR.SichuanTea_ZH-CN6703437873_UHD.jpg",
+            "wallpaperThumbnailUrl": "https://cn.bing.com/th?id=OHR.SichuanTea_ZH-CN6703437873_UHD.jpg&w=360&h=202",
+            "dailyAutoUpdate": true,
+            "dimWallpaper": false,
+            "blurLevel": 0
+          }
+        }
+      }
+    },
+    {
+      "w": 2,
+      "h": 2,
+      "colSpan": 2,
+      "rowSpan": 2,
+      "id": "memo",
+      "type": "itab-memo-04",
+      "enable": true,
+      "isPublic": true,
+      "data": {
+        "runtime": "itab-memo",
+        "layoutSystem": "itab-grid/2026-05-22",
+        "version": 1,
+        "sizeKey": "2x2",
+        "notes": [
+          {
+            "id": "memo-tip",
+            "title": "iTab操作小技巧",
+            "body": "1. 切换搜索引擎: 点击搜索框左侧图标可快速切换搜索引擎\n2. 快速翻译: 点击搜索框联想列表第一项可快速翻译文本\n3. 右键菜单: 在桌面空白处点击右键可快速添加图标、切换壁纸、设置、备份等操作\n4. 极简模式: 点击标签页时间快速切换到极简模式\n5. 动态壁纸: 点击【i壁纸】 打开壁纸应用 - 动态壁纸,选择壁纸",
+            "pinned": false,
+            "createdAt": "2021-10-16 12:07:14",
+            "updatedAt": "2026-5-21 17:08:20",
+            "listTime": "2026/5/21 17:08"
+          },
+          {
+            "id": "memo-third",
+            "title": "第三",
+            "body": "第三",
+            "pinned": false,
+            "createdAt": "2026-5-21 16:50:00",
+            "updatedAt": "2026-5-21 16:50:00",
+            "listTime": "2026/5/21 16:50"
+          },
+          {
+            "id": "memo-date",
+            "title": "2026-05-21",
+            "body": "2026-05-21",
+            "pinned": false,
+            "createdAt": "2026-5-21 16:49:00",
+            "updatedAt": "2026-5-21 16:49:00",
+            "listTime": "2026/5/21 16:49"
+          }
+        ],
+        "activeNoteId": "memo-tip"
+      }
+    },
+    {
+      "w": 2,
+      "h": 2,
+      "colSpan": 2,
+      "rowSpan": 2,
+      "id": "todo",
+      "type": "itab-todo-17",
+      "enable": true,
+      "isPublic": true,
+      "data": {
+        "runtime": "itab-todo",
+        "layoutSystem": "itab-grid/2026-05-22",
+        "version": 1,
+        "sizeKey": "2x2",
+        "tasks": []
+      }
+    },
+    {
+      "w": 2,
+      "h": 2,
+      "colSpan": 2,
+      "rowSpan": 2,
+      "id": "poem",
+      "type": "itab-poem-10",
+      "enable": true,
+      "isPublic": true,
+      "data": {
+        "runtime": "itab-poem",
+        "layoutSystem": "itab-grid/2026-05-22",
+        "version": 1,
+        "sizeKey": "2x2",
+        "paletteIndex": 0
+      }
+    },
+    {
+      "w": 1,
+      "h": 2,
+      "colSpan": 1,
+      "rowSpan": 2,
+      "id": "pomodoro",
+      "type": "itab-pomodoro-29",
+      "enable": true,
+      "isPublic": true,
+      "data": {
+        "runtime": "itab-pomodoro",
+        "layoutSystem": "itab-grid/2026-05-22",
+        "version": 1,
+        "sizeKey": "2x1",
+        "duration": 1500,
+        "remainingSeconds": 1500,
+        "phase": "idle",
+        "isRunning": false,
+        "sessions": 0,
+        "themeIndex": 0,
+        "audioEnabled": true
+      }
+    },
+    {
+      "w": 2,
+      "h": 2,
+      "colSpan": 2,
+      "rowSpan": 2,
+      "id": "daily-english",
+      "type": "itab-daily-english-14",
+      "enable": true,
+      "isPublic": true,
+      "data": {
+        "runtime": "itab-daily-english",
+        "layoutSystem": "itab-grid/2026-05-22",
+        "version": 1,
+        "sizeKey": "2x2"
+      }
+    },
+    {
+      "w": 2,
+      "h": 2,
+      "colSpan": 2,
+      "rowSpan": 2,
+      "id": "movie-calendar",
+      "type": "itab-movie-calendar-05",
+      "enable": true,
+      "isPublic": true,
+      "data": {
+        "runtime": "itab-movie-calendar",
+        "layoutSystem": "itab-grid/2026-05-22",
+        "version": 1,
+        "sizeKey": "2x2"
+      }
+    },
+    {
+      "w": 1,
+      "h": 2,
+      "colSpan": 1,
+      "rowSpan": 2,
+      "id": "weather",
+      "type": "itab-weather-00",
+      "enable": true,
+      "isPublic": true,
+      "data": {
+        "runtime": "itab-weather",
+        "layoutSystem": "itab-grid/2026-05-22",
+        "version": 1,
+        "sizeKey": "2x1"
+      }
+    },
+    {
+      "w": 2,
+      "h": 2,
+      "colSpan": 2,
+      "rowSpan": 2,
+      "id": "system-status",
+      "type": "system-status",
+      "enable": true,
+      "isPublic": true,
+      "data": {
+        "runtime": "system-status",
+        "version": 1,
+        "sizeKey": "2x2",
+        "layoutSystem": "itab-grid/2026-05-22"
+      }
+    },
+    {
+      "w": 2,
+      "h": 2,
+      "colSpan": 2,
+      "rowSpan": 2,
       "hideOnMobile": true,
       "id": "docker",
-      "isPublic": false,
-      "layouts": {
-        "desktop": {
-          "h": 2,
-          "w": 2,
-          "x": 0,
-          "y": 1
-        }
-      },
-      "rowSpan": 2,
       "type": "docker",
-      "w": 2,
-      "x": 0,
-      "y": 1
+      "enable": true,
+      "isPublic": false,
+      "data": {
+        "runtime": "docker",
+        "version": 1,
+        "sizeKey": "2x2",
+        "layoutSystem": "itab-grid/2026-05-22"
+      }
+    },
+    {
+      "w": 1,
+      "h": 2,
+      "colSpan": 1,
+      "rowSpan": 2,
+      "id": "clock",
+      "type": "itab-clock-12",
+      "enable": true,
+      "isPublic": true,
+      "data": {
+        "runtime": "itab-clock",
+        "layoutSystem": "itab-grid/2026-05-22",
+        "version": 1,
+        "sizeKey": "2x1",
+        "showSeconds": true
+      }
+    },
+    {
+      "w": 1,
+      "h": 2,
+      "colSpan": 1,
+      "rowSpan": 2,
+      "id": "ip",
+      "type": "itab-ip-30",
+      "enable": true,
+      "isPublic": true,
+      "data": {
+        "runtime": "itab-ip",
+        "layoutSystem": "itab-grid/2026-05-22",
+        "version": 1,
+        "sizeKey": "2x1"
+      }
     }
   ]
 }

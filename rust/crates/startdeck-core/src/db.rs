@@ -1,4 +1,4 @@
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result};
 use bcrypt::{DEFAULT_COST, hash};
@@ -254,7 +254,10 @@ pub async fn import_legacy_data(pool: &SqlitePool, config: &RuntimeConfig) -> Re
         import_system_config(pool, &config.data_dir.join("system.json")).await?;
         let auth_mode = system_config(pool).await?.auth_mode;
         let admin_source = if auth_mode == "single" {
-            config.data_dir.join("data.json")
+            first_existing_path([
+                config.data_dir.join("data.json"),
+                config.default_template_file.clone(),
+            ])
         } else {
             config.users_dir.join("admin.json")
         };
@@ -879,6 +882,14 @@ fn read_json_or(path: &Path, fallback: Value) -> Result<Value> {
     }
     let bytes = std::fs::read(path).with_context(|| format!("read {}", path.display()))?;
     serde_json::from_slice(&bytes).with_context(|| format!("parse {}", path.display()))
+}
+
+fn first_existing_path<const N: usize>(paths: [PathBuf; N]) -> PathBuf {
+    paths
+        .iter()
+        .find(|path| path.exists())
+        .cloned()
+        .unwrap_or_else(|| paths[0].clone())
 }
 
 fn normalize_password_hash(value: Option<&Value>, default_password: &str) -> Result<String> {

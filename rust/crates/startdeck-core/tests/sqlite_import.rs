@@ -57,6 +57,41 @@ async fn imports_legacy_navigation_widgets_and_icon_seed_into_relational_tables(
 }
 
 #[tokio::test]
+async fn imports_admin_from_default_template_when_legacy_data_json_is_missing() {
+    let temp = tempfile::tempdir().unwrap();
+    let base = temp.path();
+    let data_dir = base.join("Data/data");
+    let default_data_dir = base.join("rust/crates/startdeck-server/resources/data");
+    std::fs::create_dir_all(&data_dir).unwrap();
+    std::fs::create_dir_all(&default_data_dir).unwrap();
+    std::fs::write(
+        data_dir.join("system.json"),
+        r#"{"authMode":"single","enableDocker":true}"#,
+    )
+    .unwrap();
+    std::fs::write(
+        default_data_dir.join("default.json"),
+        serde_json::to_vec(&json!({
+            "appConfig": {"customTitle": "Default Template"},
+            "groups": [{"id": "g1", "title": "Template Group", "items": []}],
+            "widgets": [{"id": "calendar", "type": "itab-calendar-01", "enable": true, "isPublic": true, "data": {"runtime": "itab-calendar"}}]
+        }))
+        .unwrap(),
+    )
+    .unwrap();
+
+    let config = RuntimeConfig::from_base_dir(base.to_path_buf());
+    let pool = connect_sqlite(&config).await.unwrap();
+    import_legacy_data(&pool, &config).await.unwrap();
+
+    let snapshot = app_snapshot(&pool, "admin").await.unwrap();
+    assert_eq!(snapshot.user.app_config["customTitle"], "Default Template");
+    assert_eq!(snapshot.groups[0].title, "Template Group");
+    assert_eq!(snapshot.widgets[0].id, "calendar");
+    assert_eq!(snapshot.widgets[0].widget_type, "itab-calendar-01");
+}
+
+#[tokio::test]
 async fn incompatible_legacy_schema_is_rebuilt_destructively() {
     let temp = tempfile::tempdir().unwrap();
     let base = temp.path();
