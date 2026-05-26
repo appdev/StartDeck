@@ -193,6 +193,28 @@ onBeforeUnmount(() => {
   display: none;
 }
 
+:global([data-sd-scheme="dark"] .itab-poem-opened-panel),
+:global([data-sd-theme="dark"] .itab-poem-opened-panel) {
+  --poem-bg: var(
+    --sd-theme-itab-poem-poem-opened-panel-surface-01
+  ) !important;
+  --poem-wave-back: color-mix(
+    in srgb,
+    var(--sd-state-info) 18%,
+    transparent
+  ) !important;
+  --poem-wave-middle: color-mix(
+    in srgb,
+    var(--sd-state-info) 22%,
+    transparent
+  ) !important;
+  --poem-wave-front: color-mix(
+    in srgb,
+    var(--sd-state-info) 26%,
+    transparent
+  ) !important;
+}
+
 .opened-poem-wrap {
   position: relative;
   width: 100%;

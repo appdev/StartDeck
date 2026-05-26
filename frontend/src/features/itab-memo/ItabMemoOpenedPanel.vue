@@ -380,6 +380,7 @@ const updateActiveBody = (event: Event) => {
   width: 753px;
   height: 30px;
   border: 0;
+  background: transparent;
   color: var(--sd-theme-itab-memo-memo-opened-panel-text-02);
   font-size: 16px;
   font-weight: 700;
@@ -400,6 +401,7 @@ const updateActiveBody = (event: Event) => {
   height: 528px;
   resize: none;
   border: 0;
+  background: transparent;
   padding: 5px 11px;
   color: var(--sd-theme-itab-memo-memo-opened-panel-text-02);
   font-size: 14px;

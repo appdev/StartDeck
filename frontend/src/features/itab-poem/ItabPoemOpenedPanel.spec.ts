@@ -87,4 +87,21 @@ describe("ItabPoemOpenedPanel", () => {
       "background: var(--sd-theme-itab-poem-poem-opened-panel-surface-04)",
     );
   });
+
+  it("overrides runtime light palette variables in dark theme", () => {
+    const source = readFileSync(
+      "src/features/itab-poem/ItabPoemOpenedPanel.vue",
+      "utf8",
+    );
+
+    expect(source).toContain(
+      ':global([data-sd-theme="dark"] .itab-poem-opened-panel)',
+    );
+    expect(source).toContain(
+      "--poem-bg: var(\n    --sd-theme-itab-poem-poem-opened-panel-surface-01\n  ) !important;",
+    );
+    expect(source).toContain("--poem-wave-back: color-mix(");
+    expect(source).toContain("--poem-wave-middle: color-mix(");
+    expect(source).toContain("--poem-wave-front: color-mix(");
+  });
 });
