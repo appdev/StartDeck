@@ -155,14 +155,16 @@ export const useItabMemoRuntime = (
     const resolvedActive =
       items.find((note) => note.id === nextActiveNoteId)?.id || items[0]?.id;
     activeNoteId.value = resolvedActive || "";
-    emitData(
-      {
-        ...normalizedData.value,
-        notes: items,
-        ...(resolvedActive ? { activeNoteId: resolvedActive } : {}),
-      },
-      localMutation,
-    );
+    const nextData: ItabMemoWidgetData = {
+      ...normalizedData.value,
+      notes: items,
+    };
+    if (resolvedActive) {
+      nextData.activeNoteId = resolvedActive;
+    } else {
+      delete nextData.activeNoteId;
+    }
+    emitData(nextData, localMutation);
   };
 
   const selectNote = (noteId: string) => {

@@ -114,8 +114,9 @@ export const normalizeItabMemoWidgetData = (
   const sizeKey = isItabMemoSizeKey(input.sizeKey)
     ? input.sizeKey
     : ITAB_MEMO_DEFAULT_SIZE;
-  const notes = normalizeItabMemoNotes(input.notes);
-  const normalizedNotes = notes.length ? notes : createDefaultItabMemoNotes();
+  const normalizedNotes = Array.isArray(input.notes)
+    ? normalizeItabMemoNotes(input.notes)
+    : createDefaultItabMemoNotes();
   const activeNoteId =
     typeof input.activeNoteId === "string" &&
     normalizedNotes.some((note) => note.id === input.activeNoteId)

@@ -61,7 +61,11 @@ describe("itabMemoModel", () => {
       ],
     });
 
-    const defaultData = normalizeItabMemoWidgetData({ notes: [] });
+    const emptyData = normalizeItabMemoWidgetData({ notes: [] });
+    expect(emptyData.notes).toEqual([]);
+    expect(emptyData).not.toHaveProperty("activeNoteId");
+
+    const defaultData = normalizeItabMemoWidgetData({});
     expect(defaultData.sizeKey).toBe("2x2");
     expect(defaultData.notes).toEqual(
       expect.arrayContaining([
