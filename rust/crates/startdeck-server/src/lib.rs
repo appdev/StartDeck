@@ -18,7 +18,7 @@ use bcrypt::{DEFAULT_COST, hash, verify};
 use chrono::{Duration as ChronoDuration, Utc};
 use flate2::read::GzDecoder;
 use jsonwebtoken::{Algorithm, DecodingKey, EncodingKey, Header, Validation, decode, encode};
-use reqwest::Client;
+use reqwest::{Client, Url};
 use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value, json};
 use sha2::{Digest, Sha256};
@@ -62,14 +62,23 @@ impl AppState {
         pool: SqlitePool,
         remote_itab_fetch_enabled: bool,
     ) -> Self {
+        let icon_service_base = std::env::var("ICON_SERVER_BASE_URL")
+            .unwrap_or_else(|_| "http://127.0.0.1:9002".to_string());
+        Self::new_with_icon_service_base(config, pool, remote_itab_fetch_enabled, icon_service_base)
+    }
+
+    pub fn new_with_icon_service_base(
+        config: RuntimeConfig,
+        pool: SqlitePool,
+        remote_itab_fetch_enabled: bool,
+        icon_service_base: impl Into<String>,
+    ) -> Self {
         let jwt_secret = std::env::var("STARTDECK_SECRET").unwrap_or_else(|_| {
             format!(
                 "{:x}",
                 Sha256::digest(config.sqlite_file.to_string_lossy().as_bytes())
             )
         });
-        let icon_service_base = std::env::var("ICON_SERVER_BASE_URL")
-            .unwrap_or_else(|_| "http://127.0.0.1:9002".to_string());
         Self {
             config: Arc::new(config),
             pool,
@@ -78,7 +87,7 @@ impl AppState {
                 .build()
                 .expect("reqwest client"),
             jwt_secret: Arc::new(jwt_secret),
-            icon_service_base: Arc::new(icon_service_base.trim_end_matches('/').to_string()),
+            icon_service_base: Arc::new(icon_service_base.into().trim_end_matches('/').to_string()),
             remote_itab_fetch_enabled,
         }
     }
@@ -93,7 +102,6 @@ pub fn app(state: AppState) -> Router {
     let itab_live_assets_dir = static_assets::public_subdir(&state.config, "itab-live-assets");
     let itab_assets_dir = static_assets::public_subdir(&state.config, "itab");
     let intro_assets_dir = static_assets::public_subdir(&state.config, "intro-assets");
-    let icons_dir = static_assets::public_subdir(&state.config, "icons");
     Router::new()
         .route("/healthz", get(healthz))
         .route("/ws", get(ws_handler))
@@ -123,6 +131,8 @@ pub fn app(state: AppState) -> Router {
         .route("/api/site/metadata", get(site_metadata))
         .route("/api/site/icon", get(site_icon))
         .route("/api/icon-cache", post(cache_icon))
+        .route("/icons/{*path}", get(icon_service_icon_asset))
+        .route("/cache/{*path}", get(icon_service_cache_asset))
         .route("/api/ip", get(ip_lookup::ip_info))
         .route("/api/ping", get(ping))
         .route("/api/rtt", get(rtt))
@@ -196,7 +206,6 @@ pub fn app(state: AppState) -> Router {
             get_service(ServeDir::new(itab_live_assets_dir)),
         )
         .nest_service("/itab", get_service(ServeDir::new(itab_assets_dir)))
-        .nest_service("/icons", get_service(ServeDir::new(icons_dir)))
         .nest_service(
             "/intro-assets",
             get_service(ServeDir::new(intro_assets_dir)),
@@ -653,6 +662,65 @@ async fn site_icon(
     let mut res = Response::new(Body::from(bytes));
     *res.status_mut() = StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::BAD_GATEWAY);
     res.headers_mut().insert(header::CONTENT_TYPE, content_type);
+    Ok(res)
+}
+
+async fn icon_service_icon_asset(
+    State(state): State<AppState>,
+    AxumPath(path): AxumPath<String>,
+) -> Result<Response, ApiError> {
+    proxy_icon_service_asset(&state, "icons", &path).await
+}
+
+async fn icon_service_cache_asset(
+    State(state): State<AppState>,
+    AxumPath(path): AxumPath<String>,
+) -> Result<Response, ApiError> {
+    proxy_icon_service_asset(&state, "cache", &path).await
+}
+
+async fn proxy_icon_service_asset(
+    state: &AppState,
+    namespace: &str,
+    path: &str,
+) -> Result<Response, ApiError> {
+    let mut url = Url::parse(state.icon_service_base.as_str())
+        .map_err(|err| ApiError::bad_gateway(err.to_string()))?;
+    {
+        let mut segments = url
+            .path_segments_mut()
+            .map_err(|_| ApiError::bad_gateway("invalid_icon_service_base"))?;
+        segments.pop_if_empty();
+        segments.push(namespace);
+        for segment in path.split('/').filter(|segment| !segment.is_empty()) {
+            segments.push(segment);
+        }
+    }
+    let response = state
+        .http
+        .get(url)
+        .send()
+        .await
+        .map_err(|err| ApiError::bad_gateway(err.to_string()))?;
+    let status = response.status();
+    let mut headers = HeaderMap::new();
+    for header_name in [
+        header::CONTENT_TYPE,
+        header::CACHE_CONTROL,
+        header::ETAG,
+        header::LAST_MODIFIED,
+    ] {
+        if let Some(value) = response.headers().get(&header_name) {
+            headers.insert(header_name, value.clone());
+        }
+    }
+    let bytes = response
+        .bytes()
+        .await
+        .map_err(|err| ApiError::bad_gateway(err.to_string()))?;
+    let mut res = Response::new(Body::from(bytes));
+    *res.status_mut() = StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::BAD_GATEWAY);
+    *res.headers_mut() = headers;
     Ok(res)
 }
 

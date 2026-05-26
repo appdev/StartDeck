@@ -1,5 +1,5 @@
 use anyhow::Context;
-use startdeck_core::{RuntimeConfig, connect_sqlite, import_legacy_data};
+use startdeck_core::{RuntimeConfig, connect_sqlite, import_legacy_app_data};
 use startdeck_server::{AppState, app};
 use tokio::net::TcpListener;
 use tracing_subscriber::EnvFilter;
@@ -12,7 +12,7 @@ async fn main() -> anyhow::Result<()> {
 
     let config = RuntimeConfig::from_env();
     let pool = connect_sqlite(&config).await?;
-    import_legacy_data(&pool, &config).await?;
+    import_legacy_app_data(&pool, &config).await?;
     let addr = format!("{}:{}", config.host, config.port);
     let listener = TcpListener::bind(&addr)
         .await

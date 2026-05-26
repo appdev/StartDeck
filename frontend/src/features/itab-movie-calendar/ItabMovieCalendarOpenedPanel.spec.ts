@@ -52,6 +52,7 @@ describe("ItabMovieCalendarOpenedPanel", () => {
     expect(wrapper.find(".movie-calendar-panel-rating-star").exists()).toBe(
       true,
     );
+    expect(wrapper.find(".movie-calendar-panel-rating-star").text()).toBe("");
     expect(
       wrapper.find(".movie-calendar-panel-poster img").attributes("src"),
     ).toBe("/api/itab/movie-calendar/image/poster");

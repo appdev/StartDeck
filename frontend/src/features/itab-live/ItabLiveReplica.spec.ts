@@ -1523,6 +1523,7 @@ describe("ItabLiveReplica clock replica", () => {
     expect(panel.attributes("data-movie-source-status")).toBe("ok");
     expect(panel.find(".opened-movie-bg").exists()).toBe(true);
     expect(panel.find(".opened-movie-rating-star").exists()).toBe(true);
+    expect(panel.find(".opened-movie-rating-star").text()).toBe("");
     expect(
       panel.find(".opened-movie-copy + .opened-movie-poster").exists(),
     ).toBe(true);

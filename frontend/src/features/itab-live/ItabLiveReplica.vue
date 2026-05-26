@@ -17992,19 +17992,12 @@ button {
 
 .opened-movie-rating-star {
   display: inline-block;
+  flex: 0 0 auto;
   width: 55px;
   height: 11px;
-  background: url("https://files.codelife.cc/itab/rating_s@2x.png") 0 -33px /
-    cover no-repeat;
+  background: url("../../assets/itab/movie-calendar/rating_s@2x.png") 0 -33px /
+    55px 121px no-repeat;
   line-height: 11px;
-}
-
-.opened-movie-rating-star::before {
-  content: none;
-}
-
-.opened-movie-rating-star::after {
-  content: none;
 }
 
 .opened-movie-panel .opened-movie-rating {

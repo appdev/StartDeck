@@ -96,7 +96,7 @@ curl 'http://icons.put.run/api/icon?url=https://apkdv.com/posts/implementing_ios
 
 - 启动时从本地种子文件导入已有图标数据
 - 查询命中本地缓存时直接返回
-- 默认数据和运行期缓存分开存储
+- 默认种子资源和运行期缓存分开存储
 - 未命中时调用 iTab `website/info` 接口
 - 未命中时优先调用 Microlink API，若 Microlink 没有返回 `logo.url` 再回退到 iTab `website/info`
 - 自动下载图标到本地并更新缓存
@@ -108,18 +108,19 @@ curl 'http://icons.put.run/api/icon?url=https://apkdv.com/posts/implementing_ios
 
 ## 配置
 
-Rust 图标服务默认读取 `rust/crates/startdeck-iconserver/resources/data` 中的种子资源，部署时通过 `ICON_SERVICE_DATA_DIR` 指向可写运行期目录，默认监听 `9002`。常用环境变量：
+Rust 图标服务默认读取 `rust/crates/startdeck-iconserver/resources/data` 中的只读种子资源，部署时通过 `ICON_SERVICE_DATA_DIR` 指向可写运行期缓存目录，默认监听 `9002`。服务独立运行，不依赖主服务；主服务通过 HTTP 调用它。常用环境变量：
 
 - `BASE_DIR`: StartDeck 运行根目录，默认由当前工作目录推断。
 - `ICON_SERVICE_PORT`: 图标服务监听端口，默认 `9002`。
-- `ICON_SERVICE_DATA_DIR`: 图标服务可写数据目录。未设置时会优先使用 Rust crate 下的 `resources/data`，再回退到旧版 `icon-service/data`。
+- `ICON_SERVICE_RESOURCE_DIR`: 图标服务只读种子资源目录，只包含 `seed-data.json` 和默认 `icons/`。Docker 镜像中默认是 `/app/icon-service-defaults/data`。
+- `ICON_SERVICE_DATA_DIR`: 图标服务可写运行期数据目录，用于外部挂载 `cache/` 和迁移来的 `cache.json`。未设置时默认使用运行根目录下的 `icon-service/data`。
 
-服务不再读取旧版 `config.json`。若缓存未命中，服务会优先使用本地 seed/cache 数据；外部回源能力由 Rust 服务实现和部署环境决定。
+服务不再读取旧版 `config.json`。若缓存未命中，服务会优先使用只读 seed 数据，再使用运行期 cache 数据；外部回源能力由 Rust 服务实现和部署环境决定。
 
 图标目录分层：
 
-- 默认种子数据图标保存在 `seedIconDir`
-- 非默认缓存图标保存在 `cacheIconDir`
+- 默认种子数据图标保存在 `ICON_SERVICE_RESOURCE_DIR/icons`
+- 非默认缓存图标保存在 `ICON_SERVICE_DATA_DIR/cache`
 - 对外返回地址会保留这个分流，例如 `/icons/www.youtube.com.svg` 或 `/cache/apkdv.com.svg`
 
 ## 运行

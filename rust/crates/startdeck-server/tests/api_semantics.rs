@@ -3,7 +3,7 @@ use axum::http::{Request, StatusCode};
 use flate2::Compression;
 use flate2::write::GzEncoder;
 use serde_json::{Value, json};
-use startdeck_core::{RuntimeConfig, connect_sqlite, import_legacy_data};
+use startdeck_core::{RuntimeConfig, connect_sqlite, import_legacy_app_data};
 use startdeck_server::{AppState, app};
 use std::io::Write;
 use tower::ServiceExt;
@@ -99,7 +99,7 @@ async fn test_app_with_widget_cache(include_poem_cache: bool) -> axum::Router {
     std::fs::write(public_dir.join("index.html"), "<main>StartDeck</main>").unwrap();
     let config = RuntimeConfig::from_base_dir(base);
     let pool = connect_sqlite(&config).await.unwrap();
-    import_legacy_data(&pool, &config).await.unwrap();
+    import_legacy_app_data(&pool, &config).await.unwrap();
     app(AppState::new_with_remote_itab_fetch(config, pool, false))
 }
 
@@ -517,6 +517,44 @@ async fn route_surface_smoke_covers_auth_and_runtime_semantics() {
     assert_eq!(status, StatusCode::OK);
     assert_eq!(body["data"]["sourceStatus"], "fallback");
     assert_eq!(body["data"]["movieTitle"], "雌雄莫辨");
+
+    let (status, body) = json_call(&app, "GET", "/api/itab/weather/location", None, None).await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(body["data"]["id"], "101280608");
+    assert_eq!(body["data"]["name"], "龙华");
+
+    let (status, body) = json_call(
+        &app,
+        "GET",
+        "/api/itab/weather/current?location=101280608&type=city&refresh=false",
+        None,
+        None,
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(body["data"]["sourceStatus"], "fallback");
+    assert_eq!(body["data"]["current"]["now"]["cond_txt"], "阴");
+    assert_eq!(
+        body["data"]["hourly"]["hourly"].as_array().unwrap().len(),
+        24
+    );
+
+    let (status, body) = json_call(
+        &app,
+        "GET",
+        "/api/itab/weather/search?keyword=深圳",
+        None,
+        None,
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK);
+    assert!(
+        body["data"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|city| city["name"] == "深圳")
+    );
 
     let (status, body) = json_call(&app, "GET", "/api/itab/bing-wallpapers", None, None).await;
     assert_eq!(status, StatusCode::OK);

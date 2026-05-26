@@ -154,6 +154,17 @@ const hostSummary = computed(() => {
   if (!os) return "Host telemetry";
   return [os.hostname, os.distro, os.kernel].filter(Boolean).join(" · ");
 });
+const openedHostSummary = computed(() => {
+  const summary = hostSummary.value;
+  if (!systemStats.value?.uptime) return summary;
+  return [summary, `运行天数 ${uptimeDaysText.value}`].filter(Boolean).join(" · ");
+});
+const realtimeSummary = computed(() => {
+  const parts = [osSummary.value];
+  if (systemStats.value?.uptime) parts.push(`运行天数 ${uptimeDaysText.value}`);
+  parts.push(`CPU ${cpuPercent.value.toFixed(0)}%`);
+  return parts.join(" · ");
+});
 
 const metricCards = computed(() => [
   {
@@ -315,7 +326,7 @@ onUnmounted(() => {
       <div>
         <span class="system-opened-kicker">Host telemetry</span>
         <h2>系统状态</h2>
-        <p>{{ hostSummary }}</p>
+        <p>{{ openedHostSummary }}</p>
       </div>
       <AppButton variant="secondary" @click="() => fetchSystemStats()">
         立即刷新
@@ -436,7 +447,7 @@ onUnmounted(() => {
         <section class="system-settings-section">
           <div class="system-settings-section-title">
             <strong>实时状态</strong>
-            <span>{{ osSummary }} · CPU {{ cpuPercent.toFixed(0) }}%</span>
+            <span>{{ realtimeSummary }}</span>
           </div>
           <AppButton variant="secondary" @click="() => fetchSystemStats()">
             立即刷新

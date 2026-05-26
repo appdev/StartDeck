@@ -61,6 +61,7 @@ pub fn icon_addr_from_env() -> String {
 
 pub fn app(state: IconState) -> Router {
     let icon_dir = state.config.icon_service_data_dir.join("icons");
+    let icon_resource_dir = state.config.icon_service_resource_dir.join("icons");
     let cache_dir = state.config.icon_service_data_dir.join("cache");
     Router::new()
         .route("/healthz", get(healthz))
@@ -69,7 +70,10 @@ pub fn app(state: IconState) -> Router {
         .route("/api/site/icon", get(site_icon))
         .route("/api/icon/refresh", post(refresh_icon))
         .route("/api/icon/cache", delete(delete_icon_cache))
-        .nest_service("/icons", get_service(ServeDir::new(icon_dir)))
+        .nest_service(
+            "/icons",
+            get_service(ServeDir::new(icon_dir).fallback(ServeDir::new(icon_resource_dir))),
+        )
         .nest_service("/cache", get_service(ServeDir::new(cache_dir)))
         .fallback(not_found)
         .layer(CompressionLayer::new())
@@ -412,9 +416,8 @@ fn public_icon_url(state: &IconState, icon: &str) -> String {
     if icon.starts_with("http://") || icon.starts_with("https://") {
         return icon.to_string();
     }
-    let icon = if icon.starts_with('/') {
-        icon.to_string()
-    } else if icon.contains('/') {
+    let icon = normalize_local_icon_reference(icon);
+    let icon = if icon.contains('/') {
         format!("/{icon}")
     } else {
         format!("/icons/{icon}")
@@ -431,21 +434,46 @@ fn public_icon_url(state: &IconState, icon: &str) -> String {
 }
 
 fn resolve_local_icon(state: &IconState, icon: &str) -> Option<PathBuf> {
-    let trimmed = icon.trim_start_matches('/');
-    let candidate = if let Some(name) = trimmed.strip_prefix("icons/") {
-        state.config.icon_service_data_dir.join("icons").join(name)
+    let trimmed = normalize_local_icon_reference(icon);
+    let candidates = if let Some(name) = trimmed.strip_prefix("icons/") {
+        vec![
+            state.config.icon_service_data_dir.join("icons").join(name),
+            state
+                .config
+                .icon_service_resource_dir
+                .join("icons")
+                .join(name),
+        ]
     } else if let Some(name) = trimmed.strip_prefix("cache/") {
-        state.config.icon_service_data_dir.join("cache").join(name)
+        vec![state.config.icon_service_data_dir.join("cache").join(name)]
     } else if !trimmed.contains("://") {
-        state
-            .config
-            .icon_service_data_dir
-            .join("icons")
-            .join(trimmed)
+        vec![
+            state
+                .config
+                .icon_service_data_dir
+                .join("icons")
+                .join(&trimmed),
+            state
+                .config
+                .icon_service_resource_dir
+                .join("icons")
+                .join(trimmed),
+        ]
     } else {
         return None;
     };
-    Some(candidate).filter(|path| path.exists())
+    candidates.into_iter().find(|path| path.exists())
+}
+
+fn normalize_local_icon_reference(icon: &str) -> String {
+    let trimmed = icon.trim().trim_start_matches('/');
+    if let Some(name) = trimmed.strip_prefix("data/icons/") {
+        format!("icons/{name}")
+    } else if let Some(name) = trimmed.strip_prefix("data/cache/") {
+        format!("cache/{name}")
+    } else {
+        trimmed.to_string()
+    }
 }
 
 fn bytes_response(bytes: Vec<u8>, content_type: &str) -> Response {

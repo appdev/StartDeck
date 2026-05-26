@@ -1,5 +1,5 @@
 use anyhow::Context;
-use startdeck_core::{RuntimeConfig, connect_sqlite, import_legacy_data};
+use startdeck_core::{RuntimeConfig, connect_sqlite, import_icon_service_data};
 use startdeck_iconserver::{IconState, app, icon_addr_from_env};
 use tokio::net::TcpListener;
 use tracing_subscriber::EnvFilter;
@@ -12,7 +12,7 @@ async fn main() -> anyhow::Result<()> {
 
     let config = RuntimeConfig::from_env();
     let pool = connect_sqlite(&config).await?;
-    import_legacy_data(&pool, &config).await?;
+    import_icon_service_data(&pool, &config).await?;
     let addr = icon_addr_from_env();
     let listener = TcpListener::bind(&addr)
         .await

@@ -77,7 +77,7 @@ watch(
 
 .food-picker-card strong {
   display: block;
-  color: oklch(0.278 0.033 256.848);
+  color: var(--sd-theme-itab-food-picker-food-picker-widget-accent-text-01);
   font-size: 8px;
   font-weight: 700;
   line-height: 12px;

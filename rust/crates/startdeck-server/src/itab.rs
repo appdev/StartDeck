@@ -25,6 +25,7 @@ const ITAB_BING_WALLPAPER_DEFAULT_SIZE: &str = "large";
 const ITAB_DAILY_ENGLISH_KIND: &str = "itab_daily_english";
 const ITAB_MOVIE_CALENDAR_KIND: &str = "itab_movie_calendar";
 const ITAB_POEM_KIND: &str = "itab_poem";
+const ITAB_WEATHER_KIND: &str = "itab_weather";
 const ITAB_DAILY_WIDGET_CACHE_TTL_MS: i64 = 12 * 60 * 60 * 1000;
 const ITAB_POEM_CACHE_TTL_MS: i64 = 2 * 60 * 60 * 1000;
 const ITAB_MEDIA_PROXY_MAX_BYTES: usize = 12 * 1024 * 1024;
@@ -150,7 +151,12 @@ pub(crate) async fn cached_widget_data(
     uri: axum::http::Uri,
     Query(query): Query<HashMap<String, String>>,
 ) -> Result<Json<Value>, ApiError> {
-    let kind = widget_kind_from_path(uri.path());
+    let path = uri.path();
+    if path.starts_with("/api/itab/weather/") {
+        return Ok(Json(weather_widget_response(path, &query)));
+    }
+
+    let kind = widget_kind_from_path(path);
     if kind == ITAB_BING_WALLPAPER_KIND {
         return bing_wallpaper_data(&state, &query).await;
     }
@@ -842,6 +848,125 @@ fn cached_widget_response(mut data: Value, status: &str) -> Value {
     json!({"success": true, "data": data, "sourceStatus": status})
 }
 
+fn weather_widget_response(path: &str, query: &HashMap<String, String>) -> Value {
+    let data = match path {
+        "/api/itab/weather/location" => fallback_weather_location(),
+        "/api/itab/weather/search" => {
+            let keyword = query
+                .get("keyword")
+                .map(String::as_str)
+                .unwrap_or_default()
+                .trim();
+            fallback_weather_search(keyword)
+        }
+        "/api/itab/weather/current" => fallback_weather_current_bundle(),
+        _ => json!({"sourceStatus": "fallback"}),
+    };
+    json!({"success": true, "data": data, "sourceStatus": "fallback"})
+}
+
+fn fallback_weather_location() -> Value {
+    json!({
+        "id": "101280608",
+        "name": "龙华",
+        "adm1": "广东省",
+        "adm2": "深圳",
+        "country": "中国",
+        "type": "city",
+        "location": "114.04,22.65",
+        "ip": "127.0.0.1",
+        "sourceStatus": "fallback"
+    })
+}
+
+fn fallback_weather_search(keyword: &str) -> Value {
+    let cities = vec![
+        json!({"id": "101280608", "name": "龙华", "adm1": "广东省", "adm2": "深圳", "country": "中国", "type": "city", "location": "114.04,22.65"}),
+        json!({"id": "101280601", "name": "深圳", "adm1": "广东省", "adm2": "深圳", "country": "中国", "type": "city", "location": "114.05,22.55"}),
+        json!({"id": "101280101", "name": "广州", "adm1": "广东省", "adm2": "广州", "country": "中国", "type": "city", "location": "113.26,23.13"}),
+        json!({"id": "101010100", "name": "北京", "adm1": "北京市", "adm2": "北京", "country": "中国", "type": "city", "location": "116.41,39.90"}),
+        json!({"id": "101020100", "name": "上海", "adm1": "上海市", "adm2": "上海", "country": "中国", "type": "city", "location": "121.47,31.23"}),
+    ];
+    if keyword.is_empty() {
+        return Value::Array(cities);
+    }
+    let filtered: Vec<Value> = cities
+        .iter()
+        .filter(|city| {
+            ["name", "adm1", "adm2"]
+                .iter()
+                .filter_map(|key| city.get(key).and_then(Value::as_str))
+                .any(|value| value.contains(keyword))
+        })
+        .cloned()
+        .collect();
+    Value::Array(if filtered.is_empty() {
+        cities
+    } else {
+        filtered
+    })
+}
+
+fn fallback_weather_current_bundle() -> Value {
+    json!({
+        "sourceStatus": "fallback",
+        "current": {
+            "status": "ok",
+            "rain": {"txt": "各类人群可多参加户外活动，多呼吸一下清新的空气。"},
+            "now": {
+                "cond_code": "104",
+                "cond_txt": "阴",
+                "hum": "88",
+                "pcpn": "22.5",
+                "pres": "1003",
+                "tmp": "27",
+                "wind_dir": "北风",
+                "wind_sc": "0"
+            },
+            "air_now_city": {"qlty": "优", "aqi": "34"},
+            "sun": {"rise": "05:40", "set": "18:59"},
+            "daily_forecast": [
+                {"date": "2026-05-21", "cond_txt_d": "阴", "cond_code_d": "104", "wind_sc": "<3", "tmp_max": "29", "tmp_min": "25"},
+                {"date": "2026-05-22", "cond_txt_d": "晴", "cond_code_d": "100", "wind_sc": "3-4", "tmp_max": "30", "tmp_min": "26"},
+                {"date": "2026-05-23", "cond_txt_d": "晴", "cond_code_d": "100", "wind_sc": "3-4转<3", "tmp_max": "30", "tmp_min": "26"},
+                {"date": "2026-05-24", "cond_txt_d": "多云", "cond_code_d": "104", "wind_sc": "3-4转<3", "tmp_max": "33", "tmp_min": "26"},
+                {"date": "2026-05-25", "cond_txt_d": "多云", "cond_code_d": "104", "wind_sc": "3-4转<3", "tmp_max": "33", "tmp_min": "27"},
+                {"date": "2026-05-26", "cond_txt_d": "多云", "cond_code_d": "104", "wind_sc": "3-4转<3", "tmp_max": "33", "tmp_min": "27"},
+                {"date": "2026-05-27", "cond_txt_d": "小雨转多云", "cond_code_d": "104", "wind_sc": "<3", "tmp_max": "33", "tmp_min": "26"}
+            ]
+        },
+        "hourly": {
+            "updateTime": "2026-05-21T21:35+08:00",
+            "hourly": [
+                {"fxTime": "2026-05-21T22:00+08:00", "icon": "151", "temp": "26"},
+                {"fxTime": "2026-05-21T23:00+08:00", "icon": "302", "temp": "26"},
+                {"fxTime": "2026-05-22T00:00+08:00", "icon": "302", "temp": "26"},
+                {"fxTime": "2026-05-22T01:00+08:00", "icon": "302", "temp": "26"},
+                {"fxTime": "2026-05-22T02:00+08:00", "icon": "302", "temp": "26"},
+                {"fxTime": "2026-05-22T03:00+08:00", "icon": "104", "temp": "26"},
+                {"fxTime": "2026-05-22T04:00+08:00", "icon": "302", "temp": "26"},
+                {"fxTime": "2026-05-22T05:00+08:00", "icon": "302", "temp": "26"},
+                {"fxTime": "2026-05-22T06:00+08:00", "icon": "101", "temp": "27"},
+                {"fxTime": "2026-05-22T07:00+08:00", "icon": "101", "temp": "28"},
+                {"fxTime": "2026-05-22T08:00+08:00", "icon": "302", "temp": "28"},
+                {"fxTime": "2026-05-22T09:00+08:00", "icon": "101", "temp": "29"},
+                {"fxTime": "2026-05-22T10:00+08:00", "icon": "101", "temp": "29"},
+                {"fxTime": "2026-05-22T11:00+08:00", "icon": "100", "temp": "30"},
+                {"fxTime": "2026-05-22T12:00+08:00", "icon": "100", "temp": "30"},
+                {"fxTime": "2026-05-22T13:00+08:00", "icon": "100", "temp": "30"},
+                {"fxTime": "2026-05-22T14:00+08:00", "icon": "100", "temp": "31"},
+                {"fxTime": "2026-05-22T15:00+08:00", "icon": "100", "temp": "30"},
+                {"fxTime": "2026-05-22T16:00+08:00", "icon": "100", "temp": "30"},
+                {"fxTime": "2026-05-22T17:00+08:00", "icon": "100", "temp": "29"},
+                {"fxTime": "2026-05-22T18:00+08:00", "icon": "100", "temp": "29"},
+                {"fxTime": "2026-05-22T19:00+08:00", "icon": "100", "temp": "28"},
+                {"fxTime": "2026-05-22T20:00+08:00", "icon": "150", "temp": "28"},
+                {"fxTime": "2026-05-22T21:00+08:00", "icon": "150", "temp": "27"}
+            ]
+        }
+    })
+}
+
 fn fallback_widget_cache(kind: &str) -> Option<(&'static str, Value, &'static str)> {
     match kind {
         "itab_daily_english" => Some((
@@ -1090,7 +1215,7 @@ fn widget_kind_from_path(path: &str) -> &'static str {
         "/api/itab/movie-calendar" => ITAB_MOVIE_CALENDAR_KIND,
         "/api/itab/bing-wallpapers" => ITAB_BING_WALLPAPER_KIND,
         "/api/itab/weather/location" | "/api/itab/weather/search" | "/api/itab/weather/current" => {
-            "itab_weather"
+            ITAB_WEATHER_KIND
         }
         "/api/itab/poem" => ITAB_POEM_KIND,
         _ => "unknown",

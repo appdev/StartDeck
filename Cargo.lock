@@ -2877,6 +2877,7 @@ dependencies = [
  "sha2 0.10.9",
  "sqlx",
  "startdeck-core",
+ "startdeck-iconserver",
  "tempfile",
  "thiserror",
  "tokio",

@@ -202,9 +202,10 @@ onMounted(() => {
 
 .movie-calendar-panel-rating-star {
   display: inline-block;
+  flex: 0 0 auto;
   width: 55px;
   height: 11px;
-  background-image: url("https://files.codelife.cc/itab/rating_s@2x.png");
+  background-image: url("../../assets/itab/movie-calendar/rating_s@2x.png");
   background-position: 0 -33px;
   background-repeat: no-repeat;
   background-size: 55px 121px;

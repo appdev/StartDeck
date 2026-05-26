@@ -248,6 +248,12 @@ async fn destructive_reset_schema(pool: &SqlitePool) -> Result<()> {
 }
 
 pub async fn import_legacy_data(pool: &SqlitePool, config: &RuntimeConfig) -> Result<()> {
+    import_legacy_app_data(pool, config).await?;
+    import_icon_service_data(pool, config).await?;
+    Ok(())
+}
+
+pub async fn import_legacy_app_data(pool: &SqlitePool, config: &RuntimeConfig) -> Result<()> {
     if user_data_exists(pool).await? {
         tracing::info!("sqlite user data already exists; skipping legacy app-data import");
     } else {
@@ -265,9 +271,13 @@ pub async fn import_legacy_data(pool: &SqlitePool, config: &RuntimeConfig) -> Re
         import_user_dir(pool, &config.users_dir, &config.admin_password).await?;
     }
     import_widget_cache(pool, &config.data_dir.join("widget_cache.json")).await?;
+    Ok(())
+}
+
+pub async fn import_icon_service_data(pool: &SqlitePool, config: &RuntimeConfig) -> Result<()> {
     import_icon_seed_file(
         pool,
-        &config.icon_service_data_dir.join("seed-data.json"),
+        &config.icon_service_resource_dir.join("seed-data.json"),
         "seed",
     )
     .await?;
@@ -832,7 +842,8 @@ async fn import_icon_seed_file(pool: &SqlitePool, path: &Path, source: &str) -> 
             description: String::new(),
             background_color: string_field(item, "background_color").unwrap_or_default(),
             icon: string_field(item, "icon_url")
-                .or_else(|| string_field(item, "original_icon_url")),
+                .or_else(|| string_field(item, "original_icon_url"))
+                .map(|icon| normalize_icon_reference(&icon, None)),
             source: source.to_string(),
             fetched_at: Utc::now(),
         };
@@ -923,15 +934,35 @@ fn first_icon(value: &Value) -> Option<String> {
         .and_then(|items| items.first())
         .and_then(Value::as_str)
     {
-        return Some(local.to_string());
+        return Some(normalize_icon_reference(local, Some("cache")));
     }
     value
         .get("icons")
         .and_then(Value::as_array)
         .and_then(|items| items.first())
         .and_then(Value::as_str)
-        .map(ToOwned::to_owned)
+        .map(|icon| normalize_icon_reference(icon, None))
         .or_else(|| string_field(value, "src"))
+}
+
+fn normalize_icon_reference(icon: &str, default_local_prefix: Option<&str>) -> String {
+    let trimmed = icon.trim().trim_start_matches('/');
+    if trimmed.starts_with("http://") || trimmed.starts_with("https://") {
+        return trimmed.to_string();
+    }
+    if let Some(name) = trimmed.strip_prefix("data/icons/") {
+        return format!("icons/{name}");
+    }
+    if let Some(name) = trimmed.strip_prefix("data/cache/") {
+        return format!("cache/{name}");
+    }
+    if trimmed.contains('/') {
+        return trimmed.to_string();
+    }
+    if let Some(prefix) = default_local_prefix {
+        return format!("{prefix}/{trimmed}");
+    }
+    trimmed.to_string()
 }
 
 fn normalize_host(raw: &str) -> Option<String> {

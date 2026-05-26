@@ -27,7 +27,11 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="opened-weather-panel" data-grid-drag-ignore="true">
+  <div
+    class="opened-weather-panel"
+    data-itab-weather-opened-panel
+    data-grid-drag-ignore="true"
+  >
     <header class="opened-weather-header">
       <span>
         {{ runtime.activeLocation.value.province }} ·
@@ -259,6 +263,8 @@ onMounted(() => {
   height: 100%;
   padding: 30px 24px 24px;
   overflow: hidden auto;
+  background: var(--sd-theme-itab-weather-weather-opened-panel-surface-00);
+  color: var(--sd-theme-itab-weather-weather-opened-panel-text-01);
   scrollbar-width: none;
 }
 

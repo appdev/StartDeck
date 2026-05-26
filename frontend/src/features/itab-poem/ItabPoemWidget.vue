@@ -114,6 +114,16 @@ watch(
   );
 }
 
+:global([data-sd-scheme="dark"] .itab-poem-widget),
+:global([data-sd-theme="dark"] .itab-poem-widget) {
+  --poem-bg: var(--sd-theme-itab-poem-poem-widget-surface-01) !important;
+  --poem-wave-base: color-mix(
+    in srgb,
+    var(--sd-state-info) 24%,
+    transparent
+  ) !important;
+}
+
 .poem-icon-content.is-poem-size-1-1 {
   --itab-poem-card-bg: var(--sd-theme-itab-poem-poem-widget-accent-01);
 }
@@ -219,7 +229,7 @@ watch(
   width: 100%;
   margin-top: 5px;
   overflow: hidden;
-  color: oklch(0.707 0.022 261.325);
+  color: var(--sd-theme-itab-poem-poem-widget-text-02);
   font-size: 11.97px;
   line-height: 17.96px;
   text-overflow: ellipsis;

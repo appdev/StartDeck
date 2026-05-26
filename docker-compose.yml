@@ -15,6 +15,7 @@ services:
       - STARTDECK_ADMIN_PASSWORD=violet
       - ICON_SERVICE_PORT=9002
       - ICON_SERVICE_DATA_DIR=/app/icon-service/data
+      - ICON_SERVICE_RESOURCE_DIR=/app/icon-service-defaults/data
       - ICON_SERVER_BASE_URL=http://127.0.0.1:9002
       - ICON_SERVER_TIMEOUT_MS=5000
     volumes:

@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import { readFileSync } from "node:fs";
 import { mount } from "@vue/test-utils";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import ItabFoodPickerWidget from "./ItabFoodPickerWidget.vue";
@@ -66,5 +67,20 @@ describe("ItabFoodPickerWidget", () => {
       pickedAt: 1770000000001,
     });
     wrapper.unmount();
+  });
+
+  it("keeps text colors on food picker theme tokens", () => {
+    const source = readFileSync(
+      "src/features/itab-food-picker/ItabFoodPickerWidget.vue",
+      "utf8",
+    );
+
+    expect(source).not.toContain("oklch(");
+    expect(source).toContain(
+      "color: var(--sd-theme-itab-food-picker-food-picker-widget-accent-text-01)",
+    );
+    expect(source).toContain(
+      "background: var(\n    --sd-theme-itab-food-picker-food-picker-widget-accent-surface-01\n  )",
+    );
   });
 });

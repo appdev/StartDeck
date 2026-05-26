@@ -40,7 +40,8 @@ ARG HTTPS_PROXY
 
 ENV HTTP_PROXY=$HTTP_PROXY \
     HTTPS_PROXY=$HTTPS_PROXY \
-    CARGO_REGISTRIES_CRATES_IO_PROTOCOL=sparse
+    CARGO_REGISTRIES_CRATES_IO_PROTOCOL=sparse \
+    CARGO_BUILD_JOBS=1
 
 WORKDIR /app
 
@@ -64,7 +65,14 @@ WORKDIR /server-resources
 COPY rust/crates/startdeck-server/resources .
 RUN rm -rf public/icons
 
-# Stage 5: Final Image
+# Stage 5: Keep icon defaults read-only; runtime cache belongs to the mounted data dir.
+FROM busybox:1.37.0-glibc AS icon-resource-filter
+
+WORKDIR /icon-resources
+COPY rust/crates/startdeck-iconserver/resources/data .
+RUN rm -rf cache cache.json
+
+# Stage 6: Final Image
 FROM busybox:1.37.0-glibc
 
 WORKDIR /app
@@ -86,6 +94,7 @@ ENV TZ=Asia/Shanghai \
     PC_DIR=/app/Data/PC \
     APP_DIR=/app/Data/APP \
     ICON_SERVICE_DATA_DIR=/app/icon-service/data \
+    ICON_SERVICE_RESOURCE_DIR=/app/icon-service-defaults/data \
     PORT=9001 \
     ICON_SERVICE_PORT=9002 \
     ICON_SERVER_BASE_URL=http://127.0.0.1:9002 \
@@ -97,7 +106,7 @@ COPY --from=rust-builder /app/target/release/startdeck-server .
 # Copy Rust icon service binary, seed data, and startup script.
 COPY --from=rust-builder /app/target/release/startdeck-iconserver ./icon-service/startdeck-iconserver
 COPY --from=server-resource-filter /server-resources/. ./startdeck-server-defaults
-COPY rust/crates/startdeck-iconserver/resources/data ./icon-service-defaults/data
+COPY --from=icon-resource-filter /icon-resources/. ./icon-service-defaults/data
 COPY scripts/docker-entrypoint.sh ./scripts/docker-entrypoint.sh
 
 # Copy frontend dist to public directory
@@ -105,7 +114,7 @@ COPY scripts/docker-entrypoint.sh ./scripts/docker-entrypoint.sh
 COPY --from=frontend-builder /app/frontend/dist ./Data/public
 
 # Create necessary directories for volumes
-RUN mkdir -p Data/data Data/public Data/music Data/PC Data/APP Data/doc icon-service/data/icons icon-service/data/cache \
+RUN mkdir -p Data/data Data/public Data/music Data/PC Data/APP Data/doc icon-service/data/cache \
     && chmod +x ./scripts/docker-entrypoint.sh
 
 # Expose port

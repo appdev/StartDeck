@@ -25,7 +25,7 @@ const audit = JSON.parse(
 ) as ColorAudit;
 
 const exactColorPattern =
-  /#[0-9a-fA-F]{3,8}\b|\brgba?\([^)]+\)|\bhsla?\([^)]+\)/g;
+  /#[0-9a-fA-F]{3,8}\b|\brgba?\([^)]+\)|\bhsla?\([^)]+\)|\boklch\([^)]+\)|\blch\([^)]+\)|\blab\([^)]+\)/g;
 
 const ignoredLiteralColors = new Set(["transparent", "currentColor"]);
 const allowedDynamicColorPatterns = [
@@ -140,10 +140,15 @@ const darkOpenedPanelCriticalTokens = [
   "--sd-theme-itab-todo-todo-opened-panel-text-01",
   "--sd-theme-itab-wallpaper-wallpaper-opened-panel-surface-01",
   "--sd-theme-itab-wallpaper-wallpaper-opened-panel-text-01",
+  "--sd-theme-itab-weather-weather-opened-panel-surface-00",
+  "--sd-theme-itab-weather-weather-opened-panel-text-01",
 ] as const;
 
 const sourceDarkOuterWidgetValuePattern =
-  /#111\b|rgb\(\s*34\s*,\s*34\s*,\s*34\s*\)|rgb\(\s*223\s*,\s*221\s*,\s*221\s*\)|rgba\(\s*255\s*,\s*255\s*,\s*255\s*,\s*0\.8\s*\)/i;
+  /#000\b|#111\b|#111827\b|#1a202c\b|rgb\(\s*34\s*,\s*34\s*,\s*34\s*\)|rgb\(\s*223\s*,\s*221\s*,\s*221\s*\)|rgba\(\s*255\s*,\s*255\s*,\s*255\s*,\s*0\.8\s*\)/i;
+
+const sourceLightOuterWidgetValuePattern =
+  /#fff\b|#eee\b|#333\b|rgb\(\s*255\s*,\s*255\s*,\s*255\s*\)|rgb\(\s*238\s*,\s*238\s*,\s*238\s*\)|rgb\(\s*31\s*,\s*41\s*,\s*55\s*\)/i;
 
 const lightOuterWidgetCriticalTokens = [
   "--sd-theme-itab-calendar-calendar-widget-surface-01",
@@ -154,8 +159,49 @@ const lightOuterWidgetCriticalTokens = [
   "--sd-theme-itab-clock-clock-widget-text-01",
   "--sd-theme-itab-memo-memo-widget-surface-01",
   "--sd-theme-itab-memo-memo-widget-text-01",
+  "--sd-theme-itab-number-uppercase-number-uppercase-opened-panel-accent-surface-03",
+  "--sd-theme-itab-number-uppercase-number-uppercase-opened-panel-surface-01",
+  "--sd-theme-itab-number-uppercase-number-uppercase-opened-panel-text-01",
+  "--sd-theme-itab-number-uppercase-number-uppercase-widget-accent-surface-03",
   "--sd-theme-itab-todo-todo-widget-surface-01",
   "--sd-theme-itab-todo-todo-widget-text-01",
+] as const;
+
+const darkOuterWidgetCriticalTokens = [
+  "--sd-theme-itab-food-picker-food-picker-widget-accent-text-01",
+  "--sd-theme-itab-food-picker-food-picker-widget-surface-01",
+  "--sd-theme-itab-food-picker-food-picker-widget-text-01",
+  "--sd-theme-itab-poem-poem-widget-surface-01",
+  "--sd-theme-itab-poem-poem-widget-text-01",
+  "--sd-theme-itab-poem-poem-widget-text-02",
+] as const;
+
+const lightSettingsModalContentTokens = [
+  "--sd-theme-settings-modal-border-03",
+  "--sd-theme-settings-modal-border-04",
+  "--sd-theme-settings-modal-border-05",
+  "--sd-theme-settings-modal-surface-04",
+  "--sd-theme-settings-modal-surface-05",
+  "--sd-theme-settings-modal-surface-06",
+  "--sd-theme-settings-modal-surface-07",
+  "--sd-theme-settings-modal-surface-08",
+  "--sd-theme-settings-modal-surface-09",
+  "--sd-theme-settings-modal-text-05",
+  "--sd-theme-settings-modal-text-06",
+  "--sd-theme-settings-modal-text-07",
+  "--sd-theme-settings-modal-text-08",
+  "--sd-theme-settings-modal-text-09",
+  "--sd-theme-settings-modal-text-10",
+  "--sd-theme-settings-modal-text-11",
+  "--sd-theme-settings-modal-text-12",
+  "--sd-theme-settings-modal-text-13",
+  "--sd-theme-settings-modal-text-14",
+  "--sd-theme-settings-modal-text-15",
+] as const;
+
+const darkSettingsPreviewSearchTokens = [
+  "--sd-theme-settings-modal-accent-text-01",
+  "--sd-theme-settings-modal-accent-text-02",
 ] as const;
 
 describe("component color policy", () => {
@@ -296,6 +342,88 @@ describe("component color policy", () => {
           value,
           `${token} still resolves to a source-dark outer-widget literal in light theme`,
         ).not.toMatch(sourceDarkOuterWidgetValuePattern);
+      }
+    }
+  });
+
+  it("keeps light-source widget cards dark-adapted in dark theme", () => {
+    const source = readFileSync(
+      resolve(repoRoot, "frontend/src/assets/main.css"),
+      "utf8",
+    );
+    const darkThemeValues = collectDarkThemeDeclarationValues(
+      source,
+      darkOuterWidgetCriticalTokens,
+    );
+
+    for (const token of darkOuterWidgetCriticalTokens) {
+      const values = darkThemeValues.get(token) ?? [];
+      expect(values, `${token} should be declared in the dark token block`)
+        .not.toHaveLength(0);
+
+      for (const value of values) {
+        expect(
+          value,
+          `${token} should consume semantic dark surfaces/text instead of a source-light literal`,
+        ).toMatch(/var\(\s*--sd-(?:component|state|home|color)-/);
+        expect(
+          value,
+          `${token} still resolves to a source-light outer-widget literal in dark theme`,
+        ).not.toMatch(sourceLightOuterWidgetValuePattern);
+      }
+    }
+  });
+
+  it("keeps Settings modal regular content readable in light theme", () => {
+    const source = readFileSync(
+      resolve(repoRoot, "frontend/src/assets/main.css"),
+      "utf8",
+    );
+    const lightThemeValues = collectLightThemeDeclarationValues(
+      source,
+      lightSettingsModalContentTokens,
+    );
+
+    for (const token of lightSettingsModalContentTokens) {
+      const values = lightThemeValues.get(token) ?? [];
+      expect(values, `${token} should be declared in the light token block`)
+        .not.toHaveLength(0);
+
+      for (const value of values) {
+        expect(
+          value,
+          `${token} should use semantic Settings/modal tokens rather than inherited dark source literals`,
+        ).toMatch(/var\(\s*--sd-(?:color|component|shell|state)-|color-mix\(/);
+        expect(
+          value,
+          `${token} still uses the old low-contrast Settings light text source`,
+        ).not.toMatch(/223\s*,\s*221\s*,\s*221|255\s*,\s*255\s*,\s*255\s*,\s*0\.0/);
+      }
+    }
+  });
+
+  it("keeps Settings preview search text readable in dark theme", () => {
+    const source = readFileSync(
+      resolve(repoRoot, "frontend/src/assets/main.css"),
+      "utf8",
+    );
+    const darkThemeValues = collectDarkThemeDeclarationValues(
+      source,
+      darkSettingsPreviewSearchTokens,
+    );
+
+    for (const token of darkSettingsPreviewSearchTokens) {
+      const values = darkThemeValues.get(token) ?? [];
+      expect(values, `${token} should be declared in the dark token block`)
+        .not.toHaveLength(0);
+
+      for (const value of values) {
+        expect(value, `${token} should resolve through semantic text tokens`)
+          .toMatch(/var\(\s*--sd-component-text-/);
+        expect(
+          value,
+          `${token} should not use transparent accent text in dark preview search`,
+        ).not.toContain("transparent");
       }
     }
   });

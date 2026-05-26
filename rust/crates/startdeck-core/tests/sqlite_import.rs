@@ -11,9 +11,11 @@ async fn imports_legacy_navigation_widgets_and_icon_seed_into_relational_tables(
     let temp = tempfile::tempdir().unwrap();
     let base = temp.path();
     let data_dir = base.join("Data/data");
-    let icon_data_dir = base.join("rust/crates/startdeck-iconserver/resources/data");
+    let icon_resource_dir = base.join("rust/crates/startdeck-iconserver/resources/data");
+    let icon_data_dir = base.join("icon-service-data");
     std::fs::create_dir_all(&data_dir).unwrap();
-    std::fs::create_dir_all(icon_data_dir.join("icons")).unwrap();
+    std::fs::create_dir_all(icon_resource_dir.join("icons")).unwrap();
+    std::fs::create_dir_all(icon_data_dir.join("cache")).unwrap();
     std::fs::write(
         data_dir.join("system.json"),
         r#"{"authMode":"single","enableDocker":true}"#,
@@ -31,14 +33,16 @@ async fn imports_legacy_navigation_widgets_and_icon_seed_into_relational_tables(
         .unwrap(),
     )
     .unwrap();
-    std::fs::write(icon_data_dir.join("icons/example.svg"), "<svg/>").unwrap();
+    std::fs::write(icon_resource_dir.join("icons/example.svg"), "<svg/>").unwrap();
     std::fs::write(
-        icon_data_dir.join("seed-data.json"),
-        serde_json::to_vec(&json!({"items": [{"title": "Example", "url": "https://example.com", "icon_url": "example.svg", "background_color": "#fff"}]})).unwrap(),
+        icon_resource_dir.join("seed-data.json"),
+        serde_json::to_vec(&json!({"items": [{"title": "Example", "url": "https://example.com", "icon_url": "data/icons/example.svg", "background_color": "#fff"}]})).unwrap(),
     )
     .unwrap();
 
-    let config = RuntimeConfig::from_base_dir(base.to_path_buf());
+    let mut config = RuntimeConfig::from_base_dir(base.to_path_buf());
+    config.icon_service_data_dir = icon_data_dir;
+    config.icon_service_resource_dir = icon_resource_dir;
     let pool = connect_sqlite(&config).await.unwrap();
     import_legacy_data(&pool, &config).await.unwrap();
 
@@ -53,7 +57,7 @@ async fn imports_legacy_navigation_widgets_and_icon_seed_into_relational_tables(
 
     let icon = icon_record(&pool, "example.com").await.unwrap().unwrap();
     assert_eq!(icon.title, "Example");
-    assert_eq!(icon.icon.as_deref(), Some("example.svg"));
+    assert_eq!(icon.icon.as_deref(), Some("icons/example.svg"));
 }
 
 #[tokio::test]

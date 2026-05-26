@@ -106,8 +106,27 @@ describe("ItabPoemWidget", () => {
     expect(source).toContain(
       "color: var(--sd-theme-itab-poem-poem-widget-text-01)",
     );
+    expect(source).toContain(
+      "color: var(--sd-theme-itab-poem-poem-widget-text-02)",
+    );
     expect(source).toContain(".is-poem-size-2-1 .poem-body p");
     expect(source).toContain("writing-mode: vertical-lr");
     expect(source).toContain('fill-opacity="0.6"');
+  });
+
+  it("overrides runtime light palette variables in dark theme", () => {
+    const source = readFileSync(
+      "src/features/itab-poem/ItabPoemWidget.vue",
+      "utf8",
+    );
+
+    expect(source).not.toContain("oklch(");
+    expect(source).toContain(
+      ':global([data-sd-theme="dark"] .itab-poem-widget)',
+    );
+    expect(source).toContain(
+      "--poem-bg: var(--sd-theme-itab-poem-poem-widget-surface-01) !important;",
+    );
+    expect(source).toContain("--poem-wave-base: color-mix(");
   });
 });

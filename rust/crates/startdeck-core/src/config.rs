@@ -14,6 +14,7 @@ pub struct RuntimeConfig {
     pub mobile_backgrounds_dir: PathBuf,
     pub icon_cache_dir: PathBuf,
     pub icon_service_data_dir: PathBuf,
+    pub icon_service_resource_dir: PathBuf,
     pub default_template_file: PathBuf,
     pub host: String,
     pub port: u16,
@@ -52,6 +53,11 @@ impl RuntimeConfig {
         let host = env::var("HOST").unwrap_or_else(|_| "0.0.0.0".to_string());
         let admin_password =
             env::var("STARTDECK_ADMIN_PASSWORD").unwrap_or_else(|_| "admin".to_string());
+        let icon_service_data_dir = env_path(&["ICON_SERVICE_DATA_DIR", "ICON_DATA_DIR"])
+            .unwrap_or_else(|| default_icon_service_data_dir(&base_dir));
+        let icon_service_resource_dir = env_path(&["ICON_SERVICE_RESOURCE_DIR"])
+            .or_else(|| default_icon_service_resource_dir(&base_dir))
+            .unwrap_or_else(|| icon_service_data_dir.clone());
         Self {
             users_dir: data_dir.join("users"),
             sqlite_file: data_dir.join("startdeck.sqlite3"),
@@ -64,8 +70,8 @@ impl RuntimeConfig {
             mobile_backgrounds_dir: env_path(&["STARTDECK_APP_DIR", "APP_DIR"])
                 .unwrap_or_else(|| base_dir.join("Data").join("APP")),
             icon_cache_dir: data_dir.join("icon-cache"),
-            icon_service_data_dir: env_path(&["ICON_SERVICE_DATA_DIR", "ICON_DATA_DIR"])
-                .unwrap_or_else(|| default_icon_service_data_dir(&base_dir)),
+            icon_service_data_dir,
+            icon_service_resource_dir,
             default_template_file,
             data_dir,
             base_dir,
@@ -133,17 +139,17 @@ fn default_server_resource_dir(base_dir: &Path) -> PathBuf {
 }
 
 fn default_icon_service_data_dir(base_dir: &Path) -> PathBuf {
+    base_dir.join("icon-service").join("data")
+}
+
+fn default_icon_service_resource_dir(base_dir: &Path) -> Option<PathBuf> {
     let rust_resources = base_dir
         .join("rust")
         .join("crates")
         .join("startdeck-iconserver")
         .join("resources")
         .join("data");
-    if rust_resources.exists() {
-        rust_resources
-    } else {
-        base_dir.join("icon-service").join("data")
-    }
+    rust_resources.exists().then_some(rust_resources)
 }
 
 fn first_existing_path<const N: usize>(paths: [PathBuf; N]) -> PathBuf {
