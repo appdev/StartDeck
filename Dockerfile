@@ -48,17 +48,25 @@ COPY Cargo.toml Cargo.lock rust-toolchain.toml ./
 COPY rust ./rust
 
 RUN cargo build --release --locked --workspace --bins
+RUN strip target/release/startdeck-server target/release/startdeck-iconserver
 
-# Stage 3: Final Image
-FROM debian:bookworm-slim
+# Stage 3: Runtime files copied into the slim final image.
+FROM debian:bookworm-slim AS runtime-deps
 
-WORKDIR /app
-
-# Install necessary runtime dependencies.
-# The Rust binaries are built on Debian and dynamically link against glibc.
 RUN apt-get update \
     && apt-get install -y --no-install-recommends ca-certificates tzdata \
     && rm -rf /var/lib/apt/lists/*
+
+# Stage 4: Final Image
+FROM busybox:1.37.0-glibc
+
+WORKDIR /app
+
+# Runtime dependencies for HTTPS, local timezone, and GCC unwinding symbols used
+# by the Debian-built Rust binaries.
+COPY --from=runtime-deps /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
+COPY --from=runtime-deps /usr/share/zoneinfo/Asia/Shanghai /usr/share/zoneinfo/Asia/Shanghai
+COPY --from=runtime-deps /lib/x86_64-linux-gnu/libgcc_s.so.1 /lib/libgcc_s.so.1
 
 # 设置时区和 Gin 模式
 ENV TZ=Asia/Shanghai \
