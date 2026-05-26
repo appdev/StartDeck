@@ -94,12 +94,35 @@ describe("WidgetOpenedPanelHost", () => {
     expect(source).toContain('close-label="关闭弹窗"');
   });
 
+  it("passes runtime-specific overlay and panel classes for migrated widgets", () => {
+    expect(source).toContain("sd-widget-opened-overlay--${runtime}");
+    expect(source).toContain("sd-widget-opened-panel--${runtime}");
+  });
+
   it("inherits opened shell colors from semantic theme tokens", () => {
     expect(source).toContain("var(--sd-shell-overlay)");
     expect(source).toContain("var(--sd-shell-surface)");
     expect(source).toContain("var(--sd-component-surface)");
     expect(source).not.toContain(
       "background: linear-gradient(45deg, rgb(33, 30, 34)",
+    );
+  });
+
+  it("syncs the main-project weather opened shell with the iTab source frame", () => {
+    expect(source).toContain(
+      ".sd-widget-opened-overlay.sd-widget-opened-overlay--itab-weather",
+    );
+    expect(source).toContain(
+      "background: var(--sd-theme-runtime-widget-opened-panel-host-surface-03)",
+    );
+    expect(source).toContain("backdrop-filter: none");
+    expect(source).toContain(".sd-widget-opened-window.opened-itab-weather");
+    expect(source).toContain(
+      "border: 1px solid var(--sd-theme-runtime-widget-opened-panel-host-border-03)",
+    );
+    expect(source).toContain("background: transparent");
+    expect(source).toContain(
+      "box-shadow: var(--sd-theme-runtime-widget-opened-panel-host-shadow-01) 0 12px",
     );
   });
 });

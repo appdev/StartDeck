@@ -64,6 +64,7 @@ const requestClose = () => {
 <template>
   <div
     class="itab-native-panel"
+    :class="`itab-native-panel--${props.widget.kind}`"
     role="dialog"
     aria-modal="true"
     @click.self="requestClose"
@@ -98,6 +99,10 @@ const requestClose = () => {
   place-items: center;
   background: var(--sd-theme-itab-live-live-opened-shell-surface-01);
   backdrop-filter: blur(10px);
+}
+
+.itab-native-panel.itab-native-panel--weather {
+  backdrop-filter: none;
 }
 
 .opened-window {
@@ -252,12 +257,9 @@ const requestClose = () => {
 }
 
 .opened-weather {
+  border: 1px solid var(--sd-theme-itab-live-live-opened-shell-border-03);
   border-radius: 20px;
-  background: linear-gradient(
-    45deg,
-    var(--sd-theme-itab-live-live-opened-shell-surface-07) 20%,
-    var(--sd-theme-itab-live-live-opened-shell-surface-08)
-  );
+  background: transparent;
   color: var(--sd-theme-itab-live-live-opened-shell-text-02);
   box-shadow: var(--sd-theme-itab-live-live-opened-shell-shadow-02) 0 12px 32px
     0;

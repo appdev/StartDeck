@@ -1104,6 +1104,7 @@
     0.18
   );
   --sd-theme-itab-calendar-calendar-opened-panel-shadow-07: rgba(0, 0, 0, 0.08);
+  --sd-theme-itab-calendar-calendar-opened-panel-shadow-08: rgba(0, 0, 0, 0.16);
   --sd-theme-itab-calendar-calendar-opened-panel-surface-01: #fff;
   --sd-theme-itab-calendar-calendar-opened-panel-surface-02: rgb(240, 241, 244);
   --sd-theme-itab-calendar-calendar-opened-panel-surface-03: #e7ebf3;
@@ -1839,10 +1840,19 @@
     201,
     255
   );
-  --sd-theme-itab-weather-weather-opened-panel-surface-00: color-mix(
-    in srgb,
-    var(--sd-component-ink-surface) 78%,
-    transparent
+  --sd-theme-itab-weather-weather-opened-panel-surface-00: linear-gradient(
+    35deg,
+    var(--sd-component-surface-muted) 30%,
+    color-mix(
+      in srgb,
+      var(--sd-component-surface-muted) 75%,
+      var(--sd-component-text-tertiary)
+    ),
+    color-mix(
+      in srgb,
+      var(--sd-component-surface-muted) 58%,
+      var(--sd-component-text-secondary)
+    )
   );
   --sd-theme-itab-weather-weather-opened-panel-border-01: rgba(
     255,
@@ -1873,7 +1883,7 @@
     255,
     255,
     255,
-    0.06
+    0.15
   );
   --sd-theme-itab-weather-weather-opened-panel-surface-02: rgba(
     37,
@@ -1887,11 +1897,10 @@
     255,
     0.09
   );
-  --sd-theme-itab-weather-weather-opened-panel-surface-04: rgba(
-    255,
-    255,
-    255,
-    0.05
+  --sd-theme-itab-weather-weather-opened-panel-surface-04: color-mix(
+    in srgb,
+    var(--sd-component-on-strong) 3%,
+    transparent
   );
   --sd-theme-itab-weather-weather-opened-panel-surface-05: rgba(
     255,
@@ -1939,7 +1948,7 @@
     255,
     255,
     255,
-    0.48
+    0.4
   );
   --sd-theme-itab-weather-weather-opened-panel-text-08: rgba(
     255,
@@ -1970,6 +1979,12 @@
     255,
     255,
     0.92
+  );
+  --sd-theme-itab-weather-weather-opened-panel-text-13: rgba(
+    255,
+    255,
+    255,
+    0.86
   );
   --sd-theme-itab-weather-weather-widget-accent-surface-01: rgb(59, 154, 245);
   --sd-theme-itab-weather-weather-widget-accent-surface-02: rgb(77, 189, 250);
@@ -2027,10 +2042,12 @@
     255,
     0.08
   );
+  --sd-theme-runtime-widget-opened-panel-host-border-03: rgba(0, 0, 0, 0.13);
   --sd-theme-runtime-widget-opened-panel-host-shadow-01: rgba(0, 0, 0, 0.48);
   --sd-theme-runtime-widget-opened-panel-host-shadow-02: rgb(223, 223, 223);
   --sd-theme-runtime-widget-opened-panel-host-surface-01: #eee;
   --sd-theme-runtime-widget-opened-panel-host-surface-02: rgb(17, 17, 21);
+  --sd-theme-runtime-widget-opened-panel-host-surface-03: rgba(0, 0, 0, 0.5);
   --sd-theme-runtime-widget-opened-panel-host-text-01: #fff;
   --sd-theme-runtime-widget-opened-panel-host-text-02: #333;
   --sd-theme-runtime-widget-runtime-frame-shadow-01: rgba(59, 130, 246, 0.42);
@@ -3350,7 +3367,11 @@
   --sd-theme-itab-calendar-calendar-opened-panel-shadow-01: rgba(0, 0, 0, 0.16);
   --sd-theme-itab-calendar-calendar-opened-panel-shadow-02: rgba(0, 0, 0, 0.06);
   --sd-theme-itab-calendar-calendar-opened-panel-shadow-03: rgba(0, 0, 0, 0.18);
-  --sd-theme-itab-calendar-calendar-opened-panel-shadow-04: rgba(0, 0, 0, 0.2);
+  --sd-theme-itab-calendar-calendar-opened-panel-shadow-04: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 22%,
+    transparent
+  );
   --sd-theme-itab-calendar-calendar-opened-panel-shadow-05: rgba(0, 0, 0, 0.04);
   --sd-theme-itab-calendar-calendar-opened-panel-shadow-06: rgba(
     54,
@@ -3359,6 +3380,11 @@
     0.18
   );
   --sd-theme-itab-calendar-calendar-opened-panel-shadow-07: rgba(0, 0, 0, 0.08);
+  --sd-theme-itab-calendar-calendar-opened-panel-shadow-08: color-mix(
+    in srgb,
+    var(--sd-component-text-primary) 16%,
+    transparent
+  );
   --sd-theme-itab-calendar-calendar-opened-panel-surface-01: var(
     --sd-component-surface
   );
@@ -3473,7 +3499,7 @@
   --sd-theme-itab-calendar-calendar-widget-text-02: #fff;
   --sd-theme-itab-calendar-calendar-widget-text-03: rgb(223, 221, 221);
   --sd-theme-itab-calendar-calendar-widget-text-04: #999;
-  --sd-theme-itab-calendar-calendar-widget-text-05: rgba(0, 0, 0, 0.8);
+  --sd-theme-itab-calendar-calendar-widget-text-05: #999;
   --sd-theme-itab-calendar-calendar-widget-text-06: rgb(223, 221, 221);
   --sd-theme-itab-calendar-calendar-widget-text-07: rgba(223, 221, 221, 0.46);
   --sd-theme-itab-clock-clock-opened-panel-accent-border-01: #1890ff;
@@ -4198,10 +4224,19 @@
     201,
     255
   );
-  --sd-theme-itab-weather-weather-opened-panel-surface-00: color-mix(
-    in srgb,
-    var(--sd-component-ink-surface) 78%,
-    transparent
+  --sd-theme-itab-weather-weather-opened-panel-surface-00: linear-gradient(
+    35deg,
+    var(--sd-component-surface-muted) 30%,
+    color-mix(
+      in srgb,
+      var(--sd-component-surface-muted) 75%,
+      var(--sd-component-text-tertiary)
+    ),
+    color-mix(
+      in srgb,
+      var(--sd-component-surface-muted) 58%,
+      var(--sd-component-text-secondary)
+    )
   );
   --sd-theme-itab-weather-weather-opened-panel-border-01: rgba(
     255,
@@ -4232,7 +4267,7 @@
     255,
     255,
     255,
-    0.06
+    0.15
   );
   --sd-theme-itab-weather-weather-opened-panel-surface-02: rgba(
     37,
@@ -4246,11 +4281,10 @@
     255,
     0.09
   );
-  --sd-theme-itab-weather-weather-opened-panel-surface-04: rgba(
-    255,
-    255,
-    255,
-    0.05
+  --sd-theme-itab-weather-weather-opened-panel-surface-04: color-mix(
+    in srgb,
+    var(--sd-component-on-strong) 3%,
+    transparent
   );
   --sd-theme-itab-weather-weather-opened-panel-surface-05: rgba(
     255,
@@ -4298,7 +4332,7 @@
     255,
     255,
     255,
-    0.48
+    0.4
   );
   --sd-theme-itab-weather-weather-opened-panel-text-08: rgba(
     255,
@@ -4329,6 +4363,12 @@
     255,
     255,
     0.92
+  );
+  --sd-theme-itab-weather-weather-opened-panel-text-13: rgba(
+    255,
+    255,
+    255,
+    0.86
   );
   --sd-theme-itab-weather-weather-widget-accent-surface-01: rgb(59, 154, 245);
   --sd-theme-itab-weather-weather-widget-accent-surface-02: rgb(77, 189, 250);
@@ -4428,6 +4468,7 @@
     var(--sd-component-text-primary) 8%,
     transparent
   );
+  --sd-theme-runtime-widget-opened-panel-host-border-03: rgba(0, 0, 0, 0.13);
   --sd-theme-runtime-widget-opened-panel-host-shadow-01: rgba(0, 0, 0, 0.6);
   --sd-theme-runtime-widget-opened-panel-host-shadow-02: rgba(0, 0, 0, 0.42);
   --sd-theme-runtime-widget-opened-panel-host-surface-01: var(
@@ -4436,6 +4477,7 @@
   --sd-theme-runtime-widget-opened-panel-host-surface-02: var(
     --sd-component-ink-surface
   );
+  --sd-theme-runtime-widget-opened-panel-host-surface-03: rgba(0, 0, 0, 0.5);
   --sd-theme-runtime-widget-opened-panel-host-text-01: var(
     --sd-component-on-strong
   );

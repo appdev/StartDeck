@@ -5,6 +5,13 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        QWEATHER_API_HOST: ${QWEATHER_API_HOST:-}
+        QWEATHER_PROJECT_ID: ${QWEATHER_PROJECT_ID:-}
+        QWEATHER_CREDENTIAL_ID: ${QWEATHER_CREDENTIAL_ID:-}
+        QWEATHER_PRIVATE_KEY_FILE: ${QWEATHER_PRIVATE_KEY_FILE:-}
+        TENCENT_MAP_API_HOST: ${TENCENT_MAP_API_HOST:-}
+        TENCENT_MAP_KEY: ${TENCENT_MAP_KEY:-}
     image: startdeck:local
     container_name: startdeck
     restart: unless-stopped
@@ -18,10 +25,18 @@ services:
       - ICON_SERVICE_RESOURCE_DIR=/app/icon-service-defaults/data
       - ICON_SERVER_BASE_URL=http://127.0.0.1:9002
       - ICON_SERVER_TIMEOUT_MS=5000
+      - QWEATHER_API_HOST=${QWEATHER_API_HOST:-}
+      - QWEATHER_PROJECT_ID=${QWEATHER_PROJECT_ID:-}
+      - QWEATHER_CREDENTIAL_ID=${QWEATHER_CREDENTIAL_ID:-}
+      - QWEATHER_PRIVATE_KEY_FILE=${QWEATHER_PRIVATE_KEY_FILE:-}
+      - TENCENT_MAP_API_HOST=${TENCENT_MAP_API_HOST:-}
+      - TENCENT_MAP_KEY=${TENCENT_MAP_KEY:-}
     volumes:
       - ./Data/data:/app/Data/data #映射运行期数据
       - ./Data/music:/app/Data/music #映射播放器路径
       - ./Data/PC:/app/Data/PC #映射背景路径
       - ./Data/APP:/app/Data/APP #映射移动端背景路径
       - ./icon-service-data:/app/icon-service/data #映射图标服务运行期数据
+      # 如启用 QWeather 备用 IP GeoAPI，请挂载私钥并将 QWEATHER_PRIVATE_KEY_FILE 指向容器内路径。
+      # - ./ed25519-private.pem:/run/secrets/qweather-ed25519-private.pem:ro
       - /var/run/docker.sock:/var/run/docker.sock #映射Docker Socket

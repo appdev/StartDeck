@@ -9,19 +9,30 @@ import { resetItabIpRuntimeForTests } from "./useItabIpRuntime";
 vi.mock("./itabIpApi", () => ({
   fetchItabIpLookup: vi.fn(async () => ({
     ip: "163.125.214.27",
-    location: "中国 广东 深圳 中国联通",
+    location: "中国 广东省 深圳 龙华",
     country: "中国",
-    region: "广东",
-    city: "深圳",
-    isp: "中国联通",
+    region: "广东省",
+    adm2: "深圳",
+    city: "龙华",
+    district: "龙华",
+    isp: "",
     queryIp: "163.125.214.27",
     clientIp: "",
     clientIpSource: "",
+    weatherLocationId: "101280608",
+    weatherLocationType: "city",
     latitude: "22.696667",
     longitude: "114.045422",
+    coordinateSource: "codelife-getLocation",
+    coordinateAccuracy: "ip-geolocation",
     updatedAt: "2026/05/24 01:40",
     cached: false,
     sourceStatus: "ok",
+  })),
+  fetchItabIpLatency: vi.fn(async () => ({
+    latencyMs: 24.2,
+    checkedAt: "2026/05/24 01:40",
+    serverTs: 1780000000000,
   })),
 }));
 
@@ -47,11 +58,11 @@ describe("ItabIpWidget", () => {
       expect(wrapper.attributes("data-itab-ip-size")).toBe(sizeKey);
       expect(wrapper.attributes("data-itab-ip-address")).toBe("163.125.214.27");
       expect(wrapper.attributes("data-itab-ip-location")).toBe(
-        "中国-广东-深圳",
+        "广东省深圳市龙华",
       );
       if (sizeKey === "2x2" || sizeKey === "2x4") {
         expect(wrapper.text()).toContain("163.125.214.27");
-        expect(wrapper.text()).toContain("中国-广东-深圳");
+        expect(wrapper.text()).toContain("广东省深圳市龙华");
       } else {
         expect(wrapper.text()).not.toContain("163.125.214.27");
         expect(wrapper.find("img").attributes("src")).toBe(

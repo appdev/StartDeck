@@ -19,7 +19,7 @@ const showOuterInfo = computed(
 );
 
 onMounted(() => {
-  void runtime.load();
+  void runtime.ensureLoaded();
 });
 
 watch(

@@ -6,6 +6,11 @@
 docker-compose.yml
 .dockerignore
 
+# Secrets
+.env
+.env.*
+*.pem
+
 # Dependencies
 node_modules
 frontend/node_modules

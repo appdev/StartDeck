@@ -19,7 +19,7 @@ base64 = "0.22"
 bcrypt = "0.19.1"
 chrono = { version = "0.4.42", features = ["serde", "clock"] }
 flate2 = "1.1"
-jsonwebtoken = { version = "10.4.0", default-features = false, features = ["rust_crypto"] }
+jsonwebtoken = { version = "10.4.0", default-features = false, features = ["rust_crypto", "use_pem"] }
 mime_guess = "2.0"
 reqwest = { version = "0.13.3", default-features = false, features = ["json", "query", "rustls", "gzip", "stream"] }
 scraper = "0.25"

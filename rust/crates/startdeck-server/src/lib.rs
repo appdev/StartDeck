@@ -36,11 +36,14 @@ use tower_http::services::ServeDir;
 use tower_http::trace::TraceLayer;
 use uuid::Uuid;
 
+mod codelife;
 mod docker_api;
 mod ip_lookup;
 mod itab;
+mod qweather;
 mod static_assets;
 mod telemetry;
+mod tencent_map;
 
 #[derive(Clone)]
 pub struct AppState {

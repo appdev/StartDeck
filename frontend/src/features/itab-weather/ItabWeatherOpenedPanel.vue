@@ -22,13 +22,14 @@ const runtime = useItabWeatherRuntime(widgetRef, (data) =>
 );
 
 onMounted(() => {
-  runtime.ensureLoaded();
+  runtime.ensureLoaded({ refreshIfStale: true });
 });
 </script>
 
 <template>
   <div
     class="opened-weather-panel"
+    :class="runtime.weatherOuterClass.value"
     data-itab-weather-opened-panel
     data-grid-drag-ignore="true"
   >
@@ -261,7 +262,7 @@ onMounted(() => {
 <style scoped>
 .opened-weather-panel {
   height: 100%;
-  padding: 30px 24px 24px;
+  padding: 30px 12px 20px 24px;
   overflow: hidden auto;
   background: var(--sd-theme-itab-weather-weather-opened-panel-surface-00);
   color: var(--sd-theme-itab-weather-weather-opened-panel-text-01);
@@ -274,20 +275,20 @@ onMounted(() => {
 
 .opened-weather-header {
   display: flex;
-  min-height: 30px;
+  min-height: 24px;
   align-items: center;
   justify-content: space-between;
   gap: 18px;
   color: var(--sd-theme-itab-weather-weather-opened-panel-text-01);
-  font-size: 14px;
-  line-height: 20px;
+  font-size: 12px;
+  line-height: 18px;
 }
 
 .weather-header-tools {
   display: flex;
   flex: none;
   align-items: center;
-  gap: 10px;
+  gap: 5px;
 }
 
 .weather-combobox,
@@ -298,26 +299,26 @@ onMounted(() => {
 
 .weather-combobox input,
 .weather-location-search input {
-  width: 200px;
-  height: 30px;
-  padding: 0 12px;
-  border: 1px solid var(--sd-theme-itab-weather-weather-opened-panel-border-01);
-  border-radius: 4px;
+  width: 130px;
+  height: 24px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 8px 0 0 8px;
   outline: none;
   background: var(--sd-theme-itab-weather-weather-opened-panel-surface-01);
-  color: var(--sd-theme-itab-weather-weather-opened-panel-text-02);
-  font-size: 14px;
+  color: var(--sd-theme-itab-weather-weather-opened-panel-text-01);
+  font-size: 12px;
 }
 
 .weather-header-tools > button {
   display: grid;
-  width: 30px;
-  height: 30px;
+  width: 24px;
+  height: 24px;
   place-items: center;
   border: 0;
-  border-radius: 4px;
+  border-radius: 8px;
   background: var(--sd-theme-itab-weather-weather-opened-panel-surface-01);
-  color: var(--sd-theme-itab-weather-weather-opened-panel-text-03);
+  color: var(--sd-theme-itab-weather-weather-opened-panel-text-13);
 }
 
 .weather-header-tools > button:disabled {
@@ -325,8 +326,8 @@ onMounted(() => {
 }
 
 .weather-header-tools > button svg {
-  width: 17px;
-  height: 17px;
+  width: 14px;
+  height: 14px;
   fill: currentColor;
 }
 
@@ -378,30 +379,33 @@ onMounted(() => {
 }
 
 .opened-weather-current {
-  display: grid;
-  grid-template-columns: 250px minmax(220px, 1fr) 368px;
-  gap: 26px;
-  align-items: end;
-  min-height: 118px;
-  margin-top: 28px;
+  display: block;
+  min-height: 147px;
+  margin-top: 20px;
+}
+
+.opened-weather-temp {
+  display: flex;
+  height: 80px;
+  align-items: center;
 }
 
 .opened-weather-temp strong {
   display: block;
-  font-size: 78px;
+  flex: none;
+  font-size: 80px;
   font-weight: 300;
   letter-spacing: 0;
-  line-height: 82px;
+  line-height: 80px;
 }
 
 .opened-weather-temp span {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px 18px;
-  margin-top: 8px;
+  display: grid;
+  gap: 8px;
+  margin: 0 0 0 20px;
   color: var(--sd-theme-itab-weather-weather-opened-panel-text-01);
-  font-size: 14px;
-  line-height: 20px;
+  font-size: 13px;
+  line-height: 19.5px;
 }
 
 .opened-weather-temp b {
@@ -420,23 +424,26 @@ onMounted(() => {
 }
 
 .opened-weather-current p {
-  max-width: 295px;
-  margin: 0;
-  color: var(--sd-theme-itab-weather-weather-opened-panel-text-06);
+  max-width: none;
+  margin: 20px 0 0;
+  color: var(--sd-theme-itab-weather-weather-opened-panel-text-01);
   font-size: 13px;
-  line-height: 23px;
+  line-height: 18px;
 }
 
 .opened-weather-metrics {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px 18px;
-  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  margin: 10px 0 0;
+  color: var(--sd-theme-itab-weather-weather-opened-panel-text-01);
+  font-size: 13px;
+  line-height: 18px;
 }
 
 .opened-weather-metrics div {
-  display: grid;
-  gap: 3px;
+  display: flex;
+  gap: 4px;
 }
 
 .opened-weather-metrics dt,
@@ -445,13 +452,13 @@ onMounted(() => {
 }
 
 .opened-weather-metrics dt {
-  color: var(--sd-theme-itab-weather-weather-opened-panel-text-07);
-  font-size: 12px;
+  color: inherit;
+  font-size: inherit;
 }
 
 .opened-weather-metrics dd {
-  color: var(--sd-theme-itab-weather-weather-opened-panel-text-08);
-  font-size: 16px;
+  color: inherit;
+  font-size: inherit;
 }
 
 .weather-hour-card,
@@ -465,8 +472,9 @@ onMounted(() => {
 
 .weather-hour-card {
   margin-top: 20px;
-  padding: 16px 18px 12px;
-  overflow-x: auto;
+  height: 180px;
+  padding: 12px 12px 10px;
+  overflow: hidden;
 }
 
 .weather-hour-card h3,
@@ -477,10 +485,10 @@ onMounted(() => {
   align-items: center;
   gap: 8px;
   margin: 0;
-  color: var(--sd-theme-itab-weather-weather-opened-panel-text-09);
-  font-size: 15px;
+  color: var(--sd-theme-itab-weather-weather-opened-panel-text-07);
+  font-size: 12px;
   font-weight: 400;
-  line-height: 22px;
+  line-height: 18px;
 }
 
 .weather-hour-card h3 svg,
@@ -495,20 +503,20 @@ onMounted(() => {
 .weather-hour-track {
   position: relative;
   display: grid;
-  grid-template-columns: repeat(24, 38px);
-  min-width: 912px;
-  margin-top: 14px;
-  padding: 0 0 52px;
+  grid-template-columns: repeat(24, 50px);
+  min-width: 1200px;
+  margin-top: 8px;
+  padding: 0 0 70px;
   gap: 0;
 }
 
 .weather-hour-track span {
   display: grid;
   justify-items: center;
-  gap: 7px;
+  gap: 6px;
   color: var(--sd-theme-itab-weather-weather-opened-panel-text-03);
-  font-size: 12px;
-  line-height: 16px;
+  font-size: 14px;
+  line-height: 21px;
 }
 
 .weather-hour-track b,
@@ -525,10 +533,10 @@ onMounted(() => {
 
 .weather-temp-line {
   position: absolute;
-  right: 8px;
+  right: 0;
   bottom: 0;
-  left: 8px;
-  height: 54px;
+  left: 0;
+  height: 70px;
   overflow: visible;
 }
 
@@ -547,28 +555,29 @@ onMounted(() => {
 }
 
 .weather-day-card {
-  margin-top: 16px;
-  padding: 15px 18px 18px;
+  height: 378px;
+  margin-top: 20px;
+  padding: 12px;
 }
 
 .weather-day-grid {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
+  display: flex;
   gap: 0;
-  margin-top: 13px;
+  margin-top: 8px;
 }
 
 .weather-day-grid article {
   display: grid;
-  min-height: 112px;
+  width: calc(100% / 7);
+  min-height: 328px;
   place-items: center;
   gap: 4px;
-  padding: 9px 4px;
-  border-radius: 4px;
+  padding: 10px 0;
+  border-radius: 6px;
   color: var(--sd-theme-itab-weather-weather-opened-panel-text-10);
   cursor: pointer;
-  font-size: 12px;
-  line-height: 16px;
+  font-size: 13px;
+  line-height: 32px;
   transition:
     background 0.2s ease,
     color 0.2s ease;
@@ -577,7 +586,7 @@ onMounted(() => {
 
 .weather-day-grid article:hover,
 .weather-day-grid article.active {
-  background: var(--sd-theme-itab-weather-weather-opened-panel-surface-03);
+  background: var(--sd-theme-itab-weather-weather-opened-panel-surface-06);
   color: var(--sd-theme-itab-weather-weather-opened-panel-text-04);
 }
 

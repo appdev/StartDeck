@@ -39,6 +39,24 @@ const panelStyle = computed(() => {
     height: `min(${current.height}px, calc(100vh - ${current.maxHeightInset}px))`,
   };
 });
+const openedOverlayClass = computed(() => {
+  const runtime = definition.value?.runtime;
+  return [
+    "sd-widget-opened-overlay",
+    runtime ? `sd-widget-opened-overlay--${runtime}` : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+});
+const openedPanelClass = computed(() => {
+  const runtime = definition.value?.runtime;
+  return [
+    "sd-widget-opened-panel",
+    runtime ? `sd-widget-opened-panel--${runtime}` : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+});
 </script>
 
 <template>
@@ -47,8 +65,8 @@ const panelStyle = computed(() => {
     z-index="70"
     close-on-overlay
     close-on-escape
-    panel-class="sd-widget-opened-panel"
-    overlay-class="sd-widget-opened-overlay"
+    :panel-class="openedPanelClass"
+    :overlay-class="openedOverlayClass"
     :panel-style="panelStyle"
     variant="dialog"
     role="dialog"
@@ -86,6 +104,11 @@ const panelStyle = computed(() => {
   backdrop-filter: blur(10px);
 }
 
+:global(.sd-widget-opened-overlay.sd-widget-opened-overlay--itab-weather) {
+  background: var(--sd-theme-runtime-widget-opened-panel-host-surface-03);
+  backdrop-filter: none;
+}
+
 :global(.sd-widget-opened-panel) {
   overflow: hidden;
 }
@@ -119,6 +142,15 @@ const panelStyle = computed(() => {
   font-size: 14px;
   line-height: 21px;
   box-shadow: var(--sd-shadow-window);
+  backdrop-filter: none;
+}
+
+.sd-widget-opened-window.opened-itab-weather {
+  border: 1px solid var(--sd-theme-runtime-widget-opened-panel-host-border-03);
+  background: transparent;
+  color: var(--sd-theme-runtime-widget-opened-panel-host-text-01);
+  box-shadow: var(--sd-theme-runtime-widget-opened-panel-host-shadow-01) 0 12px
+    32px 0;
   backdrop-filter: none;
 }
 

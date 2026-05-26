@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use axum::Json;
 use axum::body::Body;
 use axum::extract::{Path as AxumPath, Query, State};
-use axum::http::{HeaderValue, header};
+use axum::http::{HeaderMap, HeaderValue, header};
 use axum::response::Response;
 use chrono::{Datelike, Duration as ChronoDuration, NaiveDate, Utc};
 use reqwest::Client;
@@ -13,6 +13,11 @@ use sha2::{Digest, Sha256};
 use sqlx::Row;
 use uuid::Uuid;
 
+use crate::codelife::{
+    CodelifeLocationLookup, fetch_location, fetch_weather_current, fetch_weather_hourly,
+    location_to_value, request_ip_from_headers, search_weather_city,
+};
+use crate::qweather::fetch_weather_bundle as fetch_qweather_weather_bundle;
 use crate::{
     ApiError, AppState, copy_response_header, is_blocked_host, parse_json, validate_remote_url,
 };
@@ -26,6 +31,7 @@ const ITAB_DAILY_ENGLISH_KIND: &str = "itab_daily_english";
 const ITAB_MOVIE_CALENDAR_KIND: &str = "itab_movie_calendar";
 const ITAB_POEM_KIND: &str = "itab_poem";
 const ITAB_WEATHER_KIND: &str = "itab_weather";
+const ITAB_WEATHER_CURRENT_CACHE_TTL_MS: i64 = 5 * 60 * 1000;
 const ITAB_DAILY_WIDGET_CACHE_TTL_MS: i64 = 12 * 60 * 60 * 1000;
 const ITAB_POEM_CACHE_TTL_MS: i64 = 2 * 60 * 60 * 1000;
 const ITAB_MEDIA_PROXY_MAX_BYTES: usize = 12 * 1024 * 1024;
@@ -148,12 +154,15 @@ struct CachedWidgetRow {
 
 pub(crate) async fn cached_widget_data(
     State(state): State<AppState>,
+    headers: HeaderMap,
     uri: axum::http::Uri,
     Query(query): Query<HashMap<String, String>>,
 ) -> Result<Json<Value>, ApiError> {
     let path = uri.path();
     if path.starts_with("/api/itab/weather/") {
-        return Ok(Json(weather_widget_response(path, &query)));
+        return Ok(Json(
+            weather_widget_response(&state, &headers, path, &query).await,
+        ));
     }
 
     let kind = widget_kind_from_path(path);
@@ -217,6 +226,14 @@ fn query_bool(query: &HashMap<String, String>, key: &str) -> bool {
         .unwrap_or(false)
 }
 
+fn has_query_value(query: &HashMap<String, String>, key: &str) -> bool {
+    query
+        .get(key)
+        .map(String::as_str)
+        .map(str::trim)
+        .is_some_and(|value| !value.is_empty())
+}
+
 async fn latest_cached_widget(
     state: &AppState,
     kind: &str,
@@ -225,6 +242,25 @@ async fn latest_cached_widget(
         "SELECT value_json, source_status, expires_at FROM runtime_cache WHERE kind = ? ORDER BY updated_at DESC LIMIT 1",
     )
     .bind(kind)
+    .fetch_optional(&state.pool)
+    .await?;
+    Ok(row.map(|row| CachedWidgetRow {
+        data: parse_json(row.get::<String, _>("value_json")),
+        source_status: row.get::<String, _>("source_status"),
+        expires_at: row.get::<Option<i64>, _>("expires_at"),
+    }))
+}
+
+async fn cached_widget_by_key(
+    state: &AppState,
+    kind: &str,
+    cache_key: &str,
+) -> Result<Option<CachedWidgetRow>, ApiError> {
+    let row = sqlx::query(
+        "SELECT value_json, source_status, expires_at FROM runtime_cache WHERE kind = ? AND cache_key = ? LIMIT 1",
+    )
+    .bind(kind)
+    .bind(cache_key)
     .fetch_optional(&state.pool)
     .await?;
     Ok(row.map(|row| CachedWidgetRow {
@@ -848,8 +884,246 @@ fn cached_widget_response(mut data: Value, status: &str) -> Value {
     json!({"success": true, "data": data, "sourceStatus": status})
 }
 
-fn weather_widget_response(path: &str, query: &HashMap<String, String>) -> Value {
-    let data = match path {
+async fn weather_widget_response(
+    state: &AppState,
+    headers: &HeaderMap,
+    path: &str,
+    query: &HashMap<String, String>,
+) -> Value {
+    if !state.remote_itab_fetch_enabled {
+        return weather_fallback_response(path, query, None);
+    }
+
+    if path == "/api/itab/weather/current" {
+        return weather_current_response(state, headers, query).await;
+    }
+
+    match fetch_live_weather_widget_data(state, headers, path, query).await {
+        Ok(data) => cached_widget_response(data, "ok"),
+        Err(source_error) => weather_fallback_response(path, query, Some(source_error)),
+    }
+}
+
+async fn weather_current_response(
+    state: &AppState,
+    headers: &HeaderMap,
+    query: &HashMap<String, String>,
+) -> Value {
+    let cache_key = weather_current_cache_key(headers, query);
+    let now = Utc::now().timestamp_millis();
+    let cached = match cached_widget_by_key(state, ITAB_WEATHER_KIND, &cache_key).await {
+        Ok(row) => row,
+        Err(error) => {
+            tracing::warn!(?error, %cache_key, "failed to read weather current cache");
+            None
+        }
+    };
+    if let Some(row) = cached.as_ref() {
+        if row.expires_at.map(|value| value > now).unwrap_or(true) {
+            return cached_widget_response(row.data.clone(), &row.source_status);
+        }
+    }
+
+    match fetch_live_weather_widget_data(state, headers, "/api/itab/weather/current", query).await {
+        Ok(data) => {
+            if let Err(error) = cache_widget_payload(
+                state,
+                ITAB_WEATHER_KIND,
+                &cache_key,
+                &data,
+                Some(now + ITAB_WEATHER_CURRENT_CACHE_TTL_MS),
+                "ok",
+                now,
+            )
+            .await
+            {
+                tracing::warn!(?error, %cache_key, "failed to write weather current cache");
+            }
+            cached_widget_response(data, "ok")
+        }
+        Err(source_error) => {
+            if let Some(row) = cached {
+                return cached_widget_response(row.data, "stale");
+            }
+            weather_fallback_response("/api/itab/weather/current", query, Some(source_error))
+        }
+    }
+}
+
+fn weather_current_cache_key(headers: &HeaderMap, query: &HashMap<String, String>) -> String {
+    let kind = query
+        .get("type")
+        .map(String::as_str)
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .unwrap_or("city");
+    if let Some(location) = query
+        .get("location")
+        .map(String::as_str)
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+    {
+        return format!("current:{kind}:location:{location}");
+    }
+    if let Some(coords) = query
+        .get("coords")
+        .map(String::as_str)
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+    {
+        return format!("current:{kind}:coords:{coords}");
+    }
+    let client_ip = request_ip_from_headers(headers).unwrap_or("127.0.0.1");
+    format!("current:{kind}:ip:{}", client_ip.trim())
+}
+
+async fn fetch_live_weather_widget_data(
+    state: &AppState,
+    headers: &HeaderMap,
+    path: &str,
+    query: &HashMap<String, String>,
+) -> Result<Value, String> {
+    match path {
+        "/api/itab/weather/location" => {
+            let location = if has_query_value(query, "coords") {
+                let location = fetch_location(
+                    &state.http,
+                    CodelifeLocationLookup {
+                        coords: query.get("coords").map(String::as_str),
+                        forwarded_ip: None,
+                    },
+                )
+                .await?;
+                location_to_value(&location, "ok")
+            } else {
+                crate::ip_lookup::weather_location_from_request_ip(
+                    state,
+                    headers,
+                    query_bool(query, "refresh"),
+                )
+                .await?
+            };
+            Ok(location)
+        }
+        "/api/itab/weather/search" => {
+            let keyword = query
+                .get("keyword")
+                .or_else(|| query.get("location"))
+                .map(String::as_str)
+                .unwrap_or_default()
+                .trim();
+            if keyword.is_empty() {
+                return Ok(Value::Array(Vec::new()));
+            }
+            let cities = search_weather_city(&state.http, keyword).await?;
+            Ok(Value::Array(
+                cities
+                    .iter()
+                    .map(|location| location_to_value(location, "ok"))
+                    .collect(),
+            ))
+        }
+        "/api/itab/weather/current" => {
+            let kind = query
+                .get("type")
+                .map(String::as_str)
+                .map(str::trim)
+                .filter(|value| !value.is_empty())
+                .unwrap_or("city");
+            let location_id = if let Some(location) = query
+                .get("location")
+                .map(String::as_str)
+                .map(str::trim)
+                .filter(|value| !value.is_empty())
+            {
+                location.to_string()
+            } else if !has_query_value(query, "coords") {
+                let location = crate::ip_lookup::weather_location_from_request_ip(
+                    state,
+                    headers,
+                    query_bool(query, "refresh"),
+                )
+                .await?;
+                clean_optional(
+                    location
+                        .get("id")
+                        .and_then(Value::as_str)
+                        .map(str::to_string),
+                )
+            } else {
+                let location = fetch_location(
+                    &state.http,
+                    CodelifeLocationLookup {
+                        coords: query.get("coords").map(String::as_str),
+                        forwarded_ip: None,
+                    },
+                )
+                .await?;
+                clean_optional(location.id)
+            };
+            if location_id.is_empty() {
+                return Err("missing_weather_location".to_string());
+            }
+            fetch_weather_current_bundle(state, &location_id, kind).await
+        }
+        _ => Err("unsupported_weather_path".to_string()),
+    }
+}
+
+async fn fetch_weather_current_bundle(
+    state: &AppState,
+    location_id: &str,
+    kind: &str,
+) -> Result<Value, String> {
+    match fetch_codelife_weather_current_bundle(&state.http, location_id, kind).await {
+        Ok(bundle) => Ok(bundle),
+        Err(codelife_error) => {
+            if state.config.qweather_enabled() {
+                match fetch_qweather_weather_bundle(&state.http, &state.config, location_id).await {
+                    Ok(bundle) => return Ok(bundle),
+                    Err(qweather_error) => {
+                        return Err(format!(
+                            "codelife-weather: {codelife_error}; qweather-weather: {qweather_error}"
+                        ));
+                    }
+                }
+            }
+            Err(format!("codelife-weather: {codelife_error}"))
+        }
+    }
+}
+
+async fn fetch_codelife_weather_current_bundle(
+    client: &Client,
+    location_id: &str,
+    kind: &str,
+) -> Result<Value, String> {
+    let current = fetch_weather_current(client, location_id, kind).await?;
+    let hourly = fetch_weather_hourly(client, location_id, kind).await?;
+    Ok(json!({
+        "sourceStatus": "ok",
+        "provider": "codelife",
+        "current": current,
+        "hourly": hourly
+    }))
+}
+
+fn weather_fallback_response(
+    path: &str,
+    query: &HashMap<String, String>,
+    source_error: Option<String>,
+) -> Value {
+    let mut data = fallback_weather_data(path, query);
+    if let Some(error) = source_error
+        && let Some(object) = data.as_object_mut()
+    {
+        object.insert("sourceError".to_string(), json!(error));
+    }
+    json!({"success": true, "data": data, "sourceStatus": "fallback"})
+}
+
+fn fallback_weather_data(path: &str, query: &HashMap<String, String>) -> Value {
+    match path {
         "/api/itab/weather/location" => fallback_weather_location(),
         "/api/itab/weather/search" => {
             let keyword = query
@@ -861,8 +1135,7 @@ fn weather_widget_response(path: &str, query: &HashMap<String, String>) -> Value
         }
         "/api/itab/weather/current" => fallback_weather_current_bundle(),
         _ => json!({"sourceStatus": "fallback"}),
-    };
-    json!({"success": true, "data": data, "sourceStatus": "fallback"})
+    }
 }
 
 fn fallback_weather_location() -> Value {
@@ -1219,5 +1492,36 @@ fn widget_kind_from_path(path: &str) -> &'static str {
         }
         "/api/itab/poem" => ITAB_POEM_KIND,
         _ => "unknown",
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn builds_weather_current_cache_key_from_location_coords_or_ip() {
+        let mut headers = HeaderMap::new();
+        headers.insert("x-forwarded-for", HeaderValue::from_static("8.8.8.8"));
+
+        let mut location_query = HashMap::new();
+        location_query.insert("location".to_string(), "101280608".to_string());
+        location_query.insert("type".to_string(), "city".to_string());
+        assert_eq!(
+            weather_current_cache_key(&headers, &location_query),
+            "current:city:location:101280608"
+        );
+
+        let mut coords_query = HashMap::new();
+        coords_query.insert("coords".to_string(), "114.04,22.65".to_string());
+        assert_eq!(
+            weather_current_cache_key(&headers, &coords_query),
+            "current:city:coords:114.04,22.65"
+        );
+
+        assert_eq!(
+            weather_current_cache_key(&headers, &HashMap::new()),
+            "current:city:ip:8.8.8.8"
+        );
     }
 }

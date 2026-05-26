@@ -1,4 +1,6 @@
 // @vitest-environment jsdom
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { mount } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createDefaultItabCalendarWidget } from "./itabCalendarModel";
@@ -43,5 +45,24 @@ describe("ItabCalendarWidget", () => {
     expect(wrapper.findAll(".mini-week")).toHaveLength(7);
     expect(wrapper.findAll(".mini-day")).toHaveLength(42);
     expect(wrapper.find(".mini-day.today").text()).toBe("20");
+  });
+
+  it("keeps lunar text readable on the dark calendar card", () => {
+    const cwd = process.cwd();
+    const repoRoot =
+      cwd.endsWith("/frontend") || cwd.endsWith("\\frontend")
+        ? resolve(cwd, "..")
+        : cwd;
+    const source = readFileSync(
+      resolve(repoRoot, "frontend/src/assets/main.css"),
+      "utf8",
+    );
+
+    expect(source).toContain(
+      "--sd-theme-itab-calendar-calendar-widget-text-05: #999;",
+    );
+    expect(source).not.toContain(
+      "--sd-theme-itab-calendar-calendar-widget-text-05: rgba(0, 0, 0, 0.8);",
+    );
   });
 });

@@ -1,7 +1,10 @@
 // @vitest-environment jsdom
+import { readFileSync } from "node:fs";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { flushPromises, mount } from "@vue/test-utils";
+import ItabWeatherOpenedPanel from "./ItabWeatherOpenedPanel.vue";
 import ItabWeatherWidget from "./ItabWeatherWidget.vue";
+import { resetItabWeatherRuntimeForTests } from "./useItabWeatherRuntime";
 
 const response = (data: unknown) =>
   Promise.resolve({
@@ -12,7 +15,9 @@ const response = (data: unknown) =>
 
 describe("ItabWeatherWidget", () => {
   afterEach(() => {
+    resetItabWeatherRuntimeForTests();
     vi.unstubAllGlobals();
+    vi.useRealTimers();
   });
 
   it("loads current weather through the backend proxy and renders iTab size UI", async () => {
@@ -92,5 +97,100 @@ describe("ItabWeatherWidget", () => {
     expect(wrapper.text()).toContain("深圳");
     expect(wrapper.text()).toContain("31°");
     expect(wrapper.text()).toContain("晴");
+  });
+
+  it("keeps weather cover text white on the source dark surface", () => {
+    const source = readFileSync(
+      "src/features/itab-weather/ItabWeatherWidget.vue",
+      "utf8",
+    );
+
+    expect(source).toContain(".weather-icon-content {");
+    expect(source).toContain(
+      "color: var(--sd-theme-itab-weather-weather-widget-text-01);",
+    );
+    expect(source).toContain("weather-yin_d");
+    expect(source).toContain("35deg");
+    expect(source).toContain(
+      "--sd-theme-itab-weather-weather-widget-accent-surface-09",
+    );
+  });
+
+  it("keeps current weather in runtime cache until the user opens it after five minutes", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-05-27T02:00:00+08:00"));
+    const fetchMock = vi.fn(() =>
+      response({
+        sourceStatus: "ok",
+        current: {
+          status: "ok",
+          now: {
+            tmp: String(30 + fetchMock.mock.calls.length),
+            cond_txt: "多云",
+            cond_code: "101",
+          },
+          daily_forecast: [
+            {
+              date: "2026-05-27",
+              tmp_max: "33",
+              tmp_min: "27",
+              cond_txt_d: "多云",
+              cond_code_d: "101",
+              wind_sc: "2",
+            },
+          ],
+        },
+        hourly: {
+          updateTime: "2026-05-27T02:00+08:00",
+          hourly: [
+            { fxTime: "2026-05-27T03:00+08:00", temp: "30", icon: "101" },
+          ],
+        },
+      }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    const widget = {
+      id: "weather-cache",
+      type: "itab-weather-00",
+      enable: true,
+      isPublic: true,
+      data: {
+        runtime: "itab-weather",
+        version: 1,
+        sizeKey: "1x2",
+        location: {
+          id: "101280608",
+          city: "龙华",
+          province: "广东省",
+          type: "city",
+        },
+      },
+    };
+
+    const wrapper = mount(ItabWeatherWidget, {
+      props: {
+        sizeKey: "1x2",
+        widget,
+      },
+    });
+    await flushPromises();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+
+    const openedBeforeTtl = mount(ItabWeatherOpenedPanel, {
+      props: { widget },
+    });
+    await flushPromises();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+
+    vi.setSystemTime(new Date("2026-05-27T02:05:01+08:00"));
+    const openedAfterTtl = mount(ItabWeatherOpenedPanel, {
+      props: { widget },
+    });
+    await flushPromises();
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+
+    wrapper.unmount();
+    openedBeforeTtl.unmount();
+    openedAfterTtl.unmount();
   });
 });

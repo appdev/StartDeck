@@ -210,6 +210,14 @@ services:
       - ICON_SERVICE_DATA_DIR=/app/icon-service/data
       - ICON_SERVER_BASE_URL=http://127.0.0.1:9002
       - ICON_SERVER_TIMEOUT_MS=5000
+      # 可选：配置完整后才启用 QWeather 备用 IP GeoAPI。
+      # - QWEATHER_API_HOST=https://geoapi.qweather.com
+      # - QWEATHER_PROJECT_ID=<project-id>
+      # - QWEATHER_CREDENTIAL_ID=<credential-id>
+      # - QWEATHER_PRIVATE_KEY_FILE=/run/secrets/qweather-ed25519-private.pem
+      # 可选：覆盖腾讯地图 IP 定位 Key，未设置时使用内置默认 Key。
+      # - TENCENT_MAP_API_HOST=https://apis.map.qq.com
+      # - TENCENT_MAP_KEY=<map-key>
       # 如需让后端自己识别子路径，可启用：
       # - BASE_PATH=/startdeck
     volumes:
@@ -218,6 +226,7 @@ services:
       - ./Data/PC:/app/Data/PC
       - ./Data/APP:/app/Data/APP
       - ./icon-service-data:/app/icon-service/data
+      # - ./ed25519-private.pem:/run/secrets/qweather-ed25519-private.pem:ro
       - /var/run/docker.sock:/var/run/docker.sock
 ```
 
@@ -227,6 +236,8 @@ services:
 - **数据文件**: 所有配置（布局、组件、书签等）均存储在 `Data/data/startdeck.sqlite3` 中，二进制资源保存在 `Data/` 下的对应目录。
 - **音乐文件**: 将 MP3 文件放入 `Data/music` 目录，刷新页面后即可在播放器中看到。
 - **站点图标数据**: Rust 图标服务的默认种子资源位于 `rust/crates/startdeck-iconserver/resources/data`；Docker 运行期挂载为 `/app/icon-service/data`，Debian 安装到 `/opt/startdeck/icon-service/data`。
+- **腾讯地图 IP 定位**: 默认启用，优先通过腾讯地图 IP 定位接口获取经纬度；可通过 `TENCENT_MAP_KEY` 覆盖 Key，通过 `TENCENT_MAP_API_HOST` 覆盖 API Host。未设置 Key 时使用内置默认 Key；接口失败时会继续走后续定位兜底，不影响功能正常使用。
+- **QWeather 备用接口**: 默认关闭。只有同时配置 `QWEATHER_API_HOST`、`QWEATHER_PROJECT_ID`、`QWEATHER_CREDENTIAL_ID` 且 `QWEATHER_PRIVATE_KEY_FILE` 指向容器内可读 PEM 私钥文件时，后端才会启用 QWeather。启用后它会作为城市查询和天气数据的备用 provider；Docker 本地构建可通过 `--build-arg` 或 `docker-compose.yml` 的 `build.args` 传入账号配置；私钥建议用只读 volume 或 Docker secret 挂载，不要把私钥内容写入镜像。
 - **Docker 自动升级镜像**:
   - 入口：设置 → Docker 管理 → 自动升级镜像(每2小时)。
   - 关闭时：后台不会进行任何镜像拉取或版本对比。

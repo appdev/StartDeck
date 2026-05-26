@@ -2,25 +2,37 @@
 import { mount } from "@vue/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import ItabIpOpenedPanel from "./ItabIpOpenedPanel.vue";
+import { fetchItabIpLatency, fetchItabIpLookup } from "./itabIpApi";
 import { createDefaultItabIpWidget } from "./itabIpModel";
 import { resetItabIpRuntimeForTests } from "./useItabIpRuntime";
 
 vi.mock("./itabIpApi", () => ({
   fetchItabIpLookup: vi.fn(async () => ({
     ip: "163.125.214.27",
-    location: "中国 广东 深圳 中国联通",
+    location: "中国 广东省 深圳 龙华",
     country: "中国",
-    region: "广东",
-    city: "深圳",
-    isp: "中国联通",
+    region: "广东省",
+    adm2: "深圳",
+    city: "龙华",
+    district: "龙华",
+    isp: "",
     queryIp: "163.125.214.27",
     clientIp: "",
     clientIpSource: "",
+    weatherLocationId: "101280608",
+    weatherLocationType: "city",
     latitude: "22.696667",
     longitude: "114.045422",
+    coordinateSource: "codelife-getLocation",
+    coordinateAccuracy: "ip-geolocation",
     updatedAt: "2026/05/24 01:40",
     cached: false,
     sourceStatus: "ok",
+  })),
+  fetchItabIpLatency: vi.fn(async () => ({
+    latencyMs: 24.2,
+    checkedAt: "2026/05/24 01:40",
+    serverTs: 1780000000000,
   })),
 }));
 
@@ -42,13 +54,51 @@ describe("ItabIpOpenedPanel", () => {
     await nextTickCycle();
 
     expect(wrapper.attributes("data-itab-ip-source-status")).toBe("ok");
+    expect(wrapper.attributes("data-itab-ip-latency")).toBe("24");
+    expect(wrapper.attributes("data-itab-ip-latency-status")).toBe("success");
     expect(wrapper.findAll("input")).toHaveLength(0);
-    expect(wrapper.findAll("button")).toHaveLength(0);
+    expect(wrapper.findAll("button")).toHaveLength(1);
     expect(wrapper.findAll("[role='tab']")).toHaveLength(0);
     expect(wrapper.text()).toContain("本机IP地址信息");
+    expect(wrapper.find("[data-itab-ip-info-card]").exists()).toBe(true);
+    expect(wrapper.find("[data-itab-ip-info-card]").text()).toContain(
+      "当前位置",
+    );
     expect(wrapper.text()).toContain("解析地址：163.125.214.27");
-    expect(wrapper.text()).toContain("归属地：中国-广东-深圳");
-    expect(wrapper.text()).toContain("网络：中国联通");
+    expect(wrapper.text()).toContain("归属地：广东省深圳市龙华");
+    expect(wrapper.text()).toContain("网络：未知");
     expect(wrapper.text()).toContain("经纬度：114.045422,22.696667");
+    expect(wrapper.text()).toContain("PING测试：24 ms刷新");
+    expect(
+      wrapper.find("[data-itab-ip-map].opened-ip-map-layer").exists(),
+    ).toBe(true);
+    const iframe = wrapper.find("iframe");
+    expect(iframe.attributes("src")).toContain(
+      "https://www.openstreetmap.org/export/embed.html",
+    );
+    expect(decodeURIComponent(iframe.attributes("src") || "")).toContain(
+      "marker=22.696667,114.045422",
+    );
+  });
+
+  it("does not probe latency again when the IP information is unchanged", async () => {
+    const widget = createDefaultItabIpWidget();
+    const first = mount(ItabIpOpenedPanel, {
+      props: { widget },
+    });
+
+    await nextTickCycle();
+    expect(fetchItabIpLookup).toHaveBeenCalledTimes(1);
+    expect(fetchItabIpLatency).toHaveBeenCalledTimes(1);
+
+    first.unmount();
+    const second = mount(ItabIpOpenedPanel, {
+      props: { widget },
+    });
+
+    await nextTickCycle();
+    expect(fetchItabIpLookup).toHaveBeenCalledTimes(1);
+    expect(fetchItabIpLatency).toHaveBeenCalledTimes(1);
+    second.unmount();
   });
 });

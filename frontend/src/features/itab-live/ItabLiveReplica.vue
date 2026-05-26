@@ -12313,6 +12313,10 @@ button {
   backdrop-filter: blur(10px);
 }
 
+.itab-native-panel.itab-native-panel--weather {
+  backdrop-filter: none;
+}
+
 .add-window,
 .opened-window {
   position: relative;
@@ -12678,8 +12682,9 @@ button {
 .opened-weather {
   width: min(1000px, calc(100vw - 42px));
   height: min(602px, calc(100vh - 18px));
+  border: 1px solid rgba(0, 0, 0, 0.13);
   border-radius: 20px;
-  background: linear-gradient(45deg, rgb(33, 30, 34) 20%, rgb(56, 58, 62));
+  background: transparent;
   color: #fff;
   box-shadow: rgba(0, 0, 0, 0.48) 0 12px 32px 0;
   backdrop-filter: none;

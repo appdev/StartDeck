@@ -14,6 +14,7 @@ import {
   ITAB_IP_WIDGET_TYPE,
   type ItabIpLookupResult,
   type ItabIpSourceStatus,
+  type ItabIpLookupStatus,
   type ItabIpWidgetData,
 } from "./itabIpTypes";
 
@@ -29,6 +30,57 @@ const normalizeString = (value: unknown) =>
 
 const normalizeBoolean = (value: unknown) =>
   typeof value === "boolean" ? value : false;
+
+const CHINA_COUNTRY_NAMES = new Set(["中国", "中华人民共和国", "CN", "CHN", "China"]);
+
+const isChinaCountry = (value: string) => CHINA_COUNTRY_NAMES.has(value.trim());
+
+const uniqueNonEmpty = (parts: string[]) =>
+  parts
+    .map((part) => part.trim())
+    .filter((part, index, values) => part && values.indexOf(part) === index);
+
+const ensureChineseCitySuffix = (value: string) => {
+  if (!value || /[市盟县区]$|地区$|自治州$/.test(value)) return value;
+  if (/^[\u4e00-\u9fa5]+$/.test(value)) return `${value}市`;
+  return value;
+};
+
+const splitLocationParts = (location: string) =>
+  location
+    .split(/[\s-]+/)
+    .map((part) => part.trim())
+    .filter(Boolean);
+
+const formatChinaArea = (result: ItabIpLookupResult) => {
+  let province = result.region;
+  let city = result.adm2;
+  let district = result.district || result.city;
+
+  if (!province || !city) {
+    const locationParts = splitLocationParts(result.location);
+    const withoutCountry = isChinaCountry(locationParts[0] || "")
+      ? locationParts.slice(1)
+      : locationParts;
+    province = province || withoutCountry[0] || "";
+    city = city || withoutCountry[1] || "";
+    district = district || withoutCountry[2] || "";
+  }
+
+  if (!city && result.city && result.city !== district) {
+    city = result.city;
+  }
+  if (city && district === city) {
+    district = "";
+  }
+
+  const parts = uniqueNonEmpty([
+    province,
+    ensureChineseCitySuffix(city),
+    district,
+  ]);
+  return parts.length ? parts.join("") : "";
+};
 
 export const normalizeItabIpWidgetData = (raw: unknown): ItabIpWidgetData => {
   const input = isObject(raw) ? raw : {};
@@ -95,13 +147,19 @@ export const createLoadingItabIpResult = (): ItabIpLookupResult => ({
   location: "",
   country: "",
   region: "",
+  adm2: "",
   city: "",
+  district: "",
   isp: "",
   queryIp: "",
   clientIp: "",
   clientIpSource: "",
+  weatherLocationId: "",
+  weatherLocationType: "",
   latitude: "",
   longitude: "",
+  coordinateSource: "",
+  coordinateAccuracy: "",
   updatedAt: "",
   cached: false,
   sourceStatus: "loading",
@@ -131,12 +189,16 @@ export const normalizeItabIpLookupResponse = (
     ip,
     location: normalizeString(data.location),
     country: normalizeString(data.country),
-    region: normalizeString(data.region),
+    region: normalizeString(data.region) || normalizeString(data.province),
+    adm2: normalizeString(data.adm2),
     city: normalizeString(data.city),
+    district: normalizeString(data.district),
     isp: normalizeString(data.isp) || normalizeString(data.network),
     queryIp: normalizeString(data.queryIp) || ip,
     clientIp: normalizeString(data.clientIp),
     clientIpSource: normalizeString(data.clientIpSource),
+    weatherLocationId: normalizeString(data.weatherLocationId),
+    weatherLocationType: normalizeString(data.weatherLocationType),
     latitude:
       normalizeString(data.latitude) ||
       normalizeString(data.lat) ||
@@ -146,6 +208,8 @@ export const normalizeItabIpLookupResponse = (
       normalizeString(data.lon) ||
       normalizeString(data.lng) ||
       normalizeString(data.x),
+    coordinateSource: normalizeString(data.coordinateSource),
+    coordinateAccuracy: normalizeString(data.coordinateAccuracy),
     updatedAt: new Date().toLocaleString("zh-CN", {
       hour12: false,
       year: "numeric",
@@ -163,10 +227,20 @@ export const formatItabIpAddress = (result: ItabIpLookupResult) =>
   (result.queryIp || result.ip || result.clientIp || "").trim() || "加载中";
 
 export const formatItabIpArea = (result: ItabIpLookupResult) => {
-  const parts = [result.country, result.region, result.city].filter(Boolean);
+  if (isChinaCountry(result.country) || result.location.startsWith("中国")) {
+    const chinaArea = formatChinaArea(result);
+    if (chinaArea) return chinaArea;
+  }
+
+  const parts = [
+    result.country,
+    result.region,
+    result.adm2,
+    result.city || result.district,
+  ].filter((part, index, values) => part && values.indexOf(part) === index);
   if (parts.length) return parts.join("-");
   const locationParts = result.location.split(/\s+/).filter(Boolean);
-  if (locationParts.length >= 3) return locationParts.slice(0, 3).join("-");
+  if (locationParts.length >= 3) return locationParts.slice(0, 4).join("-");
   return result.location || "未知";
 };
 
@@ -183,9 +257,57 @@ export const formatItabIpNetwork = (result: ItabIpLookupResult) => {
   return match?.[0] || "未知";
 };
 
+export const parseItabIpCoordinate = (result: ItabIpLookupResult) => {
+  const latitude = Number(result.latitude);
+  const longitude = Number(result.longitude);
+  if (
+    !Number.isFinite(latitude) ||
+    !Number.isFinite(longitude) ||
+    latitude < -90 ||
+    latitude > 90 ||
+    longitude < -180 ||
+    longitude > 180
+  ) {
+    return null;
+  }
+  return { latitude, longitude };
+};
+
 export const formatItabIpCoordinate = (result: ItabIpLookupResult) => {
-  if (!result.longitude || !result.latitude) return "暂无";
+  if (!parseItabIpCoordinate(result)) return "暂无";
   return `${result.longitude},${result.latitude}`;
+};
+
+export const formatItabIpLatency = (
+  latencyMs: number | null,
+  status: ItabIpLookupStatus,
+) => {
+  if (status === "loading") return "测试中";
+  if (latencyMs === null || !Number.isFinite(latencyMs)) return "待测试";
+  return `${Math.max(0, Math.round(latencyMs))} ms`;
+};
+
+export const createItabIpMapEmbedUrl = (result: ItabIpLookupResult) => {
+  const coordinate = parseItabIpCoordinate(result);
+  if (!coordinate) return "";
+
+  const span = 0.45;
+  const bbox = [
+    coordinate.longitude - span,
+    coordinate.latitude - span,
+    coordinate.longitude + span,
+    coordinate.latitude + span,
+  ]
+    .map((value) => value.toFixed(6))
+    .join(",");
+  const url = new URL("https://www.openstreetmap.org/export/embed.html");
+  url.searchParams.set("bbox", bbox);
+  url.searchParams.set("layer", "mapnik");
+  url.searchParams.set(
+    "marker",
+    `${coordinate.latitude.toFixed(6)},${coordinate.longitude.toFixed(6)}`,
+  );
+  return url.toString();
 };
 
 export const isLongItabIpAddress = (result: ItabIpLookupResult) =>

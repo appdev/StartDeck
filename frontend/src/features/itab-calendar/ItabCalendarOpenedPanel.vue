@@ -884,7 +884,7 @@ const selectFestivalEvent = (event: CalendarFestivalEvent) => {
 .day-cell:hover:not(.today):not(.selected) {
   background: transparent;
   box-shadow: inset 0 0 0 2px
-    var(--sd-theme-itab-calendar-calendar-opened-panel-shadow-01);
+    var(--sd-theme-itab-calendar-calendar-opened-panel-shadow-08);
 }
 
 .day-cell.today {

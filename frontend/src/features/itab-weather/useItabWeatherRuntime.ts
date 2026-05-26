@@ -23,6 +23,7 @@ import type {
 
 export const weatherIcon = (code: string) =>
   `/itab/weather/icon/${code}-fill.svg`;
+const WEATHER_RUNTIME_CACHE_TTL_MS = 5 * 60 * 1000;
 const weatherIconFromCode = (code: string | number | undefined) =>
   weatherIcon(String(code || "104"));
 
@@ -296,9 +297,22 @@ interface RuntimeState {
   abortController: AbortController | null;
   searchAbortController: AbortController | null;
   searchTimer: number | null;
+  lastLoadedAt: number;
+  lastLoadedKey: string;
 }
 
 const runtimeStates = new Map<string, RuntimeState>();
+
+export const resetItabWeatherRuntimeForTests = () => {
+  runtimeStates.forEach((state) => {
+    state.abortController?.abort();
+    state.searchAbortController?.abort();
+    if (state.searchTimer !== null && typeof window !== "undefined") {
+      window.clearTimeout(state.searchTimer);
+    }
+  });
+  runtimeStates.clear();
+};
 
 const createRuntimeState = (): RuntimeState => {
   const sample = reactive(fallbackSample()) as WeatherSample;
@@ -321,6 +335,8 @@ const createRuntimeState = (): RuntimeState => {
     abortController: null,
     searchAbortController: null,
     searchTimer: null,
+    lastLoadedAt: 0,
+    lastLoadedKey: "",
   };
 };
 
@@ -334,6 +350,11 @@ const getRuntimeState = (widgetId: string) => {
 
 const stripDegree = (value: string) => value.replace(/°/g, "");
 export const formatWeatherDegree = (value: string) => `${stripDegree(value)}°`;
+
+const weatherLocationCacheKey = (location?: ItabWeatherLocation) => {
+  if (!location?.id) return "";
+  return `${location.type || "city"}:${location.id}`;
+};
 
 const formatItabWindScale = (value?: string) => {
   const trimmed = (value || "").trim();
@@ -515,6 +536,8 @@ export const useItabWeatherRuntime = (
       if (seq !== state.requestSeq || controller.signal.aborted) return;
       applyWeatherData(state, location, bundle.current, bundle.hourly);
       state.sourceStatus.value = bundle.sourceStatus || "ok";
+      state.lastLoadedAt = Date.now();
+      state.lastLoadedKey = weatherLocationCacheKey(location);
     } catch (error) {
       if (!controller.signal.aborted && seq === state.requestSeq) {
         state.error.value =
@@ -531,9 +554,25 @@ export const useItabWeatherRuntime = (
     }
   };
 
-  const ensureLoaded = () => {
+  const isLoadedWeatherStale = () => {
+    if (!state.lastLoadedAt) return true;
+    if (
+      state.lastLoadedKey &&
+      state.lastLoadedKey !== weatherLocationCacheKey(state.activeLocation.value)
+    ) {
+      return true;
+    }
+    return Date.now() - state.lastLoadedAt >= WEATHER_RUNTIME_CACHE_TTL_MS;
+  };
+
+  const ensureLoaded = (options: { refreshIfStale?: boolean } = {}) => {
     ensureLocationFromData();
-    if (state.initialized) return;
+    if (state.initialized) {
+      if (options.refreshIfStale && isLoadedWeatherStale()) {
+        void loadCurrent(state.activeLocation.value, false);
+      }
+      return;
+    }
     state.initialized = true;
     void loadCurrent(undefined, false);
   };
@@ -552,7 +591,7 @@ export const useItabWeatherRuntime = (
     state.searchText.list = "";
     state.activeLocation.value = location;
     commitLocation(location);
-    void loadCurrent(location, true);
+    void loadCurrent(location, false);
   };
 
   const searchCities = async (keyword: string) => {

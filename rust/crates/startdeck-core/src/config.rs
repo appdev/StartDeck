@@ -1,6 +1,8 @@
 use std::env;
 use std::path::{Path, PathBuf};
 
+const DEFAULT_TENCENT_MAP_KEY: &str = "SFOBZ-WFFCB-GUWU7-JP6EC-GCMRT-7KBSQ";
+
 #[derive(Clone, Debug)]
 pub struct RuntimeConfig {
     pub base_dir: PathBuf,
@@ -16,6 +18,12 @@ pub struct RuntimeConfig {
     pub icon_service_data_dir: PathBuf,
     pub icon_service_resource_dir: PathBuf,
     pub default_template_file: PathBuf,
+    pub qweather_api_host: String,
+    pub qweather_project_id: String,
+    pub qweather_credential_id: String,
+    pub qweather_private_key_file: PathBuf,
+    pub tencent_map_api_host: String,
+    pub tencent_map_key: String,
     pub host: String,
     pub port: u16,
     pub admin_password: String,
@@ -58,6 +66,22 @@ impl RuntimeConfig {
         let icon_service_resource_dir = env_path(&["ICON_SERVICE_RESOURCE_DIR"])
             .or_else(|| default_icon_service_resource_dir(&base_dir))
             .unwrap_or_else(|| icon_service_data_dir.clone());
+        let qweather_api_host = env::var("QWEATHER_API_HOST")
+            .or_else(|_| env::var("QWEATHER_GEO_API_HOST"))
+            .unwrap_or_default()
+            .trim_end_matches('/')
+            .to_string();
+        let qweather_project_id = env::var("QWEATHER_PROJECT_ID").unwrap_or_default();
+        let qweather_credential_id = env::var("QWEATHER_CREDENTIAL_ID").unwrap_or_default();
+        let qweather_private_key_file =
+            env_path(&["QWEATHER_PRIVATE_KEY_FILE", "QWEATHER_PRIVATE_KEY_PATH"])
+                .unwrap_or_default();
+        let tencent_map_api_host = env_string(&["TENCENT_MAP_API_HOST"])
+            .unwrap_or_else(|| "https://apis.map.qq.com".to_string())
+            .trim_end_matches('/')
+            .to_string();
+        let tencent_map_key = env_string(&["TENCENT_MAP_KEY", "TENCENT_MAP_API_KEY"])
+            .unwrap_or_else(|| DEFAULT_TENCENT_MAP_KEY.to_string());
         Self {
             users_dir: data_dir.join("users"),
             sqlite_file: data_dir.join("startdeck.sqlite3"),
@@ -73,6 +97,12 @@ impl RuntimeConfig {
             icon_service_data_dir,
             icon_service_resource_dir,
             default_template_file,
+            qweather_api_host,
+            qweather_project_id,
+            qweather_credential_id,
+            qweather_private_key_file,
+            tencent_map_api_host,
+            tencent_map_key,
             data_dir,
             base_dir,
             host,
@@ -96,6 +126,13 @@ impl RuntimeConfig {
         }
         Ok(())
     }
+
+    pub fn qweather_enabled(&self) -> bool {
+        !self.qweather_api_host.trim().is_empty()
+            && !self.qweather_project_id.trim().is_empty()
+            && !self.qweather_credential_id.trim().is_empty()
+            && self.qweather_private_key_file.is_file()
+    }
 }
 
 fn infer_base_dir(cwd: &Path) -> PathBuf {
@@ -113,6 +150,15 @@ fn infer_base_dir(cwd: &Path) -> PathBuf {
             .unwrap_or_else(|| cwd.to_path_buf()),
         _ => cwd.to_path_buf(),
     }
+}
+
+fn env_string(keys: &[&str]) -> Option<String> {
+    keys.iter().find_map(|key| {
+        env::var(key)
+            .ok()
+            .map(|value| value.trim().to_string())
+            .filter(|value| !value.is_empty())
+    })
 }
 
 fn env_path(keys: &[&str]) -> Option<PathBuf> {

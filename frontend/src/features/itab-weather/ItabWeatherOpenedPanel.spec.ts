@@ -10,11 +10,13 @@ describe("ItabWeatherOpenedPanel", () => {
     );
 
     expect(source).toContain("data-itab-weather-opened-panel");
+    expect(source).toContain("runtime.ensureLoaded({ refreshIfStale: true })");
     expect(source).toContain(
       "background: var(--sd-theme-itab-weather-weather-opened-panel-surface-00)",
     );
     expect(source).toContain(
       "color: var(--sd-theme-itab-weather-weather-opened-panel-text-01)",
     );
+    expect(source).not.toContain("color: rgba(255, 255, 255, 0.82)");
   });
 });

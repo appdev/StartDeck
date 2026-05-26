@@ -103,6 +103,63 @@ async fn test_app_with_widget_cache(include_poem_cache: bool) -> axum::Router {
     app(AppState::new_with_remote_itab_fetch(config, pool, false))
 }
 
+async fn test_app_with_seeded_weather_cache() -> axum::Router {
+    let temp = tempfile::tempdir().unwrap();
+    let base = temp.keep();
+    let data_dir = base.join("Data/data");
+    std::fs::create_dir_all(&data_dir).unwrap();
+    std::fs::write(
+        data_dir.join("system.json"),
+        r#"{"authMode":"single","enableDocker":false}"#,
+    )
+    .unwrap();
+    std::fs::write(
+        data_dir.join("data.json"),
+        serde_json::to_vec(&json!({
+            "username": "admin",
+            "password": "secret",
+            "appConfig": {"customTitle": "Demo"},
+            "groups": [{"id": "g1", "title": "Main", "items": []}],
+            "widgets": []
+        }))
+        .unwrap(),
+    )
+    .unwrap();
+    let public_dir = base.join("Data/public");
+    std::fs::create_dir_all(&public_dir).unwrap();
+    std::fs::write(public_dir.join("index.html"), "<main>StartDeck</main>").unwrap();
+    let config = RuntimeConfig::from_base_dir(base);
+    let pool = connect_sqlite(&config).await.unwrap();
+    import_legacy_app_data(&pool, &config).await.unwrap();
+    let now = chrono::Utc::now().timestamp_millis();
+    sqlx::query(
+        r#"INSERT INTO runtime_cache(kind, cache_key, value_json, expires_at, source_status, updated_at)
+           VALUES ('itab_weather', 'current:city:location:101280608', ?, ?, 'ok', ?)"#,
+    )
+    .bind(
+        json!({
+            "sourceStatus": "ok",
+            "provider": "test-cache",
+            "current": {
+                "status": "ok",
+                "now": {"tmp": "28", "cond_txt": "缓存晴", "cond_code": "100"},
+                "daily_forecast": [{"date": "2026-05-27", "tmp_max": "32", "tmp_min": "25", "cond_txt_d": "缓存晴", "cond_code_d": "100", "wind_sc": "2"}]
+            },
+            "hourly": {
+                "updateTime": "2026-05-27T02:00+08:00",
+                "hourly": [{"fxTime": "2026-05-27T03:00+08:00", "temp": "28", "icon": "100"}]
+            }
+        })
+        .to_string(),
+    )
+    .bind(now + 5 * 60 * 1000)
+    .bind(now)
+    .execute(&pool)
+    .await
+    .unwrap();
+    app(AppState::new_with_remote_itab_fetch(config, pool, true))
+}
+
 async fn json_call(
     app: &axum::Router,
     method: &str,
@@ -621,4 +678,23 @@ async fn widget_fallbacks_cover_empty_runtime_cache() {
     assert_eq!(status, StatusCode::OK);
     assert_eq!(body["data"]["sourceStatus"], "fallback");
     assert_eq!(body["data"]["poemTitle"], "浪淘沙");
+}
+
+#[tokio::test]
+async fn weather_current_uses_five_minute_cache_even_when_refresh_requested() {
+    let app = test_app_with_seeded_weather_cache().await;
+
+    let (status, body) = json_call(
+        &app,
+        "GET",
+        "/api/itab/weather/current?location=101280608&type=city&refresh=true",
+        None,
+        None,
+    )
+    .await;
+
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(body["sourceStatus"], "ok");
+    assert_eq!(body["data"]["provider"], "test-cache");
+    assert_eq!(body["data"]["current"]["now"]["cond_txt"], "缓存晴");
 }

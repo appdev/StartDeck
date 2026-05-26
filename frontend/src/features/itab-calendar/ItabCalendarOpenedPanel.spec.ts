@@ -1,4 +1,6 @@
 // @vitest-environment jsdom
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { mount } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createDefaultItabCalendarWidget } from "./itabCalendarModel";
@@ -206,5 +208,51 @@ describe("ItabCalendarOpenedPanel", () => {
       "2026-06-01",
     );
     expect(wrapper.text()).toContain("节日儿童节");
+  });
+
+  it("keeps selected and hover date borders readable in the dark opened panel", () => {
+    const cwd = process.cwd();
+    const repoRoot =
+      cwd.endsWith("/frontend") || cwd.endsWith("\\frontend")
+        ? resolve(cwd, "..")
+        : cwd;
+    const source = readFileSync(
+      resolve(repoRoot, "frontend/src/assets/main.css"),
+      "utf8",
+    );
+    const shadow04Declarations = Array.from(
+      source.matchAll(
+        /--sd-theme-itab-calendar-calendar-opened-panel-shadow-04:\s*([^;]+);/g,
+      ),
+      (match) => (match[1] ?? "").replace(/\s+/g, " ").trim(),
+    );
+    const shadow08Declarations = Array.from(
+      source.matchAll(
+        /--sd-theme-itab-calendar-calendar-opened-panel-shadow-08:\s*([^;]+);/g,
+      ),
+      (match) => (match[1] ?? "").replace(/\s+/g, " ").trim(),
+    );
+    const darkShadow04Declaration = shadow04Declarations.at(-1);
+    const darkShadow08Declaration = shadow08Declarations.at(-1);
+    const panelSource = readFileSync(
+      resolve(
+        repoRoot,
+        "frontend/src/features/itab-calendar/ItabCalendarOpenedPanel.vue",
+      ),
+      "utf8",
+    );
+
+    expect(shadow04Declarations).toContain("rgba(0, 0, 0, 0.2)");
+    expect(darkShadow04Declaration).toBe(
+      "color-mix( in srgb, var(--sd-component-text-primary) 22%, transparent )",
+    );
+    expect(shadow08Declarations).toContain("rgba(0, 0, 0, 0.16)");
+    expect(darkShadow08Declaration).toBe(
+      "color-mix( in srgb, var(--sd-component-text-primary) 16%, transparent )",
+    );
+    expect(panelSource).toContain(".day-cell:hover:not(.today):not(.selected)");
+    expect(panelSource).toContain(
+      "var(--sd-theme-itab-calendar-calendar-opened-panel-shadow-08)",
+    );
   });
 });

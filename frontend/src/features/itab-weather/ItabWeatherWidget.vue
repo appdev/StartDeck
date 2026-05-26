@@ -143,12 +143,14 @@ watch(
               <b>{{ runtime.sample.condition }}</b>
             </span>
           </span>
-          <span>AQI {{ runtime.sample.airQuality }}</span>
-          <small>
-            最高{{ formatWeatherDegree(runtime.sample.high) }} 最低{{
-              formatWeatherDegree(runtime.sample.low)
-            }}
-          </small>
+          <span class="weather-card-stats">
+            <span>AQI {{ runtime.sample.airQuality }}</span>
+            <small>
+              最高{{ formatWeatherDegree(runtime.sample.high) }} 最低{{
+                formatWeatherDegree(runtime.sample.low)
+              }}
+            </small>
+          </span>
         </span>
       </template>
     </span>
@@ -172,6 +174,7 @@ watch(
   background-position: center;
   background-repeat: no-repeat;
   background-size: cover;
+  color: var(--sd-theme-itab-weather-weather-widget-text-01);
 }
 
 .weather-icon-content::before {
@@ -225,9 +228,13 @@ watch(
 }
 
 .weather-icon-content.weather-yin_d {
+  background-color: var(
+    --sd-theme-itab-weather-weather-widget-accent-surface-09
+  );
   background-image: linear-gradient(
-    45deg,
-    var(--sd-theme-itab-weather-weather-widget-surface-01) 20%,
+    35deg,
+    var(--sd-theme-itab-weather-weather-widget-accent-surface-09) 30%,
+    var(--sd-theme-itab-weather-weather-widget-surface-01),
     var(--sd-theme-itab-weather-weather-widget-surface-02)
   );
 }
@@ -421,19 +428,21 @@ watch(
 
 .weather-card-main {
   flex-direction: column;
-  justify-content: flex-start;
-  padding: 12px 13px;
+  justify-content: space-between;
+  padding: 12px;
+  font-size: 20px;
+  line-height: 30px;
 }
 
 .weather-top {
   display: flex;
   width: 100%;
-  min-height: 65px;
+  min-height: 62px;
   align-items: flex-start;
   justify-content: space-between;
   color: var(--sd-theme-itab-weather-weather-widget-text-01);
-  font-size: 12.6px;
-  line-height: 19px;
+  font-size: 20px;
+  line-height: 30px;
 }
 
 .weather-top > span {
@@ -443,14 +452,14 @@ watch(
 }
 
 .weather-top > span:first-child {
-  height: 65px;
+  height: 62px;
 }
 
 .weather-top svg,
 .weather-location-line svg {
   flex: none;
-  width: 13px;
-  height: 13px;
+  width: 12px;
+  height: 12px;
   margin-left: 2px;
   fill: currentColor;
 }
@@ -458,7 +467,8 @@ watch(
 .weather-location-line {
   display: flex;
   align-items: center;
-  line-height: 18.9px;
+  font-size: 12px;
+  line-height: 18px;
 }
 
 .weather-location-line i {
@@ -470,41 +480,47 @@ watch(
 }
 
 .weather-top img {
-  width: 26px;
-  height: 26px;
+  width: 25px;
+  height: 25px;
   object-fit: contain;
 }
 
 .weather-top b {
+  font-size: 12px;
   font-weight: 400;
+  line-height: 18px;
   text-align: center;
 }
 
 .weather-card-condition {
-  padding-top: 11px;
+  width: 25px;
+  align-items: center;
+  padding-top: 10px;
 }
 
 .weather-card-main strong {
   display: block;
-  font-size: 27.3px;
+  margin-top: 5px;
+  font-size: 26px;
   font-weight: 700;
-  line-height: 41px;
+  line-height: 39px;
 }
 
-.weather-card-main > span:not(.weather-top),
-.weather-card-main small {
+.weather-card-stats,
+.weather-card-stats small {
   display: block;
   color: var(--sd-theme-itab-weather-weather-widget-text-01);
-  font-size: 12.6px;
-  line-height: 19px;
+  font-size: 12px;
+  line-height: 18px;
 }
 
-.weather-card-main > span:not(.weather-top) {
-  margin-top: 21px;
+.weather-card-stats > span {
+  display: block;
+  margin-bottom: 2px;
 }
 
-.weather-card-main small {
-  margin-top: 2px;
+.weather-card-stats small {
+  margin: 0;
 }
 
 .weather-wide-main {
