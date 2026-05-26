@@ -144,6 +144,7 @@ const uptimeDaysText = computed(() => {
   if (days < 10) return `${days.toFixed(1)} 天`;
   return `${Math.round(days)} 天`;
 });
+const uptimeRunningText = computed(() => `已运行 ${uptimeDaysText.value}`);
 const osSummary = computed(() => {
   const os = systemStats.value?.os;
   if (!os) return "Host";
@@ -157,11 +158,11 @@ const hostSummary = computed(() => {
 const openedHostSummary = computed(() => {
   const summary = hostSummary.value;
   if (!systemStats.value?.uptime) return summary;
-  return [summary, `运行天数 ${uptimeDaysText.value}`].filter(Boolean).join(" · ");
+  return [summary, uptimeRunningText.value].filter(Boolean).join(" · ");
 });
 const realtimeSummary = computed(() => {
   const parts = [osSummary.value];
-  if (systemStats.value?.uptime) parts.push(`运行天数 ${uptimeDaysText.value}`);
+  if (systemStats.value?.uptime) parts.push(uptimeRunningText.value);
   parts.push(`CPU ${cpuPercent.value.toFixed(0)}%`);
   return parts.join(" · ");
 });
@@ -371,7 +372,7 @@ onUnmounted(() => {
                 <dd>{{ systemStats?.temp?.main || "--" }}°C</dd>
               </div>
               <div>
-                <dt>运行天数</dt>
+                <dt>已运行</dt>
                 <dd>{{ uptimeDaysText }}</dd>
               </div>
               <div>
