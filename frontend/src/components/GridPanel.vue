@@ -877,9 +877,13 @@ watch(
     // 如果 deviceKey 发生变化，强制重新挂载 GridStack 容器
     // 这可以解决从窄屏切换回宽屏时布局错乱的问题，同时避免 :key 导致的死循环
     if (shouldRemount && !isInternalUpdate && !isEditMode.value) {
+      destroyGridStack();
       isGridAlive.value = false;
       nextTick(() => {
         isGridAlive.value = true;
+        nextTick(() => {
+          void initializeGridStack();
+        });
       });
     }
   },

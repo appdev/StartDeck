@@ -167,6 +167,16 @@ describe("GridPanel Context Menu", () => {
       }),
     );
     document.body.innerHTML = "";
+    Object.defineProperty(window, "innerWidth", {
+      configurable: true,
+      writable: true,
+      value: 1024,
+    });
+    Object.defineProperty(window, "innerHeight", {
+      configurable: true,
+      writable: true,
+      value: 768,
+    });
     Object.defineProperty(window.HTMLElement.prototype, "scrollTo", {
       configurable: true,
       value: vi.fn(),
@@ -279,6 +289,34 @@ describe("GridPanel Context Menu", () => {
     expect(options.draggable?.cancel).toContain("[data-grid-drag-ignore]");
     expect(options.draggable?.cancel).toContain("[data-itab-inner-control]");
     expect(options.draggable).not.toHaveProperty("pause");
+  });
+
+  it("reinitializes GridStack against the remounted responsive grid", async () => {
+    await flushPromises();
+
+    const initialInitCalls = gridStackMock.init.mock.calls.length;
+    Object.defineProperty(window, "innerWidth", {
+      configurable: true,
+      writable: true,
+      value: 390,
+    });
+    window.dispatchEvent(new Event("resize"));
+
+    await wrapper.vm.$nextTick();
+    await flushPromises();
+    await wrapper.vm.$nextTick();
+    await flushPromises();
+
+    const remountedRoot = wrapper.find(".sd-home-grid-stack").element;
+    const lastInitCall = gridStackMock.init.mock.calls.at(-1) as
+      | unknown[]
+      | undefined;
+
+    expect(gridStackMock.instance.destroy).toHaveBeenCalled();
+    expect(gridStackMock.init.mock.calls.length).toBeGreaterThan(
+      initialInitCalls,
+    );
+    expect(lastInitCall?.[1]).toBe(remountedRoot);
   });
 
   it("gates whole-card dragging behind login state", () => {

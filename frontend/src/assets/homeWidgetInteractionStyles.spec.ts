@@ -95,4 +95,8 @@ describe("home widget interaction styles", () => {
     expect(deleteBlock).toContain("top: -0.375rem;");
     expect(deleteBlock).toContain("left: -0.375rem;");
   });
+
+  it("does not zoom the document root on compact viewports", () => {
+    expect(mainCssSource).not.toMatch(/html\s*{[^}]*\bzoom\s*:/);
+  });
 });
