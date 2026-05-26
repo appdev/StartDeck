@@ -36,9 +36,11 @@ use tower_http::services::ServeDir;
 use tower_http::trace::TraceLayer;
 use uuid::Uuid;
 
+mod docker_api;
 mod ip_lookup;
 mod itab;
 mod static_assets;
+mod telemetry;
 
 #[derive(Clone)]
 pub struct AppState {
@@ -125,18 +127,24 @@ pub fn app(state: AppState) -> Router {
         .route("/api/ping", get(ping))
         .route("/api/rtt", get(rtt))
         .route("/api/visitor/track", post(track_visitor))
-        .route("/api/system/stats", get(system_stats))
-        .route("/api/docker-status", get(docker_status))
+        .route("/api/system/stats", get(telemetry::system_stats))
+        .route("/api/docker-status", get(docker_api::docker_status))
         .route("/api/config/proxy-status", get(proxy_status))
-        .route("/api/docker/containers", get(docker_containers))
-        .route("/api/docker/info", get(docker_info))
-        .route("/api/docker/check-updates", post(docker_accepted))
-        .route("/api/docker/container/{id}/{action}", post(docker_accepted))
+        .route("/api/docker/containers", get(docker_api::docker_containers))
+        .route("/api/docker/info", get(docker_api::docker_info))
+        .route(
+            "/api/docker/check-updates",
+            post(docker_api::docker_check_updates),
+        )
+        .route(
+            "/api/docker/container/{id}/{action}",
+            post(docker_api::docker_container_action),
+        )
         .route(
             "/api/docker/container/{id}/inspect-lite",
-            get(docker_inspect),
+            get(docker_api::docker_inspect),
         )
-        .route("/api/docker/export-logs", get(docker_logs))
+        .route("/api/docker/export-logs", get(docker_api::docker_logs))
         .route("/api/music-list", get(music_list))
         .route("/api/backgrounds", get(list_backgrounds))
         .route("/api/mobile_backgrounds", get(list_mobile_backgrounds))
@@ -695,20 +703,6 @@ async fn track_visitor(State(state): State<AppState>) -> Result<Json<Value>, Api
     Ok(Json(json!({"success": true})))
 }
 
-async fn system_stats(
-    State(state): State<AppState>,
-    headers: HeaderMap,
-) -> Result<Json<Value>, ApiError> {
-    require_username(&headers, &state)?;
-    Ok(Json(
-        json!({"success": true, "data": {"runtime": "rust", "time": Utc::now().to_rfc3339()}}),
-    ))
-}
-
-async fn docker_status() -> Json<Value> {
-    Json(json!({"available": false, "enabled": false, "runtime": "rust"}))
-}
-
 async fn proxy_status() -> Json<Value> {
     let available = std::env::var("HTTP_PROXY")
         .or_else(|_| std::env::var("HTTPS_PROXY"))
@@ -716,52 +710,6 @@ async fn proxy_status() -> Json<Value> {
         .map(|value| !value.trim().is_empty())
         .unwrap_or(false);
     Json(json!({"available": available}))
-}
-
-async fn docker_containers(
-    State(state): State<AppState>,
-    headers: HeaderMap,
-) -> Result<Json<Value>, ApiError> {
-    require_username(&headers, &state)?;
-    Ok(Json(json!({"success": true, "containers": []})))
-}
-
-async fn docker_info(
-    State(state): State<AppState>,
-    headers: HeaderMap,
-) -> Result<Json<Value>, ApiError> {
-    require_username(&headers, &state)?;
-    Ok(Json(
-        json!({"success": false, "error": "docker_unavailable"}),
-    ))
-}
-
-async fn docker_accepted(
-    State(state): State<AppState>,
-    headers: HeaderMap,
-) -> Result<Json<Value>, ApiError> {
-    require_username(&headers, &state)?;
-    Ok(Json(
-        json!({"success": false, "error": "docker_unavailable"}),
-    ))
-}
-
-async fn docker_inspect(
-    State(state): State<AppState>,
-    headers: HeaderMap,
-) -> Result<Json<Value>, ApiError> {
-    require_username(&headers, &state)?;
-    Ok(Json(
-        json!({"success": false, "error": "docker_unavailable"}),
-    ))
-}
-
-async fn docker_logs(
-    State(state): State<AppState>,
-    headers: HeaderMap,
-) -> Result<Response, ApiError> {
-    require_username(&headers, &state)?;
-    Ok((StatusCode::SERVICE_UNAVAILABLE, "docker unavailable").into_response())
 }
 
 async fn music_list(State(state): State<AppState>) -> Result<Json<Value>, ApiError> {
