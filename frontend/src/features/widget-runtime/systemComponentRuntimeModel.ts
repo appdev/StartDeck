@@ -1,6 +1,6 @@
 import type { WidgetConfig } from "@/types";
-import { resolveItabWidgetSize } from "@/features/itab-widgets/itabSizePresets";
 import {
+  resolveRuntimeWidgetSize,
   resolveRuntimeWidgetSizeKey,
   type RuntimeWidgetSizeKey,
 } from "./widgetRuntimeSizes";
@@ -91,9 +91,9 @@ const applySizeToWidget = (
   sizeKey: RuntimeWidgetSizeKey,
   normalize: (value: unknown) => Record<string, unknown>,
 ) => {
-  const resolvedSizeKey =
-    resolveRuntimeWidgetSizeKey(type, { sizeKey }) || sizeKey;
-  const size = resolveItabWidgetSize(resolvedSizeKey);
+  const resolvedSizeKey = resolveRuntimeWidgetSizeKey(type, { sizeKey });
+  if (!resolvedSizeKey) return;
+  const size = resolveRuntimeWidgetSize(resolvedSizeKey);
   widget.colSpan = size.colSpan;
   widget.rowSpan = size.rowSpan;
   widget.w = size.colSpan;

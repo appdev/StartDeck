@@ -67,4 +67,28 @@ describe("itabTodoModel", () => {
       data: expect.objectContaining({ sizeKey: "1x2" }),
     });
   });
+
+  it("normalizes and applies the Todo-only 4x4 runtime size", () => {
+    expect(
+      normalizeItabTodoWidgetData({
+        sizeKey: "4x4",
+        tasks: [{ id: "a", text: "扩展待办", done: false }],
+      }),
+    ).toMatchObject({
+      sizeKey: "4x4",
+      tasks: [{ id: "a", text: "扩展待办", done: false }],
+    });
+
+    const widget = createDefaultItabTodoWidget();
+    applyItabTodoSizeToWidget(widget, "4x4");
+
+    expect(widget).toMatchObject({
+      type: ITAB_TODO_WIDGET_TYPE,
+      colSpan: 4,
+      rowSpan: 4,
+      w: 4,
+      h: 4,
+      data: expect.objectContaining({ sizeKey: "4x4" }),
+    });
+  });
 });

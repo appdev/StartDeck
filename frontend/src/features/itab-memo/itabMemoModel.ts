@@ -1,17 +1,17 @@
 import type { WidgetConfig } from "@/types";
-import {
-  ITAB_WIDGET_SIZE_BY_KEY,
-  resolveItabWidgetSize,
-  toItabWidgetSizeKey,
-  type ItabWidgetSizeKey,
-} from "@/features/itab-widgets/itabSizePresets";
+import { toItabWidgetSizeKey } from "@/features/itab-widgets/itabSizePresets";
 import { ITAB_GRID_SCHEMA_VERSION } from "@/features/itab-widgets/itabGrid";
+import {
+  resolveRuntimeWidgetSize,
+  resolveRuntimeWidgetSizeKey,
+} from "@/features/widget-runtime/widgetRuntimeSizes";
 import {
   ITAB_MEMO_CATALOG_ID,
   ITAB_MEMO_DATA_VERSION,
   ITAB_MEMO_DEFAULT_SIZE,
   ITAB_MEMO_RUNTIME,
   ITAB_MEMO_WIDGET_TYPE,
+  type ItabMemoSizeKey,
   type ItabMemoNote,
   type ItabMemoWidgetData,
 } from "./itabMemoTypes";
@@ -19,9 +19,10 @@ import {
 const isObject = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
 
-export const isItabMemoSizeKey = (value: unknown): value is ItabWidgetSizeKey =>
+export const isItabMemoSizeKey = (value: unknown): value is ItabMemoSizeKey =>
   typeof value === "string" &&
-  ITAB_WIDGET_SIZE_BY_KEY.has(value as ItabWidgetSizeKey);
+  resolveRuntimeWidgetSizeKey(ITAB_MEMO_WIDGET_TYPE, { sizeKey: value }) ===
+    value;
 
 const formatTimestamp = (input?: unknown) => {
   if (typeof input === "string" && input.trim()) return input.trim();
@@ -133,7 +134,7 @@ export const normalizeItabMemoWidgetData = (
 };
 
 export const createDefaultItabMemoWidget = (): WidgetConfig => {
-  const size = resolveItabWidgetSize(ITAB_MEMO_DEFAULT_SIZE);
+  const size = resolveRuntimeWidgetSize(ITAB_MEMO_DEFAULT_SIZE);
   return {
     id: ITAB_MEMO_CATALOG_ID,
     type: ITAB_MEMO_WIDGET_TYPE,
@@ -155,16 +156,19 @@ export const createDefaultItabMemoWidget = (): WidgetConfig => {
 
 export const applyItabMemoSizeToWidget = (
   widget: WidgetConfig,
-  sizeKey: ItabWidgetSizeKey,
+  sizeKey: ItabMemoSizeKey,
 ) => {
-  const size = resolveItabWidgetSize(sizeKey);
+  const resolvedSizeKey =
+    resolveRuntimeWidgetSizeKey(ITAB_MEMO_WIDGET_TYPE, { sizeKey }) ||
+    ITAB_MEMO_DEFAULT_SIZE;
+  const size = resolveRuntimeWidgetSize(resolvedSizeKey);
   const data = normalizeItabMemoWidgetData(widget.data);
   widget.id = ITAB_MEMO_CATALOG_ID;
   widget.type = ITAB_MEMO_WIDGET_TYPE;
   widget.data = {
     ...data,
     layoutSystem: ITAB_GRID_SCHEMA_VERSION,
-    sizeKey,
+    sizeKey: resolvedSizeKey,
   } satisfies ItabMemoWidgetData & { layoutSystem: string };
   widget.colSpan = size.colSpan;
   widget.rowSpan = size.rowSpan;
@@ -173,9 +177,14 @@ export const applyItabMemoSizeToWidget = (
 };
 
 export const syncItabMemoSizeFromWidgetSpans = (widget: WidgetConfig) => {
-  const sizeKey = toItabWidgetSizeKey({
-    colSpan: widget.w ?? widget.colSpan,
-    rowSpan: widget.h ?? widget.rowSpan,
-  });
+  const sizeKey =
+    resolveRuntimeWidgetSizeKey(ITAB_MEMO_WIDGET_TYPE, {
+      colSpan: widget.w ?? widget.colSpan,
+      rowSpan: widget.h ?? widget.rowSpan,
+    }) ||
+    toItabWidgetSizeKey({
+      colSpan: widget.w ?? widget.colSpan,
+      rowSpan: widget.h ?? widget.rowSpan,
+    });
   if (sizeKey) applyItabMemoSizeToWidget(widget, sizeKey);
 };

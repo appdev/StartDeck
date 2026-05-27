@@ -235,6 +235,7 @@ describe("widgetCatalog", () => {
       "2x1",
       "2x2",
       "2x4",
+      "4x4",
     ]);
   });
 
@@ -280,6 +281,7 @@ describe("widgetCatalog", () => {
       "2x1",
       "2x2",
       "2x4",
+      "4x4",
     ]);
   });
 

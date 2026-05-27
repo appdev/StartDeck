@@ -1,17 +1,19 @@
 import type { WidgetConfig } from "@/types";
 import {
-  ITAB_WIDGET_SIZE_BY_KEY,
-  resolveItabWidgetSize,
   toItabWidgetSizeKey,
-  type ItabWidgetSizeKey,
 } from "@/features/itab-widgets/itabSizePresets";
 import { ITAB_GRID_SCHEMA_VERSION } from "@/features/itab-widgets/itabGrid";
+import {
+  resolveRuntimeWidgetSize,
+  resolveRuntimeWidgetSizeKey,
+} from "@/features/widget-runtime/widgetRuntimeSizes";
 import {
   ITAB_TODO_CATALOG_ID,
   ITAB_TODO_DATA_VERSION,
   ITAB_TODO_DEFAULT_SIZE,
   ITAB_TODO_RUNTIME,
   ITAB_TODO_WIDGET_TYPE,
+  type ItabTodoSizeKey,
   type ItabTodoTask,
   type ItabTodoWidgetData,
 } from "./itabTodoTypes";
@@ -19,9 +21,10 @@ import {
 const isObject = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
 
-export const isItabTodoSizeKey = (value: unknown): value is ItabWidgetSizeKey =>
+export const isItabTodoSizeKey = (value: unknown): value is ItabTodoSizeKey =>
   typeof value === "string" &&
-  ITAB_WIDGET_SIZE_BY_KEY.has(value as ItabWidgetSizeKey);
+  resolveRuntimeWidgetSizeKey(ITAB_TODO_WIDGET_TYPE, { sizeKey: value }) ===
+    value;
 
 const normalizeTask = (value: unknown, index: number): ItabTodoTask | null => {
   if (!isObject(value)) return null;
@@ -64,7 +67,7 @@ export const normalizeItabTodoWidgetData = (
 };
 
 export const createDefaultItabTodoWidget = (): WidgetConfig => {
-  const size = resolveItabWidgetSize(ITAB_TODO_DEFAULT_SIZE);
+  const size = resolveRuntimeWidgetSize(ITAB_TODO_DEFAULT_SIZE);
   return {
     id: ITAB_TODO_CATALOG_ID,
     type: ITAB_TODO_WIDGET_TYPE,
@@ -86,16 +89,19 @@ export const createDefaultItabTodoWidget = (): WidgetConfig => {
 
 export const applyItabTodoSizeToWidget = (
   widget: WidgetConfig,
-  sizeKey: ItabWidgetSizeKey,
+  sizeKey: ItabTodoSizeKey,
 ) => {
-  const size = resolveItabWidgetSize(sizeKey);
+  const resolvedSizeKey =
+    resolveRuntimeWidgetSizeKey(ITAB_TODO_WIDGET_TYPE, { sizeKey }) ||
+    ITAB_TODO_DEFAULT_SIZE;
+  const size = resolveRuntimeWidgetSize(resolvedSizeKey);
   const data = normalizeItabTodoWidgetData(widget.data);
   widget.id = ITAB_TODO_CATALOG_ID;
   widget.type = ITAB_TODO_WIDGET_TYPE;
   widget.data = {
     ...data,
     layoutSystem: ITAB_GRID_SCHEMA_VERSION,
-    sizeKey,
+    sizeKey: resolvedSizeKey,
   } satisfies ItabTodoWidgetData & { layoutSystem: string };
   widget.colSpan = size.colSpan;
   widget.rowSpan = size.rowSpan;
@@ -105,6 +111,9 @@ export const applyItabTodoSizeToWidget = (
 
 export const syncItabTodoSizeFromWidgetSpans = (widget: WidgetConfig) => {
   const sizeKey = toItabWidgetSizeKey({
+    colSpan: widget.w ?? widget.colSpan,
+    rowSpan: widget.h ?? widget.rowSpan,
+  }) || resolveRuntimeWidgetSizeKey(ITAB_TODO_WIDGET_TYPE, {
     colSpan: widget.w ?? widget.colSpan,
     rowSpan: widget.h ?? widget.rowSpan,
   });

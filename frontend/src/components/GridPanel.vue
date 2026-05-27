@@ -58,13 +58,17 @@ import {
   toRuntimeWidgetSizeKey,
   type RuntimeWidgetSizeKey,
 } from "@/features/widget-runtime/widgetRuntimeSizes";
-import { toItabWidgetSizeKey } from "@/features/itab-widgets/itabSizePresets";
+import {
+  toItabWidgetSizeKey,
+  type ItabWidgetSizeKey,
+} from "@/features/itab-widgets/itabSizePresets";
 import {
   ITAB_GRID_GAP,
   ITAB_GRID_MAX_COLUMNS,
   ITAB_GRID_PITCH,
   resolveItabGridColumns,
   resolveItabGridContainerWidth,
+  resolveItabGridTrackColumns,
   withItabGridData,
 } from "@/features/itab-widgets/itabGrid";
 import { ITAB_TODO_WIDGET_TYPE } from "@/features/itab-todo/itabTodoTypes";
@@ -747,14 +751,23 @@ const headerTitleFontSize = computed(() => {
   );
   return Math.max(20, Math.min(configured, maxByLayout, fitByWidth));
 });
-const widgetColNum = computed(() =>
-  Math.max(
+const widgetColNum = computed(() => {
+  const resolveColumns =
+    deviceKey.value === "desktop"
+      ? resolveItabGridTrackColumns
+      : resolveItabGridColumns;
+  return Math.max(
     4,
-    resolveItabGridColumns(mainContentMaxWidthPx.value, ITAB_GRID_MAX_COLUMNS),
-  ),
-);
+    resolveColumns(mainContentMaxWidthPx.value, ITAB_GRID_MAX_COLUMNS),
+  );
+});
 const itabGridLayoutWidth = computed(
   () => widgetColNum.value * ITAB_GRID_PITCH,
+);
+const widgetAreaContainerWidth = computed(() =>
+  deviceKey.value === "desktop"
+    ? mainContentMaxWidth.value
+    : `${itabGridLayoutWidth.value}px`,
 );
 const lastDeviceKey = ref(deviceKey.value);
 const lastWidgetColNum = ref(widgetColNum.value);
@@ -993,18 +1006,23 @@ const handleSizeSelect = (
     const storeWidget = store.widgets.find((item) => item.id === widget.id);
     if (runtimeSizeKey && storeWidget) {
       applyRuntimeWidgetSize(storeWidget, runtimeSizeKey);
+      widget.w = storeWidget.w;
+      widget.h = storeWidget.h;
+      widget.colSpan = storeWidget.colSpan;
+      widget.rowSpan = storeWidget.rowSpan;
       widget.data = storeWidget.data;
     }
+  } else {
+    const nextSizeKey = toItabWidgetSizeKey({
+      colSpan: nextW,
+      rowSpan: nextH,
+    });
+    const normalizedWidget = withItabGridData(
+      { ...widget } as GridLayoutItem,
+      nextSizeKey,
+    );
+    Object.assign(widget, normalizedWidget);
   }
-  const nextSizeKey = toItabWidgetSizeKey({
-    colSpan: nextW,
-    rowSpan: nextH,
-  });
-  const normalizedWidget = withItabGridData(
-    { ...widget } as GridLayoutItem,
-    nextSizeKey,
-  );
-  Object.assign(widget, normalizedWidget);
 
   const newLayout = resolveResizeLayout(
     layoutData.value,
@@ -1505,13 +1523,23 @@ const syncCatalogWidgetLayout = (widget: WidgetConfig) => {
   widget.h = height;
   widget.colSpan = width;
   widget.rowSpan = height;
-  Object.assign(
-    widget,
-    withItabGridData(
-      { ...widget },
-      toItabWidgetSizeKey({ colSpan: width, rowSpan: height }),
-    ),
-  );
+  if (isRuntimeWidget(widget)) {
+    const runtimeSizeKey = toRuntimeWidgetSizeKey(widget.type, {
+      colSpan: width,
+      rowSpan: height,
+    });
+    if (runtimeSizeKey) {
+      applyRuntimeWidgetSize(widget, runtimeSizeKey);
+    }
+  } else {
+    Object.assign(
+      widget,
+      withItabGridData(
+        { ...widget },
+        toItabWidgetSizeKey({ colSpan: width, rowSpan: height }),
+      ),
+    );
+  }
 
   // The layout watcher ignores external updates during edit mode, so new/enabled widgets
   // must be placed into layoutData immediately.
@@ -1580,7 +1608,7 @@ const applyWidgetSizeFromPayload = (
   widget.rowSpan = target.rowSpan;
   Object.assign(
     widget,
-    withItabGridData(widget, target.key as RuntimeWidgetSizeKey),
+    withItabGridData(widget, target.key as ItabWidgetSizeKey),
   );
 };
 
@@ -3399,7 +3427,7 @@ onUnmounted(() => {
           v-if="layoutData.length > 0"
           class="group-container transition-all"
           :style="{
-            width: itabGridLayoutWidth + 'px',
+            width: widgetAreaContainerWidth,
             maxWidth: 'none',
             marginLeft: 'auto',
             marginRight: 'auto',
@@ -3409,7 +3437,12 @@ onUnmounted(() => {
           <div
             v-if="isGridAlive"
             ref="gridLayoutRootRef"
-            :style="{ width: itabGridLayoutWidth + 'px', maxWidth: 'none' }"
+            :style="{
+              width: itabGridLayoutWidth + 'px',
+              maxWidth: 'none',
+              marginLeft: 'auto',
+              marginRight: 'auto',
+            }"
             :class="['grid-stack sd-home-grid-stack text-white select-none']"
           >
             <div

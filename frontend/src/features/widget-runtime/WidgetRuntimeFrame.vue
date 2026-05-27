@@ -7,6 +7,7 @@ import {
   resolveWidgetRuntimeSizeKey,
   type WidgetRuntimeData,
 } from "./widgetRuntimeRegistry";
+import { resolveRuntimeWidgetSizeCapability } from "./widgetRuntimeSizes";
 import {
   isRuntimeOpenKey,
   shouldIgnoreRuntimeOpenEvent,
@@ -35,6 +36,9 @@ const sizeKey = computed(
     resolveWidgetRuntimeSizeKey(props.widget) ||
     definition.value?.defaultSizeKey ||
     "1x2",
+);
+const sizeCapability = computed(() =>
+  resolveRuntimeWidgetSizeCapability(props.widget.type),
 );
 
 const open = () => {
@@ -79,6 +83,7 @@ const onContextMenu = (event: MouseEvent) => {
     <MainWidgetShell
       :widget-type="widget.type"
       :widget-size="sizeKey"
+      :widget-size-capability="sizeCapability"
       :title="definition.title"
       :validate-contract="validateContract ?? true"
     >

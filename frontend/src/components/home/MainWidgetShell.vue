@@ -16,14 +16,18 @@ import {
   type WidgetShellViolation,
 } from "@/features/widget-shell/WidgetShellContract";
 
+type MainWidgetShellSizeCapability = "itab-default" | "large-board";
+
 const props = withDefaults(
   defineProps<{
     widgetType: string;
     widgetSize: string;
+    widgetSizeCapability?: MainWidgetShellSizeCapability;
     title?: string;
     validateContract?: boolean;
   }>(),
   {
+    widgetSizeCapability: "itab-default",
     title: "",
     validateContract: true,
   },
@@ -109,6 +113,7 @@ onBeforeUnmount(() => {
     :data-widget-shell-contract="STARTDECK_WIDGET_SHELL_CONTRACT_VERSION"
     :data-widget-type="widgetType"
     :data-widget-size="widgetSize"
+    :data-widget-size-capability="widgetSizeCapability"
   >
     <div class="sd-main-widget-shell-card" data-main-widget-shell-card>
       <div class="sd-main-widget-shell-content" data-main-widget-shell-content>

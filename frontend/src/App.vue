@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { onMounted, watch, computed, ref } from "vue";
 import GridPanel from "./components/GridPanel.vue";
-import ItabLiveReplica from "@/features/itab-live/ItabLiveReplica.vue";
 import WidgetCatalogPreviewFrame from "@/components/WidgetCatalogPreviewFrame.vue";
 import NetworkIndicator from "./components/NetworkIndicator.vue";
 import AppButton from "@/components/base/AppButton.vue";
@@ -23,18 +22,12 @@ const { width: windowWidth, height: windowHeight } = useWindowSize();
 
 const showBackToTop = computed(() => y.value > windowHeight.value);
 const saveErrorMessage = ref("");
-const isItabLiveRoute = computed(
-  () =>
-    typeof window !== "undefined" && window.location.pathname === "/itab-live",
-);
 const isWidgetPreviewRoute = computed(
   () =>
     typeof window !== "undefined" &&
     window.location.pathname === "/widget-preview",
 );
-const isStandaloneRoute = computed(
-  () => isItabLiveRoute.value || isWidgetPreviewRoute.value,
-);
+const isStandaloneRoute = computed(() => isWidgetPreviewRoute.value);
 let saveErrorTimer: number | null = null;
 
 const pushSaveError = (message: string) => {
@@ -593,8 +586,7 @@ onMounted(() => {
     class="network-indicator-wrapper"
   />
 
-  <ItabLiveReplica v-if="isItabLiveRoute" />
-  <WidgetCatalogPreviewFrame v-else-if="isWidgetPreviewRoute" />
+  <WidgetCatalogPreviewFrame v-if="isWidgetPreviewRoute" />
   <GridPanel v-else />
 
   <!-- 冲突提示：居中模态框 -->
@@ -720,11 +712,7 @@ onMounted(() => {
     </button>
   </Transition>
 
-  <ToastHost
-    v-if="!isItabLiveRoute"
-    :items="uiFeedback.toasts"
-    @dismiss="uiFeedback.dismissToast"
-  />
+  <ToastHost :items="uiFeedback.toasts" @dismiss="uiFeedback.dismissToast" />
 
   <AppModalShell
     v-if="!isStandaloneRoute"

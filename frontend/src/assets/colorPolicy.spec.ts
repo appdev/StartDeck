@@ -204,6 +204,48 @@ const darkSettingsPreviewSearchTokens = [
   "--sd-theme-settings-modal-accent-text-02",
 ] as const;
 
+const sharedLightModalContentTokens = [
+  "--sd-theme-edit-modal-border-01",
+  "--sd-theme-edit-modal-border-02",
+  "--sd-theme-edit-modal-border-03",
+  "--sd-theme-edit-modal-border-04",
+  "--sd-theme-edit-modal-surface-01",
+  "--sd-theme-edit-modal-surface-03",
+  "--sd-theme-edit-modal-surface-04",
+  "--sd-theme-edit-modal-surface-05",
+  "--sd-theme-edit-modal-surface-06",
+  "--sd-theme-edit-modal-surface-07",
+  "--sd-theme-edit-modal-surface-08",
+  "--sd-theme-edit-modal-text-01",
+  "--sd-theme-edit-modal-text-02",
+  "--sd-theme-edit-modal-text-03",
+  "--sd-theme-edit-modal-text-04",
+  "--sd-theme-edit-modal-text-05",
+  "--sd-theme-edit-modal-text-06",
+  "--sd-theme-group-settings-modal-border-01",
+  "--sd-theme-group-settings-modal-border-02",
+  "--sd-theme-group-settings-modal-border-03",
+  "--sd-theme-group-settings-modal-border-04",
+  "--sd-theme-group-settings-modal-surface-01",
+  "--sd-theme-group-settings-modal-surface-02",
+  "--sd-theme-group-settings-modal-surface-03",
+  "--sd-theme-group-settings-modal-surface-04",
+  "--sd-theme-group-settings-modal-surface-05",
+  "--sd-theme-group-settings-modal-surface-06",
+  "--sd-theme-group-settings-modal-surface-07",
+  "--sd-theme-group-settings-modal-surface-08",
+  "--sd-theme-group-settings-modal-text-01",
+  "--sd-theme-group-settings-modal-text-02",
+  "--sd-theme-group-settings-modal-text-03",
+  "--sd-theme-group-settings-modal-text-04",
+  "--sd-theme-group-settings-modal-text-05",
+  "--sd-theme-group-settings-modal-text-06",
+  "--sd-theme-group-settings-modal-text-07",
+  "--sd-theme-group-settings-modal-text-08",
+  "--sd-theme-group-settings-modal-text-09",
+  "--sd-theme-group-settings-modal-text-10",
+] as const;
+
 describe("component color policy", () => {
   it("blocks new hard-coded product colors outside the audited baseline", () => {
     for (const entry of audit.entries) {
@@ -225,7 +267,7 @@ describe("component color policy", () => {
     const vueFiles = [
       ...collectVueFiles(resolve(repoRoot, "frontend/src/components")),
       ...collectVueFiles(resolve(repoRoot, "frontend/src/features")),
-    ].filter((file) => !file.endsWith("ItabLiveReplica.vue"));
+    ];
 
     for (const file of vueFiles) {
       const relativeFile = file.slice(repoRoot.length + 1);
@@ -426,5 +468,52 @@ describe("component color policy", () => {
         ).not.toContain("transparent");
       }
     }
+  });
+
+  it("keeps Edit and Group dialogs on shared readable modal tokens in light theme", () => {
+    const source = readFileSync(
+      resolve(repoRoot, "frontend/src/assets/main.css"),
+      "utf8",
+    );
+    const lightThemeValues = collectLightThemeDeclarationValues(
+      source,
+      sharedLightModalContentTokens,
+    );
+
+    for (const token of sharedLightModalContentTokens) {
+      const values = lightThemeValues.get(token) ?? [];
+      expect(values, `${token} should be declared in the light token block`)
+        .not.toHaveLength(0);
+
+      for (const value of values) {
+        expect(
+          value,
+          `${token} should resolve through shared shell/component/state tokens`,
+        ).toMatch(/var\(\s*--sd-(?:shell|component|state)-|color-mix\(/);
+        expect(
+          value,
+          `${token} still uses the old source-dark modal literals in light theme`,
+        ).not.toMatch(/223\s*,\s*221\s*,\s*221|255\s*,\s*255\s*,\s*255\s*,\s*0\.0[4-8]|#e5e7eb|#ffffff/i);
+      }
+    }
+  });
+
+  it("keeps modal overlays and surfaces glass blurred rather than only transparent", () => {
+    const source = readFileSync(
+      resolve(repoRoot, "frontend/src/assets/main.css"),
+      "utf8",
+    );
+
+    expect(source).toContain("--sd-shell-overlay-filter");
+    expect(source).toContain("--sd-shell-surface-filter");
+    expect(source).toMatch(
+      /\.sd-overlay\s*\{[\s\S]*backdrop-filter:\s*var\(--sd-shell-overlay-filter\)/,
+    );
+    expect(source).toMatch(
+      /\.sd-overlay-strong\s*\{[\s\S]*backdrop-filter:\s*var\(--sd-shell-overlay-filter\)/,
+    );
+    expect(source).toMatch(
+      /\.sd-modal-surface\s*\{[\s\S]*backdrop-filter:\s*var\(--sd-shell-surface-filter\)/,
+    );
   });
 });

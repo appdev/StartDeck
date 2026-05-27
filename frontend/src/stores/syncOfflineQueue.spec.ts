@@ -14,4 +14,23 @@ describe("sync offline queue replay", () => {
     expect(syncStoreSource).toContain("saveStore.triggerOfflineQueueReplay(");
     expect(syncStoreSource).toContain("void replayOfflineQueueIfNeeded()");
   });
+
+  it("preserves Todo and Memo card size when websocket data arrives", () => {
+    expect(syncStoreSource).toContain('msg.type === "todo_updated"');
+    expect(syncStoreSource).toContain('msg.type === "memo_updated"');
+    expect(syncStoreSource).toContain("const currentSizeKey");
+    expect(syncStoreSource).toContain("? { sizeKey: currentSizeKey }");
+  });
+
+  it("attempts an immediate save before clearing authenticated logout state", () => {
+    const logoutBlock = /const logout = async \(\) => \{[\s\S]*?auth\.logout\(\);/.exec(
+      syncStoreSource,
+    )?.[0];
+
+    expect(logoutBlock).toBeTruthy();
+    expect(logoutBlock).toContain("saveStore.saveData(true, false");
+    expect(logoutBlock!.indexOf("saveStore.saveData")).toBeLessThan(
+      logoutBlock!.indexOf("auth.logout()"),
+    );
+  });
 });

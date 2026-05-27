@@ -3,7 +3,10 @@ import {
   resolveWidgetSizeFamily,
   type WidgetSize as PresetWidgetSize,
 } from "@/utils/widgetSizePresets";
-import { resolveRuntimeWidgetSizeFamily } from "@/features/widget-runtime/widgetRuntimeSizes";
+import {
+  isRuntimeWidgetSizeSpan,
+  resolveRuntimeWidgetSizeFamily,
+} from "@/features/widget-runtime/widgetRuntimeSizes";
 
 export type WidgetDeviceKey = "desktop" | "tablet" | "mobile";
 
@@ -80,7 +83,6 @@ export interface UseWidgetResizeOptions {
 const GRID_STEP = 1;
 const MIN_SIZE = 1;
 const PRODUCT_MAX_COLS = 4;
-const DEFAULT_MAX_ROWS = 2;
 
 const formatSize = (value: number) =>
   Number.isInteger(value) ? String(value) : value.toFixed(1);
@@ -210,7 +212,7 @@ export const resolveWidgetSizeState = (input: {
   const runtimeCols = normalizePositive(input.runtimeCols, 1);
   const productMaxSize = {
     colSpan: Math.min(PRODUCT_MAX_COLS, typeLimit.colSpan),
-    rowSpan: Math.min(DEFAULT_MAX_ROWS, typeLimit.rowSpan),
+    rowSpan: typeLimit.rowSpan,
   };
   const runtimeMaxCols =
     input.deviceKey === "mobile"
@@ -259,6 +261,11 @@ export const resolveWidgetSizeState = (input: {
     (input.deviceKey === "mobile" && requestedSize.colSpan > maxSize.colSpan)
   ) {
     limitReason = "device-max";
+  } else if (
+    !family.supported.some((size) => isSameSize(size, requestedSize)) &&
+    isRuntimeWidgetSizeSpan(requestedSize)
+  ) {
+    limitReason = "unsupported";
   } else if (
     requestedSize.colSpan > typeLimit.colSpan ||
     requestedSize.rowSpan > typeLimit.rowSpan

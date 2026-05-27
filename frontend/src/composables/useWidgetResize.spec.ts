@@ -99,4 +99,89 @@ describe("useWidgetResize iTab finite size rules", () => {
       current: true,
     });
   });
+
+  it("allows Todo to commit 4x4 on a desktop grid", () => {
+    const state = resolveWidgetSizeState({
+      widgetType: "itab-todo-17",
+      deviceKey: "desktop",
+      runtimeCols: 4,
+      currentSize: { colSpan: 2, rowSpan: 2 },
+      requestedSize: { colSpan: 4, rowSpan: 4 },
+    });
+
+    expect(state.clampedSize).toEqual({ colSpan: 4, rowSpan: 4 });
+    expect(state.limitReason).toBe("none");
+    expect(state.canCommit).toBe(true);
+    expect(state.options.map((option) => option.label)).toEqual([
+      "1x1",
+      "1x2",
+      "2x1",
+      "2x2",
+      "2x4",
+      "4x4",
+    ]);
+  });
+
+  it("allows Memo to commit 4x4 on a desktop grid", () => {
+    const state = resolveWidgetSizeState({
+      widgetType: "itab-memo-04",
+      deviceKey: "desktop",
+      runtimeCols: 4,
+      currentSize: { colSpan: 2, rowSpan: 2 },
+      requestedSize: { colSpan: 4, rowSpan: 4 },
+    });
+
+    expect(state.clampedSize).toEqual({ colSpan: 4, rowSpan: 4 });
+    expect(state.limitReason).toBe("none");
+    expect(state.canCommit).toBe(true);
+    expect(state.options.map((option) => option.label)).toEqual([
+      "1x1",
+      "1x2",
+      "2x1",
+      "2x2",
+      "2x4",
+      "4x4",
+    ]);
+  });
+
+  it("disables Todo 4x4 when the mobile runtime has fewer than four columns", () => {
+    const state = resolveWidgetSizeState({
+      widgetType: "itab-todo-17",
+      deviceKey: "mobile",
+      runtimeCols: 2,
+      currentSize: { colSpan: 2, rowSpan: 2 },
+      requestedSize: { colSpan: 4, rowSpan: 4 },
+    });
+
+    expect(state.clampedSize).toEqual({ colSpan: 2, rowSpan: 2 });
+    expect(state.limitReason).toBe("device-max");
+    expect(state.canCommit).toBe(false);
+    expect(
+      state.options.find((option) => option.label === "4x4"),
+    ).toMatchObject({
+      disabled: true,
+      reason: "device-max",
+    });
+  });
+
+  it("marks 4x4 as unsupported for runtime widgets without a board size", () => {
+    const state = resolveWidgetSizeState({
+      widgetType: "itab-weather-00",
+      deviceKey: "desktop",
+      runtimeCols: 4,
+      currentSize: { colSpan: 2, rowSpan: 2 },
+      requestedSize: { colSpan: 4, rowSpan: 4 },
+    });
+
+    expect(state.clampedSize).toEqual({ colSpan: 4, rowSpan: 2 });
+    expect(state.limitReason).toBe("unsupported");
+    expect(state.canCommit).toBe(false);
+    expect(state.options.map((option) => option.label)).toEqual([
+      "1x1",
+      "1x2",
+      "2x1",
+      "2x2",
+      "2x4",
+    ]);
+  });
 });

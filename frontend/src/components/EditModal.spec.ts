@@ -1,9 +1,12 @@
 // @vitest-environment jsdom
+import { readFileSync } from "node:fs";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { mount, VueWrapper } from "@vue/test-utils";
 import { createTestingPinia } from "@pinia/testing";
 import EditModal from "./EditModal.vue";
 import type { NavItem } from "@/types";
+
+const editModalSource = readFileSync("src/components/EditModal.vue", "utf8");
 
 const mountEditModal = (data: NavItem) =>
   mount(EditModal, {
@@ -117,5 +120,20 @@ describe("EditModal", () => {
     await wrapper.vm.$nextTick();
 
     expect(inputClick).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps shared window control dots out of edit-card header button theming", () => {
+    expect(editModalSource).toContain(
+      ".edit-card-header-actions :deep(button:not(.sd-window-control-dot))",
+    );
+    expect(editModalSource).toContain(
+      ".edit-card-header-actions :deep(button:not(.sd-window-control-dot):hover)",
+    );
+    expect(editModalSource).not.toContain(
+      ".edit-card-header-actions :deep(button) {",
+    );
+    expect(editModalSource).not.toContain(
+      ".edit-card-header-actions :deep(button:hover)",
+    );
   });
 });

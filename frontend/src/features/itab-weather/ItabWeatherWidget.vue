@@ -229,13 +229,13 @@ watch(
 
 .weather-icon-content.weather-yin_d {
   background-color: var(
-    --sd-theme-itab-weather-weather-widget-accent-surface-09
+    --sd-theme-itab-weather-weather-widget-yin-d-surface-01
   );
   background-image: linear-gradient(
     35deg,
-    var(--sd-theme-itab-weather-weather-widget-accent-surface-09) 30%,
-    var(--sd-theme-itab-weather-weather-widget-surface-01),
-    var(--sd-theme-itab-weather-weather-widget-surface-02)
+    var(--sd-theme-itab-weather-weather-widget-yin-d-gradient-01) 30%,
+    var(--sd-theme-itab-weather-weather-widget-yin-d-gradient-02),
+    var(--sd-theme-itab-weather-weather-widget-yin-d-gradient-03)
   );
 }
 

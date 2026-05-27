@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted } from "vue";
+import { onBeforeUnmount, onMounted } from "vue";
 import type { WidgetConfig } from "@/types";
 import { ITAB_IP_LATENCY_PATH, ITAB_IP_PROXY_PATH } from "./itabIpTypes";
 import { useItabIpRuntime } from "./useItabIpRuntime";
@@ -12,6 +12,11 @@ const runtime = useItabIpRuntime();
 
 onMounted(() => {
   void runtime.ensureLoaded().then(() => runtime.refreshLatencyIfNeeded());
+  runtime.startLatencyAutoRefresh();
+});
+
+onBeforeUnmount(() => {
+  runtime.stopLatencyAutoRefresh();
 });
 </script>
 
@@ -22,8 +27,6 @@ onMounted(() => {
     :data-itab-ip-latency-api="ITAB_IP_LATENCY_PATH"
     :data-itab-ip-address="runtime.address.value"
     :data-itab-ip-location="runtime.area.value"
-    :data-itab-ip-network="runtime.network.value"
-    :data-itab-ip-coordinate="runtime.coordinate.value"
     :data-itab-ip-latency="runtime.latencyValue.value"
     :data-itab-ip-latency-status="runtime.latencyStatus.value"
     :data-itab-ip-map-url="runtime.mapEmbedUrl.value"
@@ -80,14 +83,6 @@ onMounted(() => {
         <div>
           <dt>归属地：</dt>
           <dd>{{ runtime.area.value }}</dd>
-        </div>
-        <div>
-          <dt>网络：</dt>
-          <dd>{{ runtime.network.value }}</dd>
-        </div>
-        <div>
-          <dt>经纬度：</dt>
-          <dd>{{ runtime.coordinate.value }}</dd>
         </div>
         <div class="opened-ip-latency-row">
           <dt>PING测试：</dt>

@@ -3134,8 +3134,8 @@ watch(activeTab, (val) => {
 <style scoped>
 :global(.settings-shell-overlay) {
   background: var(--sd-shell-overlay);
-  -webkit-backdrop-filter: blur(10px) saturate(135%) brightness(0.7);
-  backdrop-filter: blur(10px) saturate(135%) brightness(0.7);
+  -webkit-backdrop-filter: var(--sd-shell-overlay-filter);
+  backdrop-filter: var(--sd-shell-overlay-filter);
 }
 
 :global(.settings-shell-itab) {
@@ -3144,8 +3144,8 @@ watch(activeTab, (val) => {
   border-radius: 20px;
   background: var(--sd-shell-surface);
   box-shadow: var(--sd-shadow-window);
-  -webkit-backdrop-filter: saturate(135%) blur(28px) brightness(0.62);
-  backdrop-filter: saturate(135%) blur(28px) brightness(0.62);
+  -webkit-backdrop-filter: var(--sd-shell-surface-filter);
+  backdrop-filter: var(--sd-shell-surface-filter);
 }
 
 :global(.settings-shell-itab > .sd-window-bar) {

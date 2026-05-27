@@ -64,9 +64,9 @@ watch(
   border-radius: var(--flip-card-radius, 6px);
   box-shadow: var(
     --flip-shadow,
-    0 2px 8px var(--sd-theme-itab-live-flip-card-shadow-01)
+    0 2px 8px var(--sd-theme-itab-clock-flip-card-shadow-01)
   );
-  color: var(--flip-text-color, var(--sd-theme-itab-live-flip-card-text-01));
+  color: var(--flip-text-color, var(--sd-theme-itab-clock-flip-card-text-01));
   font-family: var(
     --flip-font-family,
     "DIN",
@@ -88,11 +88,11 @@ watch(
   height: 1px;
   background: var(
     --flip-center-line,
-    var(--sd-theme-itab-live-flip-card-surface-01)
+    var(--sd-theme-itab-clock-flip-card-surface-01)
   );
   box-shadow: var(
     --flip-center-line-shadow,
-    0 1px 0 var(--sd-theme-itab-live-flip-card-shadow-02)
+    0 1px 0 var(--sd-theme-itab-clock-flip-card-shadow-02)
   );
   content: "";
 }
@@ -115,14 +115,14 @@ watch(
   top: 0;
   z-index: 1;
   border-bottom: 1px solid
-    var(--flip-border-color, var(--sd-theme-itab-live-flip-card-border-01));
+    var(--flip-border-color, var(--sd-theme-itab-clock-flip-card-border-01));
   border-radius: var(--flip-card-radius, 6px) var(--flip-card-radius, 6px) 0 0;
   background: var(
     --flip-bg-top,
     linear-gradient(
       180deg,
-      var(--sd-theme-itab-live-flip-card-accent-surface-01) 0%,
-      var(--sd-theme-itab-live-flip-card-accent-surface-02) 100%
+      var(--sd-theme-itab-clock-flip-card-accent-surface-01) 0%,
+      var(--sd-theme-itab-clock-flip-card-accent-surface-02) 100%
     )
   );
 }
@@ -135,8 +135,8 @@ watch(
     --flip-bg-bottom,
     linear-gradient(
       180deg,
-      var(--sd-theme-itab-live-flip-card-accent-surface-02) 0%,
-      var(--sd-theme-itab-live-flip-card-accent-surface-01) 100%
+      var(--sd-theme-itab-clock-flip-card-accent-surface-02) 0%,
+      var(--sd-theme-itab-clock-flip-card-accent-surface-01) 100%
     )
   );
 }
@@ -152,14 +152,14 @@ watch(
   top: 0;
   z-index: 3;
   border-bottom: 1px solid
-    var(--flip-border-color, var(--sd-theme-itab-live-flip-card-border-01));
+    var(--flip-border-color, var(--sd-theme-itab-clock-flip-card-border-01));
   border-radius: var(--flip-card-radius, 6px) var(--flip-card-radius, 6px) 0 0;
   background: var(
     --flip-bg-top,
     linear-gradient(
       180deg,
-      var(--sd-theme-itab-live-flip-card-accent-surface-01) 0%,
-      var(--sd-theme-itab-live-flip-card-accent-surface-02) 100%
+      var(--sd-theme-itab-clock-flip-card-accent-surface-01) 0%,
+      var(--sd-theme-itab-clock-flip-card-accent-surface-02) 100%
     )
   );
   transform: rotateX(0deg);
@@ -174,8 +174,8 @@ watch(
     --flip-bg-bottom,
     linear-gradient(
       180deg,
-      var(--sd-theme-itab-live-flip-card-accent-surface-02) 0%,
-      var(--sd-theme-itab-live-flip-card-accent-surface-01) 100%
+      var(--sd-theme-itab-clock-flip-card-accent-surface-02) 0%,
+      var(--sd-theme-itab-clock-flip-card-accent-surface-01) 100%
     )
   );
   transform: rotateX(90deg);
@@ -244,19 +244,19 @@ watch(
 
 @keyframes flipDownShadow {
   0% {
-    background: var(--sd-theme-itab-live-flip-card-surface-02);
+    background: var(--sd-theme-itab-clock-flip-card-surface-02);
   }
   100% {
-    background: var(--sd-theme-itab-live-flip-card-surface-03);
+    background: var(--sd-theme-itab-clock-flip-card-surface-03);
   }
 }
 
 @keyframes flipUpShadow {
   0% {
-    background: var(--sd-theme-itab-live-flip-card-surface-04);
+    background: var(--sd-theme-itab-clock-flip-card-surface-04);
   }
   100% {
-    background: var(--sd-theme-itab-live-flip-card-surface-05);
+    background: var(--sd-theme-itab-clock-flip-card-surface-05);
   }
 }
 </style>

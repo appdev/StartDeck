@@ -12,6 +12,9 @@ import { ITAB_WALLPAPER_WIDGET_TYPE } from "../../features/itab-wallpaper/itabWa
 import { ITAB_CALENDAR_WIDGET_TYPE } from "../../features/itab-calendar/itabCalendarTypes";
 import { ITAB_FOOD_PICKER_WIDGET_TYPE } from "../../features/itab-food-picker/itabFoodPickerTypes";
 import { ITAB_NUMBER_UPPERCASE_WIDGET_TYPE } from "../../features/itab-number-uppercase/itabNumberUppercaseTypes";
+import { ITAB_TODO_WIDGET_TYPE } from "../../features/itab-todo/itabTodoTypes";
+import { ITAB_MEMO_WIDGET_TYPE } from "../../features/itab-memo/itabMemoTypes";
+import type { WidgetConfig } from "../../types";
 
 const gridPanelSource = readFileSync("src/components/GridPanel.vue", "utf8");
 
@@ -627,6 +630,286 @@ describe("GridPanel Context Menu", () => {
         sizeKey: "2x1",
       }),
     });
+  });
+
+  it("selects Todo 4x4 and saves the updated runtime layout", async () => {
+    const vm = wrapper.vm as unknown as {
+      addComponent: (payload: AddComponentPayload) => Promise<unknown>;
+      selectRuntimeWidgetSize: (widget: WidgetConfig, sizeKey: "4x4") => void;
+      layoutData: Array<{ i: string; w: number; h: number; data?: unknown }>;
+    };
+    vi.mocked(store.saveData).mockResolvedValue("saved");
+
+    await vm.addComponent({
+      kind: "widget",
+      catalogItemId: "todo",
+      destinationGroupId: "home",
+      saveMode: "dirty",
+      sizeKey: "2x2",
+    });
+    await wrapper.vm.$nextTick();
+
+    const todo = store.widgets.find(
+      (item) => item.type === ITAB_TODO_WIDGET_TYPE,
+    );
+    if (!todo) throw new Error("Todo widget not found");
+
+    vm.selectRuntimeWidgetSize(todo, "4x4");
+    await wrapper.vm.$nextTick();
+
+    expect(todo).toMatchObject({
+      w: 4,
+      h: 4,
+      colSpan: 4,
+      rowSpan: 4,
+      data: expect.objectContaining({ sizeKey: "4x4" }),
+    });
+    expect(vm.layoutData.find((item) => item.i === todo.id)).toMatchObject({
+      w: 4,
+      h: 4,
+      data: expect.objectContaining({ sizeKey: "4x4" }),
+    });
+    expect(store.saveData).toHaveBeenCalledWith(true);
+  });
+
+  it.each([
+    ["Todo", "todo", ITAB_TODO_WIDGET_TYPE],
+    ["Memo", "memo", ITAB_MEMO_WIDGET_TYPE],
+  ])(
+    "adds %s directly as 4x4 without falling back to an iTab base size",
+    async (_label, catalogItemId, type) => {
+      const vm = wrapper.vm as unknown as {
+        addComponent: (payload: AddComponentPayload) => Promise<unknown>;
+        layoutData: Array<{ i: string; w: number; h: number; data?: unknown }>;
+      };
+      vi.mocked(store.saveData).mockResolvedValue("saved");
+
+      await vm.addComponent({
+        kind: "widget",
+        catalogItemId,
+        destinationGroupId: "home",
+        saveMode: "dirty",
+        sizeKey: "4x4",
+      });
+      await wrapper.vm.$nextTick();
+
+      const widget = store.widgets.find((item) => item.type === type);
+      if (!widget) throw new Error(`${type} widget not found`);
+
+      expect(widget).toMatchObject({
+        w: 4,
+        h: 4,
+        colSpan: 4,
+        rowSpan: 4,
+        data: expect.objectContaining({ sizeKey: "4x4" }),
+      });
+      expect(vm.layoutData.find((item) => item.i === widget.id)).toMatchObject({
+        w: 4,
+        h: 4,
+        data: expect.objectContaining({ sizeKey: "4x4" }),
+      });
+    },
+  );
+
+  it("keeps Todo 4x4 when the mobile size strip applies 4x4 spans", async () => {
+    const vm = wrapper.vm as unknown as {
+      addComponent: (payload: AddComponentPayload) => Promise<unknown>;
+      handleSizeSelect: (
+        widget: WidgetConfig,
+        size: { colSpan: number; rowSpan: number },
+      ) => void;
+      layoutData: Array<WidgetConfig & { i: string }>;
+    };
+    vi.mocked(store.saveData).mockResolvedValue("saved");
+
+    await vm.addComponent({
+      kind: "widget",
+      catalogItemId: "todo",
+      destinationGroupId: "home",
+      saveMode: "dirty",
+      sizeKey: "2x2",
+    });
+    await wrapper.vm.$nextTick();
+
+    const todo = store.widgets.find(
+      (item) => item.type === ITAB_TODO_WIDGET_TYPE,
+    );
+    if (!todo) throw new Error("Todo widget not found");
+    const layoutTodo = vm.layoutData.find((item) => item.i === todo.id);
+    if (!layoutTodo) throw new Error("Todo layout item not found");
+
+    vm.handleSizeSelect(layoutTodo, { colSpan: 4, rowSpan: 4 });
+    await wrapper.vm.$nextTick();
+
+    expect(todo).toMatchObject({
+      w: 4,
+      h: 4,
+      colSpan: 4,
+      rowSpan: 4,
+      data: expect.objectContaining({ sizeKey: "4x4" }),
+    });
+    expect(layoutTodo).toMatchObject({
+      w: 4,
+      h: 4,
+      colSpan: 4,
+      rowSpan: 4,
+      data: expect.objectContaining({ sizeKey: "4x4" }),
+    });
+  });
+
+  it("persists dragged Todo 4x4 layout coordinates", async () => {
+    const vm = wrapper.vm as unknown as {
+      addComponent: (payload: AddComponentPayload) => Promise<unknown>;
+      selectRuntimeWidgetSize: (widget: WidgetConfig, sizeKey: "4x4") => void;
+    };
+    vi.mocked(store.saveData).mockResolvedValue("saved");
+
+    await vm.addComponent({
+      kind: "widget",
+      catalogItemId: "todo",
+      destinationGroupId: "home",
+      saveMode: "dirty",
+      sizeKey: "2x2",
+    });
+    await wrapper.vm.$nextTick();
+
+    const todo = store.widgets.find(
+      (item) => item.type === ITAB_TODO_WIDGET_TYPE,
+    );
+    if (!todo) throw new Error("Todo widget not found");
+    vm.selectRuntimeWidgetSize(todo, "4x4");
+    await wrapper.vm.$nextTick();
+    vi.mocked(store.saveData).mockClear();
+
+    const gridItem = wrapper.find(`[data-widget-grid-item="${todo.id}"]`)
+      .element as HTMLElement & {
+      gridstackNode?: { x?: number; y?: number; w?: number; h?: number };
+    };
+    gridStackMock.handlers.get("dragstart")?.(new Event("dragstart"), gridItem);
+    gridItem.gridstackNode = {
+      ...(gridItem.gridstackNode || {}),
+      x: 3,
+      y: 2,
+      w: 4,
+      h: 4,
+    };
+    gridStackMock.handlers.get("dragstop")?.(new Event("dragstop"), gridItem);
+    await wrapper.vm.$nextTick();
+    await flushPromises();
+
+    expect(todo).toMatchObject({ x: 3, y: 2, w: 4, h: 4 });
+    expect(store.saveData).toHaveBeenCalledWith(true);
+  });
+
+  it("preserves Todo 4x4 when runtime data refreshes from the server", async () => {
+    const vm = wrapper.vm as unknown as {
+      addComponent: (payload: AddComponentPayload) => Promise<unknown>;
+      selectRuntimeWidgetSize: (widget: WidgetConfig, sizeKey: "4x4") => void;
+      updateRuntimeWidgetData: (
+        widget: WidgetConfig,
+        data: Record<string, unknown>,
+      ) => void;
+    };
+    vi.mocked(store.saveData).mockResolvedValue("saved");
+
+    await vm.addComponent({
+      kind: "widget",
+      catalogItemId: "todo",
+      destinationGroupId: "home",
+      saveMode: "dirty",
+      sizeKey: "2x2",
+    });
+    await wrapper.vm.$nextTick();
+
+    const todo = store.widgets.find(
+      (item) => item.type === ITAB_TODO_WIDGET_TYPE,
+    );
+    if (!todo) throw new Error("Todo widget not found");
+    vm.selectRuntimeWidgetSize(todo, "4x4");
+    vi.mocked(store.saveData).mockClear();
+
+    vm.updateRuntimeWidgetData(todo, {
+      runtime: "itab-todo",
+      version: 1,
+      sizeKey: "2x2",
+      tasks: [{ id: "remote", text: "远端更新", done: false }],
+    });
+
+    expect(todo.data).toEqual(
+      expect.objectContaining({
+        sizeKey: "4x4",
+        tasks: [{ id: "remote", text: "远端更新", done: false }],
+      }),
+    );
+    expect(store.saveData).toHaveBeenCalledWith(false);
+  });
+
+  it("selects Memo 4x4 and preserves it when runtime data refreshes from the server", async () => {
+    const vm = wrapper.vm as unknown as {
+      addComponent: (payload: AddComponentPayload) => Promise<unknown>;
+      selectRuntimeWidgetSize: (widget: WidgetConfig, sizeKey: "4x4") => void;
+      updateRuntimeWidgetData: (
+        widget: WidgetConfig,
+        data: Record<string, unknown>,
+      ) => void;
+      layoutData: Array<{ i: string; w: number; h: number; data?: unknown }>;
+    };
+    vi.mocked(store.saveData).mockResolvedValue("saved");
+
+    await vm.addComponent({
+      kind: "widget",
+      catalogItemId: "memo",
+      destinationGroupId: "home",
+      saveMode: "dirty",
+      sizeKey: "2x2",
+    });
+    await wrapper.vm.$nextTick();
+
+    const memo = store.widgets.find(
+      (item) => item.type === ITAB_MEMO_WIDGET_TYPE,
+    );
+    if (!memo) throw new Error("Memo widget not found");
+
+    vm.selectRuntimeWidgetSize(memo, "4x4");
+    await wrapper.vm.$nextTick();
+
+    expect(memo).toMatchObject({
+      w: 4,
+      h: 4,
+      colSpan: 4,
+      rowSpan: 4,
+      data: expect.objectContaining({ sizeKey: "4x4" }),
+    });
+    expect(vm.layoutData.find((item) => item.i === memo.id)).toMatchObject({
+      w: 4,
+      h: 4,
+      data: expect.objectContaining({ sizeKey: "4x4" }),
+    });
+    vi.mocked(store.saveData).mockClear();
+
+    vm.updateRuntimeWidgetData(memo, {
+      runtime: "itab-memo",
+      version: 1,
+      sizeKey: "2x2",
+      notes: [
+        {
+          id: "remote",
+          title: "远端备忘",
+          body: "远端内容",
+          pinned: false,
+          createdAt: "2026-05-27T00:00:00.000Z",
+          updatedAt: "2026-05-27T00:00:00.000Z",
+        },
+      ],
+    });
+
+    expect(memo.data).toEqual(
+      expect.objectContaining({
+        sizeKey: "4x4",
+        notes: [expect.objectContaining({ id: "remote", title: "远端备忘" })],
+      }),
+    );
+    expect(store.saveData).toHaveBeenCalledWith(false);
   });
 
   it("clears the active runtime trigger before closing the opened panel", () => {

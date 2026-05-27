@@ -563,7 +563,25 @@ export const useSyncStore = defineStore("sync", () => {
           return;
         if (p.widgetId) {
           const w = widgetsStore.widgets.find((x) => x.id === p.widgetId);
-          if (w) w.data = p.content;
+          if (w) {
+            if (
+              (msg.type === "todo_updated" || msg.type === "memo_updated") &&
+              w.data &&
+              typeof w.data === "object" &&
+              p.content &&
+              typeof p.content === "object"
+            ) {
+              const currentSizeKey = (w.data as Record<string, unknown>).sizeKey;
+              w.data = {
+                ...(p.content as Record<string, unknown>),
+                ...(typeof currentSizeKey === "string"
+                  ? { sizeKey: currentSizeKey }
+                  : {}),
+              };
+            } else {
+              w.data = p.content;
+            }
+          }
         }
         break;
       }
@@ -694,6 +712,19 @@ export const useSyncStore = defineStore("sync", () => {
     logoutInProgress = true;
     // Explicitly close WS to stop reconnect storms
     try {
+      if (
+        auth.isLogged &&
+        (saveStore.hasUnsavedChanges ||
+          saveStore.hasPendingSave ||
+          saveStore.saveTimer !== null ||
+          widgetsStore.layoutDirty)
+      ) {
+        try {
+          await saveStore.saveData(true, false, dataVersion, fetchAndProcessData);
+        } catch (error) {
+          console.warn("[Logout] Pre-logout save failed", error);
+        }
+      }
       stopOfflineQueueReplayTimer();
       if (status.value === "OPEN") wsClose();
       networkStore.stopNetworkHeartbeat();

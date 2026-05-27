@@ -23,10 +23,13 @@ const latencyStatus = ref<ItabIpLookupStatus>("idle");
 const latencyLoading = ref(false);
 const latencyError = ref("");
 const latencyIpKey = ref("");
+const ITAB_IP_LATENCY_AUTO_REFRESH_MS = 5 * 60 * 1000;
 let abortController: AbortController | null = null;
 let latencyAbortController: AbortController | null = null;
 let requestSerial = 0;
 let latencyRequestSerial = 0;
+let latencyAutoRefreshTimer: number | null = null;
+let latencyAutoRefreshSubscribers = 0;
 
 const ipLatencyKey = (value: ItabIpLookupResult) =>
   (value.queryIp || value.ip || value.clientIp || "").trim();
@@ -34,8 +37,13 @@ const ipLatencyKey = (value: ItabIpLookupResult) =>
 export const resetItabIpRuntimeForTests = () => {
   abortController?.abort();
   latencyAbortController?.abort();
+  if (latencyAutoRefreshTimer !== null && typeof window !== "undefined") {
+    window.clearInterval(latencyAutoRefreshTimer);
+  }
   abortController = null;
   latencyAbortController = null;
+  latencyAutoRefreshTimer = null;
+  latencyAutoRefreshSubscribers = 0;
   requestSerial = 0;
   latencyRequestSerial = 0;
   status.value = "idle";
@@ -162,6 +170,32 @@ export const useItabIpRuntime = () => {
 
   const refreshLatencyIfNeeded = () => refreshLatency(false);
 
+  const startLatencyAutoRefresh = () => {
+    latencyAutoRefreshSubscribers += 1;
+    if (latencyAutoRefreshTimer !== null || typeof window === "undefined") {
+      return;
+    }
+    latencyAutoRefreshTimer = window.setInterval(() => {
+      void refreshLatency(true);
+    }, ITAB_IP_LATENCY_AUTO_REFRESH_MS);
+  };
+
+  const stopLatencyAutoRefresh = () => {
+    latencyAutoRefreshSubscribers = Math.max(
+      0,
+      latencyAutoRefreshSubscribers - 1,
+    );
+    if (
+      latencyAutoRefreshSubscribers > 0 ||
+      latencyAutoRefreshTimer === null ||
+      typeof window === "undefined"
+    ) {
+      return;
+    }
+    window.clearInterval(latencyAutoRefreshTimer);
+    latencyAutoRefreshTimer = null;
+  };
+
   const address = computed(() => formatItabIpAddress(result.value));
   const area = computed(() => formatItabIpArea(result.value));
   const outerLocation = computed(() => formatItabIpOuterLocation(result.value));
@@ -202,5 +236,7 @@ export const useItabIpRuntime = () => {
     ensureLoaded,
     refreshLatency,
     refreshLatencyIfNeeded,
+    startLatencyAutoRefresh,
+    stopLatencyAutoRefresh,
   };
 };

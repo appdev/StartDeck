@@ -38,6 +38,10 @@ vi.mock("./widgetRuntimeRegistry", () => ({
   resolveWidgetRuntimeSizeKey: () => "2x2",
 }));
 
+vi.mock("./widgetRuntimeSizes", () => ({
+  resolveRuntimeWidgetSizeCapability: () => "large-board",
+}));
+
 const mountFrame = (props: { editing?: boolean; isDragging?: boolean } = {}) =>
   mount(WidgetRuntimeFrame, {
     props: {
@@ -52,9 +56,9 @@ const mountFrame = (props: { editing?: boolean; isDragging?: boolean } = {}) =>
     global: {
       stubs: {
         MainWidgetShell: {
-          props: ["widgetType", "widgetSize", "title"],
+          props: ["widgetType", "widgetSize", "widgetSizeCapability", "title"],
           template:
-            "<div data-testid='main-widget-shell' :data-title='title'><slot /></div>",
+            "<div data-testid='main-widget-shell' :data-title='title' :data-size-capability='widgetSizeCapability'><slot /></div>",
         },
       },
     },
@@ -155,6 +159,7 @@ describe("WidgetRuntimeFrame", () => {
       wrapper.find("[data-testid='main-widget-shell']").attributes(),
     ).toMatchObject({
       "data-title": "测试组件",
+      "data-size-capability": "large-board",
     });
   });
 });

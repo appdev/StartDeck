@@ -809,6 +809,75 @@ describe("normalizeIncomingWidgets", () => {
     });
   });
 
+  it.each([
+    [
+      "Todo",
+      "legacy-todo-id",
+      ITAB_TODO_WIDGET_TYPE,
+      {
+        runtime: "itab-todo",
+        version: 1,
+        layoutSystem: ITAB_GRID_SCHEMA_VERSION,
+        sizeKey: "4x4",
+        tasks: [{ id: "task-1", text: "评审 UI", done: false }],
+      },
+      "todo",
+    ],
+    [
+      "Memo",
+      "legacy-memo-id",
+      ITAB_MEMO_WIDGET_TYPE,
+      {
+        runtime: "itab-memo",
+        version: 1,
+        layoutSystem: ITAB_GRID_SCHEMA_VERSION,
+        sizeKey: "4x4",
+        notes: [
+          {
+            id: "note-1",
+            title: "评审 UI",
+            body: "补充检查",
+            pinned: false,
+            createdAt: "2026-05-22T00:00:00.000Z",
+            updatedAt: "2026-05-22T00:01:00.000Z",
+          },
+        ],
+      },
+      "memo",
+    ],
+  ])(
+    "keeps persisted %s 4x4 geometry during incoming refresh normalization",
+    (_label, id, type, data, canonicalId) => {
+      const normalized = normalizeIncomingWidgets(
+        [
+          {
+            id,
+            type,
+            enable: true,
+            isPublic: true,
+            w: 4,
+            h: 4,
+            colSpan: 4,
+            rowSpan: 4,
+            data,
+          },
+        ],
+        true,
+      );
+
+      expect(
+        normalized.find((widget) => widget.id === canonicalId),
+      ).toMatchObject({
+        type,
+        colSpan: 4,
+        rowSpan: 4,
+        w: 4,
+        h: 4,
+        data: expect.objectContaining({ sizeKey: "4x4" }),
+      });
+    },
+  );
+
   it("destructively removes old poem widgets and keeps canonical poem size data", () => {
     const normalized = normalizeIncomingWidgets(
       [

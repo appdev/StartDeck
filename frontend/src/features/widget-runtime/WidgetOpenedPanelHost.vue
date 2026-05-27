@@ -101,7 +101,8 @@ const openedPanelClass = computed(() => {
 <style scoped>
 :global(.sd-widget-opened-overlay) {
   background: var(--sd-shell-overlay);
-  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: var(--sd-shell-overlay-filter);
+  backdrop-filter: var(--sd-shell-overlay-filter);
 }
 
 :global(.sd-widget-opened-overlay.sd-widget-opened-overlay--itab-weather) {
@@ -123,6 +124,8 @@ const openedPanelClass = computed(() => {
   background: var(--sd-shell-surface);
   color: var(--sd-shell-text-primary);
   box-shadow: var(--sd-shadow-window);
+  -webkit-backdrop-filter: var(--sd-shell-surface-filter);
+  backdrop-filter: var(--sd-shell-surface-filter);
 }
 
 .sd-widget-opened-window.opened-itab-todo {

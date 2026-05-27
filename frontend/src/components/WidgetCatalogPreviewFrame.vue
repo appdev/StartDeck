@@ -2,7 +2,11 @@
 import { computed, onBeforeUnmount, onMounted } from "vue";
 import WidgetSizeVariantPreview from "@/components/home/WidgetSizeVariantPreview.vue";
 import WidgetRuntimeFrame from "@/features/widget-runtime/WidgetRuntimeFrame.vue";
-import { isRuntimeWidget } from "@/features/widget-runtime/widgetRuntimeRegistry";
+import {
+  applyRuntimeWidgetSize,
+  isRuntimeWidget,
+} from "@/features/widget-runtime/widgetRuntimeRegistry";
+import type { RuntimeWidgetSizeKey } from "@/features/widget-runtime/widgetRuntimeSizes";
 import {
   isItabWidgetSizeKey,
   withItabGridData,
@@ -48,6 +52,10 @@ const previewWidget = computed<WidgetConfig | undefined>(() => {
   widget.id = `preview-${item.id}`;
   widget.enable = true;
   widget.isPublic = true;
+  if (isRuntimeWidget(widget)) {
+    applyRuntimeWidgetSize(widget, size.key as RuntimeWidgetSizeKey);
+    return widget;
+  }
   return isItabWidgetSizeKey(size.key)
     ? withItabGridData(widget, size.key)
     : {

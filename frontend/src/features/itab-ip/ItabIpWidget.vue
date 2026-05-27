@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import type { WidgetConfig } from "@/types";
 import type { ItabWidgetSizeKey } from "@/features/itab-widgets/itabSizePresets";
 import { ITAB_IP_PROXY_PATH } from "./itabIpTypes";
@@ -18,8 +18,28 @@ const showOuterInfo = computed(
   () => props.sizeKey === "2x2" || props.sizeKey === "2x4",
 );
 
+const loadForCurrentSize = async (refresh = false) => {
+  if (refresh) {
+    await runtime.load(true);
+  } else {
+    await runtime.ensureLoaded();
+  }
+  if (showOuterInfo.value) {
+    await runtime.refreshLatencyIfNeeded();
+  }
+};
+
 onMounted(() => {
-  void runtime.ensureLoaded();
+  void loadForCurrentSize();
+  if (showOuterInfo.value) {
+    runtime.startLatencyAutoRefresh();
+  }
+});
+
+onBeforeUnmount(() => {
+  if (showOuterInfo.value) {
+    runtime.stopLatencyAutoRefresh();
+  }
 });
 
 watch(
@@ -28,9 +48,18 @@ watch(
     const token = value ?? 0;
     if (token === lastRefreshToken.value) return;
     lastRefreshToken.value = token;
-    void runtime.load(true);
+    void loadForCurrentSize(true);
   },
 );
+
+watch(showOuterInfo, (visible, previousVisible) => {
+  if (visible) {
+    void loadForCurrentSize();
+    if (!previousVisible) runtime.startLatencyAutoRefresh();
+  } else if (previousVisible) {
+    runtime.stopLatencyAutoRefresh();
+  }
+});
 </script>
 
 <template>
@@ -50,6 +79,12 @@ watch(
         </strong>
         <span class="ip-outer-subtitle">
           {{ runtime.outerLocation.value }}
+        </span>
+        <span
+          class="ip-outer-latency"
+          :class="{ 'is-testing': runtime.latencyLoading.value }"
+        >
+          延迟 {{ runtime.latencyLabel.value }}
         </span>
       </span>
       <span v-else class="ip-icon-card" aria-hidden="true">
@@ -110,43 +145,80 @@ watch(
 
 .ip-outer-card {
   flex-direction: column;
-  padding: 16px 8px;
+  gap: 6px;
+  padding: 12px 10px;
   text-align: center;
 }
 
 .ip-outer-title {
   display: block;
   max-width: 100%;
-  overflow: hidden;
+  overflow: visible;
   color: var(--sd-theme-itab-ip-ip-widget-text-01);
-  font-size: 18px;
+  font-size: 17px;
   font-variant-numeric: tabular-nums;
   font-weight: 700;
   letter-spacing: 0;
-  line-height: 24px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  line-height: 22px;
+  overflow-wrap: anywhere;
+  text-overflow: clip;
+  white-space: normal;
+  word-break: break-all;
 }
 
 .ip-outer-subtitle {
   display: block;
   max-width: 100%;
-  margin-top: 8px;
   overflow: hidden;
   color: var(--sd-theme-itab-ip-ip-widget-text-02);
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 500;
   letter-spacing: 0;
-  line-height: 19px;
+  line-height: 18px;
   overflow-wrap: anywhere;
   text-overflow: clip;
   white-space: normal;
   word-break: break-word;
 }
 
+.ip-outer-latency {
+  display: inline-flex;
+  min-height: 22px;
+  box-sizing: border-box;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 8px;
+  border: 1px solid
+    color-mix(
+      in srgb,
+      var(--sd-theme-itab-ip-ip-widget-text-01) 28%,
+      transparent
+    );
+  border-radius: 999px;
+  background: color-mix(
+    in srgb,
+    var(--sd-theme-itab-ip-ip-widget-text-01) 15%,
+    transparent
+  );
+  color: var(--sd-theme-itab-ip-ip-widget-text-02);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  line-height: 16px;
+  white-space: nowrap;
+}
+
+.ip-outer-latency.is-testing {
+  color: color-mix(
+    in srgb,
+    var(--sd-theme-itab-ip-ip-widget-text-02) 70%,
+    transparent
+  );
+}
+
 .itab-ip-card.is-long-address .ip-outer-title {
-  font-size: 15px;
-  line-height: 21px;
+  font-size: 14px;
+  line-height: 18px;
   overflow-wrap: anywhere;
   text-overflow: clip;
   white-space: normal;
@@ -154,22 +226,29 @@ watch(
 }
 
 .ip-size-2-4 .ip-outer-card {
-  padding: 20px 32px;
+  gap: 7px;
+  padding: 16px 28px;
 }
 
 .ip-size-2-4 .ip-outer-title {
-  font-size: 40px;
-  line-height: 48px;
+  font-size: 32px;
+  line-height: 38px;
 }
 
 .ip-size-2-4 .ip-outer-subtitle {
-  margin-top: 10px;
-  font-size: 17px;
-  line-height: 23px;
+  font-size: 16px;
+  line-height: 21px;
+}
+
+.ip-size-2-4 .ip-outer-latency {
+  min-height: 24px;
+  padding-inline: 10px;
+  font-size: 13px;
+  line-height: 18px;
 }
 
 .ip-size-2-4.is-long-address .ip-outer-title {
-  font-size: 32px;
-  line-height: 40px;
+  font-size: 24px;
+  line-height: 30px;
 }
 </style>

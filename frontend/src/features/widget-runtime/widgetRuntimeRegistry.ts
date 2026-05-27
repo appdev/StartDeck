@@ -1,5 +1,9 @@
 import type { Component } from "vue";
 import type { WidgetConfig } from "@/types";
+import {
+  ITAB_WIDGET_SIZE_BY_KEY,
+  type ItabWidgetSizeKey,
+} from "@/features/itab-widgets/itabSizePresets";
 import DockerWidget from "@/components/DockerWidget.vue";
 import SystemStatusWidget from "@/components/SystemStatusWidget.vue";
 import CustomCssWidget from "@/components/CustomCssWidget.vue";
@@ -638,55 +642,62 @@ export const applyRuntimeWidgetSize = (
   widget: WidgetConfig,
   sizeKey: RuntimeWidgetSizeKey,
 ) => {
+  const resolvedSizeKey = resolveRuntimeSizeKey(widget.type, { sizeKey });
+  if (!resolvedSizeKey) return;
+  const itabSizeKey = ITAB_WIDGET_SIZE_BY_KEY.has(
+    resolvedSizeKey as ItabWidgetSizeKey,
+  )
+    ? (resolvedSizeKey as ItabWidgetSizeKey)
+    : undefined;
   if (widget.type === DOCKER_WIDGET_TYPE) {
-    applyDockerWidgetSizeToWidget(widget, sizeKey);
+    applyDockerWidgetSizeToWidget(widget, resolvedSizeKey);
   }
   if (widget.type === SYSTEM_STATUS_WIDGET_TYPE) {
-    applySystemStatusWidgetSizeToWidget(widget, sizeKey);
+    applySystemStatusWidgetSizeToWidget(widget, resolvedSizeKey);
   }
   if (widget.type === CUSTOM_CSS_WIDGET_TYPE) {
-    applyCustomCssWidgetSizeToWidget(widget, sizeKey);
+    applyCustomCssWidgetSizeToWidget(widget, resolvedSizeKey);
   }
   if (widget.type === ITAB_WEATHER_WIDGET_TYPE) {
-    applyItabWeatherSizeToWidget(widget, sizeKey);
+    if (itabSizeKey) applyItabWeatherSizeToWidget(widget, itabSizeKey);
   }
   if (widget.type === ITAB_TODO_WIDGET_TYPE) {
-    applyItabTodoSizeToWidget(widget, sizeKey);
+    applyItabTodoSizeToWidget(widget, resolvedSizeKey);
   }
   if (widget.type === ITAB_MEMO_WIDGET_TYPE) {
-    applyItabMemoSizeToWidget(widget, sizeKey);
+    applyItabMemoSizeToWidget(widget, resolvedSizeKey);
   }
   if (widget.type === ITAB_CLOCK_WIDGET_TYPE) {
-    applyItabClockSizeToWidget(widget, sizeKey);
+    if (itabSizeKey) applyItabClockSizeToWidget(widget, itabSizeKey);
   }
   if (widget.type === ITAB_DAILY_ENGLISH_WIDGET_TYPE) {
-    applyItabDailyEnglishSizeToWidget(widget, sizeKey);
+    if (itabSizeKey) applyItabDailyEnglishSizeToWidget(widget, itabSizeKey);
   }
   if (widget.type === ITAB_POEM_WIDGET_TYPE) {
-    applyItabPoemSizeToWidget(widget, sizeKey);
+    if (itabSizeKey) applyItabPoemSizeToWidget(widget, itabSizeKey);
   }
   if (widget.type === ITAB_POMODORO_WIDGET_TYPE) {
-    applyItabPomodoroSizeToWidget(widget, sizeKey);
+    if (itabSizeKey) applyItabPomodoroSizeToWidget(widget, itabSizeKey);
   }
   if (widget.type === ITAB_ANNIVERSARY_WIDGET_TYPE) {
-    applyItabAnniversarySizeToWidget(widget, sizeKey);
+    if (itabSizeKey) applyItabAnniversarySizeToWidget(widget, itabSizeKey);
   }
   if (widget.type === ITAB_WALLPAPER_WIDGET_TYPE) {
-    applyItabWallpaperSizeToWidget(widget, sizeKey);
+    if (itabSizeKey) applyItabWallpaperSizeToWidget(widget, itabSizeKey);
   }
   if (widget.type === ITAB_MOVIE_CALENDAR_WIDGET_TYPE) {
-    applyItabMovieCalendarSizeToWidget(widget, sizeKey);
+    if (itabSizeKey) applyItabMovieCalendarSizeToWidget(widget, itabSizeKey);
   }
   if (widget.type === ITAB_IP_WIDGET_TYPE) {
-    applyItabIpSizeToWidget(widget, sizeKey);
+    if (itabSizeKey) applyItabIpSizeToWidget(widget, itabSizeKey);
   }
   if (widget.type === ITAB_CALENDAR_WIDGET_TYPE) {
-    applyItabCalendarSizeToWidget(widget, sizeKey);
+    if (itabSizeKey) applyItabCalendarSizeToWidget(widget, itabSizeKey);
   }
   if (widget.type === ITAB_NUMBER_UPPERCASE_WIDGET_TYPE) {
-    applyItabNumberUppercaseSizeToWidget(widget, sizeKey);
+    if (itabSizeKey) applyItabNumberUppercaseSizeToWidget(widget, itabSizeKey);
   }
   if (widget.type === ITAB_FOOD_PICKER_WIDGET_TYPE) {
-    applyItabFoodPickerSizeToWidget(widget, sizeKey);
+    if (itabSizeKey) applyItabFoodPickerSizeToWidget(widget, itabSizeKey);
   }
 };

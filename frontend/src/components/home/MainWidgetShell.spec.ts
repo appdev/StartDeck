@@ -27,6 +27,7 @@ describe("MainWidgetShell", () => {
     );
     expect(root.dataset.widgetType).toBe("weather");
     expect(root.dataset.widgetSize).toBe("2x2");
+    expect(root.dataset.widgetSizeCapability).toBe("itab-default");
     expect(wrapper.find("[data-main-widget-shell-card]").exists()).toBe(true);
     expect(wrapper.find("[data-main-widget-shell-content]").exists()).toBe(
       true,
@@ -71,5 +72,24 @@ describe("MainWidgetShell", () => {
     expect(title.text()).toBe("待办事项");
     expect(title.element.parentElement).toBe(root);
     expect(card.element.contains(title.element)).toBe(false);
+  });
+
+  it("exposes the large-board size capability for adapted runtime widgets", () => {
+    const wrapper = mount(MainWidgetShell, {
+      props: {
+        widgetType: "itab-memo-04",
+        widgetSize: "4x4",
+        widgetSizeCapability: "large-board",
+        validateContract: false,
+      },
+      slots: {
+        default: "<div data-test-content>memo</div>",
+      },
+    });
+
+    expect((wrapper.element as HTMLElement).dataset.widgetSize).toBe("4x4");
+    expect((wrapper.element as HTMLElement).dataset.widgetSizeCapability).toBe(
+      "large-board",
+    );
   });
 });

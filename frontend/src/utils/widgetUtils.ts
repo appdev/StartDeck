@@ -117,7 +117,10 @@ import {
   applyCustomCssWidgetSizeToWidget,
   normalizeCustomCssWidgetData,
 } from "@/features/widget-runtime/customCssRuntimeModel";
-import { resolveRuntimeWidgetSizeKey } from "@/features/widget-runtime/widgetRuntimeSizes";
+import {
+  isRuntimeWidgetType,
+  resolveRuntimeWidgetSizeKey,
+} from "@/features/widget-runtime/widgetRuntimeSizes";
 
 const REMOVED_WIDGET_TYPES = new Set([
   "iframe",
@@ -583,5 +586,7 @@ export function normalizeIncomingWidgets(
     }
   }
 
-  return nextWidgets.map((widget) => withItabGridData(widget));
+  return nextWidgets.map((widget) =>
+    isRuntimeWidgetType(widget.type) ? widget : withItabGridData(widget),
+  );
 }

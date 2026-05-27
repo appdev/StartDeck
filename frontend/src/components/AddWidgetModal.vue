@@ -1345,9 +1345,9 @@ const submitCustom = async (
 
 <style scoped>
 :global(.itab-add-overlay) {
-  background: var(--sd-theme-add-widget-modal-surface-01);
-  -webkit-backdrop-filter: blur(10px) saturate(135%) brightness(0.7);
-  backdrop-filter: blur(10px) saturate(135%) brightness(0.7);
+  background: var(--sd-shell-overlay);
+  -webkit-backdrop-filter: var(--sd-shell-overlay-filter);
+  backdrop-filter: var(--sd-shell-overlay-filter);
 }
 
 :global(.itab-add-panel) {
@@ -1362,8 +1362,8 @@ const submitCustom = async (
   background: var(--sd-shell-surface);
   background-image: none;
   box-shadow: var(--sd-shadow-window);
-  -webkit-backdrop-filter: saturate(135%) blur(28px) brightness(0.62);
-  backdrop-filter: saturate(135%) blur(28px) brightness(0.62);
+  -webkit-backdrop-filter: var(--sd-shell-surface-filter);
+  backdrop-filter: var(--sd-shell-surface-filter);
 }
 
 :global(.itab-add-surface > .sd-window-bar) {

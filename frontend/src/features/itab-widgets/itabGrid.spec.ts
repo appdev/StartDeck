@@ -8,6 +8,7 @@ import {
   resolveItabGridContainerWidth,
   resolveItabGridLayout,
   resolveItabGridRect,
+  resolveItabGridTrackColumns,
   withItabGridData,
 } from "./itabGrid";
 
@@ -51,6 +52,12 @@ describe("itabGrid", () => {
     expect(resolveItabGridColumns(389)).toBe(3);
     expect(resolveItabGridColumns(390)).toBe(4);
     expect(resolveItabGridContainerWidth(4)).toBe(390);
+  });
+
+  it("counts centered home-grid tracks without reserving an outer gap", () => {
+    expect(resolveItabGridTrackColumns(1259)).toBe(13);
+    expect(resolveItabGridTrackColumns(1260)).toBe(14);
+    expect(resolveItabGridTrackColumns(1280)).toBe(14);
   });
 
   it("normalizes widget layout data to iTab schema and size keys", () => {

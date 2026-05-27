@@ -1,6 +1,5 @@
 import {
   ITAB_WIDGET_SIZE_CANDIDATES,
-  resolveItabWidgetSize,
   toItabWidgetSizeKey,
   type ItabWidgetSizeKey,
   type ItabWidgetSizePreset,
@@ -63,8 +62,15 @@ import {
 } from "@/features/itab-food-picker/itabFoodPickerTypes";
 
 export type RuntimeWidgetSizeScope = "itab";
-export type RuntimeWidgetSizeKey = ItabWidgetSizeKey;
-export type RuntimeWidgetSizePreset = ItabWidgetSizePreset;
+export type RuntimeWidgetSizeKey = ItabWidgetSizeKey | "4x4";
+export type RuntimeWidgetSizePreset = Omit<
+  ItabWidgetSizePreset,
+  "key" | "label"
+> & {
+  key: RuntimeWidgetSizeKey;
+  label: RuntimeWidgetSizeKey;
+};
+export type RuntimeWidgetSizeCapability = "itab-default" | "large-board";
 
 export interface RuntimeWidgetSizeFamily {
   type: string;
@@ -80,26 +86,111 @@ export interface RuntimeWidgetSizeFamily {
     rowSpan: number;
   };
   defaultSizeKey: RuntimeWidgetSizeKey;
+  capability: RuntimeWidgetSizeCapability;
 }
+
+export const RUNTIME_WIDGET_4X4_SIZE: RuntimeWidgetSizePreset = {
+  key: "4x4",
+  label: "4x4",
+  colSpan: 4,
+  rowSpan: 4,
+  width: 330,
+  height: 330,
+  density: "board",
+  pattern: "grid",
+  scope: "itab",
+  max: true,
+};
+
+export const RUNTIME_WIDGET_SIZE_CANDIDATES: RuntimeWidgetSizePreset[] = [
+  ...ITAB_WIDGET_SIZE_CANDIDATES,
+  RUNTIME_WIDGET_4X4_SIZE,
+];
+
+const runtimeSizeByKey = new Map<RuntimeWidgetSizeKey, RuntimeWidgetSizePreset>(
+  RUNTIME_WIDGET_SIZE_CANDIDATES.map((size) => [size.key, size]),
+);
+
+const DEFAULT_RUNTIME_WIDGET_SIZE_KEYS: RuntimeWidgetSizeKey[] = [
+  "1x1",
+  "1x2",
+  "2x1",
+  "2x2",
+  "2x4",
+];
+
+const LARGE_BOARD_RUNTIME_WIDGET_SIZE_KEYS: RuntimeWidgetSizeKey[] = [
+  ...DEFAULT_RUNTIME_WIDGET_SIZE_KEYS,
+  "4x4",
+];
+
+const RUNTIME_WIDGET_SIZE_KEYS_BY_CAPABILITY: Record<
+  RuntimeWidgetSizeCapability,
+  RuntimeWidgetSizeKey[]
+> = {
+  "itab-default": DEFAULT_RUNTIME_WIDGET_SIZE_KEYS,
+  "large-board": LARGE_BOARD_RUNTIME_WIDGET_SIZE_KEYS,
+};
+
+export const RUNTIME_WIDGET_LARGE_BOARD_TYPES = new Set<string>([
+  ITAB_TODO_WIDGET_TYPE,
+  ITAB_MEMO_WIDGET_TYPE,
+]);
+
+export const resolveRuntimeWidgetSizeCapability = (
+  type: string,
+): RuntimeWidgetSizeCapability =>
+  RUNTIME_WIDGET_LARGE_BOARD_TYPES.has(type) ? "large-board" : "itab-default";
+
+export const resolveRuntimeWidgetSize = (sizeKey: RuntimeWidgetSizeKey) => {
+  const size = runtimeSizeByKey.get(sizeKey);
+  if (!size) throw new Error(`Unknown runtime widget size: ${sizeKey}`);
+  return size;
+};
+
+export const isRuntimeWidgetSizeSpan = (size: {
+  colSpan?: number;
+  rowSpan?: number;
+}) =>
+  RUNTIME_WIDGET_SIZE_CANDIDATES.some(
+    (candidate) =>
+      candidate.colSpan === size.colSpan && candidate.rowSpan === size.rowSpan,
+  );
+
+const resolveRuntimeSizeList = (keys: RuntimeWidgetSizeKey[]) =>
+  keys.map(resolveRuntimeWidgetSize);
 
 const createItabRuntimeSizeFamily = (
   type: string,
   defaultSizeKey: RuntimeWidgetSizeKey,
-): RuntimeWidgetSizeFamily => ({
-  type,
-  scope: "itab",
-  supported: ITAB_WIDGET_SIZE_CANDIDATES,
-  disabled: [],
-  defaultSize: {
-    colSpan: resolveItabWidgetSize(defaultSizeKey).colSpan,
-    rowSpan: resolveItabWidgetSize(defaultSizeKey).rowSpan,
-  },
-  maxSize: {
-    colSpan: resolveItabWidgetSize("2x4").colSpan,
-    rowSpan: resolveItabWidgetSize("2x4").rowSpan,
-  },
-  defaultSizeKey,
-});
+  capability: RuntimeWidgetSizeCapability = resolveRuntimeWidgetSizeCapability(
+    type,
+  ),
+): RuntimeWidgetSizeFamily => {
+  const supportedKeys = RUNTIME_WIDGET_SIZE_KEYS_BY_CAPABILITY[capability];
+  const supported = resolveRuntimeSizeList(supportedKeys);
+  const defaultSize = resolveRuntimeWidgetSize(defaultSizeKey);
+  const maxSize = supported.reduce(
+    (max, size) => ({
+      colSpan: Math.max(max.colSpan, size.colSpan),
+      rowSpan: Math.max(max.rowSpan, size.rowSpan),
+    }),
+    { colSpan: 1, rowSpan: 1 },
+  );
+  return {
+    type,
+    scope: "itab",
+    supported,
+    disabled: [],
+    defaultSize: {
+      colSpan: defaultSize.colSpan,
+      rowSpan: defaultSize.rowSpan,
+    },
+    maxSize,
+    defaultSizeKey,
+    capability,
+  };
+};
 
 const runtimeWidgetSizeFamilies = new Map<string, RuntimeWidgetSizeFamily>([
   ["docker", createItabRuntimeSizeFamily("docker", "2x2")],
@@ -199,6 +290,16 @@ export const isRuntimeWidgetType = (type: string) =>
 export const resolveRuntimeWidgetSizeFamily = (type: string) =>
   runtimeWidgetSizeFamilies.get(type);
 
+export const supportsRuntimeWidgetSize = (
+  type: string,
+  sizeKey: RuntimeWidgetSizeKey,
+) =>
+  Boolean(
+    resolveRuntimeWidgetSizeFamily(type)?.supported.some(
+      (size) => size.key === sizeKey,
+    ),
+  );
+
 export const resolveRuntimeWidgetSizeKey = (
   type: string,
   input: {
@@ -215,16 +316,24 @@ export const resolveRuntimeWidgetSizeKey = (
   ) {
     return input.sizeKey as RuntimeWidgetSizeKey;
   }
-  return toItabWidgetSizeKey({
-    colSpan: input.colSpan,
-    rowSpan: input.rowSpan,
-  });
+  return family.supported.find(
+    (candidate) =>
+      candidate.colSpan === input.colSpan &&
+      candidate.rowSpan === input.rowSpan,
+  )?.key;
 };
 
 export const toRuntimeWidgetSizeKey = (
   type: string,
   size: { colSpan?: number; rowSpan?: number },
 ) => {
-  if (!isRuntimeWidgetType(type)) return undefined;
-  return toItabWidgetSizeKey(size);
+  const family = resolveRuntimeWidgetSizeFamily(type);
+  if (!family) return undefined;
+  return (
+    family.supported.find(
+      (candidate) =>
+        candidate.colSpan === size.colSpan &&
+        candidate.rowSpan === size.rowSpan,
+    )?.key || toItabWidgetSizeKey(size)
+  );
 };

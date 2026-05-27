@@ -685,8 +685,8 @@ const isMediaCustomized = computed(() => !!group.value?.backgroundImage);
 <style scoped>
 :global(.group-settings-overlay) {
   background: var(--sd-shell-overlay);
-  -webkit-backdrop-filter: blur(10px) saturate(135%) brightness(0.7);
-  backdrop-filter: blur(10px) saturate(135%) brightness(0.7);
+  -webkit-backdrop-filter: var(--sd-shell-overlay-filter);
+  backdrop-filter: var(--sd-shell-overlay-filter);
 }
 
 :global(.group-settings-panel) {
@@ -700,8 +700,8 @@ const isMediaCustomized = computed(() => !!group.value?.backgroundImage);
   border-radius: 20px;
   background: var(--sd-shell-surface);
   box-shadow: var(--sd-shadow-window);
-  -webkit-backdrop-filter: saturate(135%) blur(28px) brightness(0.62);
-  backdrop-filter: saturate(135%) blur(28px) brightness(0.62);
+  -webkit-backdrop-filter: var(--sd-shell-surface-filter);
+  backdrop-filter: var(--sd-shell-surface-filter);
 }
 
 :global(.group-settings-surface > .sd-window-bar) {

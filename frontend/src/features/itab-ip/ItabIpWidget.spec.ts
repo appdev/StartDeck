@@ -1,9 +1,9 @@
 // @vitest-environment jsdom
-import { mount } from "@vue/test-utils";
+import { flushPromises, mount } from "@vue/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import ItabIpWidget from "./ItabIpWidget.vue";
 import { createDefaultItabIpWidget } from "./itabIpModel";
-import { fetchItabIpLookup } from "./itabIpApi";
+import { fetchItabIpLatency, fetchItabIpLookup } from "./itabIpApi";
 import { resetItabIpRuntimeForTests } from "./useItabIpRuntime";
 
 vi.mock("./itabIpApi", () => ({
@@ -54,6 +54,7 @@ describe("ItabIpWidget", () => {
       });
 
       await nextTickCycle();
+      await nextTickCycle();
 
       expect(wrapper.attributes("data-itab-ip-size")).toBe(sizeKey);
       expect(wrapper.attributes("data-itab-ip-address")).toBe("163.125.214.27");
@@ -63,15 +64,20 @@ describe("ItabIpWidget", () => {
       if (sizeKey === "2x2" || sizeKey === "2x4") {
         expect(wrapper.text()).toContain("163.125.214.27");
         expect(wrapper.text()).toContain("广东省深圳市龙华");
+        expect(wrapper.text()).toContain("延迟 24 ms");
+        expect(fetchItabIpLatency).toHaveBeenCalledTimes(1);
       } else {
         expect(wrapper.text()).not.toContain("163.125.214.27");
+        expect(wrapper.text()).not.toContain("延迟");
         expect(wrapper.find("img").attributes("src")).toBe(
           "/itab-live-assets/ip.svg",
         );
+        expect(fetchItabIpLatency).not.toHaveBeenCalled();
       }
 
       wrapper.unmount();
       resetItabIpRuntimeForTests();
+      vi.clearAllMocks();
     }
   });
 
@@ -92,5 +98,30 @@ describe("ItabIpWidget", () => {
       true,
       expect.any(AbortSignal),
     );
+  });
+
+  it("auto-refreshes visible latency every five minutes and stops after unmount", async () => {
+    vi.useFakeTimers();
+    try {
+      const wrapper = mount(ItabIpWidget, {
+        props: {
+          widget: createDefaultItabIpWidget(),
+          sizeKey: "2x2",
+        },
+      });
+
+      await flushPromises();
+      await flushPromises();
+      expect(fetchItabIpLatency).toHaveBeenCalledTimes(1);
+
+      await vi.advanceTimersByTimeAsync(5 * 60 * 1000);
+      expect(fetchItabIpLatency).toHaveBeenCalledTimes(2);
+
+      wrapper.unmount();
+      await vi.advanceTimersByTimeAsync(5 * 60 * 1000);
+      expect(fetchItabIpLatency).toHaveBeenCalledTimes(2);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

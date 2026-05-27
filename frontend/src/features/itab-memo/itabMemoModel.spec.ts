@@ -4,6 +4,7 @@ import {
   applyItabMemoSizeToWidget,
   createDefaultItabMemoWidget,
   normalizeItabMemoWidgetData,
+  syncItabMemoSizeFromWidgetSpans,
 } from "./itabMemoModel";
 import { ITAB_MEMO_WIDGET_TYPE } from "./itabMemoTypes";
 
@@ -89,5 +90,36 @@ describe("itabMemoModel", () => {
       h: 1,
       data: expect.objectContaining({ sizeKey: "1x2" }),
     });
+  });
+
+  it("preserves and applies the runtime 4x4 size", () => {
+    expect(
+      normalizeItabMemoWidgetData({
+        sizeKey: "4x4",
+        notes: [],
+      }),
+    ).toMatchObject({
+      sizeKey: "4x4",
+      notes: [],
+    });
+
+    const widget = createDefaultItabMemoWidget();
+
+    applyItabMemoSizeToWidget(widget, "4x4");
+    expect(widget).toMatchObject({
+      type: ITAB_MEMO_WIDGET_TYPE,
+      colSpan: 4,
+      rowSpan: 4,
+      w: 4,
+      h: 4,
+      data: expect.objectContaining({ sizeKey: "4x4" }),
+    });
+
+    widget.data = {
+      ...(widget.data as Record<string, unknown>),
+      sizeKey: "2x2",
+    };
+    syncItabMemoSizeFromWidgetSpans(widget);
+    expect(widget.data).toEqual(expect.objectContaining({ sizeKey: "4x4" }));
   });
 });

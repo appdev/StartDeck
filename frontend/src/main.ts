@@ -4,7 +4,6 @@ import "./assets/grid-layout.css";
 import { createApp } from "vue";
 import { createPinia } from "pinia";
 import App from "./App.vue";
-import ItabLiveReplica from "@/features/itab-live/ItabLiveReplica.vue";
 import { useMainStore } from "./stores/main";
 import { attachErrorCapture, ensureOverlayHandled } from "./utils/overlay";
 import { installFetchUrlPatch } from "./utils/runtimeUrls";
@@ -26,34 +25,25 @@ if (typeof document !== "undefined" && typeof navigator !== "undefined") {
 installFetchUrlPatch();
 installNetworkFetchPatch();
 
-const isItabLiveRoute =
-  typeof window !== "undefined" && window.location.pathname === "/itab-live";
+const app = createApp(App);
+const pinia = createPinia();
+app.use(pinia);
+app.mount("#app");
 
-if (isItabLiveRoute) {
-  const app = createApp(ItabLiveReplica);
-  app.use(createPinia());
-  app.mount("#app");
-} else {
-  const app = createApp(App);
-  const pinia = createPinia();
-  app.use(pinia);
-  app.mount("#app");
-
-  if (import.meta.env.DEV) {
-    attachErrorCapture();
-    ensureOverlayHandled();
-  }
-
-  const bootstrap = async () => {
-    // Initialize store once after mount so the shell UI can render even if
-    // the sync pipeline is slow or temporarily blocked.
-    const store = useMainStore();
-    try {
-      await store.init();
-    } catch (error) {
-      console.error("Initial store init failed", error);
-    }
-  };
-
-  void bootstrap();
+if (import.meta.env.DEV) {
+  attachErrorCapture();
+  ensureOverlayHandled();
 }
+
+const bootstrap = async () => {
+  // Initialize store once after mount so the shell UI can render even if
+  // the sync pipeline is slow or temporarily blocked.
+  const store = useMainStore();
+  try {
+    await store.init();
+  } catch (error) {
+    console.error("Initial store init failed", error);
+  }
+};
+
+void bootstrap();

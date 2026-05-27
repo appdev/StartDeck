@@ -7,7 +7,6 @@ import { useCacheStore } from "./cache";
 import { useWidgetsStore } from "./widgets";
 import { useGroupsStore } from "./groups";
 import type { WidgetConfig } from "@/types";
-import { ITAB_CLOCK_WIDGET_TYPE } from "@/features/itab-clock/itabClockTypes";
 
 const privateWidget: WidgetConfig = {
   id: "private-todo",
@@ -74,12 +73,7 @@ describe("cache store auth scope", () => {
     const loaded = cache.loadFromCache(version);
 
     expect(loaded).toBe(true);
-    expect(
-      widgets.widgets.some(
-        (widget) =>
-          widget.id === "clock" && widget.type === ITAB_CLOCK_WIDGET_TYPE,
-      ),
-    ).toBe(true);
+    expect(widgets.widgets).toEqual([]);
     expect(widgets.widgets.some((widget) => widget.id === "private-todo")).toBe(
       false,
     );

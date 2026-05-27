@@ -81,6 +81,19 @@ export const resolveItabGridColumns = (
   );
 };
 
+export const resolveItabGridTrackColumns = (
+  availableWidth: number,
+  maxColumns = ITAB_GRID_MAX_COLUMNS,
+  spec: Pick<ItabGridSpec, "cell" | "gap"> = ITAB_GRID_DEFAULT_SPEC,
+) => {
+  const safeAvailable = Number.isFinite(availableWidth) ? availableWidth : 0;
+  const fit = Math.floor(safeAvailable / (spec.cell + spec.gap));
+  return Math.max(
+    1,
+    Math.min(positiveInteger(maxColumns, ITAB_GRID_MAX_COLUMNS), fit),
+  );
+};
+
 export const isItabWidgetSizeKey = (
   value: unknown,
 ): value is ItabWidgetSizeKey =>

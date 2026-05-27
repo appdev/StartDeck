@@ -261,12 +261,149 @@ onMounted(() => {
 
 <style scoped>
 .opened-weather-panel {
+  position: relative;
   height: 100%;
   padding: 30px 12px 20px 24px;
   overflow: hidden auto;
   background: var(--sd-theme-itab-weather-weather-opened-panel-surface-00);
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
   color: var(--sd-theme-itab-weather-weather-opened-panel-text-01);
   scrollbar-width: none;
+}
+
+.opened-weather-panel > * {
+  position: relative;
+  z-index: 1;
+}
+
+.opened-weather-panel.weather-sunny_d {
+  background-image: linear-gradient(
+    45deg,
+    var(--sd-theme-itab-weather-weather-widget-accent-surface-01),
+    var(--sd-theme-itab-weather-weather-widget-accent-surface-02)
+  );
+}
+
+.opened-weather-panel.weather-sunny_n {
+  background-image: linear-gradient(
+    45deg,
+    var(--sd-theme-itab-weather-weather-widget-accent-surface-03),
+    var(--sd-theme-itab-weather-weather-widget-accent-surface-04)
+  );
+}
+
+.opened-weather-panel.weather-cloudy_d {
+  background-image: linear-gradient(
+    45deg,
+    var(--sd-theme-itab-weather-weather-widget-accent-surface-05),
+    var(--sd-theme-itab-weather-weather-widget-accent-surface-06)
+  );
+}
+
+.opened-weather-panel.weather-cloudy_d::before {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: url("/itab/weather/background/cloud.webp") right 22px top 18px /
+    300px auto no-repeat;
+  content: "";
+  opacity: 0.72;
+}
+
+.opened-weather-panel.weather-cloudy_n {
+  background-image: linear-gradient(
+    45deg,
+    var(--sd-theme-itab-weather-weather-widget-accent-surface-07),
+    var(--sd-theme-itab-weather-weather-widget-accent-surface-08)
+  );
+}
+
+.opened-weather-panel.weather-yin_d {
+  background-color: var(
+    --sd-theme-itab-weather-weather-widget-yin-d-surface-01
+  );
+  background-image: linear-gradient(
+    35deg,
+    var(--sd-theme-itab-weather-weather-widget-yin-d-gradient-01) 30%,
+    var(--sd-theme-itab-weather-weather-widget-yin-d-gradient-02),
+    var(--sd-theme-itab-weather-weather-widget-yin-d-gradient-03)
+  );
+}
+
+.opened-weather-panel.weather-yin_n {
+  background-image: linear-gradient(
+    45deg,
+    var(--sd-theme-itab-weather-weather-widget-surface-03) 20%,
+    var(--sd-theme-itab-weather-weather-widget-surface-04)
+  );
+}
+
+.opened-weather-panel.weather-rain_d,
+.opened-weather-panel.weather-rain_n {
+  background-color: var(
+    --sd-theme-itab-weather-weather-widget-accent-surface-09
+  );
+  background-image: url("/itab/weather/background/rain_d.webp");
+}
+
+.opened-weather-panel.weather-snow_d {
+  background-color: var(--sd-theme-itab-weather-weather-widget-surface-05);
+  background-image: url("/itab/weather/background/snow_d.webp");
+}
+
+.opened-weather-panel.weather-snow_n {
+  background-color: var(
+    --sd-theme-itab-weather-weather-widget-accent-surface-10
+  );
+  background-image: url("/itab/weather/background/snow_n.webp");
+}
+
+.opened-weather-panel.weather-thunder_d {
+  background-color: var(
+    --sd-theme-itab-weather-weather-widget-accent-surface-11
+  );
+  background-image: url("/itab/weather/background/thunder_d.webp");
+}
+
+.opened-weather-panel.weather-thunder_n {
+  background-color: var(
+    --sd-theme-itab-weather-weather-widget-accent-surface-12
+  );
+  background-image: url("/itab/weather/background/thunder_n.webp");
+}
+
+.opened-weather-panel.weather-foggy_d {
+  background-image: linear-gradient(
+    45deg,
+    var(--sd-theme-itab-weather-weather-widget-surface-06),
+    var(--sd-theme-itab-weather-weather-widget-surface-07)
+  );
+}
+
+.opened-weather-panel.weather-foggy_n {
+  background-image: linear-gradient(
+    45deg,
+    var(--sd-theme-itab-weather-weather-widget-surface-08),
+    var(--sd-theme-itab-weather-weather-widget-surface-09)
+  );
+}
+
+.opened-weather-panel.weather-haze_d {
+  background-image: linear-gradient(
+    45deg,
+    var(--sd-theme-itab-weather-weather-widget-accent-surface-13),
+    var(--sd-theme-itab-weather-weather-widget-accent-surface-14)
+  );
+}
+
+.opened-weather-panel.weather-haze_n {
+  background-image: linear-gradient(
+    45deg,
+    var(--sd-theme-itab-weather-weather-widget-surface-10),
+    var(--sd-theme-itab-weather-weather-widget-accent-surface-15)
+  );
 }
 
 .opened-weather-panel::-webkit-scrollbar {

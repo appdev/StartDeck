@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import type { WidgetConfig } from "@/types";
-import ItabFlipCard from "@/features/itab-live/ItabFlipCard.vue";
+import ItabFlipCard from "./ItabFlipCard.vue";
 import { useItabClockRuntime } from "./useItabClockRuntime";
 import type { ItabClockWidgetData } from "./itabClockTypes";
 

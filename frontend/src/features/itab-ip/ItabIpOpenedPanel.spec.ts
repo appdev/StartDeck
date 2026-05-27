@@ -64,10 +64,12 @@ describe("ItabIpOpenedPanel", () => {
     expect(wrapper.find("[data-itab-ip-info-card]").text()).toContain(
       "当前位置",
     );
+    expect(wrapper.attributes("data-itab-ip-network")).toBeUndefined();
+    expect(wrapper.attributes("data-itab-ip-coordinate")).toBeUndefined();
     expect(wrapper.text()).toContain("解析地址：163.125.214.27");
     expect(wrapper.text()).toContain("归属地：广东省深圳市龙华");
-    expect(wrapper.text()).toContain("网络：未知");
-    expect(wrapper.text()).toContain("经纬度：114.045422,22.696667");
+    expect(wrapper.text()).not.toContain("网络：");
+    expect(wrapper.text()).not.toContain("经纬度：");
     expect(wrapper.text()).toContain("PING测试：24 ms刷新");
     expect(
       wrapper.find("[data-itab-ip-map].opened-ip-map-layer").exists(),

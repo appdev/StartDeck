@@ -216,7 +216,7 @@ export const ITAB_WIDGET_SHELL_PROFILE: WidgetShellProfile = {
   rootSelector: ITAB_WIDGET_SHELL_SELECTORS.root,
   rootMissingExpected: ITAB_WIDGET_SHELL_SELECTORS.root,
   rootMissingMessage:
-    "widget shell root must be rendered by ItabLiveWidgetFrame",
+    "widget shell root must match the iTab widget shell profile",
   forbiddenSelectors: ITAB_WIDGET_SHELL_FORBIDDEN_SELECTORS,
   forbiddenStyleProperties: WIDGET_SHELL_FORBIDDEN_STYLE_PROPERTIES,
   requiredElements: [
@@ -246,8 +246,7 @@ export const ITAB_WIDGET_SHELL_PROFILE: WidgetShellProfile = {
   requireCardShadow: true,
   requireCardGeometryMatch: true,
   requireContentGeometryMatch: false,
-  sourceStyleOwnerExpected:
-    "shell-owned style stays in ItabLiveWidgetFrame/ItabLiveOpenedShell",
+  sourceStyleOwnerExpected: "shell-owned style stays in the widget shell",
 };
 
 export const STARTDECK_WIDGET_SHELL_PROFILE: WidgetShellProfile = {

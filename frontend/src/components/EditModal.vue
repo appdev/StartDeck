@@ -1476,8 +1476,8 @@ const submit = async () => {
 <style scoped>
 :global(.edit-card-overlay) {
   background: var(--sd-shell-overlay);
-  -webkit-backdrop-filter: blur(10px) saturate(135%) brightness(0.7);
-  backdrop-filter: blur(10px) saturate(135%) brightness(0.7);
+  -webkit-backdrop-filter: var(--sd-shell-overlay-filter);
+  backdrop-filter: var(--sd-shell-overlay-filter);
 }
 
 :global(.edit-card-panel) {
@@ -1490,8 +1490,8 @@ const submit = async () => {
   border-radius: 20px;
   background: var(--sd-shell-surface);
   box-shadow: var(--sd-shadow-window);
-  -webkit-backdrop-filter: saturate(135%) blur(28px) brightness(0.62);
-  backdrop-filter: saturate(135%) blur(28px) brightness(0.62);
+  -webkit-backdrop-filter: var(--sd-shell-surface-filter);
+  backdrop-filter: var(--sd-shell-surface-filter);
 }
 
 :global(.edit-card-surface > .sd-window-bar) {
@@ -1631,14 +1631,14 @@ const submit = async () => {
   white-space: nowrap;
 }
 
-.edit-card-header-actions :deep(button) {
+.edit-card-header-actions :deep(button:not(.sd-window-control-dot)) {
   border-color: var(--sd-theme-edit-modal-border-03);
   background: var(--sd-theme-edit-modal-surface-05);
   color: var(--sd-theme-edit-modal-text-02);
 }
 
-.edit-card-header-actions :deep(button:hover),
-.edit-card-header-actions :deep(button:focus-visible) {
+.edit-card-header-actions :deep(button:not(.sd-window-control-dot):hover),
+.edit-card-header-actions :deep(button:not(.sd-window-control-dot):focus-visible) {
   border-color: var(--sd-theme-edit-modal-accent-border-02);
   background: var(--sd-theme-edit-modal-surface-06);
   color: var(--sd-theme-edit-modal-text-01);

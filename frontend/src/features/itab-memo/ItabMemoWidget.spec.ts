@@ -82,6 +82,7 @@ describe("ItabMemoWidget", () => {
     expect(wrapper.text()).toContain("评审 UI");
     expect(wrapper.text()).toContain("第三条");
     expect(wrapper.text()).not.toContain("第四条");
+    expect(wrapper.find(".memo-widget-delete").exists()).toBe(false);
   });
 
   it("keeps compact sizes visually icon-like by hiding row text", () => {
@@ -146,5 +147,43 @@ describe("ItabMemoWidget", () => {
       expect.objectContaining({ id: "remote", title: "刷新备忘" }),
     ]);
     wrapper.unmount();
+  });
+
+  it("renders every memo in 4x4 and shows full body content without card delete controls", () => {
+    const wrapper = mount(ItabMemoWidget, {
+      props: {
+        widget: {
+          ...widget,
+          data: {
+            ...widget.data,
+            sizeKey: "4x4",
+            notes: [
+              ...widget.data.notes,
+              {
+                id: "e",
+                title: "第五条",
+                body: "很长的正文\n第二行正文",
+                pinned: false,
+                createdAt: "2026-05-22T00:00:00.000Z",
+                updatedAt: "2026-05-21T00:00:00.000Z",
+              },
+            ],
+          },
+        },
+        sizeKey: "4x4",
+        remoteSync: false,
+      },
+    });
+
+    expect(wrapper.attributes("data-itab-memo-size")).toBe("4x4");
+    expect(wrapper.classes()).toContain("is-board");
+    expect(wrapper.text()).toContain("5 条");
+    expect(wrapper.text()).toContain("第四条");
+    expect(wrapper.text()).toContain("第五条");
+    expect(wrapper.text()).toContain("很长的正文");
+    expect(wrapper.text()).toContain("第二行正文");
+    expect(wrapper.find(".memo-widget-delete").exists()).toBe(false);
+    expect(wrapper.find("[aria-label^='删除']").exists()).toBe(false);
+    expect(wrapper.emitted("updateData")).toBeUndefined();
   });
 });
