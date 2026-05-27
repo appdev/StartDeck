@@ -4,7 +4,10 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { flushPromises, mount } from "@vue/test-utils";
 import ItabWeatherOpenedPanel from "./ItabWeatherOpenedPanel.vue";
 import ItabWeatherWidget from "./ItabWeatherWidget.vue";
-import { resetItabWeatherRuntimeForTests } from "./useItabWeatherRuntime";
+import {
+  resetItabWeatherRuntimeForTests,
+  resolveItabWeatherSkinClass,
+} from "./useItabWeatherRuntime";
 
 const response = (data: unknown) =>
   Promise.resolve({
@@ -99,21 +102,49 @@ describe("ItabWeatherWidget", () => {
     expect(wrapper.text()).toContain("晴");
   });
 
-  it("keeps weather cover text white on the source dark surface", () => {
+  it("maps source weather codes to fixed source skin classes", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-05-27T12:00:00+08:00"));
+    const daySample = {
+      condition: "晴",
+      sunrise: "00:00",
+      sunset: "23:59",
+    };
+
+    expect(
+      resolveItabWeatherSkinClass({ ...daySample, code: "150" }),
+    ).toBe("weather-sunny_d");
+    expect(
+      resolveItabWeatherSkinClass({ ...daySample, code: "304" }),
+    ).toBe("weather-rain_d");
+    expect(
+      resolveItabWeatherSkinClass({ ...daySample, code: "999" }),
+    ).toBe("weather-other");
+  });
+
+  it("keeps the closed weather cover on source fixed skin colors", () => {
     const source = readFileSync(
       "src/features/itab-weather/ItabWeatherWidget.vue",
       "utf8",
     );
 
     expect(source).toContain(".weather-icon-content {");
+    expect(source).toContain("background-color: #154280;");
     expect(source).toContain(
       "color: var(--sd-theme-itab-weather-weather-widget-text-01);",
     );
-    expect(source).toContain("weather-yin_d");
-    expect(source).toContain("35deg");
     expect(source).toContain(
-      "--sd-theme-itab-weather-weather-widget-accent-surface-09",
+      "linear-gradient(35deg, #154280 30%, #335693, #a8b3d2)",
     );
+    expect(source).toContain("linear-gradient(35deg, #054989 30%, #72ade0)");
+    expect(source).toContain(
+      "linear-gradient(35deg, #354564 30%, #4c5f7f, #8b9bb8)",
+    );
+    expect(source).toContain(
+      'background-image: url("/itab/weather/background/cloud.webp");',
+    );
+    expect(source).toContain("opacity: 0.6;");
+    expect(source).toContain(".weather-icon-content.weather-other");
   });
 
   it("keeps current weather in runtime cache until the user opens it after five minutes", async () => {

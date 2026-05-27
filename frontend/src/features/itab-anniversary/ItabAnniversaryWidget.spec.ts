@@ -72,6 +72,35 @@ describe("ItabAnniversaryWidget", () => {
     wrapper.unmount();
   });
 
+  it("keeps payday image backgrounds on the card instead of falling back to solid surface", () => {
+    const widget = createDefaultItabAnniversaryWidget();
+    const paydayTemplate = anniversaryTemplates.find(
+      (item) => item.id === "payday",
+    );
+    expect(paydayTemplate).toBeTruthy();
+    widget.data = {
+      ...paydayTemplate!,
+      backgroundMode: "image",
+      backgroundImage: "/itab-live-assets/anniversary/yiyan-8.webp",
+      mask: 0,
+    };
+
+    const wrapper = mount(ItabAnniversaryWidget, {
+      props: {
+        widget,
+        sizeKey: "2x2",
+      },
+    });
+
+    const card = wrapper.find("[data-itab-anniversary-card-size]");
+    expect(card.classes()).toContain("is-payday");
+    expect(card.classes()).toContain("has-image-background");
+    expect(card.attributes("style")).toContain(
+      '--anniversary-background-image: url("/itab-live-assets/anniversary/yiyan-8.webp")',
+    );
+    wrapper.unmount();
+  });
+
   it("uses the selected color background on the outer card", () => {
     const widget = createDefaultItabAnniversaryWidget();
     widget.data = {

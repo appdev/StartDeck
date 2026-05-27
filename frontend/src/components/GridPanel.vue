@@ -4284,8 +4284,10 @@ onUnmounted(() => {
     <ContextMenuSurface
       :show="showBlankContextMenu"
       :z-index="50"
-      panel-class="fixed"
-      surface-class="itab-add-blank-context-surface"
+      overlay-class="sd-runtime-menu-overlay"
+      panel-class="sd-runtime-menu-panel"
+      surface-class="sd-runtime-menu-surface itab-add-blank-context-surface"
+      scheme="dark"
       :panel-style="{
         top: blankContextMenuPosition.y + 'px',
         left: blankContextMenuPosition.x + 'px',
@@ -4823,19 +4825,7 @@ onUnmounted(() => {
   gap: 4px;
   padding: 9px 5px;
   border-radius: 12px;
-  background: var(--sd-theme-grid-panel-surface-04);
   color: var(--sd-theme-grid-panel-text-06);
-  box-shadow: 0 10px 30px var(--sd-theme-grid-panel-shadow-04);
-  backdrop-filter: blur(10px);
-}
-
-:global(.itab-add-blank-context-surface) {
-  min-width: 0;
-  padding: 0;
-  border: 0;
-  border-radius: 12px;
-  background: transparent;
-  box-shadow: none;
 }
 
 .itab-add-blank-context-row {

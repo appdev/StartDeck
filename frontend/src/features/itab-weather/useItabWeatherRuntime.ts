@@ -27,27 +27,81 @@ const WEATHER_RUNTIME_CACHE_TTL_MS = 5 * 60 * 1000;
 const weatherIconFromCode = (code: string | number | undefined) =>
   weatherIcon(String(code || "104"));
 
-const weatherConditionCategoryByCode = (rawCode?: string | number) => {
-  const code = String(rawCode || "").trim();
-  if (!code) return "";
-  if (code === "100" || code === "900" || code === "901") return "sunny";
-  if (["101", "102", "103", "150", "151", "152", "153"].includes(code)) {
-    return "cloudy";
-  }
-  if (code === "104") return "yin";
-  if (["302", "303", "304"].includes(code)) return "thunder";
-  if (/^3/.test(code)) return "rain";
-  if (/^4/.test(code)) return "snow";
-  if (["500", "501", "509", "510", "514", "515"].includes(code)) {
-    return "foggy";
-  }
-  if (["502", "503", "504", "507", "508", "511", "512", "513"].includes(code)) {
-    return "haze";
-  }
-  return "";
+type ItabWeatherSkinCategory =
+  | "sunny"
+  | "cloudy"
+  | "yin"
+  | "thunder"
+  | "rain"
+  | "snow"
+  | "foggy"
+  | "haze";
+
+type ItabWeatherCodeCategory = ItabWeatherSkinCategory | "other" | "";
+
+const SOURCE_WEATHER_CODE_CATEGORIES: Record<string, ItabWeatherSkinCategory> = {
+  "100": "sunny",
+  "150": "sunny",
+  "101": "cloudy",
+  "102": "cloudy",
+  "103": "cloudy",
+  "151": "cloudy",
+  "152": "cloudy",
+  "153": "cloudy",
+  "104": "yin",
+  "302": "thunder",
+  "303": "thunder",
+  "300": "rain",
+  "301": "rain",
+  "304": "rain",
+  "305": "rain",
+  "306": "rain",
+  "307": "rain",
+  "308": "rain",
+  "309": "rain",
+  "310": "rain",
+  "311": "rain",
+  "312": "rain",
+  "313": "rain",
+  "314": "rain",
+  "315": "rain",
+  "316": "rain",
+  "317": "rain",
+  "318": "rain",
+  "350": "rain",
+  "351": "rain",
+  "399": "rain",
+  "400": "snow",
+  "401": "snow",
+  "402": "snow",
+  "403": "snow",
+  "404": "snow",
+  "405": "snow",
+  "406": "snow",
+  "407": "snow",
+  "408": "snow",
+  "409": "snow",
+  "410": "snow",
+  "500": "foggy",
+  "501": "foggy",
+  "509": "foggy",
+  "510": "foggy",
+  "514": "foggy",
+  "515": "foggy",
+  "502": "haze",
 };
 
-const weatherConditionCategoryByText = (condition: string) => {
+const weatherConditionCategoryByCode = (
+  rawCode?: string | number,
+): ItabWeatherCodeCategory => {
+  const code = String(rawCode || "").trim();
+  if (!code) return "";
+  return SOURCE_WEATHER_CODE_CATEGORIES[code] || "other";
+};
+
+const weatherConditionCategoryByText = (
+  condition: string,
+): ItabWeatherSkinCategory => {
   if (/雷/.test(condition)) return "thunder";
   if (/雪/.test(condition)) return "snow";
   if (/雨/.test(condition)) return "rain";
@@ -67,17 +121,29 @@ const parseWeatherTimeMinutes = (value: string) => {
   return hour * 60 + minute;
 };
 
-const resolveWeatherDayPart = (sample: WeatherSample) => {
+const resolveWeatherDayPart = (
+  sample: Pick<WeatherSample, "sunrise" | "sunset">,
+) => {
   const now = new Date();
   const currentMinutes = now.getHours() * 60 + now.getMinutes();
   const sunriseMinutes = parseWeatherTimeMinutes(sample.sunrise);
   const sunsetMinutes = parseWeatherTimeMinutes(sample.sunset);
   if (sunriseMinutes === null || sunsetMinutes === null) {
-    return now.getHours() >= 6 && now.getHours() < 18 ? "d" : "n";
+    return now.getHours() > 6 && now.getHours() < 19 ? "d" : "n";
   }
   return currentMinutes >= sunriseMinutes && currentMinutes < sunsetMinutes
     ? "d"
     : "n";
+};
+
+export const resolveItabWeatherSkinClass = (
+  sample: Pick<WeatherSample, "code" | "condition" | "sunrise" | "sunset">,
+) => {
+  const codeCategory = weatherConditionCategoryByCode(sample.code);
+  if (codeCategory === "other") return "weather-other";
+  const category =
+    codeCategory || weatherConditionCategoryByText(sample.condition || "");
+  return `weather-${category}_${resolveWeatherDayPart(sample)}`;
 };
 
 const fallbackSample = (): WeatherSample => ({
@@ -643,12 +709,7 @@ export const useItabWeatherRuntime = (
     }, 220);
   };
 
-  const weatherOuterClass = computed(() => {
-    const category =
-      weatherConditionCategoryByCode(state.sample.code) ||
-      weatherConditionCategoryByText(state.sample.condition);
-    return `weather-${category}_${resolveWeatherDayPart(state.sample)}`;
-  });
+  const weatherOuterClass = computed(() => resolveItabWeatherSkinClass(state.sample));
 
   const weatherOuterDaily = computed(() =>
     state.days.value.slice(1, 7).map((day, index) => ({

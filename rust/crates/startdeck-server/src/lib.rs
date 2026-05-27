@@ -774,9 +774,8 @@ async fn cache_icon(
     let file_name = format!("{hash}{ext}");
     let target = state.config.icon_cache_dir.join(&file_name);
     fs::write(&target, data).await?;
-    Ok(Json(
-        json!({"success": true, "url": format!("/icon-cache/{file_name}")}),
-    ))
+    let path = format!("/icon-cache/{file_name}");
+    Ok(Json(json!({"success": true, "path": path, "url": path})))
 }
 
 async fn ping(Query(query): Query<HashMap<String, String>>) -> Json<Value> {

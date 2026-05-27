@@ -49,15 +49,142 @@ const activePreviewSize = ref<ItabWidgetSizeKey>("2x2");
 const asideCollapsed = ref(false);
 const repeatDropdownOpen = ref(false);
 const datePickerOpen = ref(false);
+type AnniversaryColorPickerTarget = "text" | "background";
+
+const colorPickerTarget = ref<AnniversaryColorPickerTarget | null>(null);
+const colorPickerHue = ref(0);
+const colorPickerSaturation = ref(100);
+const colorPickerValue = ref(100);
+const colorPickerHex = ref("#ffffff");
+const colorPickerPresets = [
+  "#ff4b0a",
+  "#ff8a00",
+  "#ffcc00",
+  "#7ee681",
+  "#11c5c8",
+  "#1890ff",
+  "#c91586",
+];
 const editor = reactive<ItabAnniversaryWidgetData>(
   normalizeItabAnniversaryWidgetData(props.widget.data),
 );
+
+const clampPercent = (value: number) => Math.min(Math.max(value, 0), 100);
+
+const normalizeHexColor = (value: string) => {
+  const cleaned = value.trim().replace(/^#/, "");
+  if (/^[0-9a-fA-F]{3}$/.test(cleaned)) {
+    return `#${cleaned
+      .split("")
+      .map((character) => `${character}${character}`)
+      .join("")
+      .toLowerCase()}`;
+  }
+  if (/^[0-9a-fA-F]{6}$/.test(cleaned)) {
+    return `#${cleaned.toLowerCase()}`;
+  }
+  return null;
+};
+
+const rgbToHex = (red: number, green: number, blue: number) =>
+  `#${[red, green, blue]
+    .map((value) => value.toString(16).padStart(2, "0"))
+    .join("")}`;
+
+const hsvToHex = (hue: number, saturation: number, value: number) => {
+  const chroma = (value / 100) * (saturation / 100);
+  const huePrime = (((hue % 360) + 360) % 360) / 60;
+  const secondary = chroma * (1 - Math.abs((huePrime % 2) - 1));
+  const match = value / 100 - chroma;
+  const [red, green, blue] =
+    huePrime < 1
+      ? [chroma, secondary, 0]
+      : huePrime < 2
+        ? [secondary, chroma, 0]
+        : huePrime < 3
+          ? [0, chroma, secondary]
+          : huePrime < 4
+            ? [0, secondary, chroma]
+            : huePrime < 5
+              ? [secondary, 0, chroma]
+              : [chroma, 0, secondary];
+
+  return rgbToHex(
+    Math.round((red + match) * 255),
+    Math.round((green + match) * 255),
+    Math.round((blue + match) * 255),
+  );
+};
+
+const hexToHsv = (hex: string) => {
+  const normalized = normalizeHexColor(hex) || "#ffffff";
+  const red = Number.parseInt(normalized.slice(1, 3), 16) / 255;
+  const green = Number.parseInt(normalized.slice(3, 5), 16) / 255;
+  const blue = Number.parseInt(normalized.slice(5, 7), 16) / 255;
+  const max = Math.max(red, green, blue);
+  const min = Math.min(red, green, blue);
+  const delta = max - min;
+  const hue =
+    delta === 0
+      ? 0
+      : max === red
+        ? 60 * (((green - blue) / delta) % 6)
+        : max === green
+          ? 60 * ((blue - red) / delta + 2)
+          : 60 * ((red - green) / delta + 4);
+
+  return {
+    hue: Math.round((hue + 360) % 360),
+    saturation: max === 0 ? 0 : Math.round((delta / max) * 100),
+    value: Math.round(max * 100),
+  };
+};
+
+const syncColorPickerHex = () => {
+  colorPickerHex.value = hsvToHex(
+    colorPickerHue.value,
+    colorPickerSaturation.value,
+    colorPickerValue.value,
+  );
+};
+
+const setColorPickerFromHex = (hex: string) => {
+  const normalized = normalizeHexColor(hex) || "#ffffff";
+  const hsv = hexToHsv(normalized);
+  colorPickerHue.value = hsv.hue;
+  colorPickerSaturation.value = hsv.saturation;
+  colorPickerValue.value = hsv.value;
+  colorPickerHex.value = normalized;
+};
+
+const colorPickerDraftColor = computed(() =>
+  normalizeHexColor(colorPickerHex.value) ||
+  hsvToHex(
+    colorPickerHue.value,
+    colorPickerSaturation.value,
+    colorPickerValue.value,
+  ),
+);
+
+const colorPickerPaletteStyle = computed(() => ({
+  "--picker-hue-color": `hsl(${colorPickerHue.value} 100% 50%)`,
+}));
+
+const colorPickerPointerStyle = computed(() => ({
+  left: `${colorPickerSaturation.value}%`,
+  top: `${100 - colorPickerValue.value}%`,
+}));
+
+const colorPickerHuePointerStyle = computed(() => ({
+  top: `${(colorPickerHue.value / 360) * 100}%`,
+}));
 
 const syncEditor = (data: ItabAnniversaryWidgetData) => {
   Object.assign(editor, data);
   activePreviewSize.value = data.sizeKey;
   repeatDropdownOpen.value = false;
   datePickerOpen.value = false;
+  colorPickerTarget.value = null;
 };
 
 watch(
@@ -125,8 +252,6 @@ const visibleMonthOptions = computed(() =>
 const visibleDayOptions = computed(() =>
   wheelWindow(dayOptions.value, dateParts.value.day, "day"),
 );
-const templateCardWithSize = (template: ItabAnniversaryTemplate) =>
-  anniversaryTemplateWithSize(template, editor.sizeKey);
 const templateThumbnail = (template: ItabAnniversaryTemplate) =>
   template.id === "life"
     ? anniversaryTemplates.find((item) => item.id === "plain-life") || template
@@ -139,6 +264,18 @@ const isTemplateActive = (template: ItabAnniversaryTemplate) =>
 const isDotActive = (index: number) =>
   anniversaryPreviewSizes[index % anniversaryPreviewSizes.length] ===
   activePreviewSize.value;
+
+const isEditorSize = (
+  sizeKey: ItabWidgetSizeKey,
+): sizeKey is Extract<ItabWidgetSizeKey, "2x2" | "2x4"> =>
+  anniversaryEditorSizes.some((candidate) => candidate === sizeKey);
+
+const selectPreviewSize = (sizeKey: ItabWidgetSizeKey) => {
+  activePreviewSize.value = sizeKey;
+  if (isEditorSize(sizeKey)) {
+    editor.sizeKey = sizeKey;
+  }
+};
 
 const selectTemplate = (template: ItabAnniversaryTemplate) => {
   const sizeKey = editor.sizeKey;
@@ -154,7 +291,7 @@ const selectTemplate = (template: ItabAnniversaryTemplate) => {
 };
 
 const setEditorSize = (sizeKey: Extract<ItabWidgetSizeKey, "2x2" | "2x4">) => {
-  editor.sizeKey = sizeKey;
+  selectPreviewSize(sizeKey);
 };
 
 const shiftPreview = (direction: -1 | 1) => {
@@ -165,12 +302,13 @@ const shiftPreview = (direction: -1 | 1) => {
   const nextIndex =
     (currentIndex + direction + anniversaryPreviewSizes.length) %
     anniversaryPreviewSizes.length;
-  activePreviewSize.value = anniversaryPreviewSizes[nextIndex] || "2x2";
+  selectPreviewSize(anniversaryPreviewSizes[nextIndex] || "2x2");
 };
 
 const selectDot = (index: number) => {
-  activePreviewSize.value =
-    anniversaryPreviewSizes[index % anniversaryPreviewSizes.length] || "2x2";
+  selectPreviewSize(
+    anniversaryPreviewSizes[index % anniversaryPreviewSizes.length] || "2x2",
+  );
 };
 
 const toggleAside = () => {
@@ -183,6 +321,7 @@ const closeFloatingControls = () => {
   ).showCommonEvents = false;
   repeatDropdownOpen.value = false;
   datePickerOpen.value = false;
+  colorPickerTarget.value = null;
 };
 
 const handleOutsidePointerDown = (event: PointerEvent) => {
@@ -193,7 +332,7 @@ const handleOutsidePointerDown = (event: PointerEvent) => {
   }
   if (
     target.closest(
-      ".anniversary-common-trigger,.anniversary-event-popover,.anniversary-date-trigger,.anniversary-date-popper,.anniversary-repeat-select",
+      ".anniversary-common-trigger,.anniversary-event-popover,.anniversary-date-trigger,.anniversary-date-popper,.anniversary-repeat-select,.anniversary-gradient-swatch,.anniversary-color-picker-popover",
     )
   ) {
     return;
@@ -280,17 +419,122 @@ const handleDateWheel = (part: "year" | "month" | "day", event: WheelEvent) => {
   stepDatePart(part, event.deltaY > 0 ? 1 : -1);
 };
 
+const isPresetColor = (colors: string[], color: string) =>
+  colors.some((candidate) => candidate.toLowerCase() === color.toLowerCase());
+
+const openColorPicker = (target: AnniversaryColorPickerTarget) => {
+  const color = target === "text" ? editor.textColor : editor.backgroundColor;
+  setColorPickerFromHex(color);
+  colorPickerTarget.value = target;
+  repeatDropdownOpen.value = false;
+  datePickerOpen.value = false;
+  (
+    editor as ItabAnniversaryWidgetData & { showCommonEvents?: boolean }
+  ).showCommonEvents = false;
+};
+
+const setColorPickerHsv = (
+  hue: number,
+  saturation: number,
+  value: number,
+) => {
+  colorPickerHue.value = Math.min(Math.max(hue, 0), 360);
+  colorPickerSaturation.value = clampPercent(saturation);
+  colorPickerValue.value = clampPercent(value);
+  syncColorPickerHex();
+};
+
+const setColorPickerPreset = (color: string) => {
+  setColorPickerFromHex(color);
+};
+
+const handleColorPickerHexInput = (value: string) => {
+  colorPickerHex.value = value;
+  const normalized = normalizeHexColor(value);
+  if (normalized) {
+    setColorPickerFromHex(normalized);
+  }
+};
+
+const commitColorPickerHex = () => {
+  setColorPickerFromHex(colorPickerHex.value);
+};
+
+const clearColorPickerDraft = () => {
+  setColorPickerFromHex("#ffffff");
+};
+
+const applyColorPickerDraft = () => {
+  const color = colorPickerDraftColor.value;
+  if (colorPickerTarget.value === "text") {
+    setTextColor(color);
+  } else if (colorPickerTarget.value === "background") {
+    setBackgroundColor(color);
+  }
+  colorPickerTarget.value = null;
+};
+
+const updateColorPickerSvFromPointer = (
+  element: HTMLElement,
+  event: PointerEvent,
+) => {
+  const rect = element.getBoundingClientRect();
+  const saturation = ((event.clientX - rect.left) / rect.width) * 100;
+  const value = 100 - ((event.clientY - rect.top) / rect.height) * 100;
+  setColorPickerHsv(colorPickerHue.value, saturation, value);
+};
+
+const startColorPickerSvDrag = (event: PointerEvent) => {
+  const element = event.currentTarget as HTMLElement;
+  updateColorPickerSvFromPointer(element, event);
+  const handlePointerMove = (moveEvent: PointerEvent) =>
+    updateColorPickerSvFromPointer(element, moveEvent);
+  const handlePointerUp = () => {
+    window.removeEventListener("pointermove", handlePointerMove);
+    window.removeEventListener("pointerup", handlePointerUp);
+  };
+  window.addEventListener("pointermove", handlePointerMove);
+  window.addEventListener("pointerup", handlePointerUp);
+  event.preventDefault();
+};
+
+const updateColorPickerHueFromPointer = (
+  element: HTMLElement,
+  event: PointerEvent,
+) => {
+  const rect = element.getBoundingClientRect();
+  const hue = ((event.clientY - rect.top) / rect.height) * 360;
+  setColorPickerHsv(hue, colorPickerSaturation.value, colorPickerValue.value);
+};
+
+const startColorPickerHueDrag = (event: PointerEvent) => {
+  const element = event.currentTarget as HTMLElement;
+  updateColorPickerHueFromPointer(element, event);
+  const handlePointerMove = (moveEvent: PointerEvent) =>
+    updateColorPickerHueFromPointer(element, moveEvent);
+  const handlePointerUp = () => {
+    window.removeEventListener("pointermove", handlePointerMove);
+    window.removeEventListener("pointerup", handlePointerUp);
+  };
+  window.addEventListener("pointermove", handlePointerMove);
+  window.addEventListener("pointerup", handlePointerUp);
+  event.preventDefault();
+};
+
 const setTextColor = (color: string) => {
   editor.textColor = color;
+  colorPickerTarget.value = null;
 };
 
 const setBackgroundColor = (color: string) => {
   editor.backgroundColor = color;
   editor.backgroundMode = "color";
+  colorPickerTarget.value = null;
 };
 
 const setBackgroundMode = (mode: ItabAnniversaryBackgroundMode) => {
   editor.backgroundMode = mode;
+  colorPickerTarget.value = null;
   if (mode === "image" && !editor.backgroundImage) {
     editor.backgroundImage = anniversaryBackgroundImages[11]?.full || "";
   }
@@ -626,10 +870,15 @@ onBeforeUnmount(() => {
             class="anniversary-gradient-swatch"
             role="button"
             tabindex="0"
+            :class="{
+              active:
+                colorPickerTarget === 'text' ||
+                !isPresetColor(anniversaryTextColors, editor.textColor),
+            }"
             aria-label="更多字体颜色"
-            @click="setTextColor('#ffffff')"
-            @keydown.enter.prevent="setTextColor('#ffffff')"
-            @keydown.space.prevent="setTextColor('#ffffff')"
+            @click="openColorPicker('text')"
+            @keydown.enter.prevent="openColorPicker('text')"
+            @keydown.space.prevent="openColorPicker('text')"
           ></span>
         </div>
       </div>
@@ -678,10 +927,19 @@ onBeforeUnmount(() => {
             class="anniversary-gradient-swatch"
             role="button"
             tabindex="0"
+            :class="{
+              active:
+                colorPickerTarget === 'background' ||
+                (editor.backgroundMode === 'color' &&
+                  !isPresetColor(
+                    anniversaryBackgroundColors,
+                    editor.backgroundColor,
+                  )),
+            }"
             aria-label="更多背景颜色"
-            @click="setBackgroundColor('#ffffff')"
-            @keydown.enter.prevent="setBackgroundColor('#ffffff')"
-            @keydown.space.prevent="setBackgroundColor('#ffffff')"
+            @click="openColorPicker('background')"
+            @keydown.enter.prevent="openColorPicker('background')"
+            @keydown.space.prevent="openColorPicker('background')"
           ></span>
         </div>
       </div>
@@ -721,6 +979,61 @@ onBeforeUnmount(() => {
         </div>
       </div>
     </section>
+
+    <div
+      v-if="colorPickerTarget"
+      class="anniversary-color-picker-popover"
+      data-itab-anniversary-color-picker
+      @pointerdown.stop
+    >
+      <div class="anniversary-color-picker-main">
+        <button
+          type="button"
+          class="anniversary-color-picker-palette"
+          :style="colorPickerPaletteStyle"
+          aria-label="颜色明度和饱和度"
+          @pointerdown="startColorPickerSvDrag"
+        >
+          <span
+            class="anniversary-color-picker-point"
+            :style="colorPickerPointerStyle"
+          ></span>
+        </button>
+        <button
+          type="button"
+          class="anniversary-color-picker-hue"
+          aria-label="颜色色相"
+          @pointerdown="startColorPickerHueDrag"
+        >
+          <span :style="colorPickerHuePointerStyle"></span>
+        </button>
+      </div>
+      <div class="anniversary-color-picker-presets">
+        <button
+          v-for="color in colorPickerPresets"
+          :key="`anniversary-picker-${color}`"
+          type="button"
+          :class="{ active: colorPickerDraftColor === color }"
+          :style="{ '--picker-preset-color': color }"
+          :aria-label="`预设颜色 ${color}`"
+          @click="setColorPickerPreset(color)"
+        ></button>
+      </div>
+      <div class="anniversary-color-picker-footer">
+        <input
+          :value="colorPickerHex"
+          aria-label="颜色值"
+          spellcheck="false"
+          @input="
+            handleColorPickerHexInput(($event.target as HTMLInputElement).value)
+          "
+          @change="commitColorPickerHex"
+          @keydown.enter.prevent="applyColorPickerDraft"
+        />
+        <button type="button" @click="clearColorPickerDraft">清空</button>
+        <button type="button" @click="applyColorPickerDraft">确定</button>
+      </div>
+    </div>
 
     <section class="anniversary-action-row">
       <button type="button" @click="commit">修改完成</button>
@@ -965,14 +1278,19 @@ onBeforeUnmount(() => {
   width: 30px;
   height: 30px;
   place-items: center;
-  border: 0;
+  border: 1px solid
+    var(--sd-theme-itab-anniversary-anniversary-opened-panel-border-04);
   border-radius: 50%;
   background: var(
-    --sd-theme-itab-anniversary-anniversary-opened-panel-surface-05
+    --sd-theme-itab-anniversary-anniversary-opened-panel-surface-17
   );
-  color: var(--sd-theme-itab-anniversary-anniversary-opened-panel-text-06);
+  box-shadow: 0 6px 18px
+    var(--sd-theme-itab-anniversary-anniversary-opened-panel-shadow-06);
+  color: var(--sd-theme-itab-anniversary-anniversary-opened-panel-text-01);
   font-size: 30px;
   line-height: 26px;
+  text-shadow: 0 1px 2px
+    var(--sd-theme-itab-anniversary-anniversary-opened-panel-shadow-05);
 }
 
 .anniversary-preview-arrow.previous {
@@ -1024,14 +1342,19 @@ onBeforeUnmount(() => {
   width: 30px;
   height: 30px;
   padding: 0;
-  border: 0;
+  border: 1px solid
+    var(--sd-theme-itab-anniversary-anniversary-opened-panel-border-04);
   border-radius: 50%;
   background: var(
-    --sd-theme-itab-anniversary-anniversary-opened-panel-surface-08
+    --sd-theme-itab-anniversary-anniversary-opened-panel-surface-17
   );
-  color: var(--sd-theme-itab-anniversary-anniversary-opened-panel-text-05);
+  box-shadow: 0 6px 18px
+    var(--sd-theme-itab-anniversary-anniversary-opened-panel-shadow-06);
+  color: var(--sd-theme-itab-anniversary-anniversary-opened-panel-text-01);
   font-size: 30px;
   line-height: 26px;
+  text-shadow: 0 1px 2px
+    var(--sd-theme-itab-anniversary-anniversary-opened-panel-shadow-05);
   transition: left 0.18s ease;
 }
 
@@ -1418,6 +1741,153 @@ onBeforeUnmount(() => {
     var(--sd-theme-itab-anniversary-anniversary-opened-panel-accent-surface-05),
     var(--sd-theme-itab-anniversary-anniversary-opened-panel-accent-surface-01)
   ) !important;
+}
+
+.anniversary-color-picker-popover {
+  position: absolute;
+  right: 24px;
+  bottom: 52px;
+  z-index: 20;
+  width: 344px;
+  padding: 12px;
+  border: 1px solid
+    var(--sd-theme-itab-anniversary-anniversary-opened-panel-border-04);
+  border-radius: 4px;
+  background: var(
+    --sd-theme-itab-anniversary-anniversary-opened-panel-surface-09
+  );
+  box-shadow:
+    0 0 1px var(--sd-theme-itab-anniversary-anniversary-opened-panel-shadow-04),
+    0 12px 30px
+      var(--sd-theme-itab-anniversary-anniversary-opened-panel-shadow-05);
+}
+
+.anniversary-color-picker-main {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 12px;
+  gap: 8px;
+}
+
+.anniversary-color-picker-palette,
+.anniversary-color-picker-hue,
+.anniversary-color-picker-presets button,
+.anniversary-color-picker-footer button {
+  padding: 0;
+  border: 0;
+  cursor: pointer;
+}
+
+.anniversary-color-picker-palette {
+  position: relative;
+  height: 190px;
+  overflow: hidden;
+  background:
+    linear-gradient(to top, #000, transparent),
+    linear-gradient(to right, #fff, var(--picker-hue-color));
+}
+
+.anniversary-color-picker-point {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.45),
+    0 1px 4px rgba(0, 0, 0, 0.35);
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+}
+
+.anniversary-color-picker-hue {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(
+    to bottom,
+    #f00,
+    #ff0,
+    #0f0,
+    #0ff,
+    #00f,
+    #f0f,
+    #f00
+  );
+}
+
+.anniversary-color-picker-hue span {
+  position: absolute;
+  left: -2px;
+  width: 16px;
+  height: 4px;
+  border: 1px solid #fff;
+  border-radius: 4px;
+  background: transparent;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+  pointer-events: none;
+  transform: translateY(-50%);
+}
+
+.anniversary-color-picker-presets {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.anniversary-color-picker-presets button {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--picker-preset-color);
+  box-shadow: 0 0 0 1px
+    var(--sd-theme-itab-anniversary-anniversary-opened-panel-shadow-06);
+}
+
+.anniversary-color-picker-presets button.active {
+  box-shadow:
+    0 0 0 2px
+      var(--sd-theme-itab-anniversary-anniversary-opened-panel-surface-09),
+    0 0 0 4px
+      var(--sd-theme-itab-anniversary-anniversary-opened-panel-accent-surface-06);
+}
+
+.anniversary-color-picker-footer {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 64px 48px;
+  align-items: center;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.anniversary-color-picker-footer input {
+  width: 100%;
+  height: 26px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 13px;
+  outline: none;
+  background: var(
+    --sd-theme-itab-anniversary-anniversary-opened-panel-surface-01
+  );
+  color: var(--sd-theme-itab-anniversary-anniversary-opened-panel-text-09);
+  font-size: 13px;
+}
+
+.anniversary-color-picker-footer button {
+  height: 26px;
+  border-radius: 13px;
+  background: transparent;
+  color: var(--sd-theme-itab-anniversary-anniversary-opened-panel-text-08);
+  font-size: 13px;
+}
+
+.anniversary-color-picker-footer button:last-child {
+  border: 1px solid
+    var(--sd-theme-itab-anniversary-anniversary-opened-panel-border-01);
+  background: var(
+    --sd-theme-itab-anniversary-anniversary-opened-panel-surface-01
+  );
+  color: var(--sd-theme-itab-anniversary-anniversary-opened-panel-text-01);
+  font-weight: 600;
 }
 
 .anniversary-background-row {

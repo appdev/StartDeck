@@ -475,6 +475,7 @@ async fn route_surface_smoke_covers_auth_and_runtime_semantics() {
     .await;
     assert_eq!(status, StatusCode::OK);
     assert!(body["url"].as_str().unwrap().starts_with("/icon-cache/"));
+    assert_eq!(body["path"], body["url"]);
 
     for uri in [
         "/api/ip",

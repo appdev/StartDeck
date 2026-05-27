@@ -10,7 +10,6 @@ import type {
 import type { WidgetConfig } from "@/types";
 import { ITAB_FOOD_PICKER_CATALOG_ID } from "@/features/itab-food-picker/itabFoodPickerTypes";
 import { ITAB_NUMBER_UPPERCASE_CATALOG_ID } from "@/features/itab-number-uppercase/itabNumberUppercaseTypes";
-import type { StartDeckSiteShortcutCatalogItem } from "@/utils/siteShortcutCatalog";
 
 const mountModal = (
   onAddComponent = vi.fn<
@@ -20,11 +19,7 @@ const mountModal = (
     id: payload.kind === "widget" ? payload.catalogItemId : "created",
     groupId: payload.destinationGroupId,
   })),
-  siteFixtureState?: {
-    loading?: boolean;
-    error?: string;
-    items?: StartDeckSiteShortcutCatalogItem[];
-  },
+  _siteFixtureState?: unknown,
   widgets: WidgetConfig[] = [],
 ) =>
   mount(AddWidgetModal, {
@@ -34,7 +29,6 @@ const mountModal = (
       groups: [{ id: "home", title: "主页", items: [] }],
       activeGroupId: "home",
       onAddComponent,
-      siteFixtureState,
     },
     global: {
       plugins: [
@@ -60,12 +54,16 @@ const mountModal = (
   });
 
 describe("AddWidgetModal iTab add UI", () => {
-  it("renders stable iTab selectors and switches tabs", async () => {
+  it("renders stable iTab selectors with only the widget add flow", async () => {
     const wrapper = mountModal();
 
     expect(wrapper.find('[data-testid="itab-add-modal"]').exists()).toBe(true);
+    expect(wrapper.find(".itab-add-sidebar").exists()).toBe(false);
     expect(wrapper.find('[data-testid="itab-add-tab-widget"]').exists()).toBe(
-      true,
+      false,
+    );
+    expect(wrapper.find('[data-testid="itab-add-tab-custom"]').exists()).toBe(
+      false,
     );
     expect(wrapper.find('[data-testid="itab-add-search"]').exists()).toBe(true);
     expect(wrapper.find('[data-testid="itab-add-destination"]').exists()).toBe(
@@ -80,7 +78,11 @@ describe("AddWidgetModal iTab add UI", () => {
     expect(wrapper.find('[data-testid="itab-add-tab-site"]').exists()).toBe(
       false,
     );
+    expect(wrapper.find('[data-testid="itab-add-custom-url"]').exists()).toBe(
+      false,
+    );
     expect(wrapper.text()).not.toContain("网址导航");
+    expect(wrapper.text()).not.toContain("自定义图标");
     expect(wrapper.text()).not.toContain("PDF转换大师");
     expect(wrapper.text()).not.toContain("渐变色");
     expect(wrapper.text()).not.toContain("🔥");
@@ -135,29 +137,6 @@ describe("AddWidgetModal iTab add UI", () => {
     expect(allTabCard.find(".itab-add-replica-heading").exists()).toBe(true);
     expect(allTabCard.find(".itab-add-replica-preview").exists()).toBe(true);
     expect(wrapper.find(".itab-add-size-button").exists()).toBe(false);
-
-    await wrapper.find('[data-testid="itab-add-tab-custom"]').trigger("click");
-    expect(wrapper.find('[data-testid="itab-add-custom-url"]').exists()).toBe(
-      true,
-    );
-    expect(wrapper.find('[data-testid="itab-add-search"]').exists()).toBe(
-      false,
-    );
-    expect(wrapper.find('[data-testid="itab-add-custom-save"]').exists()).toBe(
-      true,
-    );
-    expect(
-      wrapper.find('[data-testid="itab-add-custom-icon-color"]').exists(),
-    ).toBe(true);
-    expect(
-      wrapper.find('[data-testid="itab-add-custom-icon-text"]').exists(),
-    ).toBe(true);
-    expect(
-      wrapper.find('[data-testid="itab-add-custom-text-icon"]').exists(),
-    ).toBe(true);
-    expect(
-      wrapper.find('[data-testid="itab-add-custom-upload"]').exists(),
-    ).toBe(true);
   });
 
   it("emits default widget size through the shared payload contract", async () => {
@@ -535,44 +514,5 @@ describe("AddWidgetModal iTab add UI", () => {
     expect(
       disabled.find('[data-testid="itab-add-card-add"]').attributes("disabled"),
     ).toBeUndefined();
-  });
-
-  it("maps custom saves into custom-icon payloads", async () => {
-    const addSpy = vi.fn(async (payload: AddComponentPayload) => ({
-      status: "success" as const,
-      id: payload.kind === "widget" ? payload.catalogItemId : "created",
-      groupId: payload.destinationGroupId,
-    }));
-    const wrapper = mountModal(addSpy);
-
-    await wrapper.find('[data-testid="itab-add-tab-custom"]').trigger("click");
-    await wrapper
-      .find('[data-testid="itab-add-custom-url"]')
-      .setValue("example.com");
-    await wrapper
-      .find('[data-testid="itab-add-custom-title"]')
-      .setValue("Example");
-    await wrapper
-      .find('[data-testid="itab-add-custom-icon-text"]')
-      .setValue("EX");
-    await wrapper
-      .find('[data-testid="itab-add-custom-text-icon"]')
-      .setValue(true);
-    await wrapper
-      .find('[data-testid="itab-add-custom-save-continue"]')
-      .trigger("click");
-
-    expect(addSpy).toHaveBeenLastCalledWith(
-      expect.objectContaining({
-        kind: "custom-icon",
-        saveMode: "save-and-continue",
-        destinationGroupId: "home",
-      }),
-    );
-    const payload = addSpy.mock.calls.at(-1)?.[0];
-    expect(payload?.kind).toBe("custom-icon");
-    if (payload?.kind === "custom-icon") {
-      expect(payload.navItem.icon).toContain("data:image/svg+xml");
-    }
   });
 });

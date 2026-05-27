@@ -2,30 +2,12 @@
 import { computed, ref, watch } from "vue";
 import AppModalShell from "@/components/base/AppModalShell.vue";
 import AppWindowControls from "@/components/base/AppWindowControls.vue";
-import {
-  useSmartIconMatch,
-  type SmartIconMatchResult,
-} from "@/composables/useSmartIconMatch";
 import { useMainStore } from "@/stores/main";
 import type { NavGroup, WidgetConfig } from "@/types";
 import type {
   AddComponentPayload,
   AddComponentResult,
-  AddSaveMode,
 } from "@/utils/addComponentTypes";
-import {
-  createNavItemFromCustomIcon,
-  createNavItemFromSiteShortcut,
-  type CustomIconDraft,
-} from "@/utils/navItemAdapter";
-import {
-  SITE_SHORTCUT_CATEGORIES,
-  filterAndSortSiteShortcuts,
-  getSiteShortcutIcon,
-  type StartDeckSiteShortcutCatalogItem,
-  type SiteShortcutCategory,
-  type SiteShortcutSortMode,
-} from "@/utils/siteShortcutCatalog";
 import {
   WIDGET_CATALOG,
   getWidgetCatalogAction,
@@ -35,7 +17,6 @@ import {
   type WidgetCatalogSizeKey,
 } from "@/utils/widgetCatalog";
 
-type AddTab = "widget" | "site" | "custom";
 type ReplicaWidgetCard = {
   id: string;
   catalogItemId: string;
@@ -90,11 +71,6 @@ const props = defineProps<{
   widgets: WidgetConfig[];
   groups?: NavGroup[];
   activeGroupId?: string;
-  siteFixtureState?: {
-    loading?: boolean;
-    error?: string;
-    items?: StartDeckSiteShortcutCatalogItem[];
-  };
   onAddComponent?: (
     payload: AddComponentPayload,
   ) => AddComponentResult | Promise<AddComponentResult>;
@@ -107,32 +83,13 @@ const emit = defineEmits<{
 
 const store = useMainStore();
 
-const activeTab = ref<AddTab>("widget");
 const searchText = ref("");
 const destinationGroupId = ref("");
 const activeWidgetCategory = ref<WidgetUiCategory>("explore");
-const activeSiteCategory = ref<SiteShortcutCategory | "all">("all");
-const activeSortMode = ref<SiteShortcutSortMode>("featured");
 const activeRecommendationBatch = ref(0);
 const busyKey = ref("");
 const resultMessage = ref("");
-const customUploadInputRef = ref<HTMLInputElement | null>(null);
 const previewSizeKey: WidgetCatalogSizeKey = "2x2";
-
-const customForm = ref<CustomIconDraft>({
-  title: "",
-  url: "",
-  icon: "",
-  iconText: "A",
-  useTextIcon: false,
-  description1: "",
-  iconBackgroundMode: "auto",
-  iconAutoBackgroundColor: "",
-  iconCustomBackgroundColor: "#1890ff",
-  color: "bg-gray-100 text-gray-700",
-  titleColor: "",
-  iconSize: 100,
-});
 
 const groups = computed(() => props.groups || store.groups);
 
@@ -168,35 +125,16 @@ watch(
   () => props.show,
   (show) => {
     if (!show) return;
-    activeTab.value = "widget";
     searchText.value = "";
     activeWidgetCategory.value = "explore";
-    activeSiteCategory.value = "browser";
-    activeSortMode.value = "featured";
     activeRecommendationBatch.value = 0;
     resultMessage.value = "";
-    resetCustomForm();
     ensureDestination();
   },
   { immediate: true },
 );
 
 watch(destinationOptions, ensureDestination);
-
-const tabs: { id: AddTab; label: string; testId: string; icon: string }[] = [
-  {
-    id: "widget",
-    label: "小组件",
-    testId: "itab-add-tab-widget",
-    icon: "widget",
-  },
-  {
-    id: "custom",
-    label: "自定义图标",
-    testId: "itab-add-tab-custom",
-    icon: "custom",
-  },
-];
 
 const WIDGET_UI_CATEGORIES: {
   label: string;
@@ -396,120 +334,6 @@ const ITAB_WIDGET_RECOMMENDATION_BATCHES: ReplicaWidgetCard[][] = [
   ],
 ];
 
-const ITAB_SITE_REPLICA_CATALOG: StartDeckSiteShortcutCatalogItem[] = [
-  {
-    id: "itab-add-icon",
-    title: "添加图标",
-    description: "添加到桌面后，可以通过此图标快速打开添加图标功能",
-    url: "https://go.itab.link/",
-    category: "browser",
-    glyph: "加",
-    featuredRank: 1,
-    updatedAt: "2026-05-22",
-    popularity: 99,
-  },
-  {
-    id: "itab-bookmarks",
-    title: "书签",
-    description: "快速打开浏览器书签管理",
-    url: "https://go.itab.link/bookmarks",
-    category: "browser",
-    glyph: "签",
-    featuredRank: 2,
-    updatedAt: "2026-05-22",
-    popularity: 98,
-  },
-  {
-    id: "itab-widget-store",
-    title: "组件商城",
-    description: "添加到桌面后，快速打开iTab组件商店",
-    url: "https://go.itab.link/store",
-    category: "browser",
-    glyph: "组",
-    featuredRank: 3,
-    updatedAt: "2026-05-22",
-    popularity: 97,
-  },
-  {
-    id: "itab-history",
-    title: "历史记录",
-    description: "快速打开浏览器历史记录",
-    url: "https://go.itab.link/history",
-    category: "browser",
-    glyph: "历",
-    featuredRank: 4,
-    updatedAt: "2026-05-22",
-    popularity: 96,
-  },
-  {
-    id: "itab-downloads",
-    title: "下载管理",
-    description: "快速打开浏览器的下载管理",
-    url: "https://go.itab.link/downloads",
-    category: "browser",
-    glyph: "下",
-    featuredRank: 5,
-    updatedAt: "2026-05-22",
-    popularity: 95,
-  },
-  {
-    id: "itab-settings",
-    title: "设置",
-    description: "iTab设置，iTab设置的快捷访问图标",
-    url: "https://go.itab.link/settings",
-    category: "browser",
-    glyph: "设",
-    featuredRank: 6,
-    updatedAt: "2026-05-22",
-    popularity: 94,
-  },
-  {
-    id: "itab-extensions",
-    title: "扩展管理",
-    description: "浏览器扩展中心",
-    url: "https://chromewebstore.google.com/",
-    category: "browser",
-    glyph: "扩",
-    featuredRank: 7,
-    updatedAt: "2026-05-22",
-    popularity: 93,
-  },
-  {
-    id: "douyin",
-    title: "抖音",
-    description: "抖音",
-    url: "https://www.douyin.com",
-    category: "popular",
-    glyph: "抖",
-    featuredRank: 8,
-    updatedAt: "2026-05-22",
-    popularity: 92,
-  },
-  {
-    id: "bilibili-source",
-    title: "哔哩哔哩",
-    description:
-      "bilibili是国内知名的视频弹幕网站，这里有及时的动漫新番，活跃的ACG氛围，有创意的Up主。",
-    url: "https://www.bilibili.com",
-    category: "popular",
-    glyph: "哔",
-    featuredRank: 9,
-    updatedAt: "2026-05-22",
-    popularity: 91,
-  },
-  {
-    id: "tencent-video",
-    title: "腾讯视频",
-    description: "腾讯视频致力于打造中国领先的在线视频媒体平台",
-    url: "https://v.qq.com",
-    category: "media",
-    glyph: "腾",
-    featuredRank: 10,
-    updatedAt: "2026-05-22",
-    popularity: 90,
-  },
-];
-
 const query = computed(() => searchText.value.trim().toLowerCase());
 
 const catalogById = computed(
@@ -575,20 +399,6 @@ const filteredCatalog = computed(() =>
   }),
 );
 
-const siteCatalogItems = computed(
-  () => props.siteFixtureState?.items ?? ITAB_SITE_REPLICA_CATALOG,
-);
-const siteLoading = computed(() => !!props.siteFixtureState?.loading);
-const siteError = computed(() => props.siteFixtureState?.error || "");
-
-const filteredSites = computed(() =>
-  filterAndSortSiteShortcuts(siteCatalogItems.value, {
-    category: activeSiteCategory.value,
-    query: searchText.value,
-    sortMode: activeSortMode.value,
-  }),
-);
-
 const defaultSizeFor = (item: WidgetCatalogItem) => {
   const runtimeDefaultKey =
     "defaultSizeKey" in item.sizeFamily
@@ -627,21 +437,6 @@ const actionDisabled = (item: WidgetCatalogItem) =>
   getWidgetCatalogAction(props.widgets, item) === "enabled";
 
 const close = () => emit("update:show", false);
-
-const tabIndex = computed(() =>
-  tabs.findIndex((tab) => tab.id === activeTab.value),
-);
-
-const focusTabByOffset = (offset: number) => {
-  const next = (tabIndex.value + offset + tabs.length) % tabs.length;
-  activeTab.value = tabs[next]!.id;
-};
-
-const onTabKeydown = (event: KeyboardEvent) => {
-  if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
-  event.preventDefault();
-  focusTabByOffset(event.key === "ArrowRight" ? 1 : -1);
-};
 
 const invokeAdd = async (
   payload: AddComponentPayload,
@@ -690,124 +485,12 @@ const addReplicaWidget = async (card: ReplicaWidgetCard) => {
   }
   await addWidget(item);
 };
-
-const addSite = async (itemId: string) => {
-  const item = siteCatalogItems.value.find(
-    (candidate) => candidate.id === itemId,
-  );
-  if (!item || !destinationGroupId.value) return;
-  const mapped = createNavItemFromSiteShortcut(item);
-  if (mapped.ok === false) {
-    resultMessage.value = mapped.message;
-    return;
-  }
-
-  const payload: AddComponentPayload = {
-    kind: "site-shortcut",
-    catalogItemId: item.id,
-    destinationGroupId: destinationGroupId.value,
-    saveMode: "save",
-    navItem: mapped.navItem,
-  };
-  await invokeAdd(payload, `site:${item.id}`);
-};
-
-function resetCustomForm() {
-  customForm.value = {
-    title: "",
-    url: "",
-    icon: "",
-    iconText: "A",
-    useTextIcon: false,
-    description1: "",
-    iconBackgroundMode: "auto",
-    iconAutoBackgroundColor: "",
-    iconCustomBackgroundColor: "#1890ff",
-    color: "bg-gray-100 text-gray-700",
-    titleColor: "",
-    iconSize: 100,
-  };
-}
-
-const triggerCustomUpload = () => {
-  customUploadInputRef.value?.click();
-};
-
-const onCustomUploadChange = (event: Event) => {
-  const file = (event.target as HTMLInputElement).files?.[0];
-  if (!file) return;
-  if (file.size > 5 * 1024 * 1024) {
-    resultMessage.value = "请上传小于 5MB 的图片。";
-    return;
-  }
-  const reader = new FileReader();
-  reader.onload = () => {
-    if (typeof reader.result === "string") {
-      customForm.value.icon = reader.result;
-      customForm.value.useTextIcon = false;
-    }
-  };
-  reader.onerror = () => {
-    resultMessage.value = "图片读取失败，请重试。";
-  };
-  reader.readAsDataURL(file);
-  if (customUploadInputRef.value) customUploadInputRef.value.value = "";
-};
-
-const onIconSelect = (result: SmartIconMatchResult) => {
-  customForm.value.icon = result.icon;
-  customForm.value.iconAutoBackgroundColor = result.backgroundColor || "";
-  if (!customForm.value.title && result.label)
-    customForm.value.title = result.label;
-  if (customForm.value.iconBackgroundMode !== "custom") {
-    customForm.value.iconBackgroundMode = "auto";
-  }
-};
-
-const {
-  smartMatchCandidates,
-  selectedSmartMatchCandidateUrl,
-  isSmartMatching,
-  smartMatchIcons,
-  selectSmartMatchCandidate,
-} = useSmartIconMatch({
-  form: customForm,
-  onSelect: onIconSelect,
-  notify: (message) => {
-    resultMessage.value = message;
-  },
-});
-
-const submitCustom = async (
-  mode: Extract<AddSaveMode, "save" | "save-and-continue">,
-) => {
-  if (!destinationGroupId.value) return;
-  const mapped = createNavItemFromCustomIcon(customForm.value);
-  if (mapped.ok === false) {
-    resultMessage.value = mapped.message;
-    return;
-  }
-  const payload: AddComponentPayload = {
-    kind: "custom-icon",
-    destinationGroupId: destinationGroupId.value,
-    saveMode: mode,
-    navItem: mapped.navItem,
-  };
-  const result = await invokeAdd(payload, `custom:${mode}`);
-  if (result.status === "success") {
-    if (mode === "save") {
-      close();
-    } else {
-      resetCustomForm();
-    }
-  }
-};
 </script>
 
 <template>
   <AppModalShell
     :show="show"
-    :z-index="70"
+    :z-index="130"
     close-on-overlay
     close-on-escape
     initial-focus="[data-testid='itab-add-search']"
@@ -827,57 +510,9 @@ const submitCustom = async (
         close-label="关闭添加组件"
         @close="close"
       />
-      <aside class="itab-add-sidebar" role="tablist" aria-label="添加类型">
-        <button
-          v-for="tab in tabs"
-          :key="tab.id"
-          type="button"
-          class="itab-add-left-tab"
-          :class="{ 'is-active': activeTab === tab.id }"
-          role="tab"
-          :aria-selected="activeTab === tab.id"
-          :tabindex="activeTab === tab.id ? 0 : -1"
-          :data-testid="tab.testId"
-          @click="activeTab = tab.id"
-          @keydown="onTabKeydown"
-        >
-          <span class="itab-add-left-icon" aria-hidden="true">
-            <svg v-if="tab.icon === 'widget'" viewBox="0 0 20 20" fill="none">
-              <circle cx="6" cy="6" r="2.1" stroke="currentColor" />
-              <circle cx="14" cy="6" r="2.1" stroke="currentColor" />
-              <circle cx="6" cy="14" r="2.1" stroke="currentColor" />
-              <circle cx="14" cy="14" r="2.1" stroke="currentColor" />
-            </svg>
-            <svg
-              v-else-if="tab.icon === 'site'"
-              viewBox="0 0 20 20"
-              fill="none"
-            >
-              <circle cx="10" cy="10" r="7" stroke="currentColor" />
-              <path
-                d="M3.5 10h13M10 3.2c2 2 2 11.6 0 13.6M10 3.2c-2 2-2 11.6 0 13.6"
-                stroke="currentColor"
-              />
-            </svg>
-            <svg v-else viewBox="0 0 20 20" fill="none">
-              <path
-                d="m5.3 14.7 7.9-7.9M12.5 3.8l3.7 3.7-2.2 2.2-3.7-3.7 2.2-2.2ZM4.2 13.8l2 2-1.9.9-.9-.9.8-2Z"
-                stroke="currentColor"
-                stroke-linejoin="round"
-              />
-              <path
-                d="M5.3 4.6 7 6.3M3.7 6.2 5.4 8"
-                stroke="currentColor"
-                stroke-linecap="round"
-              />
-            </svg>
-          </span>
-          <span>{{ tab.label }}</span>
-        </button>
-      </aside>
 
       <section class="itab-add-main">
-        <div v-if="activeTab !== 'custom'" class="itab-add-toolbar">
+        <div class="itab-add-toolbar">
           <label class="itab-add-search-wrap">
             <span class="sr-only">搜索</span>
             <input
@@ -917,7 +552,7 @@ const submitCustom = async (
           {{ resultMessage }}
         </div>
 
-        <div v-if="activeTab === 'widget'" class="itab-add-pane">
+        <div class="itab-add-pane">
           <div class="itab-add-chip-row" aria-label="组件分类">
             <button
               v-for="category in categoryOptions"
@@ -1120,224 +755,6 @@ const submitCustom = async (
             未找到小组件
           </div>
         </div>
-
-        <div v-else-if="activeTab === 'site'" class="itab-add-pane">
-          <div class="itab-add-chip-row" aria-label="网址分类">
-            <button
-              v-for="category in SITE_SHORTCUT_CATEGORIES"
-              :key="category.id"
-              type="button"
-              data-testid="itab-add-category-chip"
-              class="itab-add-chip"
-              :class="{ 'is-active': activeSiteCategory === category.id }"
-              :aria-pressed="activeSiteCategory === category.id"
-              @click="activeSiteCategory = category.id"
-            >
-              {{ category.label }}
-            </button>
-          </div>
-
-          <div
-            v-if="siteLoading"
-            data-testid="itab-add-site-loading"
-            class="itab-add-state"
-            role="status"
-          >
-            正在加载网址导航...
-          </div>
-          <div
-            v-else-if="siteError"
-            data-testid="itab-add-site-error"
-            class="itab-add-state is-error"
-            role="alert"
-          >
-            {{ siteError }}
-          </div>
-          <div v-else-if="filteredSites.length > 0" class="itab-add-site-grid">
-            <article
-              v-for="item in filteredSites"
-              :key="item.id"
-              data-testid="itab-add-site-card"
-              class="itab-add-site-card"
-            >
-              <div class="itab-add-site-icon" aria-hidden="true">
-                <img :src="getSiteShortcutIcon(item)" alt="" />
-              </div>
-              <div class="itab-add-site-copy">
-                <h3>{{ item.title }}</h3>
-                <p>{{ item.description }}</p>
-                <span>{{ item.url.replace(/^https?:\/\//, "") }}</span>
-              </div>
-              <button
-                type="button"
-                data-testid="itab-add-card-add"
-                class="itab-add-site-add"
-                :disabled="busyKey === `site:${item.id}`"
-                :aria-label="`添加 ${item.title}`"
-                @click="addSite(item.id)"
-              >
-                添加
-              </button>
-            </article>
-          </div>
-
-          <div v-else data-testid="itab-add-site-empty" class="itab-add-empty">
-            未找到网址
-          </div>
-        </div>
-
-        <form
-          v-else
-          class="itab-add-custom-form"
-          @submit.prevent="submitCustom('save')"
-        >
-          <div class="itab-add-custom-preview">
-            <div class="itab-add-custom-icon">
-              <img
-                v-if="customForm.icon && !customForm.useTextIcon"
-                :src="customForm.icon"
-                alt=""
-              />
-              <span v-else>{{
-                customForm.iconText || customForm.title.slice(0, 1) || "+"
-              }}</span>
-            </div>
-            <div>
-              <h3>{{ customForm.title || "自定义图标" }}</h3>
-              <p>{{ customForm.url || "输入网址后可自动获取图标" }}</p>
-            </div>
-          </div>
-
-          <label class="itab-add-field">
-            <span>地址</span>
-            <input
-              v-model="customForm.url"
-              data-testid="itab-add-custom-url"
-              type="url"
-              placeholder="https://"
-              autocomplete="url"
-            />
-          </label>
-          <button
-            type="button"
-            data-testid="itab-add-custom-fetch-icon"
-            class="itab-add-secondary-button"
-            :disabled="isSmartMatching"
-            @click="smartMatchIcons"
-          >
-            {{ isSmartMatching ? "获取中" : "获取图标" }}
-          </button>
-
-          <div
-            v-if="smartMatchCandidates.length > 0"
-            class="itab-add-icon-candidates"
-          >
-            <button
-              v-for="candidate in smartMatchCandidates"
-              :key="candidate.url"
-              type="button"
-              class="itab-add-icon-candidate"
-              :class="{
-                'is-active': selectedSmartMatchCandidateUrl === candidate.url,
-              }"
-              :aria-label="`选择 ${candidate.label || '候选图标'}`"
-              @click="selectSmartMatchCandidate(candidate)"
-            >
-              <img :src="candidate.url" alt="" />
-            </button>
-          </div>
-
-          <label class="itab-add-field">
-            <span>名称</span>
-            <input
-              v-model="customForm.title"
-              data-testid="itab-add-custom-title"
-              type="text"
-              placeholder="网站名称"
-              autocomplete="off"
-            />
-          </label>
-
-          <label class="itab-add-field">
-            <span>说明</span>
-            <input
-              v-model="customForm.description1"
-              type="text"
-              placeholder="可选说明"
-              autocomplete="off"
-            />
-          </label>
-
-          <div class="itab-add-custom-options">
-            <label class="itab-add-field">
-              <span>图标颜色</span>
-              <input
-                v-model="customForm.iconCustomBackgroundColor"
-                data-testid="itab-add-custom-icon-color"
-                type="color"
-                class="itab-add-color-input"
-                @input="customForm.iconBackgroundMode = 'custom'"
-              />
-            </label>
-
-            <label class="itab-add-field">
-              <span>图标文字</span>
-              <input
-                v-model="customForm.iconText"
-                data-testid="itab-add-custom-icon-text"
-                type="text"
-                maxlength="2"
-                placeholder="A"
-                autocomplete="off"
-              />
-            </label>
-
-            <label class="itab-add-toggle">
-              <input
-                v-model="customForm.useTextIcon"
-                data-testid="itab-add-custom-text-icon"
-                type="checkbox"
-              />
-              <span>文字图标</span>
-            </label>
-
-            <input
-              ref="customUploadInputRef"
-              type="file"
-              accept="image/png,image/jpeg,image/webp,image/gif,image/svg+xml,image/x-icon"
-              class="sr-only"
-              @change="onCustomUploadChange"
-            />
-            <button
-              type="button"
-              data-testid="itab-add-custom-upload"
-              class="itab-add-secondary-button"
-              @click="triggerCustomUpload"
-            >
-              上传
-            </button>
-          </div>
-
-          <div class="itab-add-custom-actions">
-            <button
-              type="submit"
-              data-testid="itab-add-custom-save"
-              class="itab-add-primary-button"
-              :disabled="busyKey === 'custom:save'"
-            >
-              保 存
-            </button>
-            <button
-              type="button"
-              data-testid="itab-add-custom-save-continue"
-              class="itab-add-secondary-button"
-              :disabled="busyKey === 'custom:save-and-continue'"
-              @click="submitCustom('save-and-continue')"
-            >
-              保存并继续
-            </button>
-          </div>
-        </form>
       </section>
     </div>
   </AppModalShell>
@@ -1378,7 +795,7 @@ const submitCustom = async (
 .itab-add-layout {
   position: relative;
   display: grid;
-  grid-template-columns: 154px minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr);
   height: min(600px, calc(100vh - 96px));
   min-height: min(600px, calc(100vh - 96px));
   color: var(--sd-shell-text-primary);
@@ -1389,73 +806,6 @@ const submitCustom = async (
   z-index: 3;
   top: 11px;
   right: 20px;
-}
-
-.itab-add-sidebar {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  border-right: 0;
-  background: transparent;
-  padding: 78px 12px 22px;
-}
-
-.itab-add-left-tab {
-  display: inline-flex;
-  width: 140px;
-  min-height: 38px;
-  align-items: center;
-  gap: 10px;
-  border: 0;
-  border-radius: 9px;
-  background: transparent;
-  color: var(--sd-theme-add-widget-modal-text-01);
-  font-size: 14px;
-  font-weight: 400;
-  text-align: left;
-  padding: 8px 18px;
-}
-
-.itab-add-left-tab:hover,
-.itab-add-left-tab:focus-visible {
-  background: var(--sd-theme-add-widget-modal-surface-02);
-  outline: none;
-}
-
-.itab-add-left-tab.is-active {
-  position: relative;
-  background: var(--sd-theme-add-widget-modal-surface-03);
-  color: var(--sd-theme-add-widget-modal-text-01);
-}
-
-.itab-add-left-tab.is-active::before {
-  content: "";
-  position: absolute;
-  top: 10px;
-  bottom: 10px;
-  left: -12px;
-  width: 3px;
-  border-radius: 999px;
-  background: var(--sd-theme-add-widget-modal-accent-surface-01);
-}
-
-.itab-add-left-icon {
-  display: inline-grid;
-  width: 18px;
-  height: 18px;
-  flex: 0 0 auto;
-  place-items: center;
-  color: var(--sd-theme-add-widget-modal-text-02);
-}
-
-.itab-add-left-icon svg {
-  width: 18px;
-  height: 18px;
-  stroke-width: 1.8;
-}
-
-.itab-add-left-tab.is-active .itab-add-left-icon {
-  color: var(--sd-theme-add-widget-modal-text-03);
 }
 
 .itab-add-main {
@@ -1476,8 +826,7 @@ const submitCustom = async (
 }
 
 .itab-add-search-wrap,
-.itab-add-destination-wrap,
-.itab-add-field {
+.itab-add-destination-wrap {
   min-width: 0;
 }
 
@@ -1563,8 +912,7 @@ const submitCustom = async (
 }
 
 .itab-add-search,
-.itab-add-destination,
-.itab-add-field input {
+.itab-add-destination {
   width: 100%;
   min-width: 0;
   height: 24px;
@@ -1588,8 +936,7 @@ const submitCustom = async (
 }
 
 .itab-add-search:focus,
-.itab-add-destination:focus,
-.itab-add-field input:focus {
+.itab-add-destination:focus {
   border-color: transparent;
   box-shadow: none;
 }
@@ -1665,8 +1012,7 @@ const submitCustom = async (
   padding: 0;
 }
 
-.itab-add-widget-grid,
-.itab-add-site-grid {
+.itab-add-widget-grid {
   display: grid;
   width: 100%;
   min-height: 0;
@@ -1679,18 +1025,15 @@ const submitCustom = async (
   scrollbar-width: thin;
 }
 
-.itab-add-widget-grid::-webkit-scrollbar,
-.itab-add-site-grid::-webkit-scrollbar {
+.itab-add-widget-grid::-webkit-scrollbar {
   width: 8px;
 }
 
-.itab-add-widget-grid::-webkit-scrollbar-track,
-.itab-add-site-grid::-webkit-scrollbar-track {
+.itab-add-widget-grid::-webkit-scrollbar-track {
   background: transparent;
 }
 
-.itab-add-widget-grid::-webkit-scrollbar-thumb,
-.itab-add-site-grid::-webkit-scrollbar-thumb {
+.itab-add-widget-grid::-webkit-scrollbar-thumb {
   border-radius: 999px;
   background: var(--sd-theme-add-widget-modal-surface-07);
 }
@@ -1710,14 +1053,7 @@ const submitCustom = async (
   scrollbar-gutter: stable;
 }
 
-.itab-add-site-grid {
-  grid-template-columns: repeat(auto-fit, minmax(190px, 257px));
-  align-content: start;
-  justify-content: start;
-}
-
-.itab-add-widget-card,
-.itab-add-site-card {
+.itab-add-widget-card {
   position: relative;
   border: 0;
   border-radius: 12px;
@@ -1740,14 +1076,6 @@ const submitCustom = async (
   gap: 0;
   overflow: hidden;
   color: var(--sd-theme-add-widget-modal-text-01);
-}
-
-.itab-add-site-card {
-  display: grid;
-  grid-template-columns: 44px minmax(0, 1fr);
-  gap: 10px;
-  min-height: 113px;
-  padding: 0;
 }
 
 .itab-add-widget-card.is-enabled {
@@ -2110,42 +1438,12 @@ const submitCustom = async (
   padding: 13px 12px 0;
 }
 
-.itab-add-site-copy h3,
-.itab-add-custom-preview h3 {
-  overflow: hidden;
-  color: var(--sd-theme-add-widget-modal-text-01);
-  font-size: 14px;
-  font-weight: 500;
-  line-height: 1.25;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.itab-add-site-copy p,
-.itab-add-custom-preview p {
-  display: -webkit-box;
-  overflow: hidden;
-  color: var(--sd-theme-add-widget-modal-text-13);
-  font-size: 12px;
-  line-height: 1.35;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-}
-
-.itab-add-card-button,
-.itab-add-site-add,
-.itab-add-primary-button,
-.itab-add-secondary-button {
+.itab-add-card-button {
   height: 32px;
   border: 0;
   border-radius: 6px;
   font-size: 12px;
   font-weight: 800;
-}
-
-.itab-add-card-button,
-.itab-add-site-add,
-.itab-add-primary-button {
   background: var(--sd-theme-add-widget-modal-accent-surface-01);
   color: var(--sd-theme-add-widget-modal-text-04);
 }
@@ -2164,60 +1462,9 @@ const submitCustom = async (
   bottom: 10px;
 }
 
-.itab-add-card-button:disabled,
-.itab-add-site-add:disabled,
-.itab-add-primary-button:disabled,
-.itab-add-secondary-button:disabled {
+.itab-add-card-button:disabled {
   cursor: not-allowed;
   opacity: 0.55;
-}
-
-.itab-add-site-icon {
-  display: grid;
-  width: 44px;
-  height: 44px;
-  place-items: center;
-  align-self: start;
-  margin: 12px 0 0 12px;
-  overflow: hidden;
-  border-radius: 12px;
-  background: var(--sd-theme-add-widget-modal-surface-04);
-  color: var(--sd-theme-add-widget-modal-text-01);
-  font-size: 13px;
-  font-weight: 900;
-}
-
-.itab-add-site-icon img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-}
-
-.itab-add-site-copy {
-  min-width: 0;
-  padding-top: 12px;
-  padding-right: 48px;
-}
-
-.itab-add-site-copy span {
-  display: block;
-  overflow: hidden;
-  color: var(--sd-theme-add-widget-modal-text-14);
-  font-size: 11px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.itab-add-site-add {
-  position: absolute;
-  right: 10px;
-  bottom: 10px;
-  width: 48px;
-  height: 24px;
-  border-radius: 20px;
-  background: var(--sd-theme-add-widget-modal-surface-04);
-  color: var(--sd-theme-add-widget-modal-text-15);
-  font-weight: 500;
 }
 
 .itab-add-empty {
@@ -2229,209 +1476,17 @@ const submitCustom = async (
   font-weight: 700;
 }
 
-.itab-add-state {
-  display: grid;
-  min-height: 160px;
-  place-items: center;
-  border: 1px solid var(--sd-theme-add-widget-modal-border-05);
-  border-radius: 8px;
-  background: var(--sd-theme-add-widget-modal-surface-16);
-  color: var(--sd-theme-add-widget-modal-accent-text-04);
-  font-size: 13px;
-  font-weight: 800;
-}
-
-.itab-add-state.is-error {
-  background: var(--sd-theme-add-widget-modal-surface-17);
-  color: var(--sd-theme-add-widget-modal-accent-text-05);
-}
-
-.itab-add-custom-form {
-  display: grid;
-  align-content: start;
-  grid-template-columns: 84px 290px 86px minmax(0, 1fr);
-  gap: 18px 10px;
-  overflow-y: auto;
-  padding: 49px 18px 18px 30px;
-}
-
-.itab-add-custom-preview {
-  display: none;
-  align-items: center;
-  gap: 12px;
-  border: 1px solid var(--sd-theme-add-widget-modal-border-05);
-  border-radius: 8px;
-  background: var(--sd-theme-add-widget-modal-surface-18);
-  padding: 14px;
-}
-
-.itab-add-custom-icon,
-.itab-add-icon-candidate {
-  display: grid;
-  place-items: center;
-  overflow: hidden;
-  border: 0;
-  background: var(--sd-theme-add-widget-modal-surface-19);
-}
-
-.itab-add-custom-icon {
-  width: 58px;
-  height: 58px;
-  border-radius: 16px;
-  color: var(--sd-theme-add-widget-modal-accent-text-06);
-  font-size: 24px;
-  font-weight: 900;
-}
-
-.itab-add-custom-icon img,
-.itab-add-icon-candidate img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-}
-
-.itab-add-field {
-  display: grid;
-  gap: 7px;
-}
-
-.itab-add-custom-form > .itab-add-field {
-  display: contents;
-}
-
-.itab-add-custom-form > .itab-add-field:nth-of-type(3) {
-  display: none;
-}
-
-.itab-add-custom-form > .itab-add-field span {
-  grid-column: 1;
-  align-self: center;
-  justify-self: end;
-}
-
-.itab-add-custom-form > .itab-add-field input {
-  grid-column: 2;
-  width: 290px;
-  height: 30px;
-  border: 1px solid var(--sd-theme-add-widget-modal-border-06);
-  border-radius: 6px;
-  background: var(--sd-theme-add-widget-modal-surface-06);
-  padding: 0 10px;
-}
-
-.itab-add-custom-form > .itab-add-field:nth-of-type(2) input {
-  grid-column: 2 / span 2;
-  width: 376px;
-}
-
-.itab-add-custom-form > .itab-add-secondary-button {
-  width: 86px;
-}
-
-.itab-add-field span {
-  color: var(--sd-theme-add-widget-modal-text-01);
-  font-size: 12px;
-  font-weight: 400;
-}
-
-.itab-add-custom-options {
-  display: grid;
-  grid-column: 1 / -1;
-  grid-template-columns: minmax(0, 156px) minmax(0, 156px) 120px 120px;
-  gap: 12px;
-  align-items: end;
-  margin-top: 18px;
-  padding-left: 84px;
-}
-
-.itab-add-custom-options .itab-add-field input {
-  height: 34px;
-  border: 1px solid var(--sd-theme-add-widget-modal-border-06);
-  border-radius: 6px;
-  background: var(--sd-theme-add-widget-modal-surface-06);
-  padding: 0 10px;
-}
-
-.itab-add-color-input {
-  padding: 3px !important;
-}
-
-.itab-add-toggle {
-  display: inline-flex;
-  height: 34px;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  border: 1px solid var(--sd-theme-add-widget-modal-border-06);
-  border-radius: 17px;
-  background: var(--sd-theme-add-widget-modal-surface-20);
-  color: var(--sd-theme-add-widget-modal-text-01);
-  font-size: 12px;
-  font-weight: 800;
-}
-
-.itab-add-secondary-button {
-  width: 120px;
-  border: 1px solid var(--sd-theme-add-widget-modal-border-06);
-  background: var(--sd-theme-add-widget-modal-surface-20);
-  color: var(--sd-theme-add-widget-modal-text-01);
-}
-
-.itab-add-icon-candidates {
-  display: flex;
-  grid-column: 2 / -1;
-  gap: 8px;
-}
-
-.itab-add-icon-candidate {
-  width: 40px;
-  height: 40px;
-  border-radius: 10px;
-}
-
-.itab-add-icon-candidate.is-active {
-  box-shadow: 0 0 0 2px var(--sd-theme-add-widget-modal-shadow-02);
-}
-
-.itab-add-custom-actions {
-  display: flex;
-  grid-column: 1 / -1;
-  gap: 10px;
-  margin-top: 111px;
-  padding-left: 66px;
-  padding-top: 4px;
-}
-
-.itab-add-primary-button {
-  width: 120px;
-}
-
 @media (max-width: 834px) {
   .itab-add-layout {
     grid-template-columns: 1fr;
     height: min(680px, calc(100vh - 32px));
   }
 
-  .itab-add-sidebar {
-    flex-direction: row;
-    overflow-x: auto;
-    border-right: 0;
-    border-bottom: 1px solid var(--sd-theme-add-widget-modal-border-05);
-    padding: 10px 12px;
-  }
-
-  .itab-add-left-tab {
-    width: auto;
-    min-width: 104px;
-    text-align: center;
-  }
-
   .itab-add-toolbar {
     grid-template-columns: 1fr;
   }
 
-  .itab-add-widget-grid,
-  .itab-add-site-grid {
+  .itab-add-widget-grid {
     grid-template-columns: 1fr;
   }
 
@@ -2441,10 +1496,6 @@ const submitCustom = async (
 
   .itab-add-widget-card.is-replica-card {
     width: 100%;
-  }
-
-  .itab-add-custom-options {
-    grid-template-columns: 1fr;
   }
 }
 </style>

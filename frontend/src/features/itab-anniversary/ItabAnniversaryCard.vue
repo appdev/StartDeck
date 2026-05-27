@@ -32,6 +32,11 @@ const sizeClass = computed(
   () => `size-${cardTemplate.value.sizeKey.replace("x", "-")}`,
 );
 const isPayday = computed(() => cardTemplate.value.eventName === "发工资还有");
+const hasImageBackground = computed(
+  () =>
+    cardTemplate.value.backgroundMode === "image" &&
+    cardTemplate.value.backgroundImage.trim().length > 0,
+);
 const withCalendar = computed(() =>
   anniversaryUsesCalendar(cardTemplate.value),
 );
@@ -48,6 +53,7 @@ const style = computed(() => anniversaryTemplateStyle(cardTemplate.value));
       {
         'is-current': current,
         'is-payday': isPayday,
+        'has-image-background': hasImageBackground,
         'with-calendar': withCalendar,
       },
       templateClass,
@@ -246,12 +252,14 @@ const style = computed(() => anniversaryTemplateStyle(cardTemplate.value));
 }
 
 .is-payday {
+  --payday-band: 44px;
   justify-content: flex-start;
   padding: 0;
   background: linear-gradient(
     to bottom,
-    var(--anniversary-text) 0 44px,
-    var(--sd-theme-itab-anniversary-anniversary-card-surface-01) 44px 100%
+    var(--anniversary-text) 0 var(--payday-band),
+    var(--sd-theme-itab-anniversary-anniversary-card-surface-01)
+      var(--payday-band) 100%
   );
   color: var(--anniversary-text);
   text-align: center;
@@ -290,11 +298,13 @@ const style = computed(() => anniversaryTemplateStyle(cardTemplate.value));
 }
 
 .variant-mini.is-payday.size-2-2 {
+  --payday-band: 37.5px;
   display: block;
   background: linear-gradient(
     to bottom,
-    var(--anniversary-text) 0 37.5px,
-    var(--sd-theme-itab-anniversary-anniversary-card-surface-01) 37.5px 100%
+    var(--anniversary-text) 0 var(--payday-band),
+    var(--sd-theme-itab-anniversary-anniversary-card-surface-01)
+      var(--payday-band) 100%
   );
 }
 
@@ -334,6 +344,10 @@ const style = computed(() => anniversaryTemplateStyle(cardTemplate.value));
   line-height: 71.4px;
 }
 
+.is-payday.size-1-1 {
+  --payday-band: 18px;
+}
+
 .is-payday.size-1-1 .anniversary-card-copy {
   grid-template-rows: 18px minmax(0, 1fr);
 }
@@ -356,6 +370,7 @@ const style = computed(() => anniversaryTemplateStyle(cardTemplate.value));
 }
 
 .is-payday.size-1-2 {
+  --payday-band: 20px;
   background: var(--sd-theme-itab-anniversary-anniversary-card-surface-01);
 }
 
@@ -380,6 +395,7 @@ const style = computed(() => anniversaryTemplateStyle(cardTemplate.value));
 }
 
 .is-payday.size-2-1 {
+  --payday-band: 38px;
   background: var(--sd-theme-itab-anniversary-anniversary-card-surface-01);
 }
 
@@ -794,23 +810,46 @@ const style = computed(() => anniversaryTemplateStyle(cardTemplate.value));
   height: var(--payday-band);
   align-items: center;
   justify-content: center;
+  overflow: hidden;
   padding: 0 6px;
   color: var(--sd-theme-itab-anniversary-anniversary-card-text-01);
   font-size: var(--payday-label-size);
   font-weight: 500;
   line-height: var(--payday-label-line);
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .variant-preview.is-payday .anniversary-card-copy strong {
   display: flex;
+  min-width: 0;
   width: 100%;
   height: 100%;
   align-items: center;
   justify-content: center;
   margin: 0;
+  overflow: hidden;
   color: var(--anniversary-text);
   font-size: var(--payday-number-size);
   font-weight: 700;
   line-height: var(--payday-number-line);
+}
+
+.is-payday.has-image-background,
+.variant-mini.is-payday.has-image-background,
+.variant-preview.is-payday.has-image-background {
+  background-color: var(
+    --sd-theme-itab-anniversary-anniversary-card-surface-01
+  );
+  background-image:
+    linear-gradient(
+      to bottom,
+      var(--anniversary-text) 0 var(--payday-band),
+      transparent var(--payday-band) 100%
+    ),
+    var(--anniversary-background-image);
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
 }
 </style>

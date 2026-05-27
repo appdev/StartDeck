@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest";
 import { nextTick } from "vue";
 import ItabAnniversaryOpenedPanel from "./ItabAnniversaryOpenedPanel.vue";
 import { createDefaultItabAnniversaryWidget } from "./itabAnniversaryModel";
+import { anniversaryPreviewSizes } from "./useItabAnniversaryRuntime";
 
 const openedPanelSource = readFileSync(
   "src/features/itab-anniversary/ItabAnniversaryOpenedPanel.vue",
@@ -38,6 +39,12 @@ describe("ItabAnniversaryOpenedPanel", () => {
     expect(openedPanelSource).toContain("padding: 8px 0 4px 17px;");
     expect(openedPanelSource).toContain('class="anniversary-image-panel"');
     expect(openedPanelSource).toContain("height: 100px;");
+    expect(openedPanelSource).toContain(
+      "--sd-theme-itab-anniversary-anniversary-opened-panel-surface-17",
+    );
+    expect(openedPanelSource).toContain(
+      "--sd-theme-itab-anniversary-anniversary-opened-panel-text-01",
+    );
     expect(cardSource).toContain("padding: 9.5px 7.6px;");
     expect(cardSource).toContain("font-size: 34.2px;");
     expect(cardSource).toContain("line-height: 51.3px;");
@@ -46,6 +53,8 @@ describe("ItabAnniversaryOpenedPanel", () => {
     expect(cardSource).toContain(
       ".itab-anniversary-card.size-2-4:not(.with-calendar):not(.is-payday)",
     );
+    expect(cardSource).toContain(".is-payday.has-image-background");
+    expect(cardSource).toContain("var(--anniversary-background-image);");
     expect(cardSource).not.toContain(
       "\n.size-2-4:not(.with-calendar):not(.is-payday)",
     );
@@ -172,6 +181,11 @@ describe("ItabAnniversaryOpenedPanel", () => {
       .findAll(".anniversary-preview-arrow")
       .find((button) => button.attributes("aria-label") === "下一个尺寸")!
       .trigger("click");
+    expect(
+      wrapper
+        .find(".anniversary-preview-pane [data-itab-anniversary-card-size]")
+        .attributes("data-itab-anniversary-card-size"),
+    ).toBe("2x4");
     await wrapper
       .findAll(".anniversary-action-row button")[1]!
       .trigger("click");
@@ -186,6 +200,81 @@ describe("ItabAnniversaryOpenedPanel", () => {
     });
     expect(wrapper.emitted("updateData")).toBeUndefined();
     expect(wrapper.emitted("close")).toHaveLength(1);
+  });
+
+  it("applies selected image backgrounds to the payday preview immediately", async () => {
+    const wrapper = mount(ItabAnniversaryOpenedPanel, {
+      props: { widget: createDefaultItabAnniversaryWidget() },
+    });
+
+    await wrapper.findAll(".anniversary-template-card")[1]!.trigger("click");
+    await wrapper
+      .findAll(".anniversary-background-mode button")
+      .find((button) => button.text() === "图片")!
+      .trigger("click");
+    const imageButtons = wrapper.findAll(".anniversary-image-strip button");
+    await imageButtons[7]!.trigger("click");
+
+    const previewCard = wrapper.find(
+      ".anniversary-preview-pane .itab-anniversary-card",
+    );
+    expect(previewCard.classes()).toContain("is-payday");
+    expect(previewCard.classes()).toContain("has-image-background");
+    expect(
+      (previewCard.element as HTMLElement).style.getPropertyValue(
+        "--anniversary-background-image",
+      ),
+    ).toContain("/itab-live-assets/anniversary/yiyan-8.webp");
+  });
+
+  it("uses the left 2x4 selector as the add size without carousel clicks", async () => {
+    const wrapper = mount(ItabAnniversaryOpenedPanel, {
+      props: { widget: createDefaultItabAnniversaryWidget() },
+    });
+
+    await wrapper
+      .findAll(".anniversary-size-row button")
+      .find((button) => button.text() === "2x4")!
+      .trigger("click");
+
+    expect(
+      wrapper
+        .find(".anniversary-preview-pane [data-itab-anniversary-card-size]")
+        .attributes("data-itab-anniversary-card-size"),
+    ).toBe("2x4");
+
+    await wrapper
+      .findAll(".anniversary-action-row button")[1]!
+      .trigger("click");
+
+    expect(wrapper.emitted("addData")?.[0]?.[0]).toMatchObject({
+      sizeKey: "2x4",
+    });
+  });
+
+  it("keeps every carousel dot preview size in sync with emitted add data", async () => {
+    for (const [index, sizeKey] of anniversaryPreviewSizes.entries()) {
+      const wrapper = mount(ItabAnniversaryOpenedPanel, {
+        props: { widget: createDefaultItabAnniversaryWidget() },
+      });
+
+      const dots = wrapper.findAll(".anniversary-carousel-dots span");
+      await dots[index]!.trigger("click");
+
+      expect(
+        wrapper
+          .find(".anniversary-preview-pane [data-itab-anniversary-card-size]")
+          .attributes("data-itab-anniversary-card-size"),
+      ).toBe(sizeKey);
+
+      await wrapper
+        .findAll(".anniversary-action-row button")[1]!
+        .trigger("click");
+
+      expect(wrapper.emitted("addData")?.[0]?.[0]).toMatchObject({
+        sizeKey,
+      });
+    }
   });
 
   it("emits image-backed add data with the selected source image", async () => {
@@ -225,6 +314,72 @@ describe("ItabAnniversaryOpenedPanel", () => {
     expect(wrapper.emitted("updateData")?.[0]?.[0]).toMatchObject({
       backgroundMode: "color",
       backgroundColor: "#fc4548",
+    });
+  });
+
+  it("opens a source-like custom color picker for text color", async () => {
+    const wrapper = mount(ItabAnniversaryOpenedPanel, {
+      props: { widget: createDefaultItabAnniversaryWidget() },
+    });
+
+    await wrapper.find('[aria-label="更多字体颜色"]').trigger("click");
+
+    expect(wrapper.find("[data-itab-anniversary-color-picker]").exists()).toBe(
+      true,
+    );
+    expect(wrapper.find('[aria-label="颜色明度和饱和度"]').exists()).toBe(true);
+    expect(wrapper.find('[aria-label="颜色色相"]').exists()).toBe(true);
+    expect(wrapper.find(".anniversary-color-picker-footer").text()).toContain(
+      "清空确定",
+    );
+
+    await wrapper.find('input[aria-label="颜色值"]').setValue("#12ABEF");
+    await wrapper
+      .findAll(".anniversary-color-picker-footer button")
+      .find((button) => button.text() === "确定")!
+      .trigger("click");
+
+    const previewCard = wrapper.find(
+      ".anniversary-preview-pane .itab-anniversary-card",
+    );
+    expect(
+      (previewCard.element as HTMLElement).style.getPropertyValue(
+        "--anniversary-text",
+      ),
+    ).toBe("#12abef");
+    expect(wrapper.find("[data-itab-anniversary-color-picker]").exists()).toBe(
+      false,
+    );
+    expect(wrapper.find('[aria-label="更多字体颜色"]').classes()).toContain(
+      "active",
+    );
+
+    await wrapper.find(".anniversary-action-row button").trigger("click");
+    expect(wrapper.emitted("updateData")?.[0]?.[0]).toMatchObject({
+      textColor: "#12abef",
+    });
+  });
+
+  it("applies custom background colors from the color picker", async () => {
+    const wrapper = mount(ItabAnniversaryOpenedPanel, {
+      props: { widget: createDefaultItabAnniversaryWidget() },
+    });
+
+    await wrapper
+      .findAll(".anniversary-background-mode button")
+      .find((button) => button.text() === "颜色")!
+      .trigger("click");
+    await wrapper.find('[aria-label="更多背景颜色"]').trigger("click");
+    await wrapper.find('input[aria-label="颜色值"]').setValue("#101820");
+    await wrapper
+      .findAll(".anniversary-color-picker-footer button")
+      .find((button) => button.text() === "确定")!
+      .trigger("click");
+
+    await wrapper.find(".anniversary-action-row button").trigger("click");
+    expect(wrapper.emitted("updateData")?.[0]?.[0]).toMatchObject({
+      backgroundMode: "color",
+      backgroundColor: "#101820",
     });
   });
 });

@@ -422,6 +422,27 @@ describe("GridPanel Context Menu", () => {
     expect(blankMenu?.textContent).toContain("设置");
   });
 
+  it("reuses the runtime widget menu surface for blank-area menu glass", () => {
+    const listStyle =
+      gridPanelSource.match(
+        /\.itab-add-blank-context-list\s*\{[\s\S]*?\n\}/,
+      )?.[0] ?? "";
+
+    expect(gridPanelSource).toContain(
+      'overlay-class="sd-runtime-menu-overlay"',
+    );
+    expect(gridPanelSource).toContain('panel-class="sd-runtime-menu-panel"');
+    expect(gridPanelSource).toContain(
+      'surface-class="sd-runtime-menu-surface itab-add-blank-context-surface"',
+    );
+    expect(gridPanelSource).toContain('scheme="dark"');
+    expect(gridPanelSource).not.toMatch(
+      /:global\(\.itab-add-blank-context-surface\)\s*\{/,
+    );
+    expect(listStyle).not.toContain("backdrop-filter");
+    expect(listStyle).not.toContain("background:");
+  });
+
   it("does not open the blank-area menu from excluded interactive targets", async () => {
     const actionButton = wrapper.find(
       '[data-testid="home-top-actions"] button',
