@@ -97,6 +97,12 @@ async fn test_app_with_widget_cache(include_poem_cache: bool) -> axum::Router {
     let public_dir = base.join("Data/public");
     std::fs::create_dir_all(&public_dir).unwrap();
     std::fs::write(public_dir.join("index.html"), "<main>StartDeck</main>").unwrap();
+    std::fs::write(public_dir.join("favicon.ico"), b"ico-bytes").unwrap();
+    std::fs::write(
+        public_dir.join("favicon.svg"),
+        r#"<svg xmlns="http://www.w3.org/2000/svg" id="startdeck"/>"#,
+    )
+    .unwrap();
     let config = RuntimeConfig::from_base_dir(base);
     let pool = connect_sqlite(&config).await.unwrap();
     import_legacy_app_data(&pool, &config).await.unwrap();
@@ -247,6 +253,38 @@ async fn login_and_read_data_snapshot() {
     assert!(body["widgets"][0].get("enabled").is_none());
     assert_eq!(body["widgets"][0]["isPublic"], true);
     assert!(body["widgets"][0].get("is_public").is_none());
+}
+
+#[tokio::test]
+async fn root_favicon_assets_are_served_as_static_files() {
+    let app = test_app().await;
+
+    for (uri, expected_body, expected_content_type) in [
+        ("/favicon.ico", b"ico-bytes".as_slice(), "image/x-icon"),
+        (
+            "/favicon.svg",
+            r#"<svg xmlns="http://www.w3.org/2000/svg" id="startdeck"/>"#.as_bytes(),
+            "image/svg+xml",
+        ),
+    ] {
+        let response = app
+            .clone()
+            .oneshot(Request::builder().uri(uri).body(Body::empty()).unwrap())
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::OK, "{uri}");
+        let content_type = response
+            .headers()
+            .get("content-type")
+            .and_then(|value| value.to_str().ok())
+            .unwrap_or_default();
+        assert!(
+            content_type.starts_with(expected_content_type),
+            "{uri} content-type was {content_type:?}"
+        );
+        let body = to_bytes(response.into_body(), usize::MAX).await.unwrap();
+        assert_eq!(body.as_ref(), expected_body, "{uri}");
+    }
 }
 
 #[tokio::test]

@@ -32,7 +32,7 @@ use startdeck_core::{
 use tokio::fs;
 use tower_http::compression::CompressionLayer;
 use tower_http::cors::{Any, CorsLayer};
-use tower_http::services::ServeDir;
+use tower_http::services::{ServeDir, ServeFile};
 use tower_http::trace::TraceLayer;
 use uuid::Uuid;
 
@@ -199,6 +199,14 @@ pub fn app(state: AppState) -> Router {
         .route(
             "/api/itab-resources/{resource_id}",
             get(itab_resource).head(itab_resource_head),
+        )
+        .route(
+            "/favicon.ico",
+            get_service(ServeFile::new(public_dir.join("favicon.ico"))),
+        )
+        .route(
+            "/favicon.svg",
+            get_service(ServeFile::new(public_dir.join("favicon.svg"))),
         )
         .nest_service(
             "/assets",
