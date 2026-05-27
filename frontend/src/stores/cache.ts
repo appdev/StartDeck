@@ -232,12 +232,20 @@ export const useCacheStore = defineStore("cache", () => {
       const res = await fetchWithTimeout("/api/data", {
         headers: getHeaders(),
       });
+      if (res.status === 401 && auth.isLogged) {
+        auth.logout();
+        throw new Error("Init unauthorized with stored token");
+      }
       if (res.status === 304) {
         if (!isClientReady.value) {
           const reloadRes = await fetchWithTimeout("/api/data", {
             headers: getHeaders(),
             cache: "reload",
           });
+          if (reloadRes.status === 401 && auth.isLogged) {
+            auth.logout();
+            throw new Error("Init reload unauthorized with stored token");
+          }
           if (!reloadRes.ok)
             throw new Error(
               `Init reload failed with status ${reloadRes.status}`,

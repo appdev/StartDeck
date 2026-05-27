@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createPinia, setActivePinia } from "pinia";
 import { ref } from "vue";
 import { useAuthStore } from "./auth";
@@ -24,6 +24,10 @@ describe("cache store auth scope", () => {
   beforeEach(() => {
     setActivePinia(createPinia());
     localStorage.clear();
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
   });
 
   it("does not restore authenticated cache for guest sessions", () => {
@@ -78,5 +82,41 @@ describe("cache store auth scope", () => {
       false,
     );
     expect(version.value).toBe(2);
+  });
+
+  it("clears stale authenticated state when the server rejects the stored token", async () => {
+    const auth = useAuthStore();
+    const cache = useCacheStore();
+    const widgets = useWidgetsStore();
+    const version = ref(0);
+
+    auth.token = "stale-token";
+    auth.username = "admin";
+    localStorage.setItem("start-deck-token", "stale-token");
+    localStorage.setItem("start-deck-username", "admin");
+    widgets.widgets = [privateWidget];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        new Response(JSON.stringify({ error: "invalid_token" }), {
+          status: 401,
+          headers: { "Content-Type": "application/json" },
+        }),
+      ),
+    );
+
+    await expect(
+      cache.loadServerSnapshot(
+        () => undefined,
+        () => undefined,
+        () => undefined,
+      ),
+    ).rejects.toThrow("Init unauthorized with stored token");
+
+    expect(auth.isLogged).toBe(false);
+    expect(auth.username).toBe("");
+    expect(localStorage.getItem("start-deck-token")).toBeNull();
+    expect(localStorage.getItem("start-deck-username")).toBeNull();
+    expect(version.value).toBe(0);
   });
 });

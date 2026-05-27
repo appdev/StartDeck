@@ -375,7 +375,9 @@ async fn get_data(
     State(state): State<AppState>,
     headers: HeaderMap,
 ) -> Result<Json<Value>, ApiError> {
-    let username = username_from_headers(&headers, &state).unwrap_or_else(|| "admin".to_string());
+    let Some(username) = optional_username_from_headers(&headers, &state)? else {
+        return Ok(Json(default_template_to_api_value(&state).await?));
+    };
     let snapshot = app_snapshot(&state.pool, &username).await?;
     Ok(Json(snapshot_to_api_value(snapshot)))
 }
@@ -440,7 +442,9 @@ async fn version(
     State(state): State<AppState>,
     headers: HeaderMap,
 ) -> Result<Json<Value>, ApiError> {
-    let username = username_from_headers(&headers, &state).unwrap_or_else(|| "admin".to_string());
+    let Some(username) = optional_username_from_headers(&headers, &state)? else {
+        return Ok(Json(json!({"version": 0, "isGuest": true})));
+    };
     let snapshot = app_snapshot(&state.pool, &username).await?;
     Ok(Json(json!({"version": snapshot.version})))
 }
@@ -485,7 +489,12 @@ async fn get_widget(
     headers: HeaderMap,
     AxumPath(id): AxumPath<String>,
 ) -> Result<Json<Value>, ApiError> {
-    let username = username_from_headers(&headers, &state).unwrap_or_else(|| "admin".to_string());
+    let Some(username) = optional_username_from_headers(&headers, &state)? else {
+        let template = load_default_template(&state).await?;
+        let widget = public_template_widget(&template, &id)
+            .ok_or_else(|| ApiError::not_found("widget_not_found"))?;
+        return Ok(Json(widget));
+    };
     let row = sqlx::query("SELECT id, widget_type, enabled, is_public, data_json, layout_json, sort_order FROM widgets WHERE username = ? AND id = ?")
         .bind(username)
         .bind(id)
@@ -1260,6 +1269,84 @@ fn snapshot_to_api_value(snapshot: AppSnapshot) -> Value {
     })
 }
 
+async fn default_template_to_api_value(state: &AppState) -> Result<Value, ApiError> {
+    let template = load_default_template(state).await?;
+    let system = system_config(&state.pool).await?;
+    let mut out = object_from_value(template);
+    let groups = public_template_groups(out.remove("groups").unwrap_or_else(|| json!([])));
+    let widgets = public_template_widgets(out.remove("widgets").unwrap_or_else(|| json!([])));
+    out.entry("appConfig".to_string())
+        .or_insert_with(|| json!({}));
+    out.insert("groups".to_string(), groups);
+    out.insert("widgets".to_string(), widgets);
+    out.insert("username".to_string(), json!("__guest__"));
+    out.insert("isGuest".to_string(), json!(true));
+    out.insert("systemConfig".to_string(), serde_json::to_value(&system)?);
+    out.insert("authMode".to_string(), json!(&system.auth_mode));
+    out.insert("enableDocker".to_string(), json!(system.enable_docker));
+    out.insert("version".to_string(), json!(0));
+    Ok(Value::Object(out))
+}
+
+fn public_template_groups(value: Value) -> Value {
+    let Value::Array(groups) = value else {
+        return json!([]);
+    };
+    Value::Array(
+        groups
+            .into_iter()
+            .filter(template_entry_is_public)
+            .map(|mut group| {
+                if let Some(object) = group.as_object_mut() {
+                    let items = object.remove("items").unwrap_or_else(|| json!([]));
+                    object.insert("items".to_string(), public_template_items(items));
+                }
+                group
+            })
+            .collect(),
+    )
+}
+
+fn public_template_items(value: Value) -> Value {
+    let Value::Array(items) = value else {
+        return json!([]);
+    };
+    Value::Array(items.into_iter().filter(template_entry_is_public).collect())
+}
+
+fn public_template_widgets(value: Value) -> Value {
+    let Value::Array(widgets) = value else {
+        return json!([]);
+    };
+    Value::Array(
+        widgets
+            .into_iter()
+            .filter(template_entry_is_public)
+            .collect(),
+    )
+}
+
+fn public_template_widget(template: &Value, id: &str) -> Option<Value> {
+    template
+        .get("widgets")
+        .and_then(Value::as_array)
+        .and_then(|widgets| {
+            widgets
+                .iter()
+                .filter(|widget| template_entry_is_public(widget))
+                .find(|widget| string_value(widget, "id").as_deref() == Some(id))
+                .cloned()
+        })
+}
+
+fn template_entry_is_public(value: &Value) -> bool {
+    value
+        .get("isPublic")
+        .or_else(|| value.get("is_public"))
+        .and_then(Value::as_bool)
+        .unwrap_or(true)
+}
+
 fn nav_group_to_api_value(group: &NavGroup) -> Value {
     let mut out = object_from_value(unwrap_nested_object(&group.settings, "settings"));
     out.remove("items");
@@ -1592,24 +1679,38 @@ async fn delete_named_file(dir: &Path, name: &str) -> Result<Json<Value>, ApiErr
     }
 }
 
-fn username_from_headers(headers: &HeaderMap, state: &AppState) -> Option<String> {
+fn bearer_token(headers: &HeaderMap) -> Option<&str> {
     headers
         .get(header::AUTHORIZATION)
         .and_then(|value| value.to_str().ok())
         .and_then(|value| value.strip_prefix("Bearer "))
-        .and_then(|token| {
-            decode::<Claims>(
-                token,
-                &DecodingKey::from_secret(state.jwt_secret.as_bytes()),
-                &Validation::new(Algorithm::HS256),
-            )
-            .ok()
-            .map(|data| data.claims.username)
-        })
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+}
+
+fn decode_bearer_username(token: &str, state: &AppState) -> Result<String, ApiError> {
+    decode::<Claims>(
+        token,
+        &DecodingKey::from_secret(state.jwt_secret.as_bytes()),
+        &Validation::new(Algorithm::HS256),
+    )
+    .map(|data| data.claims.username)
+    .map_err(|_| ApiError::unauthorized("invalid_token"))
+}
+
+fn optional_username_from_headers(
+    headers: &HeaderMap,
+    state: &AppState,
+) -> Result<Option<String>, ApiError> {
+    let Some(token) = bearer_token(headers) else {
+        return Ok(None);
+    };
+    Ok(Some(decode_bearer_username(token, state)?))
 }
 
 fn require_username(headers: &HeaderMap, state: &AppState) -> Result<String, ApiError> {
-    username_from_headers(headers, state).ok_or_else(|| ApiError::unauthorized("invalid_token"))
+    optional_username_from_headers(headers, state)?
+        .ok_or_else(|| ApiError::unauthorized("invalid_token"))
 }
 
 fn require_admin(headers: &HeaderMap, state: &AppState) -> Result<String, ApiError> {

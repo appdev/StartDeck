@@ -407,6 +407,12 @@ export const useSyncStore = defineStore("sync", () => {
       const headers: Record<string, string> = {};
       if (auth.token) headers["Authorization"] = `Bearer ${auth.token}`;
       const res = await fetch(`/api/data`, { headers });
+      if (res.status === 401 && auth.isLogged) {
+        auth.logout();
+        resetActiveStateForGuest();
+        void init();
+        return;
+      }
       if (!res.ok) return;
       const data = await res.json();
       if (
@@ -571,7 +577,8 @@ export const useSyncStore = defineStore("sync", () => {
               p.content &&
               typeof p.content === "object"
             ) {
-              const currentSizeKey = (w.data as Record<string, unknown>).sizeKey;
+              const currentSizeKey = (w.data as Record<string, unknown>)
+                .sizeKey;
               w.data = {
                 ...(p.content as Record<string, unknown>),
                 ...(typeof currentSizeKey === "string"
@@ -720,7 +727,12 @@ export const useSyncStore = defineStore("sync", () => {
           widgetsStore.layoutDirty)
       ) {
         try {
-          await saveStore.saveData(true, false, dataVersion, fetchAndProcessData);
+          await saveStore.saveData(
+            true,
+            false,
+            dataVersion,
+            fetchAndProcessData,
+          );
         } catch (error) {
           console.warn("[Logout] Pre-logout save failed", error);
         }

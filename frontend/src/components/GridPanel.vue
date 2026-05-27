@@ -4699,6 +4699,21 @@ onUnmounted(() => {
   width: min(600px, calc(100vw - 88px));
   justify-items: center;
   gap: 8px;
+  --sd-itab-home-search-engine-mask: color-mix(
+    in srgb,
+    var(--sd-theme-grid-panel-surface-02) 72%,
+    transparent
+  );
+  --sd-itab-home-search-engine-mask-strong: color-mix(
+    in srgb,
+    var(--sd-theme-grid-panel-surface-02) 88%,
+    transparent
+  );
+  --sd-itab-home-search-engine-mask-border: color-mix(
+    in srgb,
+    var(--sd-theme-grid-panel-border-02) 62%,
+    transparent
+  );
 }
 
 .sd-itab-home-search {
@@ -4775,29 +4790,44 @@ onUnmounted(() => {
   height: 24px;
   flex: 0 0 auto;
   overflow: hidden;
-  border: 0;
+  box-sizing: border-box;
+  border: 1px solid var(--sd-itab-home-search-engine-mask-border);
   border-radius: 999px;
-  background: transparent;
-  color: var(--sd-theme-grid-panel-text-04);
+  background: var(--sd-itab-home-search-engine-mask);
+  color: color-mix(
+    in srgb,
+    var(--sd-theme-grid-panel-text-01) 88%,
+    transparent
+  );
   font-size: 12px;
   font-weight: 700;
-  line-height: 24px;
+  line-height: 22px;
   text-align: center;
   text-overflow: ellipsis;
   white-space: nowrap;
+  box-shadow: 0 6px 16px
+    color-mix(in srgb, var(--sd-theme-grid-panel-shadow-03) 24%, transparent);
   text-shadow: 0 1px 8px var(--sd-theme-grid-panel-shadow-03);
+  -webkit-backdrop-filter: blur(12px) saturate(125%);
+  backdrop-filter: blur(12px) saturate(125%);
   cursor: pointer;
 }
 
 .sd-itab-home-search-engines button:hover,
 .sd-itab-home-search-engines button:focus-visible,
 .sd-itab-home-search-engines button.is-active {
-  background: var(--sd-theme-grid-panel-surface-03);
+  border-color: var(--sd-theme-grid-panel-border-02);
+  background: var(--sd-itab-home-search-engine-mask-strong);
+  color: var(--sd-theme-grid-panel-text-01);
   outline: none;
 }
 
 .sd-itab-home-search-engines button.is-add {
-  color: var(--sd-theme-grid-panel-text-05);
+  color: color-mix(
+    in srgb,
+    var(--sd-theme-grid-panel-text-01) 70%,
+    transparent
+  );
 }
 
 @media (max-width: 767px) {

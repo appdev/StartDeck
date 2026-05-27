@@ -23,12 +23,13 @@ describe("sync offline queue replay", () => {
   });
 
   it("attempts an immediate save before clearing authenticated logout state", () => {
-    const logoutBlock = /const logout = async \(\) => \{[\s\S]*?auth\.logout\(\);/.exec(
-      syncStoreSource,
-    )?.[0];
+    const logoutBlock =
+      /const logout = async \(\) => \{[\s\S]*?auth\.logout\(\);/.exec(
+        syncStoreSource,
+      )?.[0];
 
     expect(logoutBlock).toBeTruthy();
-    expect(logoutBlock).toContain("saveStore.saveData(true, false");
+    expect(logoutBlock).toMatch(/saveStore\.saveData\(\s*true,\s*false/);
     expect(logoutBlock!.indexOf("saveStore.saveData")).toBeLessThan(
       logoutBlock!.indexOf("auth.logout()"),
     );

@@ -34,6 +34,27 @@ async fn test_app_with_widget_cache(include_poem_cache: bool) -> axum::Router {
         .unwrap(),
     )
     .unwrap();
+    std::fs::write(
+        data_dir.join("default.json"),
+        serde_json::to_vec(&json!({
+            "version": 12345,
+            "appConfig": {"customTitle": "Guest Default"},
+            "groups": [{
+                "id": "guest-group",
+                "title": "Guest Group",
+                "items": [
+                    {"id": "public-link", "title": "Public Link", "url": "https://example.com", "icon": "", "isPublic": true},
+                    {"id": "private-link", "title": "Private Link", "url": "https://secret.example.com", "icon": "", "isPublic": false}
+                ]
+            }],
+            "widgets": [
+                {"id": "memo", "type": "memo", "enable": true, "isPublic": true, "data": {"content": "guest memo"}},
+                {"id": "private-widget", "type": "memo", "enable": true, "isPublic": false, "data": {"content": "private"}}
+            ]
+        }))
+        .unwrap(),
+    )
+    .unwrap();
     if include_poem_cache {
         std::fs::write(
             data_dir.join("widget_cache.json"),
@@ -131,6 +152,16 @@ async fn test_app_with_seeded_weather_cache() -> axum::Router {
         .unwrap(),
     )
     .unwrap();
+    std::fs::write(
+        data_dir.join("default.json"),
+        serde_json::to_vec(&json!({
+            "appConfig": {"customTitle": "Default"},
+            "groups": [{"id": "default-group", "title": "Default Group", "items": []}],
+            "widgets": [{"id": "default-clock", "type": "itab-clock", "enable": true, "isPublic": true, "data": {}}]
+        }))
+        .unwrap(),
+    )
+    .unwrap();
     let public_dir = base.join("Data/public");
     std::fs::create_dir_all(&public_dir).unwrap();
     std::fs::write(public_dir.join("index.html"), "<main>StartDeck</main>").unwrap();
@@ -216,6 +247,7 @@ async fn login_token(app: &axum::Router) -> String {
 async fn login_and_read_data_snapshot() {
     let app = test_app().await;
     let response = app
+        .clone()
         .oneshot(
             Request::builder()
                 .method("POST")
@@ -232,11 +264,13 @@ async fn login_and_read_data_snapshot() {
     assert_eq!(body["success"], true);
     assert!(body["token"].as_str().unwrap().len() > 20);
 
-    let app = test_app().await;
+    let token = body["token"].as_str().unwrap().to_string();
     let response = app
+        .clone()
         .oneshot(
             Request::builder()
                 .uri("/api/data")
+                .header("authorization", format!("Bearer {token}"))
                 .body(Body::empty())
                 .unwrap(),
         )
@@ -253,6 +287,71 @@ async fn login_and_read_data_snapshot() {
     assert!(body["widgets"][0].get("enabled").is_none());
     assert_eq!(body["widgets"][0]["isPublic"], true);
     assert!(body["widgets"][0].get("is_public").is_none());
+
+    let response = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .uri("/api/data")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
+    let body: Value =
+        serde_json::from_slice(&to_bytes(response.into_body(), usize::MAX).await.unwrap()).unwrap();
+    assert_eq!(body["isGuest"], true);
+    assert_eq!(body["username"], "__guest__");
+    assert_eq!(body["appConfig"]["customTitle"], "Guest Default");
+    assert_eq!(body["groups"][0]["title"], "Guest Group");
+    assert_eq!(body["groups"][0]["items"][0]["id"], "public-link");
+    assert_eq!(body["groups"][0]["items"].as_array().unwrap().len(), 1);
+    assert_eq!(body["widgets"][0]["id"], "memo");
+    assert_eq!(body["widgets"].as_array().unwrap().len(), 1);
+    assert_eq!(body["authMode"], "single");
+    assert_eq!(body["enableDocker"], false);
+
+    let response = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .uri("/api/data")
+                .header("authorization", "Bearer invalid-token")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
+
+    let response = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .uri("/api/widgets/memo")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
+    let body: Value =
+        serde_json::from_slice(&to_bytes(response.into_body(), usize::MAX).await.unwrap()).unwrap();
+    assert_eq!(body["id"], "memo");
+    assert_eq!(body["type"], "memo");
+    assert_eq!(body["data"]["content"], "guest memo");
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/api/widgets/private-widget")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::NOT_FOUND);
 }
 
 #[tokio::test]
@@ -317,9 +416,11 @@ async fn save_updates_relational_snapshot() {
     assert_eq!(response.status(), StatusCode::OK);
 
     let response = app
+        .clone()
         .oneshot(
             Request::builder()
                 .uri("/api/data")
+                .header("authorization", format!("Bearer {token}"))
                 .body(Body::empty())
                 .unwrap(),
         )
@@ -343,6 +444,22 @@ async fn save_updates_relational_snapshot() {
     assert_eq!(body["widgets"][0]["w"], 2);
     assert_eq!(body["widgets"][0]["h"], 1);
     assert_eq!(body["widgets"][0]["hideOnMobile"], true);
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/api/data")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
+    let body: Value =
+        serde_json::from_slice(&to_bytes(response.into_body(), usize::MAX).await.unwrap()).unwrap();
+    assert_eq!(body["isGuest"], true);
+    assert_eq!(body["appConfig"]["customTitle"], "Guest Default");
+    assert_eq!(body["widgets"][0]["id"], "memo");
 }
 
 #[tokio::test]
