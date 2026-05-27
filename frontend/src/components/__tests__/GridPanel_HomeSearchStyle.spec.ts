@@ -23,7 +23,7 @@ const getRuleBlock = (source: string, selector: string) => {
 };
 
 describe("GridPanel home search styles", () => {
-  it("derives the search engine mask from the search box surface token", () => {
+  it("keeps only the selected search engine masked with the search box color", () => {
     const searchBlock = getRuleBlock(gridPanelSource, ".sd-itab-home-search");
     const wrapBlock = getRuleBlock(
       gridPanelSource,
@@ -33,25 +33,30 @@ describe("GridPanel home search styles", () => {
       gridPanelSource,
       ".sd-itab-home-search-engines button",
     );
-    const activeButtonBlock = getRuleBlock(
+    const hoverButtonBlock = getRuleBlock(
       gridPanelSource,
-      ".sd-itab-home-search-engines button:hover,\n.sd-itab-home-search-engines button:focus-visible,\n.sd-itab-home-search-engines button.is-active",
+      ".sd-itab-home-search-engines button:hover,\n.sd-itab-home-search-engines button:focus-visible",
+    );
+    const selectedButtonBlock = getRuleBlock(
+      gridPanelSource,
+      ".sd-itab-home-search-engines button.is-active",
     );
 
     expect(searchBlock).toContain(
       "background: var(--sd-theme-grid-panel-surface-02);",
     );
-    expect(wrapBlock).toContain("--sd-itab-home-search-engine-mask");
-    expect(wrapBlock).toContain("var(--sd-theme-grid-panel-surface-02) 72%");
-    expect(wrapBlock).toContain("var(--sd-theme-grid-panel-surface-02) 88%");
-    expect(engineButtonBlock).toContain(
-      "background: var(--sd-itab-home-search-engine-mask);",
+    expect(wrapBlock).toContain(
+      "--sd-itab-home-search-engine-selected-bg",
     );
-    expect(engineButtonBlock).toContain(
-      "var(--sd-theme-grid-panel-text-01) 88%",
+    expect(wrapBlock).toContain("var(--sd-theme-grid-panel-surface-02) 42%");
+    expect(engineButtonBlock).toContain("background: transparent;");
+    expect(engineButtonBlock).toContain("border: 1px solid transparent;");
+    expect(hoverButtonBlock).not.toContain("background:");
+    expect(selectedButtonBlock).toContain(
+      "background: var(--sd-itab-home-search-engine-selected-bg);",
     );
-    expect(activeButtonBlock).toContain(
-      "background: var(--sd-itab-home-search-engine-mask-strong);",
+    expect(selectedButtonBlock).toContain(
+      "border-color: var(--sd-itab-home-search-engine-selected-border);",
     );
   });
 });

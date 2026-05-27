@@ -4699,19 +4699,14 @@ onUnmounted(() => {
   width: min(600px, calc(100vw - 88px));
   justify-items: center;
   gap: 8px;
-  --sd-itab-home-search-engine-mask: color-mix(
+  --sd-itab-home-search-engine-selected-bg: color-mix(
     in srgb,
-    var(--sd-theme-grid-panel-surface-02) 72%,
+    var(--sd-theme-grid-panel-surface-02) 42%,
     transparent
   );
-  --sd-itab-home-search-engine-mask-strong: color-mix(
+  --sd-itab-home-search-engine-selected-border: color-mix(
     in srgb,
-    var(--sd-theme-grid-panel-surface-02) 88%,
-    transparent
-  );
-  --sd-itab-home-search-engine-mask-border: color-mix(
-    in srgb,
-    var(--sd-theme-grid-panel-border-02) 62%,
+    var(--sd-theme-grid-panel-border-02) 48%,
     transparent
   );
 }
@@ -4791,9 +4786,9 @@ onUnmounted(() => {
   flex: 0 0 auto;
   overflow: hidden;
   box-sizing: border-box;
-  border: 1px solid var(--sd-itab-home-search-engine-mask-border);
+  border: 1px solid transparent;
   border-radius: 999px;
-  background: var(--sd-itab-home-search-engine-mask);
+  background: transparent;
   color: color-mix(
     in srgb,
     var(--sd-theme-grid-panel-text-01) 88%,
@@ -4805,21 +4800,20 @@ onUnmounted(() => {
   text-align: center;
   text-overflow: ellipsis;
   white-space: nowrap;
-  box-shadow: 0 6px 16px
-    color-mix(in srgb, var(--sd-theme-grid-panel-shadow-03) 24%, transparent);
   text-shadow: 0 1px 8px var(--sd-theme-grid-panel-shadow-03);
-  -webkit-backdrop-filter: blur(12px) saturate(125%);
-  backdrop-filter: blur(12px) saturate(125%);
   cursor: pointer;
 }
 
 .sd-itab-home-search-engines button:hover,
-.sd-itab-home-search-engines button:focus-visible,
-.sd-itab-home-search-engines button.is-active {
-  border-color: var(--sd-theme-grid-panel-border-02);
-  background: var(--sd-itab-home-search-engine-mask-strong);
+.sd-itab-home-search-engines button:focus-visible {
   color: var(--sd-theme-grid-panel-text-01);
   outline: none;
+}
+
+.sd-itab-home-search-engines button.is-active {
+  border-color: var(--sd-itab-home-search-engine-selected-border);
+  background: var(--sd-itab-home-search-engine-selected-bg);
+  color: var(--sd-theme-grid-panel-text-01);
 }
 
 .sd-itab-home-search-engines button.is-add {
