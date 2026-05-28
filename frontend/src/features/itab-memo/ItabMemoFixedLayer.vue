@@ -59,6 +59,7 @@ const fixedMemoBody = (note: ItabMemoNote) => note.body.trim() || "无内容";
         <time>{{ note.listTime || "a few seconds ago" }}</time>
       </div>
       <button
+        v-if="runtime.canWriteMemo.value"
         class="notes-fixed-cancel"
         title="取消固定"
         type="button"

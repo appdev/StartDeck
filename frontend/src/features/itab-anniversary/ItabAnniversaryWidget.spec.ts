@@ -124,6 +124,36 @@ describe("ItabAnniversaryWidget", () => {
     wrapper.unmount();
   });
 
+  it.each(["1x1", "1x2", "2x1", "2x2", "2x4"] as const)(
+    "uses selected color background on countdown cards for %s",
+    (sizeKey) => {
+      const widget = createDefaultItabAnniversaryWidget();
+      const paydayTemplate = anniversaryTemplates.find(
+        (item) => item.id === "payday",
+      );
+      expect(paydayTemplate).toBeTruthy();
+      widget.data = {
+        ...paydayTemplate!,
+        backgroundMode: "color",
+        backgroundColor: "#fc4548",
+      };
+
+      const wrapper = mount(ItabAnniversaryWidget, {
+        props: {
+          widget,
+          sizeKey,
+        },
+      });
+
+      const card = wrapper.find("[data-itab-anniversary-card-size]");
+      expect(card.classes()).toContain("is-payday");
+      expect(card.classes()).not.toContain("has-image-background");
+      expect(card.attributes("style")).toContain("--anniversary-bg: #fc4548");
+      expect(card.attributes("style")).toContain("--anniversary-image: none");
+      wrapper.unmount();
+    },
+  );
+
   it("does not render a local synthetic list for 2x4 non-calendar templates", () => {
     const widget = createDefaultItabAnniversaryWidget();
     widget.data = anniversaryTemplates.find((item) => item.id === "love");

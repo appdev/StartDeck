@@ -26,6 +26,7 @@ const latencyIpKey = ref("");
 const ITAB_IP_LATENCY_AUTO_REFRESH_MS = 5 * 60 * 1000;
 let abortController: AbortController | null = null;
 let latencyAbortController: AbortController | null = null;
+let lookupInFlight: Promise<ItabIpLookupResult> | null = null;
 let requestSerial = 0;
 let latencyRequestSerial = 0;
 let latencyAutoRefreshTimer: number | null = null;
@@ -42,6 +43,7 @@ export const resetItabIpRuntimeForTests = () => {
   }
   abortController = null;
   latencyAbortController = null;
+  lookupInFlight = null;
   latencyAutoRefreshTimer = null;
   latencyAutoRefreshSubscribers = 0;
   requestSerial = 0;
@@ -57,38 +59,44 @@ export const resetItabIpRuntimeForTests = () => {
   result.value = createLoadingItabIpResult();
 };
 
-export const useItabIpRuntime = () => {
-  const load = async (refresh = false) => {
-    abortController?.abort();
-    const controller = new AbortController();
-    abortController = controller;
-    const serial = ++requestSerial;
-    const timeoutId =
-      typeof window === "undefined"
-        ? undefined
-        : window.setTimeout(() => controller.abort(), 8000);
-    loading.value = true;
-    status.value = "loading";
-    error.value = "";
+const applyLookupResult = (next: ItabIpLookupResult) => {
+  const previousIpKey = ipLatencyKey(result.value);
+  if (previousIpKey && previousIpKey !== ipLatencyKey(next)) {
+    latencyMs.value = null;
+    latencyStatus.value = "idle";
+    latencyError.value = "";
+    latencyIpKey.value = "";
+  }
+  result.value = next;
+  status.value = next.sourceStatus === "error" ? "error" : "success";
+  if (next.sourceStatus === "error") {
+    error.value = "查询服务暂不可用，已显示可识别的本机地址";
+  }
+};
 
-    try {
-      const previousIpKey = ipLatencyKey(result.value);
-      const next = await fetchItabIpLookup(refresh, controller.signal);
+const requestLookup = async () => {
+  if (lookupInFlight) return lookupInFlight;
+
+  abortController?.abort();
+  const controller = new AbortController();
+  abortController = controller;
+  const serial = ++requestSerial;
+  const timeoutId =
+    typeof window === "undefined"
+      ? undefined
+      : window.setTimeout(() => controller.abort(), 8000);
+  loading.value = true;
+  status.value = "loading";
+  error.value = "";
+
+  const promise = fetchItabIpLookup(false, controller.signal)
+    .then((next) => {
       if (serial === requestSerial) {
-        if (previousIpKey && previousIpKey !== ipLatencyKey(next)) {
-          latencyMs.value = null;
-          latencyStatus.value = "idle";
-          latencyError.value = "";
-          latencyIpKey.value = "";
-        }
-        result.value = next;
-        status.value = next.sourceStatus === "error" ? "error" : "success";
-        if (next.sourceStatus === "error") {
-          error.value = "查询服务暂不可用，已显示可识别的本机地址";
-        }
+        applyLookupResult(next);
       }
-      return next.sourceStatus === "ok";
-    } catch (loadError) {
+      return next;
+    })
+    .catch((loadError) => {
       if (!controller.signal.aborted && serial === requestSerial) {
         result.value = createErrorItabIpResult(result.value);
         status.value = "error";
@@ -97,23 +105,51 @@ export const useItabIpRuntime = () => {
             ? "查询超时，请稍后重试"
             : "查询失败，请稍后重试";
       }
-      return false;
-    } finally {
+      throw loadError;
+    })
+    .finally(() => {
       if (timeoutId !== undefined) {
         window.clearTimeout(timeoutId);
       }
       if (abortController === controller) {
         abortController = null;
       }
+      if (lookupInFlight === promise) {
+        lookupInFlight = null;
+      }
       if (serial === requestSerial) {
         loading.value = false;
       }
+    });
+
+  lookupInFlight = promise;
+  return promise;
+};
+
+export const prefetchItabIpLocation = async () => {
+  try {
+    const next = await requestLookup();
+    return next.sourceStatus === "ok";
+  } catch {
+    return false;
+  }
+};
+
+export const useItabIpRuntime = () => {
+  const load = async (_refresh = false) => {
+    return prefetchItabIpLocation();
+  };
+
+  const ensureResult = async () => {
+    if (status.value === "success" && ipLatencyKey(result.value)) {
+      return result.value;
     }
+    const ok = await load(false);
+    return ok ? result.value : null;
   };
 
   const ensureLoaded = async () => {
-    if (status.value === "success" && ipLatencyKey(result.value)) return true;
-    return load(false);
+    return (await ensureResult()) !== null;
   };
 
   const refreshLatency = async (force = true) => {
@@ -234,6 +270,7 @@ export const useItabIpRuntime = () => {
     sourceStatus,
     load,
     ensureLoaded,
+    ensureResult,
     refreshLatency,
     refreshLatencyIfNeeded,
     startLatencyAutoRefresh,

@@ -11,52 +11,12 @@ import type {
 import {
   WIDGET_CATALOG,
   getWidgetCatalogAction,
-  getWidgetCatalogItem,
   type WidgetCatalogCategory,
   type WidgetCatalogItem,
   type WidgetCatalogSizeKey,
 } from "@/utils/widgetCatalog";
 
-type ReplicaWidgetCard = {
-  id: string;
-  catalogItemId: string;
-  title: string;
-  description: string;
-  glyph: string;
-  previewKind:
-    | "number"
-    | "clock"
-    | "weather"
-    | "quote"
-    | "english"
-    | "memo"
-    | "todo"
-    | "pomodoro"
-    | "food"
-    | "quote"
-    | "english"
-    | "audio"
-    | "offwork"
-    | "anniversary"
-    | "sbti"
-    | "image"
-    | "ai"
-    | "sports"
-    | "game";
-  previewTone:
-    | "blue"
-    | "purple"
-    | "amber"
-    | "green"
-    | "cyan"
-    | "pink"
-    | "slate";
-  previewText?: string;
-  previewAsset?: string;
-  previewAssetFit?: "contain" | "cover";
-};
 type WidgetUiCategory =
-  | "explore"
   | "all"
   | "productivity"
   | "tool"
@@ -85,8 +45,7 @@ const store = useMainStore();
 
 const searchText = ref("");
 const destinationGroupId = ref("");
-const activeWidgetCategory = ref<WidgetUiCategory>("explore");
-const activeRecommendationBatch = ref(0);
+const activeWidgetCategory = ref<WidgetUiCategory>("all");
 const busyKey = ref("");
 const resultMessage = ref("");
 const previewSizeKey: WidgetCatalogSizeKey = "2x2";
@@ -126,8 +85,7 @@ watch(
   (show) => {
     if (!show) return;
     searchText.value = "";
-    activeWidgetCategory.value = "explore";
-    activeRecommendationBatch.value = 0;
+    activeWidgetCategory.value = "all";
     resultMessage.value = "";
     ensureDestination();
   },
@@ -142,7 +100,6 @@ const WIDGET_UI_CATEGORIES: {
   categories?: WidgetCatalogCategory[];
   types?: string[];
 }[] = [
-  { label: "探索", value: "explore" },
   { label: "全部", value: "all" },
   { label: "效率", value: "productivity", categories: ["common", "content"] },
   { label: "工具", value: "tool", categories: ["tool"] },
@@ -167,215 +124,7 @@ const WIDGET_UI_CATEGORIES: {
 
 const categoryOptions = computed(() => WIDGET_UI_CATEGORIES);
 
-const ITAB_WIDGET_RECOMMENDATION_BATCHES: ReplicaWidgetCard[][] = [
-  [
-    {
-      id: "source-number-uppercase",
-      catalogItemId: "itab-number-uppercase-35",
-      title: "金额换算",
-      description: "将金额转为大写",
-      glyph: "¥",
-      previewKind: "number",
-      previewTone: "slate",
-    },
-    {
-      id: "source-weather",
-      catalogItemId: "itab-weather-00",
-      title: "天气",
-      description:
-        "准确预报全球近10000多个地区的一周天气预报，包括国内县级和县级以上全部城市",
-      glyph: "天",
-      previewKind: "weather",
-      previewTone: "blue",
-    },
-    {
-      id: "source-ip",
-      catalogItemId: "ip",
-      title: "本机IP",
-      description: "显示当前 IP 地址、归属地和网络信息",
-      glyph: "IP",
-      previewKind: "number",
-      previewTone: "blue",
-      previewAsset: "/itab-live-assets/ip.svg",
-    },
-    {
-      id: "source-anniversary",
-      catalogItemId: "itab-anniversary-03",
-      title: "纪念日",
-      description:
-        "可配置纪念日、恋爱日期、倒数日等事件，支持日期、颜色、背景图片和蒙版设置",
-      glyph: "纪",
-      previewKind: "anniversary",
-      previewTone: "pink",
-    },
-    {
-      id: "source-clock",
-      catalogItemId: "itab-clock-12",
-      title: "时钟",
-      description: "桌面翻页时钟，打开后可进入大屏时间面板",
-      glyph: "时",
-      previewKind: "clock",
-      previewTone: "slate",
-    },
-    {
-      id: "source-food-picker",
-      catalogItemId: "itab-food-picker-15",
-      title: "今天吃什么",
-      description: "随机抽取用餐候选并维护本地菜单",
-      glyph: "吃",
-      previewKind: "food",
-      previewTone: "amber",
-    },
-    {
-      id: "source-memo",
-      catalogItemId: "itab-memo-04",
-      title: "备忘录",
-      description: "快速记录备忘内容，支持搜索、编辑和固定到桌面",
-      glyph: "备",
-      previewKind: "memo",
-      previewTone: "amber",
-    },
-    {
-      id: "source-todo",
-      catalogItemId: "itab-todo-17",
-      title: "待办事项",
-      description: "记录任务清单，打开后可新增、编辑和勾选待办",
-      glyph: "办",
-      previewKind: "todo",
-      previewTone: "blue",
-    },
-    {
-      id: "source-pomodoro",
-      catalogItemId: "itab-pomodoro-29",
-      title: "番茄时钟",
-      description: "专注计时、背景音和会话进度",
-      glyph: "番",
-      previewKind: "pomodoro",
-      previewTone: "green",
-    },
-    {
-      id: "source-poem",
-      catalogItemId: "itab-poem-10",
-      title: "今日诗词",
-      description: "每天一句诗词名句，可查看出处、全文、译文和注释",
-      glyph: "诗",
-      previewKind: "quote",
-      previewTone: "green",
-    },
-    {
-      id: "source-daily-english",
-      catalogItemId: "itab-daily-english-14",
-      title: "今日英语",
-      description: "每日英语句子、中文翻译和跟读音频",
-      glyph: "英",
-      previewKind: "english",
-      previewTone: "slate",
-    },
-    {
-      id: "source-audio-convert",
-      catalogItemId: "itab-converter-suite-34",
-      title: "音频格式转换",
-      description: "支持mp3、wav、ogg、ac3、flac、opus、pcm、m4a、aac在线互转",
-      glyph: "音",
-      previewKind: "audio",
-      previewTone: "cyan",
-    },
-    {
-      id: "source-offwork",
-      catalogItemId: "itab-offwork-22",
-      title: "下班倒计时",
-      description: "下班倒计时，打工人的必备神器。 下班还有 休息时间",
-      glyph: "下",
-      previewKind: "offwork",
-      previewTone: "green",
-    },
-  ],
-  [
-    {
-      id: "source-sbti",
-      catalogItemId: "custom-css",
-      title: "SBTI人格测试",
-      description:
-        "SBTI（Silly Big Personality Test），直译''傻乎乎人格测试'，由B站UP主创作，核心定位是纯娱乐化精神状态自测工具，无专业心理学依据",
-      glyph: "SB",
-      previewKind: "sbti",
-      previewTone: "purple",
-    },
-    {
-      id: "source-image-compress",
-      catalogItemId: "itab-converter-suite-34",
-      title: "图片压缩",
-      description: "不改变图片尺寸减小文件大小，支持20张批量处理",
-      glyph: "图",
-      previewKind: "image",
-      previewTone: "cyan",
-    },
-    {
-      id: "source-sports",
-      catalogItemId: "itab-hotsearch-02",
-      title: "体育",
-      description:
-        "关注运动最新资讯和赛程，球迷的福利德乙升降级附加赛05-22 02:30沃尔夫斯堡VS帕德博恩",
-      glyph: "体",
-      previewKind: "sports",
-      previewTone: "green",
-    },
-    {
-      id: "source-2048",
-      catalogItemId: "itab-2048-20",
-      title: "2048",
-      description:
-        "《2048》是一款比较流行的数字游戏，合并相同方块，得到2048的方块!",
-      glyph: "2",
-      previewKind: "game",
-      previewTone: "amber",
-      previewText: "2048",
-    },
-  ],
-];
-
 const query = computed(() => searchText.value.trim().toLowerCase());
-
-const catalogById = computed(
-  () => new Map(WIDGET_CATALOG.map((item) => [item.id, item] as const)),
-);
-
-const isReplicaWidgetRecommendation = computed(
-  () => activeWidgetCategory.value === "explore" && !query.value,
-);
-
-const replicaWidgetCards = computed(
-  () =>
-    ITAB_WIDGET_RECOMMENDATION_BATCHES[
-      activeRecommendationBatch.value %
-        ITAB_WIDGET_RECOMMENDATION_BATCHES.length
-    ] || ITAB_WIDGET_RECOMMENDATION_BATCHES[0]!,
-);
-
-const replicaCatalogItem = (card: ReplicaWidgetCard) =>
-  catalogById.value.get(card.catalogItemId) ||
-  getWidgetCatalogItem(card.catalogItemId);
-
-const replicaActionLabel = (card: ReplicaWidgetCard) => {
-  const item = replicaCatalogItem(card);
-  return item ? actionLabel(item) : "待迁移";
-};
-
-const replicaActionDisabled = (card: ReplicaWidgetCard) => {
-  const item = replicaCatalogItem(card);
-  return !item || actionDisabled(item);
-};
-
-const replicaBusyKey = (card: ReplicaWidgetCard) => {
-  const item = replicaCatalogItem(card);
-  return `widget:${item?.id || card.catalogItemId}`;
-};
-
-const switchRecommendationBatch = () => {
-  activeRecommendationBatch.value =
-    (activeRecommendationBatch.value + 1) %
-    ITAB_WIDGET_RECOMMENDATION_BATCHES.length;
-};
 
 const widgetSearchMatches = (item: WidgetCatalogItem) => {
   if (!query.value) return true;
@@ -391,7 +140,6 @@ const filteredCatalog = computed(() =>
     );
     const matchesCategory =
       !activeCategory ||
-      activeCategory.value === "explore" ||
       activeCategory.value === "all" ||
       activeCategory.categories?.includes(item.category) ||
       activeCategory.types?.includes(item.type);
@@ -420,11 +168,6 @@ const previewSizeFor = (item: WidgetCatalogItem) =>
 
 const widgetPreviewFrameSrc = (item: WidgetCatalogItem) =>
   `/widget-preview?catalogId=${encodeURIComponent(item.id)}&size=${encodeURIComponent(previewSizeFor(item).key)}`;
-
-const replicaPreviewFrameSrc = (card: ReplicaWidgetCard) => {
-  const item = replicaCatalogItem(card);
-  return item ? widgetPreviewFrameSrc(item) : "";
-};
 
 const actionLabel = (item: WidgetCatalogItem) => {
   const action = getWidgetCatalogAction(props.widgets, item);
@@ -475,15 +218,6 @@ const addWidget = async (item: WidgetCatalogItem) => {
     sizeKey: defaultSizeFor(item).key,
   };
   await invokeAdd(payload, `widget:${item.id}`);
-};
-
-const addReplicaWidget = async (card: ReplicaWidgetCard) => {
-  const item = replicaCatalogItem(card);
-  if (!item) {
-    resultMessage.value = "当前复刻卡片尚未映射到可添加组件。";
-    return;
-  }
-  await addWidget(item);
 };
 </script>
 
@@ -568,138 +302,7 @@ const addReplicaWidget = async (card: ReplicaWidgetCard) => {
             </button>
           </div>
 
-          <div v-if="isReplicaWidgetRecommendation" class="itab-add-rank-row">
-            <button
-              type="button"
-              data-testid="itab-add-batch-button"
-              class="itab-add-batch-button"
-              @click="switchRecommendationBatch"
-            >
-              换一批
-            </button>
-          </div>
-
-          <div
-            v-if="isReplicaWidgetRecommendation"
-            class="itab-add-widget-grid is-replica"
-          >
-            <article
-              v-for="card in replicaWidgetCards"
-              :key="card.id"
-              data-testid="itab-add-widget-card"
-              class="itab-add-widget-card is-replica-card"
-              :class="[
-                `is-tone-${card.previewTone}`,
-                `is-preview-${card.previewKind}`,
-              ]"
-            >
-              <div class="itab-add-replica-heading">
-                <h3>{{ card.title }}</h3>
-                <p>{{ card.description }}</p>
-              </div>
-              <div class="itab-add-replica-preview">
-                <span class="itab-add-replica-art">
-                  <iframe
-                    v-if="replicaPreviewFrameSrc(card)"
-                    class="itab-add-widget-preview-frame"
-                    :src="replicaPreviewFrameSrc(card)"
-                    :title="`${card.title} 2x2 预览`"
-                    loading="lazy"
-                    sandbox="allow-scripts allow-same-origin"
-                    aria-hidden="true"
-                    tabindex="-1"
-                  ></iframe>
-                  <img
-                    v-else-if="card.previewAsset"
-                    :src="card.previewAsset"
-                    alt=""
-                    class="itab-add-replica-asset"
-                    :class="{
-                      'is-cover': card.previewAssetFit === 'cover',
-                    }"
-                  />
-                  <span
-                    v-else-if="card.previewKind === 'weather'"
-                    class="itab-add-weather-art"
-                  >
-                    <strong>25°</strong>
-                    <span>龙华 · 大雨</span>
-                  </span>
-                  <span
-                    v-else-if="card.previewKind === 'clock'"
-                    class="itab-add-clock-art"
-                  >
-                    <strong>21:09</strong>
-                    <span>05/21 周四</span>
-                  </span>
-                  <span
-                    v-else-if="card.previewKind === 'offwork'"
-                    class="itab-add-offwork-art"
-                  >
-                    <strong>休息时间</strong>
-                    <span>下班倒计时</span>
-                  </span>
-                  <span
-                    v-else-if="card.previewKind === 'memo'"
-                    class="itab-add-memo-art"
-                  >
-                    <strong>备忘录</strong>
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                  </span>
-                  <span
-                    v-else-if="card.previewKind === 'todo'"
-                    class="itab-add-todo-art"
-                  >
-                    <strong>待办事项(3)</strong>
-                    <span><i></i>评审 UI</span>
-                    <span><i></i>补充 QA</span>
-                  </span>
-                  <span
-                    v-else-if="card.previewKind === 'pomodoro'"
-                    class="itab-add-pomodoro-art"
-                  >
-                    <strong>25:00</strong>
-                    <span>海浪</span>
-                  </span>
-                  <span
-                    v-else-if="card.previewKind === 'english'"
-                    class="itab-add-english-art"
-                  >
-                    <b>跟读</b>
-                    <strong>Light stretches longer</strong>
-                    <span>日光拉得更长</span>
-                  </span>
-                  <span v-else class="itab-add-replica-glyph">{{
-                    card.glyph
-                  }}</span>
-                </span>
-              </div>
-              <div class="itab-add-replica-footer">
-                <button
-                  type="button"
-                  data-testid="itab-add-card-add"
-                  class="itab-add-card-button"
-                  :disabled="
-                    replicaActionDisabled(card) ||
-                    busyKey === replicaBusyKey(card)
-                  "
-                  :aria-disabled="replicaActionDisabled(card)"
-                  :aria-label="`${replicaActionLabel(card)} ${card.title}`"
-                  @click="addReplicaWidget(card)"
-                >
-                  {{
-                    busyKey === replicaBusyKey(card)
-                      ? "处理中"
-                      : replicaActionLabel(card)
-                  }}
-                </button>
-              </div>
-            </article>
-          </div>
-
-          <div v-else class="itab-add-widget-grid is-replica">
+          <div class="itab-add-widget-grid is-replica">
             <article
               v-for="item in filteredCatalog"
               :key="item.id"
@@ -746,12 +349,7 @@ const addReplicaWidget = async (card: ReplicaWidgetCard) => {
             </article>
           </div>
 
-          <div
-            v-if="
-              !isReplicaWidgetRecommendation && filteredCatalog.length === 0
-            "
-            class="itab-add-empty"
-          >
+          <div v-if="filteredCatalog.length === 0" class="itab-add-empty">
             未找到小组件
           </div>
         </div>
@@ -961,8 +559,7 @@ const addReplicaWidget = async (card: ReplicaWidgetCard) => {
   padding: 0 12px 18px 18px;
 }
 
-.itab-add-chip-row,
-.itab-add-rank-row {
+.itab-add-chip-row {
   display: flex;
   flex: 0 0 auto;
   overflow-x: auto;
@@ -971,10 +568,6 @@ const addReplicaWidget = async (card: ReplicaWidgetCard) => {
 
 .itab-add-chip-row {
   gap: 10px;
-}
-
-.itab-add-rank-row {
-  align-items: center;
 }
 
 .itab-add-chip {
@@ -996,20 +589,6 @@ const addReplicaWidget = async (card: ReplicaWidgetCard) => {
 .itab-add-chip.is-active {
   background: var(--sd-theme-add-widget-modal-accent-surface-01);
   color: var(--sd-theme-add-widget-modal-text-04);
-}
-
-.itab-add-batch-button {
-  width: 58px;
-  height: 18px;
-  margin-left: auto;
-  margin-right: 25px;
-  border: 0;
-  background: transparent;
-  color: var(--sd-theme-add-widget-modal-text-02);
-  font-size: 12px;
-  font-weight: 400;
-  line-height: 18px;
-  padding: 0;
 }
 
 .itab-add-widget-grid {
@@ -1043,14 +622,13 @@ const addReplicaWidget = async (card: ReplicaWidgetCard) => {
 }
 
 .itab-add-widget-grid.is-replica {
-  grid-template-columns: repeat(2, 390px);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   grid-auto-rows: 308px;
   align-content: start;
   align-items: start;
-  justify-content: start;
+  justify-content: stretch;
   overflow-y: auto;
-  padding-right: 10px;
-  scrollbar-gutter: stable;
+  padding-right: 0;
 }
 
 .itab-add-widget-card {
@@ -1069,7 +647,7 @@ const addReplicaWidget = async (card: ReplicaWidgetCard) => {
 }
 
 .itab-add-widget-card.is-replica-card {
-  width: 390px;
+  width: 100%;
   height: 308px;
   min-height: 308px;
   grid-template-rows: 58px 190px 40px;
@@ -1133,302 +711,6 @@ const addReplicaWidget = async (card: ReplicaWidgetCard) => {
 .itab-add-replica-art {
   display: grid;
   place-items: center;
-}
-
-.itab-add-widget-card.is-tone-blue .itab-add-replica-preview {
-  background:
-    radial-gradient(
-      circle at 50% 40%,
-      var(--sd-theme-add-widget-modal-accent-surface-03),
-      transparent 36%
-    ),
-    linear-gradient(
-      135deg,
-      var(--sd-theme-add-widget-modal-accent-surface-04),
-      var(--sd-theme-add-widget-modal-accent-surface-05)
-    );
-}
-
-.itab-add-widget-card.is-tone-purple .itab-add-replica-preview {
-  background:
-    radial-gradient(
-      circle at 50% 40%,
-      var(--sd-theme-add-widget-modal-accent-surface-06),
-      transparent 36%
-    ),
-    linear-gradient(
-      135deg,
-      var(--sd-theme-add-widget-modal-accent-surface-07),
-      var(--sd-theme-add-widget-modal-accent-surface-08)
-    );
-}
-
-.itab-add-widget-card.is-tone-amber .itab-add-replica-preview {
-  background:
-    radial-gradient(
-      circle at 50% 40%,
-      var(--sd-theme-add-widget-modal-accent-surface-09),
-      transparent 36%
-    ),
-    linear-gradient(
-      135deg,
-      var(--sd-theme-add-widget-modal-accent-surface-10),
-      var(--sd-theme-add-widget-modal-accent-surface-11)
-    );
-}
-
-.itab-add-widget-card.is-tone-green .itab-add-replica-preview {
-  background:
-    radial-gradient(
-      circle at 50% 40%,
-      var(--sd-theme-add-widget-modal-accent-surface-12),
-      transparent 36%
-    ),
-    linear-gradient(
-      135deg,
-      var(--sd-theme-add-widget-modal-accent-surface-13),
-      var(--sd-theme-add-widget-modal-accent-surface-14)
-    );
-}
-
-.itab-add-widget-card.is-tone-cyan .itab-add-replica-preview {
-  background:
-    radial-gradient(
-      circle at 50% 40%,
-      var(--sd-theme-add-widget-modal-accent-surface-15),
-      transparent 36%
-    ),
-    linear-gradient(
-      135deg,
-      var(--sd-theme-add-widget-modal-accent-surface-16),
-      var(--sd-theme-add-widget-modal-accent-surface-17)
-    );
-}
-
-.itab-add-widget-card.is-tone-pink .itab-add-replica-preview {
-  background:
-    radial-gradient(
-      circle at 50% 40%,
-      var(--sd-theme-add-widget-modal-accent-surface-18),
-      transparent 36%
-    ),
-    linear-gradient(
-      135deg,
-      var(--sd-theme-add-widget-modal-accent-surface-19),
-      var(--sd-theme-add-widget-modal-accent-surface-20)
-    );
-}
-
-.itab-add-widget-card.is-tone-slate .itab-add-replica-preview {
-  background:
-    radial-gradient(
-      circle at 50% 40%,
-      var(--sd-theme-add-widget-modal-surface-09),
-      transparent 36%
-    ),
-    linear-gradient(
-      135deg,
-      var(--sd-theme-add-widget-modal-accent-surface-21),
-      var(--sd-theme-add-widget-modal-accent-surface-22)
-    );
-}
-
-.itab-add-widget-card.is-replica-card .itab-add-replica-preview {
-  background: transparent;
-}
-
-.itab-add-replica-glyph {
-  display: grid;
-  width: 150px;
-  height: 150px;
-  place-items: center;
-  border-radius: 18px;
-  background: var(--sd-theme-add-widget-modal-surface-10);
-  color: var(--sd-theme-add-widget-modal-text-08);
-  font-size: 64px;
-  font-weight: 800;
-}
-
-.itab-add-replica-asset {
-  display: block;
-  width: 150px;
-  height: 150px;
-  border-radius: 18px;
-  object-fit: contain;
-}
-
-.itab-add-replica-asset.is-cover {
-  width: 150px;
-  height: 90px;
-  border-radius: 10px;
-  object-fit: cover;
-}
-
-.itab-add-widget-card.is-preview-number .itab-add-replica-asset {
-  background: var(--sd-theme-add-widget-modal-accent-surface-23);
-}
-
-.itab-add-widget-card.is-preview-number .itab-add-replica-asset {
-  width: 152px;
-  height: 152px;
-  transform: translateY(-1px);
-}
-
-.itab-add-weather-art,
-.itab-add-clock-art,
-.itab-add-offwork-art,
-.itab-add-todo-art,
-.itab-add-pomodoro-art {
-  display: grid;
-  width: 142px;
-  height: 92px;
-  align-content: center;
-  justify-items: center;
-  border-radius: 12px;
-  background: var(--sd-theme-add-widget-modal-preview-surface);
-  color: var(--sd-theme-add-widget-modal-preview-text);
-}
-
-.itab-add-english-art {
-  position: relative;
-  overflow: hidden;
-  display: grid;
-  width: 142px;
-  height: 92px;
-  align-content: center;
-  justify-items: start;
-  padding: 12px;
-  border-radius: 12px;
-  background:
-    linear-gradient(
-      var(--sd-theme-add-widget-modal-surface-11),
-      var(--sd-theme-add-widget-modal-surface-11)
-    ),
-    url("/api/itab-resources/itab-itab-daily-english-14-body-2x4-background-86acdbf74c")
-      center/cover no-repeat,
-    var(--sd-theme-add-widget-modal-surface-12);
-  color: var(--sd-theme-add-widget-modal-text-04);
-}
-
-.itab-add-english-art b {
-  position: absolute;
-  top: 9px;
-  right: 9px;
-  color: var(--sd-theme-add-widget-modal-text-09);
-  font-size: 10px;
-  font-weight: 500;
-  line-height: 1;
-}
-
-.itab-add-english-art strong {
-  max-width: 96px;
-  overflow: hidden;
-  font-size: 12px;
-  font-weight: 500;
-  line-height: 18px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.itab-add-english-art span {
-  margin-top: 5px;
-  color: var(--sd-theme-add-widget-modal-text-10);
-  font-size: 12px;
-  line-height: 18px;
-}
-
-.itab-add-weather-art strong,
-.itab-add-clock-art strong,
-.itab-add-pomodoro-art strong {
-  font-size: 38px;
-  line-height: 1;
-}
-
-.itab-add-offwork-art strong {
-  font-size: 20px;
-  line-height: 1;
-}
-
-.itab-add-weather-art span,
-.itab-add-clock-art span,
-.itab-add-offwork-art span,
-.itab-add-pomodoro-art span {
-  margin-top: 8px;
-  color: var(--sd-theme-add-widget-modal-text-10);
-  font-size: 12px;
-}
-
-.itab-add-pomodoro-art {
-  background:
-    linear-gradient(
-      var(--sd-theme-add-widget-modal-surface-13),
-      var(--sd-theme-add-widget-modal-surface-14)
-    ),
-    url("/itab/widget/tomato/hailang.jpg") center/cover no-repeat,
-    var(--sd-theme-add-widget-modal-accent-surface-24);
-}
-
-.itab-add-memo-art {
-  overflow: hidden;
-  display: grid;
-  width: 118px;
-  height: 118px;
-  border-radius: 18px;
-  background: var(--sd-theme-add-widget-modal-surface-15);
-  box-shadow: var(--sd-theme-add-widget-modal-shadow-01) 0 10px 22px;
-}
-
-.itab-add-memo-art strong {
-  display: grid;
-  height: 30px;
-  place-items: center;
-  background-image: linear-gradient(
-    0deg,
-    var(--sd-theme-add-widget-modal-accent-surface-25),
-    var(--sd-theme-add-widget-modal-accent-surface-26)
-  );
-  color: var(--sd-theme-add-widget-modal-text-04);
-  font-size: 12px;
-  line-height: 18px;
-}
-
-.itab-add-memo-art span {
-  height: 29px;
-  border-bottom: 1px solid var(--sd-theme-add-widget-modal-border-03);
-}
-
-.itab-add-todo-art {
-  align-content: start;
-  justify-items: stretch;
-  padding: 10px 12px;
-  background: var(--sd-theme-add-widget-modal-surface-15);
-  color: var(--sd-theme-add-widget-modal-text-11);
-  text-align: left;
-}
-
-.itab-add-todo-art strong {
-  margin-bottom: 6px;
-  color: var(--sd-theme-add-widget-modal-accent-text-02);
-  font-size: 12px;
-  line-height: 18px;
-}
-
-.itab-add-todo-art span {
-  display: flex;
-  min-width: 0;
-  align-items: center;
-  gap: 7px;
-  color: var(--sd-theme-add-widget-modal-text-12);
-  font-size: 12px;
-  line-height: 24px;
-}
-
-.itab-add-todo-art i {
-  width: 12px;
-  height: 12px;
-  flex: 0 0 12px;
-  border: 2px solid var(--sd-theme-add-widget-modal-border-04);
-  border-radius: 3px;
 }
 
 .itab-add-replica-footer {

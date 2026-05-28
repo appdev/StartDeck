@@ -85,6 +85,23 @@ describe("ItabMemoWidget", () => {
     expect(wrapper.find(".memo-widget-delete").exists()).toBe(false);
   });
 
+  it("renders public default memo rows for logged-out users", () => {
+    const auth = useAuthStore();
+    auth.logout();
+
+    const wrapper = mount(ItabMemoWidget, {
+      props: {
+        widget,
+        sizeKey: "2x4",
+        remoteSync: false,
+      },
+    });
+
+    expect(wrapper.text()).toContain("固定备忘");
+    expect(wrapper.text()).toContain("评审 UI");
+    expect(wrapper.text()).not.toContain("登录后使用备忘录");
+  });
+
   it("keeps compact sizes visually icon-like by hiding row text", () => {
     const wrapper = mount(ItabMemoWidget, {
       props: {

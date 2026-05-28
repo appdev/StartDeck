@@ -52,6 +52,10 @@ const previewWidget = computed<WidgetConfig | undefined>(() => {
   widget.id = `preview-${item.id}`;
   widget.enable = true;
   widget.isPublic = true;
+  widget.data = {
+    ...(widget.data && typeof widget.data === "object" ? widget.data : {}),
+    catalogPreview: true,
+  };
   if (isRuntimeWidget(widget)) {
     applyRuntimeWidgetSize(widget, size.key as RuntimeWidgetSizeKey);
     return widget;

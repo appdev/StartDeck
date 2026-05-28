@@ -34,7 +34,9 @@ export const useItabTodoRuntime = (
   const shouldUseSocket = computed(
     () => store.isLanModeInited && store.effectiveIsLan && store.isConnected,
   );
-  const canReadTodo = computed(() => store.isLogged);
+  const canReadTodo = computed(
+    () => store.isLogged || widget.value.isPublic === true,
+  );
   const canWriteTodo = computed(() => canWriteResource(store.isLogged));
   const normalizedData = computed(() =>
     normalizeItabTodoWidgetData(widget.value.data),

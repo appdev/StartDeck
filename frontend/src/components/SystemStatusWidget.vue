@@ -40,6 +40,46 @@ type SystemStats = {
   };
 };
 
+const SYSTEM_STATUS_PREVIEW_GB = 1024 * 1024 * 1024;
+const SYSTEM_STATUS_PREVIEW_STATS: SystemStats = {
+  cpu: {
+    currentLoad: 28,
+    currentLoadUser: 18,
+    currentLoadSystem: 10,
+    manufacturer: "Apple",
+    brand: "Apple M-series",
+    speed: 3.2,
+    cores: 10,
+  },
+  mem: {
+    total: 32 * SYSTEM_STATUS_PREVIEW_GB,
+    used: 19 * SYSTEM_STATUS_PREVIEW_GB,
+    active: 19 * SYSTEM_STATUS_PREVIEW_GB,
+    available: 13 * SYSTEM_STATUS_PREVIEW_GB,
+  },
+  disk: [
+    {
+      fs: "/dev/disk3s1",
+      type: "apfs",
+      size: 1024 * SYSTEM_STATUS_PREVIEW_GB,
+      used: 420 * SYSTEM_STATUS_PREVIEW_GB,
+      use: 41,
+      mount: "/",
+    },
+  ],
+  network: [{ iface: "en0", rx_sec: 860 * 1024, tx_sec: 180 * 1024 }],
+  temp: { main: 42, cores: [41, 42, 43], max: 43 },
+  uptime: 86400 * 6.8,
+  os: {
+    distro: "macOS",
+    release: "15",
+    codename: "Sequoia",
+    kernel: "Darwin",
+    arch: "arm64",
+    hostname: "StartDeck",
+  },
+};
+
 const store = useMainStore();
 const props = defineProps<{
   widget?: WidgetConfig;
@@ -61,6 +101,12 @@ const systemRuntimeState = useSharedSystemStatusRuntimeState(props.widget?.id);
 const systemStats = systemRuntimeState.systemStats as Ref<SystemStats | null>;
 const errorCount = systemRuntimeState.errorCount;
 const pollInterval = systemRuntimeState.pollInterval;
+const isCatalogPreview = computed(() =>
+  Boolean(props.widget?.data?.catalogPreview),
+);
+const activeSystemStats = computed(() =>
+  isCatalogPreview.value ? SYSTEM_STATUS_PREVIEW_STATS : systemStats.value,
+);
 
 const systemWidgetModel = computed(() => {
   if (!props.widget) return undefined;
@@ -110,34 +156,34 @@ const formatRate = (bytes: number) => {
 };
 
 const cpuPercent = computed(() =>
-  clampPercent(systemStats.value?.cpu.currentLoad ?? 0),
+  clampPercent(activeSystemStats.value?.cpu.currentLoad ?? 0),
 );
 const memPercent = computed(() => {
-  const mem = systemStats.value?.mem;
+  const mem = activeSystemStats.value?.mem;
   if (!mem?.total) return 0;
   return clampPercent((mem.active / mem.total) * 100);
 });
-const primaryDisk = computed(() => systemStats.value?.disk?.[0]);
+const primaryDisk = computed(() => activeSystemStats.value?.disk?.[0]);
 const diskPercent = computed(() => clampPercent(primaryDisk.value?.use ?? 0));
 const primaryNetwork = computed(
   () =>
-    systemStats.value?.network?.find(
+    activeSystemStats.value?.network?.find(
       (item) => item.rx_sec > 0 || item.tx_sec > 0,
-    ) || systemStats.value?.network?.[0],
+    ) || activeSystemStats.value?.network?.[0],
 );
 const compactCpuBrand = computed(() => {
-  const brand = systemStats.value?.cpu.brand || "";
+  const brand = activeSystemStats.value?.cpu.brand || "";
   return brand.replace(/^Apple\s+/i, "").trim() || "处理器";
 });
 const uptimeText = computed(() => {
-  const uptime = systemStats.value?.uptime ?? 0;
+  const uptime = activeSystemStats.value?.uptime ?? 0;
   if (uptime <= 0) return "--";
   const days = uptime / 86400;
   if (days >= 1) return `${days.toFixed(1)} 天`;
   return `${Math.max(1, Math.round(uptime / 3600))} 小时`;
 });
 const uptimeDaysText = computed(() => {
-  const uptime = systemStats.value?.uptime ?? 0;
+  const uptime = activeSystemStats.value?.uptime ?? 0;
   if (uptime <= 0) return "--";
   const days = uptime / 86400;
   if (days < 0.1) return "< 0.1 天";
@@ -146,23 +192,23 @@ const uptimeDaysText = computed(() => {
 });
 const uptimeRunningText = computed(() => `已运行 ${uptimeDaysText.value}`);
 const osSummary = computed(() => {
-  const os = systemStats.value?.os;
+  const os = activeSystemStats.value?.os;
   if (!os) return "Host";
   return [os.distro, os.release].filter(Boolean).join(" ") || os.hostname;
 });
 const hostSummary = computed(() => {
-  const os = systemStats.value?.os;
+  const os = activeSystemStats.value?.os;
   if (!os) return "Host telemetry";
   return [os.hostname, os.distro, os.kernel].filter(Boolean).join(" · ");
 });
 const openedHostSummary = computed(() => {
   const summary = hostSummary.value;
-  if (!systemStats.value?.uptime) return summary;
+  if (!activeSystemStats.value?.uptime) return summary;
   return [summary, uptimeRunningText.value].filter(Boolean).join(" · ");
 });
 const realtimeSummary = computed(() => {
   const parts = [osSummary.value];
-  if (systemStats.value?.uptime) parts.push(uptimeRunningText.value);
+  if (activeSystemStats.value?.uptime) parts.push(uptimeRunningText.value);
   parts.push(`CPU ${cpuPercent.value.toFixed(0)}%`);
   return parts.join(" · ");
 });
@@ -172,7 +218,7 @@ const metricCards = computed(() => [
     key: "cpu",
     label: "CPU",
     value: `${cpuPercent.value.toFixed(0)}%`,
-    detail: systemStats.value?.cpu.brand || "处理器负载",
+    detail: activeSystemStats.value?.cpu.brand || "处理器负载",
     cardDetail: compactCpuBrand.value,
     percent: cpuPercent.value,
     tone: "blue",
@@ -181,11 +227,11 @@ const metricCards = computed(() => [
     key: "mem",
     label: "内存",
     value: `${memPercent.value.toFixed(0)}%`,
-    detail: systemStats.value
-      ? `${formatGb(systemStats.value.mem.active)} / ${formatGb(systemStats.value.mem.total)}`
+    detail: activeSystemStats.value
+      ? `${formatGb(activeSystemStats.value.mem.active)} / ${formatGb(activeSystemStats.value.mem.total)}`
       : "--",
-    cardDetail: systemStats.value
-      ? `${formatCompactGb(systemStats.value.mem.active)}/${formatCompactGb(systemStats.value.mem.total)}`
+    cardDetail: activeSystemStats.value
+      ? `${formatCompactGb(activeSystemStats.value.mem.active)}/${formatCompactGb(activeSystemStats.value.mem.total)}`
       : "--",
     percent: memPercent.value,
     tone: "violet",
@@ -220,10 +266,10 @@ const metricCards = computed(() => [
 const squareMetricCards = computed(() => metricCards.value.slice(1, 3));
 const boardMetricCards = computed(() => metricCards.value.slice(0, 4));
 const openedDiskRows = computed(
-  () => systemStats.value?.disk?.slice(0, 4) || [],
+  () => activeSystemStats.value?.disk?.slice(0, 4) || [],
 );
 const openedNetworkRows = computed(
-  () => systemStats.value?.network?.slice(0, 4) || [],
+  () => activeSystemStats.value?.network?.slice(0, 4) || [],
 );
 
 const ensureSystemWidgetData = () => {
@@ -251,6 +297,7 @@ const setSystemWidgetMobileVisible = (visible: boolean) => {
   store.markDirty();
 };
 const startPolling = () => {
+  if (isCatalogPreview.value) return;
   systemRuntimeState.clearPollingTimer();
   systemRuntimeState.setPollingTimer(
     setInterval(() => {
@@ -265,6 +312,7 @@ const stopPolling = () => {
 };
 
 const fetchSystemStats = async () => {
+  if (isCatalogPreview.value) return;
   try {
     const headers = store.getHeaders();
     const res = await fetch("/api/system/stats", { headers });
@@ -297,22 +345,26 @@ useResumeRefresh({
     stopPolling();
   },
   onVisible: () => {
+    if (isCatalogPreview.value) return;
     void fetchSystemStats();
     startPolling();
   },
   onOnline: () => {
+    if (isCatalogPreview.value) return;
     void fetchSystemStats();
     startPolling();
   },
 });
 
 onMounted(() => {
+  if (isCatalogPreview.value) return;
   systemRuntimeState.retain();
   void fetchSystemStats();
   startPolling();
 });
 
 onUnmounted(() => {
+  if (isCatalogPreview.value) return;
   systemRuntimeState.release();
 });
 </script>
@@ -361,15 +413,15 @@ onUnmounted(() => {
             <dl>
               <div>
                 <dt>CPU</dt>
-                <dd>{{ systemStats?.cpu.brand || "--" }}</dd>
+                <dd>{{ activeSystemStats?.cpu.brand || "--" }}</dd>
               </div>
               <div>
                 <dt>核心</dt>
-                <dd>{{ systemStats?.cpu.cores || "--" }}</dd>
+                <dd>{{ activeSystemStats?.cpu.cores || "--" }}</dd>
               </div>
               <div>
                 <dt>温度</dt>
-                <dd>{{ systemStats?.temp?.main || "--" }}°C</dd>
+                <dd>{{ activeSystemStats?.temp?.main || "--" }}°C</dd>
               </div>
               <div>
                 <dt>已运行</dt>
@@ -470,12 +522,12 @@ onUnmounted(() => {
         'is-vertical': isVerticalSystemLayout,
         'is-square': isSquareSystemLayout,
         'is-board': displaySize.isBoard,
-        'has-stats': Boolean(systemStats),
+        'has-stats': Boolean(activeSystemStats),
       },
     ]"
     :data-widget-size="displaySize.sizeKey"
   >
-    <template v-if="systemStats">
+    <template v-if="activeSystemStats">
       <div v-if="isTinySystemLayout" class="system-status-quick">
         <span>CPU</span>
         <div>
@@ -506,7 +558,7 @@ onUnmounted(() => {
         </article>
         <article>
           <span>TEMP</span>
-          <strong>{{ systemStats.temp?.main || "--" }}°</strong>
+          <strong>{{ activeSystemStats.temp?.main || "--" }}°</strong>
         </article>
       </div>
 
@@ -553,14 +605,14 @@ onUnmounted(() => {
         </section>
         <div class="system-status-context">
           <span>运行 {{ uptimeText }}</span>
-          <span v-if="systemStats.temp?.main"
-            >{{ systemStats.temp.main }}°C</span
+          <span v-if="activeSystemStats.temp?.main"
+            >{{ activeSystemStats.temp.main }}°C</span
           >
           <span
-            v-if="systemStats.os?.hostname"
-            :title="systemStats.os.hostname"
+            v-if="activeSystemStats.os?.hostname"
+            :title="activeSystemStats.os.hostname"
           >
-            {{ systemStats.os.hostname }}
+            {{ activeSystemStats.os.hostname }}
           </span>
         </div>
       </div>

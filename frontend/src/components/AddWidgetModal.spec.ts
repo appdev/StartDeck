@@ -73,7 +73,7 @@ describe("AddWidgetModal iTab add UI", () => {
       true,
     );
     expect(wrapper.find('[data-testid="itab-add-batch-button"]').exists()).toBe(
-      true,
+      false,
     );
     expect(wrapper.find('[data-testid="itab-add-tab-site"]').exists()).toBe(
       false,
@@ -87,6 +87,7 @@ describe("AddWidgetModal iTab add UI", () => {
     expect(wrapper.text()).not.toContain("渐变色");
     expect(wrapper.text()).not.toContain("🔥");
     expect(wrapper.text()).not.toContain("今日推荐");
+    expect(wrapper.text()).not.toContain("探索");
     expect(wrapper.text()).not.toContain("最近更新");
     expect(wrapper.text()).not.toContain("最受欢迎");
     expect(wrapper.text()).not.toContain("其他");
@@ -97,27 +98,22 @@ describe("AddWidgetModal iTab add UI", () => {
       wrapper
         .findAll('[data-testid="itab-add-category-chip"]')
         .map((chip) => chip.text()),
-    ).toEqual([
-      "探索",
-      "全部",
-      "效率",
-      "工具",
-      "系统",
-      "开发",
-      "设计",
-      "创意",
-      "娱乐",
-    ]);
+    ).toEqual(["全部", "效率", "工具", "系统", "开发", "设计", "创意", "娱乐"]);
     expect(wrapper.find(".itab-add-replica-popularity").exists()).toBe(false);
     const initialCards = wrapper.findAll(
       '[data-testid="itab-add-widget-card"]',
     );
     expect(
       initialCards.slice(0, 4).map((card) => card.find("h3").text()),
-    ).toEqual(["金额换算", "天气", "本机IP", "纪念日"]);
+    ).toEqual(["时钟", "天气", "纪念日", "日历"]);
     expect(
       wrapper.find(".itab-add-widget-preview-frame").attributes("src"),
     ).toContain("/widget-preview?");
+    expect(
+      wrapper
+        .findAll('[data-testid="itab-add-category-chip"]')[0]!
+        .attributes("aria-pressed"),
+    ).toBe("true");
     expect(wrapper.find(".itab-add-window-controls").exists()).toBe(true);
     expect(wrapper.find(".itab-add-window-controls .is-green").exists()).toBe(
       true,
@@ -127,10 +123,6 @@ describe("AddWidgetModal iTab add UI", () => {
     expect(wrapper.find(".itab-add-replica-dots").exists()).toBe(false);
     expect(wrapper.find(".itab-add-size-button").exists()).toBe(false);
 
-    await wrapper
-      .findAll('[data-testid="itab-add-category-chip"]')[1]!
-      .trigger("click");
-    await wrapper.vm.$nextTick();
     const allTabCard = wrapper.find('[data-testid="itab-add-widget-card"]');
     expect(allTabCard.classes()).toContain("is-replica-card");
     expect(allTabCard.classes()).toContain("is-catalog-card");
@@ -218,7 +210,7 @@ describe("AddWidgetModal iTab add UI", () => {
     );
   });
 
-  it("keeps iTab recommendation cards display-only until they are migrated", async () => {
+  it("maps the weather catalog card to the weather singleton add flow", async () => {
     const addSpy = vi.fn(async (payload: AddComponentPayload) => ({
       status: "success" as const,
       id: payload.kind === "widget" ? payload.catalogItemId : "created",
@@ -226,41 +218,13 @@ describe("AddWidgetModal iTab add UI", () => {
     }));
     const wrapper = mountModal(addSpy);
 
-    const recommendationCards = wrapper.findAll(
-      ".itab-add-widget-card.is-replica-card",
-    );
-    expect(recommendationCards.length).toBeGreaterThan(0);
-
-    const displayOnlyCard = recommendationCards.find(
-      (card) =>
-        card.find('[data-testid="itab-add-card-add"]').text() === "待迁移",
-    );
-    if (!displayOnlyCard)
-      throw new Error("display-only recommendation not found");
-
-    const displayOnlyButton = displayOnlyCard.find(
-      '[data-testid="itab-add-card-add"]',
-    );
-    expect(displayOnlyButton.attributes("disabled")).toBeDefined();
-    expect(displayOnlyButton.attributes("aria-disabled")).toBe("true");
-
-    await displayOnlyButton.trigger("click");
-
-    expect(addSpy).not.toHaveBeenCalled();
-  });
-
-  it("maps the iTab weather recommendation to the weather singleton add flow", async () => {
-    const addSpy = vi.fn(async (payload: AddComponentPayload) => ({
-      status: "success" as const,
-      id: payload.kind === "widget" ? payload.catalogItemId : "created",
-      groupId: payload.destinationGroupId,
-    }));
-    const wrapper = mountModal(addSpy);
+    await wrapper.find('[data-testid="itab-add-search"]').setValue("天气");
+    await wrapper.vm.$nextTick();
 
     const weatherCard = wrapper
       .findAll(".itab-add-widget-card.is-replica-card")
       .find((card) => card.find("h3").text() === "天气");
-    if (!weatherCard) throw new Error("weather recommendation not found");
+    if (!weatherCard) throw new Error("weather catalog card not found");
 
     const addButton = weatherCard.find('[data-testid="itab-add-card-add"]');
     expect(addButton.text()).toBe("添加");
@@ -279,7 +243,7 @@ describe("AddWidgetModal iTab add UI", () => {
     );
   });
 
-  it("maps the iTab IP recommendation to the local IP add flow", async () => {
+  it("maps the IP catalog card to the local IP add flow", async () => {
     const addSpy = vi.fn(async (payload: AddComponentPayload) => ({
       status: "success" as const,
       id: payload.kind === "widget" ? payload.catalogItemId : "created",
@@ -287,10 +251,13 @@ describe("AddWidgetModal iTab add UI", () => {
     }));
     const wrapper = mountModal(addSpy);
 
+    await wrapper.find('[data-testid="itab-add-search"]').setValue("本机IP");
+    await wrapper.vm.$nextTick();
+
     const ipCard = wrapper
       .findAll(".itab-add-widget-card.is-replica-card")
       .find((card) => card.find("h3").text() === "本机IP");
-    if (!ipCard) throw new Error("IP recommendation not found");
+    if (!ipCard) throw new Error("IP catalog card not found");
 
     const addButton = ipCard.find('[data-testid="itab-add-card-add"]');
     expect(addButton.text()).toBe("添加");
@@ -344,7 +311,7 @@ describe("AddWidgetModal iTab add UI", () => {
     );
   });
 
-  it("maps the amount conversion recommendation to the add flow", async () => {
+  it("maps the amount conversion catalog card to the add flow", async () => {
     const addSpy = vi.fn(async (payload: AddComponentPayload) => ({
       status: "success" as const,
       id: payload.kind === "widget" ? payload.catalogItemId : "created",
@@ -377,7 +344,7 @@ describe("AddWidgetModal iTab add UI", () => {
     );
   });
 
-  it("maps migrated Clock, Memo, Todo, Pomodoro and poem recommendations to their canonical add flows", async () => {
+  it("maps migrated Clock, Memo, Todo, Pomodoro and poem catalog cards to their canonical add flows", async () => {
     const addSpy = vi.fn(async (payload: AddComponentPayload) => ({
       status: "success" as const,
       id: payload.kind === "widget" ? payload.catalogItemId : "created",
@@ -388,20 +355,18 @@ describe("AddWidgetModal iTab add UI", () => {
     const cards = wrapper.findAll(".itab-add-widget-card.is-replica-card");
     const clockCard = cards.find((card) => card.find("h3").text() === "时钟");
     const memoCard = cards.find((card) => card.find("h3").text() === "备忘录");
-    const todoCard = cards.find(
-      (card) => card.find("h3").text() === "待办事项",
-    );
+    const todoCard = cards.find((card) => card.find("h3").text() === "待办");
     const poemCard = cards.find(
       (card) => card.find("h3").text() === "今日诗词",
     );
     const pomodoroCard = cards.find(
       (card) => card.find("h3").text() === "番茄时钟",
     );
-    if (!clockCard) throw new Error("clock recommendation not found");
-    if (!memoCard) throw new Error("memo recommendation not found");
-    if (!todoCard) throw new Error("todo recommendation not found");
-    if (!poemCard) throw new Error("poem recommendation not found");
-    if (!pomodoroCard) throw new Error("pomodoro recommendation not found");
+    if (!clockCard) throw new Error("clock catalog card not found");
+    if (!memoCard) throw new Error("memo catalog card not found");
+    if (!todoCard) throw new Error("todo catalog card not found");
+    if (!poemCard) throw new Error("poem catalog card not found");
+    if (!pomodoroCard) throw new Error("pomodoro catalog card not found");
 
     const clockButton = clockCard.find('[data-testid="itab-add-card-add"]');
     const memoButton = memoCard.find('[data-testid="itab-add-card-add"]');

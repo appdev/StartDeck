@@ -171,7 +171,9 @@ watch(
   box-sizing: border-box;
   position: relative;
   overflow: hidden;
-  background-color: #154280;
+  background-color: var(
+    --sd-theme-itab-weather-weather-opened-panel-scene-base
+  );
   background-position: center;
   background-repeat: no-repeat;
   background-size: cover;
@@ -190,15 +192,21 @@ watch(
 }
 
 .weather-icon-content.weather-sunny_d {
-  background-image: linear-gradient(35deg, #154280 30%, #335693, #a8b3d2);
+  background-image: var(
+    --sd-theme-itab-weather-weather-opened-panel-scene-sunny-day
+  );
 }
 
 .weather-icon-content.weather-sunny_n {
-  background-image: linear-gradient(45deg, #000012 20%, #29334e);
+  background-image: var(
+    --sd-theme-itab-weather-weather-opened-panel-scene-sunny-night
+  );
 }
 
 .weather-icon-content.weather-cloudy_d {
-  background-image: linear-gradient(35deg, #054989 30%, #72ade0);
+  background-image: var(
+    --sd-theme-itab-weather-weather-opened-panel-scene-cloudy-day
+  );
 }
 
 .weather-icon-content.weather-cloudy_d::before {
@@ -211,15 +219,21 @@ watch(
 }
 
 .weather-icon-content.weather-cloudy_n {
-  background-image: linear-gradient(35deg, #191a2e 30%, #4c5f7f);
+  background-image: var(
+    --sd-theme-itab-weather-weather-opened-panel-scene-cloudy-night
+  );
 }
 
 .weather-icon-content.weather-yin_d {
-  background-image: linear-gradient(35deg, #354564 30%, #4c5f7f, #8b9bb8);
+  background-image: var(
+    --sd-theme-itab-weather-weather-opened-panel-scene-yin-day
+  );
 }
 
 .weather-icon-content.weather-yin_n {
-  background-image: linear-gradient(45deg, #211e22 20%, #383a3e);
+  background-image: var(
+    --sd-theme-itab-weather-weather-opened-panel-scene-yin-night
+  );
 }
 
 .weather-icon-content.weather-rain_d,
@@ -244,19 +258,27 @@ watch(
 }
 
 .weather-icon-content.weather-foggy_d {
-  background-image: linear-gradient(45deg, #789fb8 20%, #6386a3);
+  background-image: var(
+    --sd-theme-itab-weather-weather-opened-panel-scene-foggy-day
+  );
 }
 
 .weather-icon-content.weather-foggy_n {
-  background-image: linear-gradient(45deg, #6c7682 20%, #535d69);
+  background-image: var(
+    --sd-theme-itab-weather-weather-opened-panel-scene-foggy-night
+  );
 }
 
 .weather-icon-content.weather-haze_d {
-  background-image: linear-gradient(45deg, #8d8882 20%, #bbb7af);
+  background-image: var(
+    --sd-theme-itab-weather-weather-opened-panel-scene-haze-day
+  );
 }
 
 .weather-icon-content.weather-haze_n {
-  background-image: linear-gradient(45deg, #1b1712 20%, #5b4c49);
+  background-image: var(
+    --sd-theme-itab-weather-weather-opened-panel-scene-haze-night
+  );
 }
 
 .weather-icon-content.weather-other {

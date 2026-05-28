@@ -258,8 +258,7 @@ const style = computed(() => anniversaryTemplateStyle(cardTemplate.value));
   background: linear-gradient(
     to bottom,
     var(--anniversary-text) 0 var(--payday-band),
-    var(--sd-theme-itab-anniversary-anniversary-card-surface-01)
-      var(--payday-band) 100%
+    var(--anniversary-bg) var(--payday-band) 100%
   );
   color: var(--anniversary-text);
   text-align: center;
@@ -303,8 +302,7 @@ const style = computed(() => anniversaryTemplateStyle(cardTemplate.value));
   background: linear-gradient(
     to bottom,
     var(--anniversary-text) 0 var(--payday-band),
-    var(--sd-theme-itab-anniversary-anniversary-card-surface-01)
-      var(--payday-band) 100%
+    var(--anniversary-bg) var(--payday-band) 100%
   );
 }
 
@@ -371,7 +369,7 @@ const style = computed(() => anniversaryTemplateStyle(cardTemplate.value));
 
 .is-payday.size-1-2 {
   --payday-band: 20px;
-  background: var(--sd-theme-itab-anniversary-anniversary-card-surface-01);
+  background: var(--anniversary-bg);
 }
 
 .is-payday.size-1-2 .anniversary-card-copy {
@@ -396,7 +394,7 @@ const style = computed(() => anniversaryTemplateStyle(cardTemplate.value));
 
 .is-payday.size-2-1 {
   --payday-band: 38px;
-  background: var(--sd-theme-itab-anniversary-anniversary-card-surface-01);
+  background: var(--anniversary-bg);
 }
 
 .is-payday.size-2-1 .anniversary-card-copy {
@@ -768,8 +766,7 @@ const style = computed(() => anniversaryTemplateStyle(cardTemplate.value));
   background: linear-gradient(
     to bottom,
     var(--anniversary-text) 0 var(--payday-band),
-    var(--sd-theme-itab-anniversary-anniversary-card-surface-01)
-      var(--payday-band) 100%
+    var(--anniversary-bg) var(--payday-band) 100%
   );
 }
 
@@ -838,9 +835,7 @@ const style = computed(() => anniversaryTemplateStyle(cardTemplate.value));
 .is-payday.has-image-background,
 .variant-mini.is-payday.has-image-background,
 .variant-preview.is-payday.has-image-background {
-  background-color: var(
-    --sd-theme-itab-anniversary-anniversary-card-surface-01
-  );
+  background-color: var(--anniversary-bg);
   background-image:
     linear-gradient(
       to bottom,

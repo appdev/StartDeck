@@ -728,6 +728,7 @@ onMounted(() => {
         : 'sd-overlay'
     "
     panel-class="w-full max-w-sm"
+    surface-class="sd-compact-window"
     @close="uiFeedback.closeAlert()"
   >
     <p

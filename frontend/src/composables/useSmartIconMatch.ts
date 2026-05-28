@@ -205,6 +205,11 @@ export const useSmartIconMatch = ({
       const metadata = await fetchSiteMetadata(targetUrl);
       if (activeRunId.value !== runId) return;
 
+      const metadataTitle = metadata?.title?.trim();
+      if (metadataTitle) {
+        form.value.title = metadataTitle;
+      }
+
       const candidates: SmartIconCandidate[] = [];
       const metadataIcon = metadata?.icon?.trim();
       const metadataBackgroundColor = normalizeIconBackgroundColor(
@@ -234,10 +239,6 @@ export const useSmartIconMatch = ({
 
       if (activeRunId.value !== runId) return;
       smartMatchCandidates.value = candidates;
-      const firstCandidate = candidates[0];
-      if (firstCandidate) {
-        applySmartMatchCandidate(firstCandidate);
-      }
     } catch (e) {
       console.warn("Site metadata lookup failed", e);
     } finally {

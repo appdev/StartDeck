@@ -1,5 +1,6 @@
 import { computed, reactive, ref, type Ref } from "vue";
 import type { WidgetConfig } from "@/types";
+import { useItabIpRuntime } from "@/features/itab-ip/useItabIpRuntime";
 import {
   fetchItabWeatherCurrent,
   fetchItabWeatherLocation,
@@ -7,6 +8,7 @@ import {
 } from "./itabWeatherApi";
 import {
   normalizeItabWeatherWidgetData,
+  toItabWeatherLocationFromIpLookup,
   toItabWeatherLocation,
 } from "./itabWeatherModel";
 import type {
@@ -39,57 +41,58 @@ type ItabWeatherSkinCategory =
 
 type ItabWeatherCodeCategory = ItabWeatherSkinCategory | "other" | "";
 
-const SOURCE_WEATHER_CODE_CATEGORIES: Record<string, ItabWeatherSkinCategory> = {
-  "100": "sunny",
-  "150": "sunny",
-  "101": "cloudy",
-  "102": "cloudy",
-  "103": "cloudy",
-  "151": "cloudy",
-  "152": "cloudy",
-  "153": "cloudy",
-  "104": "yin",
-  "302": "thunder",
-  "303": "thunder",
-  "300": "rain",
-  "301": "rain",
-  "304": "rain",
-  "305": "rain",
-  "306": "rain",
-  "307": "rain",
-  "308": "rain",
-  "309": "rain",
-  "310": "rain",
-  "311": "rain",
-  "312": "rain",
-  "313": "rain",
-  "314": "rain",
-  "315": "rain",
-  "316": "rain",
-  "317": "rain",
-  "318": "rain",
-  "350": "rain",
-  "351": "rain",
-  "399": "rain",
-  "400": "snow",
-  "401": "snow",
-  "402": "snow",
-  "403": "snow",
-  "404": "snow",
-  "405": "snow",
-  "406": "snow",
-  "407": "snow",
-  "408": "snow",
-  "409": "snow",
-  "410": "snow",
-  "500": "foggy",
-  "501": "foggy",
-  "509": "foggy",
-  "510": "foggy",
-  "514": "foggy",
-  "515": "foggy",
-  "502": "haze",
-};
+const SOURCE_WEATHER_CODE_CATEGORIES: Record<string, ItabWeatherSkinCategory> =
+  {
+    "100": "sunny",
+    "150": "sunny",
+    "101": "cloudy",
+    "102": "cloudy",
+    "103": "cloudy",
+    "151": "cloudy",
+    "152": "cloudy",
+    "153": "cloudy",
+    "104": "yin",
+    "302": "thunder",
+    "303": "thunder",
+    "300": "rain",
+    "301": "rain",
+    "304": "rain",
+    "305": "rain",
+    "306": "rain",
+    "307": "rain",
+    "308": "rain",
+    "309": "rain",
+    "310": "rain",
+    "311": "rain",
+    "312": "rain",
+    "313": "rain",
+    "314": "rain",
+    "315": "rain",
+    "316": "rain",
+    "317": "rain",
+    "318": "rain",
+    "350": "rain",
+    "351": "rain",
+    "399": "rain",
+    "400": "snow",
+    "401": "snow",
+    "402": "snow",
+    "403": "snow",
+    "404": "snow",
+    "405": "snow",
+    "406": "snow",
+    "407": "snow",
+    "408": "snow",
+    "409": "snow",
+    "410": "snow",
+    "500": "foggy",
+    "501": "foggy",
+    "509": "foggy",
+    "510": "foggy",
+    "514": "foggy",
+    "515": "foggy",
+    "502": "haze",
+  };
 
 const weatherConditionCategoryByCode = (
   rawCode?: string | number,
@@ -543,6 +546,7 @@ export const useItabWeatherRuntime = (
   const getWidget = () =>
     typeof widget === "function" ? widget() : widget.value;
   const state = getRuntimeState(getWidget().id);
+  const ipRuntime = useItabIpRuntime();
   const normalizedData = () => normalizeItabWeatherWidgetData(getWidget().data);
 
   const commitLocation = (location: ItabWeatherLocation) => {
@@ -580,15 +584,23 @@ export const useItabWeatherRuntime = (
     state.error.value = "";
 
     try {
+      const persistedLocation = normalizedData().location;
       let location =
-        locationInput ||
-        normalizedData().location ||
-        state.activeLocation.value;
-      if (!locationInput && !normalizedData().location) {
+        locationInput || persistedLocation || state.activeLocation.value;
+      if (!locationInput && !persistedLocation) {
         try {
-          location = toItabWeatherLocation(
-            await fetchItabWeatherLocation(controller.signal),
-          );
+          const ipResult = await ipRuntime.ensureResult();
+          if (seq !== state.requestSeq || controller.signal.aborted) return;
+          const ipLocation = ipResult
+            ? toItabWeatherLocationFromIpLookup(ipResult)
+            : undefined;
+          if (ipLocation) {
+            location = ipLocation;
+          } else {
+            location = toItabWeatherLocation(
+              await fetchItabWeatherLocation(controller.signal),
+            );
+          }
         } catch {
           location = state.activeLocation.value;
         }
@@ -624,7 +636,8 @@ export const useItabWeatherRuntime = (
     if (!state.lastLoadedAt) return true;
     if (
       state.lastLoadedKey &&
-      state.lastLoadedKey !== weatherLocationCacheKey(state.activeLocation.value)
+      state.lastLoadedKey !==
+        weatherLocationCacheKey(state.activeLocation.value)
     ) {
       return true;
     }
@@ -709,7 +722,9 @@ export const useItabWeatherRuntime = (
     }, 220);
   };
 
-  const weatherOuterClass = computed(() => resolveItabWeatherSkinClass(state.sample));
+  const weatherOuterClass = computed(() =>
+    resolveItabWeatherSkinClass(state.sample),
+  );
 
   const weatherOuterDaily = computed(() =>
     state.days.value.slice(1, 7).map((day, index) => ({

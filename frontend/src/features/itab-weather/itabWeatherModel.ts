@@ -1,4 +1,5 @@
 import type { WidgetConfig } from "@/types";
+import type { ItabIpLookupResult } from "@/features/itab-ip/itabIpTypes";
 import {
   ITAB_WIDGET_SIZE_BY_KEY,
   resolveItabWidgetSize,
@@ -19,6 +20,11 @@ import {
 
 const isObject = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
+
+const cleanText = (value: string | undefined) => (value || "").trim();
+
+const firstText = (values: Array<string | undefined>) =>
+  values.map(cleanText).find(Boolean) || "";
 
 export const isItabWeatherSizeKey = (
   value: unknown,
@@ -58,6 +64,35 @@ export const toItabWeatherLocation = (
   country: location.country,
   location: location.location,
 });
+
+export const toItabWeatherLocationFromIpLookup = (
+  result: ItabIpLookupResult,
+): ItabWeatherLocation | undefined => {
+  if (result.sourceStatus !== "ok") return undefined;
+  const id = cleanText(result.weatherLocationId);
+  if (!id) return undefined;
+  const city = firstText([
+    result.city,
+    result.district,
+    result.adm2,
+    result.region,
+    result.location,
+  ]);
+  if (!city) return undefined;
+  const latitude = cleanText(result.latitude);
+  const longitude = cleanText(result.longitude);
+  const location =
+    latitude && longitude ? `${longitude},${latitude}` : undefined;
+  return {
+    id,
+    city,
+    province: cleanText(result.region) || undefined,
+    adm2: cleanText(result.adm2) || undefined,
+    type: cleanText(result.weatherLocationType) || "city",
+    country: cleanText(result.country) || undefined,
+    location,
+  };
+};
 
 export const normalizeItabWeatherWidgetData = (
   raw: unknown,

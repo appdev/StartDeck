@@ -45,6 +45,8 @@ mod static_assets;
 mod telemetry;
 mod tencent_map;
 
+const ICON_CACHE_MAX_BYTES: usize = 5 * 1024 * 1024;
+
 #[derive(Clone)]
 pub struct AppState {
     config: Arc<RuntimeConfig>,
@@ -780,12 +782,7 @@ async fn cache_icon(
     State(state): State<AppState>,
     Json(body): Json<Value>,
 ) -> Result<Json<Value>, ApiError> {
-    let raw = body
-        .get("dataUrl")
-        .or_else(|| body.get("data_url"))
-        .and_then(Value::as_str)
-        .ok_or_else(|| ApiError::bad_request("data_url_required"))?;
-    let (content_type, data) = decode_data_url(raw)?;
+    let (content_type, data) = resolve_icon_cache_input(&state, &body).await?;
     let ext = extension_for_content_type(&content_type).unwrap_or(".bin");
     let hash = format!("{:x}", Sha256::digest(&data));
     let file_name = format!("{hash}{ext}");
@@ -793,6 +790,60 @@ async fn cache_icon(
     fs::write(&target, data).await?;
     let path = format!("/icon-cache/{file_name}");
     Ok(Json(json!({"success": true, "path": path, "url": path})))
+}
+
+async fn resolve_icon_cache_input(
+    state: &AppState,
+    body: &Value,
+) -> Result<(String, Vec<u8>), ApiError> {
+    if let Some(raw) = body
+        .get("dataUrl")
+        .or_else(|| body.get("data_url"))
+        .and_then(Value::as_str)
+    {
+        let (content_type, data) = decode_data_url(raw)?;
+        return validate_icon_cache_bytes(content_type, data);
+    }
+
+    let raw_url = body
+        .get("url")
+        .or_else(|| body.get("iconUrl"))
+        .and_then(Value::as_str)
+        .ok_or_else(|| ApiError::bad_request("data_url_required"))?;
+    let parsed = validate_remote_url(raw_url).await?;
+    if is_blocked_host(parsed.host_str().unwrap_or_default()).await? {
+        return Err(ApiError::forbidden("blocked_host"));
+    }
+
+    let response = state
+        .http
+        .get(parsed.clone())
+        .send()
+        .await
+        .map_err(|err| ApiError::bad_gateway(err.to_string()))?;
+    if !response.status().is_success() {
+        return Err(ApiError::bad_gateway("fetch_failed"));
+    }
+    if response
+        .content_length()
+        .map(|length| length > ICON_CACHE_MAX_BYTES as u64)
+        .unwrap_or(false)
+    {
+        return Err(ApiError::bad_request("icon_too_large"));
+    }
+    let content_type = response
+        .headers()
+        .get(header::CONTENT_TYPE)
+        .and_then(|value| value.to_str().ok())
+        .map(normalize_icon_content_type)
+        .or_else(|| icon_content_type_from_path(parsed.path()))
+        .unwrap_or_else(|| "application/octet-stream".to_string());
+    let data = response
+        .bytes()
+        .await
+        .map_err(|err| ApiError::bad_gateway(err.to_string()))?
+        .to_vec();
+    validate_icon_cache_bytes(content_type, data)
 }
 
 async fn ping(Query(query): Query<HashMap<String, String>>) -> Json<Value> {
@@ -1811,6 +1862,34 @@ fn decode_data_url(raw: &str) -> Result<(String, Vec<u8>), ApiError> {
         .decode(data)
         .map_err(|_| ApiError::bad_request("invalid_base64"))?;
     Ok((content_type, bytes))
+}
+
+fn normalize_icon_content_type(raw: &str) -> String {
+    raw.split(';')
+        .next()
+        .unwrap_or("application/octet-stream")
+        .trim()
+        .to_ascii_lowercase()
+}
+
+fn icon_content_type_from_path(path: &str) -> Option<String> {
+    mime_guess::from_path(path)
+        .first()
+        .map(|mime| mime.essence_str().to_string())
+}
+
+fn validate_icon_cache_bytes(
+    content_type: String,
+    data: Vec<u8>,
+) -> Result<(String, Vec<u8>), ApiError> {
+    if data.len() > ICON_CACHE_MAX_BYTES {
+        return Err(ApiError::bad_request("icon_too_large"));
+    }
+    let content_type = normalize_icon_content_type(&content_type);
+    if extension_for_content_type(&content_type).is_none() {
+        return Err(ApiError::bad_request("unsupported_icon_type"));
+    }
+    Ok((content_type, data))
 }
 
 fn extension_for_content_type(content_type: &str) -> Option<&'static str> {

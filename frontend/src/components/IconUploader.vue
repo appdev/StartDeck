@@ -6,6 +6,11 @@ import WallpaperLibrary from "./WallpaperLibrary.vue";
 import { useMainStore } from "../stores/main";
 import AppWindowControls from "@/components/base/AppWindowControls.vue";
 import { useUiFeedbackStore } from "@/stores/uiFeedback";
+import {
+  applyCropperZoom,
+  readCropperScale,
+  type VueCropperHandle,
+} from "@/utils/vueCropperZoom";
 
 const props = withDefaults(
   defineProps<{
@@ -29,9 +34,11 @@ const uiFeedback = useUiFeedbackStore();
 const showCropper = ref(false);
 const showLibrary = ref(false);
 const uploadImgUrl = ref("");
-const cropper = ref();
+const cropper = ref<VueCropperHandle | null>(null);
 const fileInput = ref<HTMLInputElement | null>(null);
 const zoom = ref(1);
+const cropperBaseScale = ref(1);
+const isCropperReady = ref(false);
 
 const triggerSelect = () => {
   if (props.uploadOnly) {
@@ -68,6 +75,8 @@ const onFileChange = (event: Event) => {
 
     if (props.crop) {
       zoom.value = 1; // Reset zoom
+      cropperBaseScale.value = 1;
+      isCropperReady.value = false;
       showCropper.value = true; // 打开裁剪弹窗
     } else {
       // 不裁剪，直接使用
@@ -81,12 +90,28 @@ const onFileChange = (event: Event) => {
 
 const onZoomChange = (e: Event) => {
   const newVal = parseFloat((e.target as HTMLInputElement).value);
-  const diff = newVal - zoom.value;
-  cropper.value.changeScale(diff);
-  zoom.value = newVal;
+  if (!Number.isFinite(newVal)) return;
+  const result = applyCropperZoom(
+    cropper.value,
+    zoom.value,
+    newVal,
+    cropperBaseScale.value,
+  );
+  zoom.value = result.zoom;
+};
+
+const onCropperLoad = (status: string) => {
+  if (status !== "success") {
+    isCropperReady.value = false;
+    return;
+  }
+  cropperBaseScale.value = readCropperScale(cropper.value) ?? 1;
+  zoom.value = 1;
+  isCropperReady.value = true;
 };
 
 const confirmCrop = () => {
+  if (!cropper.value?.getCropData) return;
   cropper.value.getCropData((data: string) => {
     // Resize to 216x216
     const img = new Image();
@@ -186,6 +211,7 @@ const confirmCrop = () => {
             :fixedNumber="[1, 1]"
             :centerBox="true"
             outputType="png"
+            @img-load="onCropperLoad"
           ></VueCropper>
         </div>
 
@@ -212,7 +238,11 @@ const confirmCrop = () => {
           <button @click="showCropper = false" class="sd-btn sd-btn-secondary">
             取消
           </button>
-          <button @click="confirmCrop" class="sd-btn sd-btn-primary px-6">
+          <button
+            @click="confirmCrop"
+            class="sd-btn sd-btn-primary px-6"
+            :disabled="!isCropperReady"
+          >
             确认使用
           </button>
         </div>

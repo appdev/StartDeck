@@ -77,6 +77,25 @@ describe("ItabTodoWidget", () => {
     expect(emitted.tasks.find((task) => task.id === "a")?.done).toBe(true);
   });
 
+  it("renders public default tasks for logged-out users", () => {
+    const auth = useAuthStore();
+    auth.logout();
+
+    const wrapper = mount(ItabTodoWidget, {
+      props: {
+        widget,
+        sizeKey: "2x4",
+      },
+    });
+
+    expect(wrapper.text()).toContain("待办事项(2)");
+    expect(wrapper.text()).toContain("评审 UI");
+    expect(wrapper.text()).toContain("补充 QA");
+    expect(wrapper.text()).not.toContain("登录后使用待办");
+    expect(wrapper.find(".todo-icon-check").exists()).toBe(false);
+    expect(wrapper.find(".todo-icon-delete").exists()).toBe(false);
+  });
+
   it("renders four pending rows in the 2x2 card", () => {
     const wrapper = mount(ItabTodoWidget, {
       props: {

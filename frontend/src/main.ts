@@ -8,6 +8,7 @@ import { useMainStore } from "./stores/main";
 import { attachErrorCapture, ensureOverlayHandled } from "./utils/overlay";
 import { installFetchUrlPatch } from "./utils/runtimeUrls";
 import { installNetworkFetchPatch } from "./utils/networkFetch";
+import { prefetchItabIpLocationOnBoot } from "./features/itab-ip/itabIpBoot";
 
 if (typeof document !== "undefined" && typeof navigator !== "undefined") {
   const ua = navigator.userAgent || "";
@@ -39,6 +40,7 @@ const bootstrap = async () => {
   // Initialize store once after mount so the shell UI can render even if
   // the sync pipeline is slow or temporarily blocked.
   const store = useMainStore();
+  prefetchItabIpLocationOnBoot();
   try {
     await store.init();
   } catch (error) {

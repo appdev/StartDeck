@@ -187,26 +187,49 @@ const parseAnniversaryDate = (value: string) => {
   return new Date(year, month - 1, day);
 };
 
-const nextMonthlyAnniversary = (date: Date, today: Date) => {
-  const targetDay = Math.min(
-    date.getDate(),
-    daysInAnniversaryMonth(today.getFullYear(), today.getMonth() + 1),
+const clampedAnniversaryDate = (
+  year: number,
+  zeroBasedMonth: number,
+  day: number,
+) => {
+  const monthStart = new Date(year, zeroBasedMonth, 1);
+  const normalizedYear = monthStart.getFullYear();
+  const normalizedMonth = monthStart.getMonth();
+  return new Date(
+    normalizedYear,
+    normalizedMonth,
+    Math.min(day, daysInAnniversaryMonth(normalizedYear, normalizedMonth + 1)),
   );
-  const candidate = new Date(today.getFullYear(), today.getMonth(), targetDay);
+};
+
+const nextMonthlyAnniversary = (date: Date, today: Date) => {
+  const candidate = clampedAnniversaryDate(
+    today.getFullYear(),
+    today.getMonth(),
+    date.getDate(),
+  );
   if (candidate.getTime() < today.getTime()) {
-    candidate.setMonth(candidate.getMonth() + 1);
+    return clampedAnniversaryDate(
+      today.getFullYear(),
+      today.getMonth() + 1,
+      date.getDate(),
+    );
   }
   return candidate;
 };
 
 const nextYearlyAnniversary = (date: Date, today: Date) => {
-  const candidate = new Date(
+  const candidate = clampedAnniversaryDate(
     today.getFullYear(),
     date.getMonth(),
     date.getDate(),
   );
   if (candidate.getTime() < today.getTime()) {
-    candidate.setFullYear(candidate.getFullYear() + 1);
+    return clampedAnniversaryDate(
+      today.getFullYear() + 1,
+      date.getMonth(),
+      date.getDate(),
+    );
   }
   return candidate;
 };
@@ -215,6 +238,45 @@ const nextWeeklyAnniversary = (date: Date, today: Date) => {
   const candidate = new Date(today);
   const offset = (date.getDay() - today.getDay() + 7) % 7;
   candidate.setDate(today.getDate() + offset);
+  return candidate;
+};
+
+const previousMonthlyAnniversary = (date: Date, today: Date) => {
+  const candidate = clampedAnniversaryDate(
+    today.getFullYear(),
+    today.getMonth(),
+    date.getDate(),
+  );
+  if (candidate.getTime() > today.getTime()) {
+    return clampedAnniversaryDate(
+      today.getFullYear(),
+      today.getMonth() - 1,
+      date.getDate(),
+    );
+  }
+  return candidate;
+};
+
+const previousYearlyAnniversary = (date: Date, today: Date) => {
+  const candidate = clampedAnniversaryDate(
+    today.getFullYear(),
+    date.getMonth(),
+    date.getDate(),
+  );
+  if (candidate.getTime() > today.getTime()) {
+    return clampedAnniversaryDate(
+      today.getFullYear() - 1,
+      date.getMonth(),
+      date.getDate(),
+    );
+  }
+  return candidate;
+};
+
+const previousWeeklyAnniversary = (date: Date, today: Date) => {
+  const candidate = new Date(today);
+  const offset = (today.getDay() - date.getDay() + 7) % 7;
+  candidate.setDate(today.getDate() - offset);
   return candidate;
 };
 
@@ -230,6 +292,18 @@ const anniversaryRemainingTarget = (
   return target;
 };
 
+const anniversaryElapsedTarget = (
+  target: Date,
+  repeat: ItabAnniversaryWidgetData["repeat"],
+  today: Date,
+) => {
+  if (repeat === "每月") return previousMonthlyAnniversary(target, today);
+  if (repeat === "每年" || repeat === "节日")
+    return previousYearlyAnniversary(target, today);
+  if (repeat === "每周") return previousWeeklyAnniversary(target, today);
+  return target;
+};
+
 export const anniversaryDays = (
   date: string,
   mode: ItabAnniversaryMode,
@@ -241,7 +315,7 @@ export const anniversaryDays = (
   const effectiveTarget =
     mode === "remaining"
       ? anniversaryRemainingTarget(target, repeat, today)
-      : target;
+      : anniversaryElapsedTarget(target, repeat, today);
   const diff = Math.round(
     (today.getTime() - effectiveTarget.getTime()) / 86400000,
   );

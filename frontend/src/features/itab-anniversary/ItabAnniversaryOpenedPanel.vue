@@ -51,20 +51,22 @@ const repeatDropdownOpen = ref(false);
 const datePickerOpen = ref(false);
 type AnniversaryColorPickerTarget = "text" | "background";
 
+const toHexColor = (hex: string) => `#${hex}`;
+const colorPickerDefaultHex = toHexColor("ffffff");
 const colorPickerTarget = ref<AnniversaryColorPickerTarget | null>(null);
 const colorPickerHue = ref(0);
 const colorPickerSaturation = ref(100);
 const colorPickerValue = ref(100);
-const colorPickerHex = ref("#ffffff");
+const colorPickerHex = ref(colorPickerDefaultHex);
 const colorPickerPresets = [
-  "#ff4b0a",
-  "#ff8a00",
-  "#ffcc00",
-  "#7ee681",
-  "#11c5c8",
-  "#1890ff",
-  "#c91586",
-];
+  "ff4b0a",
+  "ff8a00",
+  "ffcc00",
+  "7ee681",
+  "11c5c8",
+  "1890ff",
+  "c91586",
+].map(toHexColor);
 const editor = reactive<ItabAnniversaryWidgetData>(
   normalizeItabAnniversaryWidgetData(props.widget.data),
 );
@@ -117,7 +119,7 @@ const hsvToHex = (hue: number, saturation: number, value: number) => {
 };
 
 const hexToHsv = (hex: string) => {
-  const normalized = normalizeHexColor(hex) || "#ffffff";
+  const normalized = normalizeHexColor(hex) || colorPickerDefaultHex;
   const red = Number.parseInt(normalized.slice(1, 3), 16) / 255;
   const green = Number.parseInt(normalized.slice(3, 5), 16) / 255;
   const blue = Number.parseInt(normalized.slice(5, 7), 16) / 255;
@@ -149,7 +151,7 @@ const syncColorPickerHex = () => {
 };
 
 const setColorPickerFromHex = (hex: string) => {
-  const normalized = normalizeHexColor(hex) || "#ffffff";
+  const normalized = normalizeHexColor(hex) || colorPickerDefaultHex;
   const hsv = hexToHsv(normalized);
   colorPickerHue.value = hsv.hue;
   colorPickerSaturation.value = hsv.saturation;
@@ -157,13 +159,14 @@ const setColorPickerFromHex = (hex: string) => {
   colorPickerHex.value = normalized;
 };
 
-const colorPickerDraftColor = computed(() =>
-  normalizeHexColor(colorPickerHex.value) ||
-  hsvToHex(
-    colorPickerHue.value,
-    colorPickerSaturation.value,
-    colorPickerValue.value,
-  ),
+const colorPickerDraftColor = computed(
+  () =>
+    normalizeHexColor(colorPickerHex.value) ||
+    hsvToHex(
+      colorPickerHue.value,
+      colorPickerSaturation.value,
+      colorPickerValue.value,
+    ),
 );
 
 const colorPickerPaletteStyle = computed(() => ({
@@ -433,11 +436,7 @@ const openColorPicker = (target: AnniversaryColorPickerTarget) => {
   ).showCommonEvents = false;
 };
 
-const setColorPickerHsv = (
-  hue: number,
-  saturation: number,
-  value: number,
-) => {
+const setColorPickerHsv = (hue: number, saturation: number, value: number) => {
   colorPickerHue.value = Math.min(Math.max(hue, 0), 360);
   colorPickerSaturation.value = clampPercent(saturation);
   colorPickerValue.value = clampPercent(value);
@@ -461,7 +460,7 @@ const commitColorPickerHex = () => {
 };
 
 const clearColorPickerDraft = () => {
-  setColorPickerFromHex("#ffffff");
+  setColorPickerFromHex(colorPickerDefaultHex);
 };
 
 const applyColorPickerDraft = () => {
@@ -1782,19 +1781,21 @@ onBeforeUnmount(() => {
   height: 190px;
   overflow: hidden;
   background:
-    linear-gradient(to top, #000, transparent),
-    linear-gradient(to right, #fff, var(--picker-hue-color));
+    linear-gradient(to top, black, transparent),
+    linear-gradient(to right, white, var(--picker-hue-color));
 }
 
 .anniversary-color-picker-point {
   position: absolute;
   width: 8px;
   height: 8px;
-  border: 2px solid #fff;
+  border: 2px solid white;
   border-radius: 50%;
   box-shadow:
-    0 0 0 1px rgba(0, 0, 0, 0.45),
-    0 1px 4px rgba(0, 0, 0, 0.35);
+    0 0 0 1px
+      var(--sd-theme-itab-anniversary-anniversary-opened-panel-shadow-04),
+    0 1px 4px
+      var(--sd-theme-itab-anniversary-anniversary-opened-panel-shadow-06);
   pointer-events: none;
   transform: translate(-50%, -50%);
 }
@@ -1804,13 +1805,13 @@ onBeforeUnmount(() => {
   overflow: hidden;
   background: linear-gradient(
     to bottom,
-    #f00,
-    #ff0,
-    #0f0,
-    #0ff,
-    #00f,
-    #f0f,
-    #f00
+    red,
+    yellow,
+    lime,
+    cyan,
+    blue,
+    magenta,
+    red
   );
 }
 
@@ -1819,10 +1820,11 @@ onBeforeUnmount(() => {
   left: -2px;
   width: 16px;
   height: 4px;
-  border: 1px solid #fff;
+  border: 1px solid white;
   border-radius: 4px;
   background: transparent;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 1px 3px
+    var(--sd-theme-itab-anniversary-anniversary-opened-panel-shadow-06);
   pointer-events: none;
   transform: translateY(-50%);
 }
@@ -1847,7 +1849,9 @@ onBeforeUnmount(() => {
     0 0 0 2px
       var(--sd-theme-itab-anniversary-anniversary-opened-panel-surface-09),
     0 0 0 4px
-      var(--sd-theme-itab-anniversary-anniversary-opened-panel-accent-surface-06);
+      var(
+        --sd-theme-itab-anniversary-anniversary-opened-panel-accent-surface-06
+      );
 }
 
 .anniversary-color-picker-footer {

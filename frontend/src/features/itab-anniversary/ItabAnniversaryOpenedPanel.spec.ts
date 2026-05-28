@@ -55,6 +55,10 @@ describe("ItabAnniversaryOpenedPanel", () => {
     );
     expect(cardSource).toContain(".is-payday.has-image-background");
     expect(cardSource).toContain("var(--anniversary-background-image);");
+    expect(cardSource).toContain(
+      "var(--anniversary-bg) var(--payday-band) 100%",
+    );
+    expect(cardSource).toContain("background-color: var(--anniversary-bg);");
     expect(cardSource).not.toContain(
       "\n.size-2-4:not(.with-calendar):not(.is-payday)",
     );
@@ -315,6 +319,33 @@ describe("ItabAnniversaryOpenedPanel", () => {
       backgroundMode: "color",
       backgroundColor: "#fc4548",
     });
+  });
+
+  it("applies selected color backgrounds to the countdown preview immediately", async () => {
+    const wrapper = mount(ItabAnniversaryOpenedPanel, {
+      props: { widget: createDefaultItabAnniversaryWidget() },
+    });
+
+    await wrapper.findAll(".anniversary-template-card")[1]!.trigger("click");
+    await wrapper
+      .findAll(".anniversary-background-mode button")
+      .find((button) => button.text() === "颜色")!
+      .trigger("click");
+    const backgroundSwatches = wrapper.findAll(
+      ".anniversary-bg-swatches-row .anniversary-color-swatches span",
+    );
+    await backgroundSwatches[2]!.trigger("click");
+
+    const previewCard = wrapper.find(
+      ".anniversary-preview-pane .itab-anniversary-card",
+    );
+    expect(previewCard.classes()).toContain("is-payday");
+    expect(previewCard.classes()).not.toContain("has-image-background");
+    expect(
+      (previewCard.element as HTMLElement).style.getPropertyValue(
+        "--anniversary-bg",
+      ),
+    ).toBe("#fc4548");
   });
 
   it("opens a source-like custom color picker for text color", async () => {

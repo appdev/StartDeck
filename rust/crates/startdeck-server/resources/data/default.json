@@ -540,34 +540,34 @@
         "sizeKey": "2x2",
         "notes": [
           {
-            "id": "memo-tip",
-            "title": "iTab操作小技巧",
-            "body": "1. 切换搜索引擎: 点击搜索框左侧图标可快速切换搜索引擎\n2. 快速翻译: 点击搜索框联想列表第一项可快速翻译文本\n3. 右键菜单: 在桌面空白处点击右键可快速添加图标、切换壁纸、设置、备份等操作\n4. 极简模式: 点击标签页时间快速切换到极简模式\n5. 动态壁纸: 点击【i壁纸】 打开壁纸应用 - 动态壁纸,选择壁纸",
-            "pinned": false,
-            "createdAt": "2021-10-16 12:07:14",
-            "updatedAt": "2026-5-21 17:08:20",
-            "listTime": "2026/5/21 17:08"
+            "id": "promo-shot-today",
+            "title": "今日发布",
+            "body": "搜索、导航、组件、状态看板\n都在一个清爽首页里。\nStartDeck 让开屏更安静，效率更集中。",
+            "pinned": true,
+            "createdAt": "2026-05-28T03:42:20.961Z",
+            "updatedAt": "2026-05-28T03:42:20.961Z",
+            "listTime": "2026/5/28 11:42"
           },
           {
-            "id": "memo-third",
-            "title": "第三",
-            "body": "第三",
+            "id": "promo-shot-design",
+            "title": "设计灵感",
+            "body": "一张首页承载常用入口、实时信息与轻量工具。少一点切换，多一点专注。",
             "pinned": false,
-            "createdAt": "2026-5-21 16:50:00",
-            "updatedAt": "2026-5-21 16:50:00",
-            "listTime": "2026/5/21 16:50"
+            "createdAt": "2026-05-28T03:42:20.961Z",
+            "updatedAt": "2026-05-28T03:42:20.961Z",
+            "listTime": "2026/5/28 11:42"
           },
           {
-            "id": "memo-date",
-            "title": "2026-05-21",
-            "body": "2026-05-21",
+            "id": "promo-shot-rhythm",
+            "title": "发布节奏",
+            "body": "截图、短视频、发布说明一次准备好，把产品亮点讲得更清楚。",
             "pinned": false,
-            "createdAt": "2026-5-21 16:49:00",
-            "updatedAt": "2026-5-21 16:49:00",
-            "listTime": "2026/5/21 16:49"
+            "createdAt": "2026-05-28T03:42:20.961Z",
+            "updatedAt": "2026-05-28T03:42:20.961Z",
+            "listTime": "2026/5/28 11:42"
           }
         ],
-        "activeNoteId": "memo-tip"
+        "activeNoteId": "promo-shot-today"
       }
     },
     {
@@ -584,7 +584,33 @@
         "layoutSystem": "itab-grid/2026-05-22",
         "version": 1,
         "sizeKey": "2x2",
-        "tasks": []
+        "tasks": [
+          {
+            "id": "promo-shot-home",
+            "text": "拍摄首页全景截图",
+            "done": false
+          },
+          {
+            "id": "promo-shot-video",
+            "text": "录制 30 秒演示视频",
+            "done": false
+          },
+          {
+            "id": "promo-shot-points",
+            "text": "精修三条产品卖点",
+            "done": false
+          },
+          {
+            "id": "promo-shot-links",
+            "text": "校对下载与部署链接",
+            "done": false
+          },
+          {
+            "id": "promo-shot-cover",
+            "text": "准备发布公告封面",
+            "done": false
+          }
+        ]
       }
     },
     {

@@ -81,7 +81,7 @@ describe("ItabIpWidget", () => {
     }
   });
 
-  it("refreshes through the runtime token contract", async () => {
+  it("refreshes through the runtime token contract without bypassing the IP cache", async () => {
     const wrapper = mount(ItabIpWidget, {
       props: {
         widget: createDefaultItabIpWidget(),
@@ -95,7 +95,7 @@ describe("ItabIpWidget", () => {
     await nextTickCycle();
 
     expect(fetchItabIpLookup).toHaveBeenCalledWith(
-      true,
+      false,
       expect.any(AbortSignal),
     );
   });

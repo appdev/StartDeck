@@ -122,6 +122,31 @@ describe("EditModal", () => {
     expect(inputClick).toHaveBeenCalledTimes(1);
   });
 
+  it("moves smart match next to the external link and removes item title color editing", async () => {
+    wrapper = mountEditModal({
+      id: "link-1",
+      title: "Link Card",
+      url: "https://example.com",
+      icon: "https://example.com/favicon.ico",
+      titleColor: "#000000",
+      isPublic: true,
+    });
+    await wrapper.vm.$nextTick();
+
+    const linkMatchRow = document.body.querySelector(
+      ".edit-card-link-match-row",
+    );
+    expect(linkMatchRow).not.toBeNull();
+    expect(linkMatchRow?.textContent).toContain("智能匹配");
+    expect(
+      document.body.querySelector(".edit-card-icon-toolbar")?.textContent,
+    ).not.toContain("智能匹配");
+    expect(document.body.textContent).not.toContain("标题颜色");
+    expect(editModalSource).not.toContain(
+      '<label class="sd-label">标题颜色</label>',
+    );
+  });
+
   it("keeps shared window control dots out of edit-card header button theming", () => {
     expect(editModalSource).toContain(
       ".edit-card-header-actions :deep(button:not(.sd-window-control-dot))",
@@ -135,5 +160,7 @@ describe("EditModal", () => {
     expect(editModalSource).not.toContain(
       ".edit-card-header-actions :deep(button:hover)",
     );
+    expect(editModalSource).toContain(":global(.edit-card-panel:focus)");
+    expect(editModalSource).toContain("outline: none;");
   });
 });

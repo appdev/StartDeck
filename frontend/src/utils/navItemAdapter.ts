@@ -3,7 +3,7 @@ import {
   normalizeIconBackgroundColor,
   normalizeLegacyIconBackground,
 } from "@/utils/iconAppearance";
-import { resolveManagedUrl, toAppUrl } from "@/utils/runtimeUrls";
+import { cacheIconToLocal } from "@/utils/iconCache";
 import { getSiteIconUrl, normalizeSiteUrl } from "@/utils/siteMetadata";
 import {
   getSiteShortcutIcon,
@@ -153,111 +153,4 @@ export const createTextIconDataUrl = (text: string, color = "#1890ff") => {
   return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
 };
 
-type IconCacheErrorResponse = {
-  error?: string | { code?: string; message?: string };
-  success?: boolean;
-  path?: string;
-};
-
-const extractIconCacheError = (data: IconCacheErrorResponse | null): string => {
-  if (!data) return "图标缓存失败，请稍后重试";
-  if (typeof data.error === "string") return data.error;
-  if (data.error && typeof data.error.message === "string") {
-    const code = typeof data.error.code === "string" ? data.error.code : "";
-    const tips: Record<string, string> = {
-      invalid_url: "请使用有效的 http/https 图标地址",
-      blocked_host: "该地址属于受限内网地址，建议先上传图标再保存",
-      icon_too_large: "图标超过 5MB，建议压缩后重试",
-      unsupported_icon_type: "仅支持 png/jpg/webp/gif/svg/ico",
-      unsafe_svg: "SVG 含高风险脚本内容，请换一个安全图标",
-      fetch_failed: "远程图标拉取失败，请检查网络后重试",
-    };
-    const tip = code && tips[code] ? `（${tips[code]}）` : "";
-    return `${data.error.message}${tip}`;
-  }
-  return "图标缓存失败，请稍后重试";
-};
-
-const iconUrlToDataUrl = async (url: string): Promise<string | null> => {
-  try {
-    const res = await fetch(url);
-    if (!res.ok) return null;
-    const blob = await res.blob();
-    return await new Promise((resolve) => {
-      const reader = new FileReader();
-      reader.onload = () =>
-        resolve(typeof reader.result === "string" ? reader.result : null);
-      reader.onerror = () => resolve(null);
-      reader.readAsDataURL(blob);
-    });
-  } catch {
-    return null;
-  }
-};
-
-const normalizeIconUrlForCache = (value: string) => {
-  if (/^https?:\/\//i.test(value)) return value;
-  if (value.startsWith("/api/site/icon")) {
-    return new URL(resolveManagedUrl(value), window.location.origin).toString();
-  }
-  if (value.startsWith("/icons/")) {
-    return new URL(toAppUrl(value), window.location.origin).toString();
-  }
-  if (value.startsWith("icons/")) {
-    return new URL(toAppUrl(`/${value}`), window.location.origin).toString();
-  }
-  return "";
-};
-
-export const cacheNavItemIconToLocal = async (
-  icon: string,
-): Promise<{ path: string | null; error: string | null }> => {
-  const trimmed = icon.trim();
-  if (!trimmed) return { path: null, error: null };
-  if (trimmed.startsWith("/icon-cache/")) return { path: trimmed, error: null };
-
-  let payload: { dataUrl?: string; url?: string } | null = null;
-  if (trimmed.startsWith("data:")) {
-    payload = { dataUrl: trimmed };
-  } else {
-    const normalized = normalizeIconUrlForCache(trimmed);
-    if (normalized) {
-      if (
-        trimmed.startsWith("icons/") ||
-        trimmed.startsWith("/icons/") ||
-        trimmed.startsWith("/api/site/icon")
-      ) {
-        const dataUrl = await iconUrlToDataUrl(normalized);
-        payload = dataUrl ? { dataUrl } : null;
-      } else {
-        payload = { url: normalized };
-      }
-    }
-  }
-
-  if (!payload) {
-    return {
-      path: null,
-      error: "图标地址格式不支持本地缓存，请改为上传图片或使用 http/https 链接",
-    };
-  }
-
-  try {
-    const res = await fetch("/api/icon-cache", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-    const data = (await res
-      .json()
-      .catch(() => null)) as IconCacheErrorResponse | null;
-    if (!res.ok) return { path: null, error: extractIconCacheError(data) };
-    if (data?.success && typeof data.path === "string" && data.path) {
-      return { path: data.path, error: null };
-    }
-    return { path: null, error: extractIconCacheError(data) };
-  } catch (e: unknown) {
-    const message = e instanceof Error ? e.message : "";
-    return { path: null, error: message || "图标缓存请求失败，请稍后重试" };
-  }
-};
+export const cacheNavItemIconToLocal = cacheIconToLocal;

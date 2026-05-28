@@ -20,13 +20,18 @@ import {
   type DirtyCloseReason,
 } from "@/composables/useDirtyStateGuard";
 import { VueCropper } from "vue-cropper";
-import { resolveManagedUrl, toAppUrl } from "@/utils/runtimeUrls";
+import { cacheIconToLocal } from "@/utils/iconCache";
 import { getSiteIconUrl } from "@/utils/siteMetadata";
 import {
   normalizeIconBackgroundColor,
   resolveIconBackground,
 } from "@/utils/iconAppearance";
 import { useUiFeedbackStore } from "@/stores/uiFeedback";
+import {
+  applyCropperZoom,
+  readCropperScale,
+  type VueCropperHandle,
+} from "@/utils/vueCropperZoom";
 import "vue-cropper/dist/index.css";
 
 // 接收父组件传来的数据
@@ -331,7 +336,7 @@ watch(
             props.data.iconBackgroundMode === "custom" ? "custom" : "auto",
           iconAutoBackgroundColor: props.data.iconAutoBackgroundColor || "",
           iconCustomBackgroundColor: props.data.iconCustomBackgroundColor || "",
-          titleColor: props.data.titleColor || "",
+          titleColor: "",
           backgroundImage: props.data.backgroundImage || "",
           backgroundBlur: props.data.backgroundBlur ?? 6,
           backgroundMask: props.data.backgroundMask ?? 0.3,
@@ -463,8 +468,10 @@ const isSaving = ref(false);
 const iconFileInput = ref<HTMLInputElement | null>(null);
 const showIconCropper = ref(false);
 const iconUploadImgUrl = ref("");
-const iconCropperRef = ref();
+const iconCropperRef = ref<VueCropperHandle | null>(null);
 const iconZoom = ref(1);
+const iconCropperBaseScale = ref(1);
+const isIconCropperReady = ref(false);
 
 const triggerIconUpload = () => {
   iconFileInput.value?.click();
@@ -485,6 +492,8 @@ const onIconFileChange = (event: Event) => {
   reader.onload = (e) => {
     iconUploadImgUrl.value = e.target?.result as string;
     iconZoom.value = 1;
+    iconCropperBaseScale.value = 1;
+    isIconCropperReady.value = false;
     showIconCropper.value = true;
   };
   reader.readAsDataURL(file);
@@ -493,13 +502,29 @@ const onIconFileChange = (event: Event) => {
 
 const onIconZoomChange = (e: Event) => {
   const newVal = parseFloat((e.target as HTMLInputElement).value);
-  const diff = newVal - iconZoom.value;
-  iconCropperRef.value?.changeScale(diff);
-  iconZoom.value = newVal;
+  if (!Number.isFinite(newVal)) return;
+  const result = applyCropperZoom(
+    iconCropperRef.value,
+    iconZoom.value,
+    newVal,
+    iconCropperBaseScale.value,
+  );
+  iconZoom.value = result.zoom;
+};
+
+const onIconCropperLoad = (status: string) => {
+  if (status !== "success") {
+    isIconCropperReady.value = false;
+    return;
+  }
+  iconCropperBaseScale.value = readCropperScale(iconCropperRef.value) ?? 1;
+  iconZoom.value = 1;
+  isIconCropperReady.value = true;
 };
 
 const confirmIconCrop = () => {
-  iconCropperRef.value?.getCropData((data: string) => {
+  if (!iconCropperRef.value?.getCropData) return;
+  iconCropperRef.value.getCropData((data: string) => {
     const img = new Image();
     img.onload = () => {
       const canvas = document.createElement("canvas");
@@ -518,115 +543,6 @@ const confirmIconCrop = () => {
     };
     img.src = data;
   });
-};
-
-type IconCacheErrorResponse = {
-  error?: string | { code?: string; message?: string };
-  success?: boolean;
-  path?: string;
-};
-
-const extractIconCacheError = (data: IconCacheErrorResponse | null): string => {
-  if (!data) return "图标缓存失败，请稍后重试";
-  if (typeof data.error === "string") return data.error;
-  if (data.error && typeof data.error.message === "string") {
-    const code = typeof data.error.code === "string" ? data.error.code : "";
-    const tips: Record<string, string> = {
-      invalid_url: "请使用有效的 http/https 图标地址",
-      blocked_host: "该地址属于受限内网地址，建议先上传图标再保存",
-      icon_too_large: "图标超过 5MB，建议压缩后重试",
-      unsupported_icon_type: "仅支持 png/jpg/webp/gif/svg/ico",
-      unsafe_svg: "SVG 含高风险脚本内容，请换一个安全图标",
-      fetch_failed: "远程图标拉取失败，请检查网络后重试",
-    };
-    const tip = code && tips[code] ? `（${tips[code]}）` : "";
-    return `${data.error.message}${tip}`;
-  }
-  return "图标缓存失败，请稍后重试";
-};
-
-const cacheIconToLocal = async (
-  icon: string,
-): Promise<{ path: string | null; error: string | null }> => {
-  const trimmed = icon.trim();
-  if (!trimmed) return { path: null, error: null };
-  if (trimmed.startsWith("/icon-cache/")) return { path: trimmed, error: null };
-
-  const iconUrlToDataUrl = async (url: string): Promise<string | null> => {
-    try {
-      const res = await fetch(url);
-      if (!res.ok) return null;
-      const blob = await res.blob();
-      return await new Promise((resolve) => {
-        const reader = new FileReader();
-        reader.onload = () =>
-          resolve(typeof reader.result === "string" ? reader.result : null);
-        reader.onerror = () => resolve(null);
-        reader.readAsDataURL(blob);
-      });
-    } catch {
-      return null;
-    }
-  };
-
-  // Support relative local icon paths (e.g. "icons/foo.png" from local matching).
-  const normalizeIconUrl = (value: string) => {
-    if (/^https?:\/\//i.test(value)) return value;
-    if (value.startsWith("/api/site/icon")) {
-      return new URL(
-        resolveManagedUrl(value),
-        window.location.origin,
-      ).toString();
-    }
-    if (value.startsWith("/icons/"))
-      return new URL(toAppUrl(value), window.location.origin).toString();
-    if (value.startsWith("icons/"))
-      return new URL(toAppUrl(`/${value}`), window.location.origin).toString();
-    return "";
-  };
-
-  let payload: { dataUrl?: string; url?: string } | null = null;
-  if (trimmed.startsWith("data:")) {
-    payload = { dataUrl: trimmed };
-  } else {
-    const normalized = normalizeIconUrl(trimmed);
-    if (normalized) {
-      if (
-        trimmed.startsWith("icons/") ||
-        trimmed.startsWith("/icons/") ||
-        trimmed.startsWith("/api/site/icon")
-      ) {
-        // 同源图标先转成 dataUrl，避免后端抓取本机地址时被拦截。
-        const dataUrl = await iconUrlToDataUrl(normalized);
-        payload = dataUrl ? { dataUrl } : null;
-      } else {
-        payload = { url: normalized };
-      }
-    }
-  }
-
-  if (!payload)
-    return {
-      path: null,
-      error: "图标地址格式不支持本地缓存，请改为上传图片或使用 http/https 链接",
-    };
-
-  try {
-    const res = await fetch("/api/icon-cache", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-    const data = await res.json().catch(() => null);
-    if (!res.ok) return { path: null, error: extractIconCacheError(data) };
-    if (data && data.success && typeof data.path === "string" && data.path) {
-      return { path: data.path, error: null };
-    }
-    return { path: null, error: extractIconCacheError(data) };
-  } catch (e: unknown) {
-    const message = e instanceof Error ? e.message : "";
-    return { path: null, error: message || "图标缓存请求失败，请稍后重试" };
-  }
 };
 
 // 提交保存
@@ -726,38 +642,15 @@ const submit = async () => {
       </div>
     </template>
 
-    <div class="flex gap-3">
-      <div class="flex-1">
-        <label class="sd-label">标题 <span class="text-red-500">*</span></label>
-        <div class="relative">
-          <input
-            v-model="form.title"
-            type="text"
-            class="sd-input"
-            placeholder="例如：我的博客"
-          />
-        </div>
-      </div>
-      <div>
-        <label class="sd-label">标题颜色</label>
-        <div
-          class="flex items-center h-10 px-2 border border-slate-200 rounded-lg bg-white"
-        >
-          <input
-            v-model="form.titleColor"
-            type="color"
-            class="w-8 h-8 rounded cursor-pointer border-none p-0 bg-transparent"
-            title="选择标题颜色"
-          />
-          <button
-            v-if="form.titleColor"
-            @click="form.titleColor = ''"
-            class="ml-2 text-xs text-gray-400 hover:text-red-500"
-            title="清除颜色"
-          >
-            ✕
-          </button>
-        </div>
+    <div>
+      <label class="sd-label">标题 <span class="text-red-500">*</span></label>
+      <div class="relative">
+        <input
+          v-model="form.title"
+          type="text"
+          class="sd-input"
+          placeholder="例如：我的博客"
+        />
       </div>
     </div>
 
@@ -785,13 +678,40 @@ const submit = async () => {
           + 备用地址
         </button>
       </label>
-      <div class="relative">
+      <div class="edit-card-link-match-row">
         <input
           v-model="form.url"
           type="text"
           class="sd-input"
           placeholder="https://example.com"
         />
+        <button
+          type="button"
+          @click.prevent="smartMatchIcons"
+          :disabled="isSmartMatching"
+          class="sd-btn edit-card-smart-match-button"
+          :class="isSmartMatching ? 'sd-btn-secondary' : 'sd-btn-primary'"
+        >
+          <span
+            v-if="isSmartMatching"
+            class="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin"
+          ></span>
+          <svg
+            v-else
+            class="w-3.5 h-3.5"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M13 10V3L4 14h7v7l9-11h-7z"
+            />
+          </svg>
+          {{ isSmartMatching ? "匹配中..." : "智能匹配" }}
+        </button>
       </div>
       <!-- Backup URLs -->
       <div
@@ -801,8 +721,43 @@ const submit = async () => {
         <div
           v-for="(item, index) in form.backupUrls"
           :key="'backup-wan-' + index"
+          data-testid="edit-card-backup-url-row"
           class="flex flex-col sm:flex-row gap-2 items-start sm:items-center p-2 bg-gray-50 rounded-lg border border-gray-100"
         >
+          <!-- URL Field -->
+          <div class="relative flex-[2] w-full sm:w-auto">
+            <input
+              v-model="item.url"
+              type="text"
+              maxlength="500"
+              class="sd-input sd-input-action text-sm"
+              :class="
+                isValidUrl(item.url)
+                  ? 'border-gray-200'
+                  : 'border-red-300 bg-red-50'
+              "
+              placeholder="请输入完整URL地址"
+              @keydown.enter.prevent
+            />
+            <button
+              v-if="item.url"
+              @click="item.url = ''"
+              class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-red-500 rounded-full p-0.5"
+              title="清除"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+                class="w-3 h-3"
+              >
+                <path
+                  d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z"
+                />
+              </svg>
+            </button>
+          </div>
+
           <!-- Name Field -->
           <div class="relative flex-1 w-full sm:w-auto">
             <input
@@ -824,40 +779,6 @@ const submit = async () => {
             <button
               v-if="item.name"
               @click="item.name = ''"
-              class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-red-500 rounded-full p-0.5"
-              title="清除"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-                class="w-3 h-3"
-              >
-                <path
-                  d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z"
-                />
-              </svg>
-            </button>
-          </div>
-
-          <!-- URL Field -->
-          <div class="relative flex-[2] w-full sm:w-auto">
-            <input
-              v-model="item.url"
-              type="text"
-              maxlength="500"
-              class="sd-input sd-input-action text-sm"
-              :class="
-                isValidUrl(item.url)
-                  ? 'border-gray-200'
-                  : 'border-red-300 bg-red-50'
-              "
-              placeholder="请输入完整URL地址"
-              @keydown.enter.prevent
-            />
-            <button
-              v-if="item.url"
-              @click="item.url = ''"
               class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-red-500 rounded-full p-0.5"
               title="清除"
             >
@@ -1054,33 +975,6 @@ const submit = async () => {
                 />
               </svg>
               上传图标
-            </button>
-            <button
-              type="button"
-              @click.prevent="smartMatchIcons"
-              :disabled="isSmartMatching"
-              class="sd-btn min-h-0 px-3 py-1.5 text-xs shrink-0"
-              :class="isSmartMatching ? 'sd-btn-secondary' : 'sd-btn-primary'"
-            >
-              <span
-                v-if="isSmartMatching"
-                class="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin"
-              ></span>
-              <svg
-                v-else
-                class="w-3.5 h-3.5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M13 10V3L4 14h7v7l9-11h-7z"
-                />
-              </svg>
-              {{ isSmartMatching ? "匹配中..." : "智能匹配" }}
             </button>
           </div>
 
@@ -1432,7 +1326,7 @@ const submit = async () => {
     title="裁剪图标"
     @close="showIconCropper = false"
   >
-    <div class="flex h-[500px] flex-col" @mousedown.stop @mouseup.stop>
+    <div class="flex h-[500px] flex-col">
       <div class="relative flex-1 bg-gray-900">
         <VueCropper
           ref="iconCropperRef"
@@ -1444,6 +1338,7 @@ const submit = async () => {
           :fixedNumber="[1, 1]"
           :centerBox="true"
           outputType="png"
+          @img-load="onIconCropperLoad"
         ></VueCropper>
       </div>
       <div
@@ -1468,7 +1363,12 @@ const submit = async () => {
       <AppButton variant="secondary" @click="showIconCropper = false"
         >取消</AppButton
       >
-      <AppButton variant="primary" @click="confirmIconCrop">确认使用</AppButton>
+      <AppButton
+        variant="primary"
+        :disabled="!isIconCropperReady"
+        @click="confirmIconCrop"
+        >确认使用</AppButton
+      >
     </template>
   </AppModalShell>
 </template>
@@ -1482,6 +1382,11 @@ const submit = async () => {
 
 :global(.edit-card-panel) {
   width: min(760px, calc(100vw - 32px));
+}
+
+:global(.edit-card-panel:focus),
+:global(.edit-card-panel:focus-visible) {
+  outline: none;
 }
 
 :global(.edit-card-surface) {
@@ -1608,6 +1513,19 @@ const submit = async () => {
   gap: 12px;
 }
 
+.edit-card-link-match-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+}
+
+.edit-card-smart-match-button {
+  min-height: 42px;
+  padding: 0 14px;
+  white-space: nowrap;
+}
+
 .edit-card-icon-toolbar {
   display: flex;
   flex-wrap: wrap;
@@ -1638,7 +1556,8 @@ const submit = async () => {
 }
 
 .edit-card-header-actions :deep(button:not(.sd-window-control-dot):hover),
-.edit-card-header-actions :deep(button:not(.sd-window-control-dot):focus-visible) {
+.edit-card-header-actions
+  :deep(button:not(.sd-window-control-dot):focus-visible) {
   border-color: var(--sd-theme-edit-modal-accent-border-02);
   background: var(--sd-theme-edit-modal-surface-06);
   color: var(--sd-theme-edit-modal-text-01);
@@ -1812,6 +1731,15 @@ const submit = async () => {
 
   .edit-card-icon-toolbar {
     gap: 8px;
+  }
+
+  .edit-card-link-match-row {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .edit-card-smart-match-button {
+    width: 100%;
   }
 
   .edit-card-icon-url-row {

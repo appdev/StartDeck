@@ -108,7 +108,7 @@ watch(
           :class="{ 'has-checkbox': isInteractiveList }"
         >
           <button
-            v-if="isInteractiveList"
+            v-if="isInteractiveList && runtime.canWriteTodo.value"
             class="todo-icon-check"
             type="button"
             data-grid-drag-ignore="true"
@@ -119,7 +119,7 @@ watch(
           <i v-else></i>
           <em>{{ task.text }}</em>
           <button
-            v-if="isFourByFour"
+            v-if="isFourByFour && runtime.canWriteTodo.value"
             class="todo-icon-delete"
             type="button"
             data-grid-drag-ignore="true"
@@ -138,6 +138,7 @@ watch(
             class="todo-icon-row is-done has-checkbox"
           >
             <button
+              v-if="runtime.canWriteTodo.value"
               class="todo-icon-check is-done"
               type="button"
               data-grid-drag-ignore="true"
@@ -156,8 +157,10 @@ watch(
                 />
               </svg>
             </button>
+            <i v-else></i>
             <em>{{ task.text }}</em>
             <button
+              v-if="runtime.canWriteTodo.value"
               class="todo-icon-delete"
               type="button"
               data-grid-drag-ignore="true"

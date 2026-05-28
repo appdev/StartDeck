@@ -3979,12 +3979,11 @@ onUnmounted(() => {
                     ]"
                     :style="{
                       color:
-                        item.titleColor ||
-                        (item.backgroundImage || group.backgroundImage
+                        item.backgroundImage || group.backgroundImage
                           ? 'var(--sd-home-card-title-on-media)'
                           : group.cardTitleColor ||
                             store.appConfig.cardTitleColor ||
-                            'var(--sd-home-card-title-primary)'),
+                            'var(--sd-home-card-title-primary)',
                       fontSize: group.cardTitleSize
                         ? group.cardTitleSize + 'px'
                         : undefined,
@@ -4010,12 +4009,11 @@ onUnmounted(() => {
                     class="flex flex-col gap-0.5 text-[10px] mt-0.5 w-full opacity-90 leading-none font-mono"
                     :style="{
                       color:
-                        item.titleColor ||
-                        (item.backgroundImage || group.backgroundImage
+                        item.backgroundImage || group.backgroundImage
                           ? 'var(--sd-home-card-title-on-media)'
                           : group.cardTitleColor ||
                             store.appConfig.cardTitleColor ||
-                            'var(--sd-home-card-title-secondary)'),
+                            'var(--sd-home-card-title-secondary)',
                       textShadow:
                         item.backgroundImage || group.backgroundImage
                           ? 'var(--sd-home-card-text-shadow-on-media)'
@@ -4105,12 +4103,11 @@ onUnmounted(() => {
                   :class="'text-center px-2 w-full'"
                   :style="{
                     color:
-                      item.titleColor ||
-                      (item.backgroundImage || group.backgroundImage
+                      item.backgroundImage || group.backgroundImage
                         ? 'var(--sd-home-card-title-on-media)'
                         : group.cardTitleColor ||
                           store.appConfig.cardTitleColor ||
-                          'var(--sd-home-card-title-primary)'),
+                          'var(--sd-home-card-title-primary)',
                     fontSize: (group.cardTitleSize ?? 13) + 'px',
                     textShadow:
                       item.backgroundImage || group.backgroundImage
@@ -4709,6 +4706,22 @@ onUnmounted(() => {
     var(--sd-theme-grid-panel-border-02) 48%,
     transparent
   );
+  --sd-itab-home-search-engine-text: color-mix(
+    in srgb,
+    var(--sd-theme-grid-panel-text-06) 90%,
+    transparent
+  );
+  --sd-itab-home-search-engine-muted-text: color-mix(
+    in srgb,
+    var(--sd-theme-grid-panel-text-06) 72%,
+    transparent
+  );
+  --sd-itab-home-search-engine-selected-text: var(
+    --sd-itab-home-search-engine-text
+  );
+  --sd-itab-home-search-engine-text-shadow:
+    0 1px 8px var(--sd-theme-grid-panel-shadow-03),
+    0 0 2px var(--sd-theme-grid-panel-shadow-03);
 }
 
 .sd-itab-home-search {
@@ -4789,39 +4802,30 @@ onUnmounted(() => {
   border: 1px solid transparent;
   border-radius: 999px;
   background: transparent;
-  color: color-mix(
-    in srgb,
-    var(--sd-theme-grid-panel-text-01) 88%,
-    transparent
-  );
+  color: var(--sd-itab-home-search-engine-text);
   font-size: 12px;
   font-weight: 700;
   line-height: 22px;
   text-align: center;
   text-overflow: ellipsis;
   white-space: nowrap;
-  text-shadow: 0 1px 8px var(--sd-theme-grid-panel-shadow-03);
+  text-shadow: var(--sd-itab-home-search-engine-text-shadow);
   cursor: pointer;
 }
 
 .sd-itab-home-search-engines button:hover,
 .sd-itab-home-search-engines button:focus-visible {
-  color: var(--sd-theme-grid-panel-text-01);
   outline: none;
 }
 
 .sd-itab-home-search-engines button.is-active {
   border-color: var(--sd-itab-home-search-engine-selected-border);
   background: var(--sd-itab-home-search-engine-selected-bg);
-  color: var(--sd-theme-grid-panel-text-01);
+  color: var(--sd-itab-home-search-engine-selected-text);
 }
 
 .sd-itab-home-search-engines button.is-add {
-  color: color-mix(
-    in srgb,
-    var(--sd-theme-grid-panel-text-01) 70%,
-    transparent
-  );
+  color: var(--sd-itab-home-search-engine-muted-text);
 }
 
 @media (max-width: 767px) {

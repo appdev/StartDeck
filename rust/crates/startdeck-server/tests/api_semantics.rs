@@ -632,6 +632,17 @@ async fn route_surface_smoke_covers_auth_and_runtime_semantics() {
     assert!(body["url"].as_str().unwrap().starts_with("/icon-cache/"));
     assert_eq!(body["path"], body["url"]);
 
+    let (status, body) = json_call(
+        &app,
+        "POST",
+        "/api/icon-cache",
+        None,
+        Some(json!({"url": "http://127.0.0.1:9/icon.svg"})),
+    )
+    .await;
+    assert_eq!(status, StatusCode::FORBIDDEN);
+    assert_eq!(body["error"], "blocked_host");
+
     for uri in [
         "/api/ip",
         "/api/ping?url=https://example.com",

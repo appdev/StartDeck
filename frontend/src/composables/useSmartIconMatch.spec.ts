@@ -71,7 +71,7 @@ describe("useSmartIconMatch", () => {
     ).resolves.toBe(true);
   });
 
-  it("uses StartPage-style site metadata as the smart icon source", async () => {
+  it("uses site metadata for title and candidates without replacing the current icon", async () => {
     vi.stubGlobal(
       "fetch",
       vi.fn(async (input: string | URL | Request) => {
@@ -98,10 +98,10 @@ describe("useSmartIconMatch", () => {
     const notify = vi.fn();
     const onSelect = vi.fn();
     const form = ref({
-      title: "Example",
+      title: "Old title",
       url: "example.com",
       lanUrl: "",
-      icon: "",
+      icon: "icons/current.svg",
     });
 
     const smartIconMatch = useSmartIconMatch({
@@ -112,6 +112,8 @@ describe("useSmartIconMatch", () => {
 
     await smartIconMatch.smartMatchIcons();
 
+    expect(form.value.title).toBe("Example");
+    expect(form.value.icon).toBe("icons/current.svg");
     expect(smartIconMatch.isSmartMatching.value).toBe(false);
     expect(smartIconMatch.smartMatchCandidates.value).toEqual([
       {
@@ -121,16 +123,9 @@ describe("useSmartIconMatch", () => {
         backgroundColor: "#111827",
       },
     ]);
-    expect(smartIconMatch.selectedSmartMatchCandidateUrl.value).toBe(
-      "/api/site/icon?url=https%3A%2F%2Fexample.com",
-    );
+    expect(smartIconMatch.selectedSmartMatchCandidateUrl.value).toBe("");
     expect(smartIconMatch.showSmartMatchModal.value).toBe(true);
-    expect(onSelect).toHaveBeenCalledWith({
-      icon: "/api/site/icon?url=https%3A%2F%2Fexample.com",
-      source: "site",
-      label: "Example",
-      backgroundColor: "#111827",
-    });
+    expect(onSelect).not.toHaveBeenCalled();
     expect(notify).not.toHaveBeenCalled();
   });
 
@@ -152,17 +147,17 @@ describe("useSmartIconMatch", () => {
       })),
     );
 
+    const form = ref({ title: "", url: "example.com" });
     const smartIconMatch = useSmartIconMatch({
-      form: ref({ url: "example.com" }),
+      form,
       onSelect: vi.fn(),
       notify: vi.fn(),
     });
 
     await smartIconMatch.smartMatchIcons();
 
-    expect(smartIconMatch.selectedSmartMatchCandidateUrl.value).toBe(
-      "/api/site/icon?url=https%3A%2F%2Fexample.com&size=64",
-    );
+    expect(form.value.title).toBe("Example");
+    expect(smartIconMatch.selectedSmartMatchCandidateUrl.value).toBe("");
     expect(smartIconMatch.smartMatchCandidates.value).toEqual([
       {
         url: "/api/site/icon?url=https%3A%2F%2Fexample.com&size=64",

@@ -50,6 +50,19 @@ describe("ItabMemoFixedLayer", () => {
     expect(wrapper.find(".notes-fixed-item").text()).toContain("固定备忘");
   });
 
+  it("renders public fixed notes as read-only when logged out", () => {
+    const auth = useAuthStore();
+    auth.logout();
+
+    const wrapper = mount(ItabMemoFixedLayer, {
+      props: { widget },
+    });
+
+    expect(wrapper.find("[data-itab-memo-fixed-layer]").exists()).toBe(true);
+    expect(wrapper.text()).toContain("固定备忘");
+    expect(wrapper.find(".notes-fixed-cancel").exists()).toBe(false);
+  });
+
   it("uses backdrop blur instead of only changing opacity", () => {
     expect(componentSource).toContain(
       "backdrop-filter: blur(10px) saturate(116%);",

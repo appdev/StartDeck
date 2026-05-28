@@ -1,7 +1,10 @@
 // @vitest-environment jsdom
+import { readFileSync } from "node:fs";
 import { afterEach, describe, expect, it } from "vitest";
 import { mount, type VueWrapper } from "@vue/test-utils";
 import AppWindowBar from "@/components/base/AppWindowBar.vue";
+
+const mainCssSource = readFileSync("src/assets/main.css", "utf8");
 
 let wrapper: VueWrapper | null = null;
 
@@ -53,5 +56,9 @@ describe("AppWindowBar", () => {
     await bar.find(".sd-window-control-dot.is-red").trigger("click");
 
     expect(bar.emitted("close")).toEqual([[]]);
+  });
+
+  it("caps centered title padding relative to the window width", () => {
+    expect(mainCssSource).toContain("padding-inline: min(6rem, 20%)");
   });
 });

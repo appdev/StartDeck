@@ -11,7 +11,7 @@ const mountPreview = (search: string) => {
         WidgetRuntimeFrame: {
           props: ["widget"],
           template:
-            '<div class="runtime-frame-stub" :data-size-key="widget.data?.sizeKey" :data-span="`${widget.w}x${widget.h}`"></div>',
+            '<div class="runtime-frame-stub" :data-size-key="widget.data?.sizeKey" :data-span="`${widget.w}x${widget.h}`" :data-catalog-preview="widget.data?.catalogPreview ? \'true\' : \'false\'"></div>',
         },
       },
     },
@@ -51,6 +51,16 @@ describe("WidgetCatalogPreviewFrame", () => {
     expect(wrapper.find(".runtime-frame-stub").attributes()).toMatchObject({
       "data-size-key": "2x2",
       "data-span": "2x2",
+    });
+  });
+
+  it("marks runtime widgets as catalog previews", () => {
+    const wrapper = mountPreview("?catalogId=system-status&size=2x2");
+
+    expect(wrapper.find(".runtime-frame-stub").attributes()).toMatchObject({
+      "data-size-key": "2x2",
+      "data-span": "2x2",
+      "data-catalog-preview": "true",
     });
   });
 });

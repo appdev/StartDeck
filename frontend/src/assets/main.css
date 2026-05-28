@@ -1320,9 +1320,7 @@
   --sd-theme-itab-clock-clock-opened-panel-text-05: rgba(255, 255, 255, 0.28);
   --sd-theme-itab-clock-clock-opened-panel-text-06: #fff;
   --sd-theme-itab-clock-clock-widget-surface-01: var(--sd-component-surface);
-  --sd-theme-itab-clock-clock-widget-text-01: var(
-    --sd-component-text-primary
-  );
+  --sd-theme-itab-clock-clock-widget-text-01: var(--sd-component-text-primary);
   --sd-theme-itab-daily-english-daily-english-opened-panel-surface-01: #000;
   --sd-theme-itab-daily-english-daily-english-opened-panel-surface-02: rgba(
     0,
@@ -1747,9 +1745,7 @@
   --sd-theme-itab-todo-todo-widget-border-01: rgb(147, 147, 147);
   --sd-theme-itab-todo-todo-widget-surface-01: var(--sd-component-surface);
   --sd-theme-itab-todo-todo-widget-surface-02: rgb(147, 147, 147);
-  --sd-theme-itab-todo-todo-widget-text-01: var(
-    --sd-component-text-primary
-  );
+  --sd-theme-itab-todo-todo-widget-text-01: var(--sd-component-text-primary);
   --sd-theme-itab-wallpaper-wallpaper-opened-panel-accent-01: rgb(24, 144, 255);
   --sd-theme-itab-wallpaper-wallpaper-opened-panel-accent-surface-01: rgb(
     24,
@@ -1866,6 +1862,59 @@
       var(--sd-component-text-secondary)
     )
   );
+  --sd-theme-itab-weather-weather-opened-panel-scene-base: #184482;
+  --sd-theme-itab-weather-weather-opened-panel-scene-sunny-day: linear-gradient(
+    35deg,
+    #154280 30%,
+    #335693,
+    #a8b3d2
+  );
+  --sd-theme-itab-weather-weather-opened-panel-scene-sunny-night: linear-gradient(
+    45deg,
+    #000012 20%,
+    #29334e
+  );
+  --sd-theme-itab-weather-weather-opened-panel-scene-cloudy-day: linear-gradient(
+    35deg,
+    #054989 30%,
+    #72ade0
+  );
+  --sd-theme-itab-weather-weather-opened-panel-scene-cloudy-night: linear-gradient(
+    35deg,
+    #191a2e 30%,
+    #4c5f7f
+  );
+  --sd-theme-itab-weather-weather-opened-panel-scene-yin-day: linear-gradient(
+    35deg,
+    #354564 30%,
+    #4c5f7f,
+    #8b9bb8
+  );
+  --sd-theme-itab-weather-weather-opened-panel-scene-yin-night: linear-gradient(
+    45deg,
+    #211e22 20%,
+    #383a3e
+  );
+  --sd-theme-itab-weather-weather-opened-panel-scene-foggy-day: linear-gradient(
+    45deg,
+    #789fb8 20%,
+    #6386a3
+  );
+  --sd-theme-itab-weather-weather-opened-panel-scene-foggy-night: linear-gradient(
+    45deg,
+    #6c7682 20%,
+    #535d69
+  );
+  --sd-theme-itab-weather-weather-opened-panel-scene-haze-day: linear-gradient(
+    45deg,
+    #8d8882 20%,
+    #bbb7af
+  );
+  --sd-theme-itab-weather-weather-opened-panel-scene-haze-night: linear-gradient(
+    45deg,
+    #1b1712 20%,
+    #5b4c49
+  );
   --sd-theme-itab-weather-weather-opened-panel-border-01: rgba(
     255,
     255,
@@ -1926,6 +1975,10 @@
     255,
     0.08
   );
+  --sd-theme-itab-weather-weather-opened-panel-surface-07: #ffffff08;
+  --sd-theme-itab-weather-weather-opened-panel-surface-08: #ffffff14;
+  --sd-theme-itab-weather-weather-opened-panel-surface-09: #ffffff0f;
+  --sd-theme-itab-weather-weather-opened-panel-surface-10: #154280;
   --sd-theme-itab-weather-weather-opened-panel-text-01: color-mix(
     in srgb,
     var(--sd-component-on-strong) 82%,
@@ -1998,6 +2051,7 @@
     255,
     0.86
   );
+  --sd-theme-itab-weather-weather-opened-panel-text-14: #d5d5d5;
   --sd-theme-itab-weather-weather-widget-accent-surface-01: rgb(59, 154, 245);
   --sd-theme-itab-weather-weather-widget-accent-surface-02: rgb(77, 189, 250);
   --sd-theme-itab-weather-weather-widget-accent-surface-03: rgb(7, 22, 42);
@@ -3552,12 +3606,8 @@
   );
   --sd-theme-itab-ip-ip-opened-panel-accent-text-01: #b56b00;
   --sd-theme-itab-ip-ip-opened-panel-surface-01: var(--sd-component-surface);
-  --sd-theme-itab-ip-ip-opened-panel-text-01: var(
-    --sd-component-text-primary
-  );
-  --sd-theme-itab-ip-ip-opened-panel-text-02: var(
-    --sd-component-text-primary
-  );
+  --sd-theme-itab-ip-ip-opened-panel-text-01: var(--sd-component-text-primary);
+  --sd-theme-itab-ip-ip-opened-panel-text-02: var(--sd-component-text-primary);
   --sd-theme-itab-ip-ip-widget-accent-surface-01: rgb(60, 102, 255);
   --sd-theme-itab-ip-ip-widget-text-01: #fff;
   --sd-theme-itab-ip-ip-widget-text-02: rgba(255, 255, 255, 0.92);
@@ -3588,9 +3638,7 @@
   --sd-theme-itab-memo-memo-opened-panel-border-01: var(
     --sd-component-text-tertiary
   );
-  --sd-theme-itab-memo-memo-opened-panel-border-02: var(
-    --sd-component-border
-  );
+  --sd-theme-itab-memo-memo-opened-panel-border-02: var(--sd-component-border);
   --sd-theme-itab-memo-memo-opened-panel-shadow-01: rgba(0, 0, 0, 0.12);
   --sd-theme-itab-memo-memo-opened-panel-surface-01: var(
     --sd-component-surface
@@ -3761,12 +3809,8 @@
     0.55
   );
   --sd-theme-itab-number-uppercase-number-uppercase-widget-accent-text-03: #fef08a;
-  --sd-theme-itab-poem-poem-opened-panel-border-01: var(
-    --sd-component-border
-  );
-  --sd-theme-itab-poem-poem-opened-panel-border-02: var(
-    --sd-component-border
-  );
+  --sd-theme-itab-poem-poem-opened-panel-border-01: var(--sd-component-border);
+  --sd-theme-itab-poem-poem-opened-panel-border-02: var(--sd-component-border);
   --sd-theme-itab-poem-poem-opened-panel-surface-01: var(
     --sd-component-surface
   );
@@ -3802,9 +3846,7 @@
   --sd-theme-itab-poem-poem-widget-accent-surface-01: rgb(9, 55, 68);
   --sd-theme-itab-poem-poem-widget-surface-01: var(--sd-component-surface);
   --sd-theme-itab-poem-poem-widget-text-01: var(--sd-component-text-primary);
-  --sd-theme-itab-poem-poem-widget-text-02: var(
-    --sd-component-text-secondary
-  );
+  --sd-theme-itab-poem-poem-widget-text-02: var(--sd-component-text-secondary);
   --sd-theme-itab-pomodoro-pomodoro-opened-panel-accent-surface-01: rgba(
     3,
     25,
@@ -3933,12 +3975,7 @@
   --sd-theme-itab-todo-todo-widget-border-01: rgb(147, 147, 147);
   --sd-theme-itab-todo-todo-widget-surface-01: rgb(34, 34, 34);
   --sd-theme-itab-todo-todo-widget-surface-02: rgb(147, 147, 147);
-  --sd-theme-itab-todo-todo-widget-text-01: rgba(
-    255,
-    255,
-    255,
-    0.8
-  );
+  --sd-theme-itab-todo-todo-widget-text-01: rgba(255, 255, 255, 0.8);
   --sd-theme-itab-wallpaper-wallpaper-opened-panel-accent-01: rgb(24, 144, 255);
   --sd-theme-itab-wallpaper-wallpaper-opened-panel-accent-surface-01: rgb(
     24,
@@ -5993,7 +6030,7 @@ button.sd-window-control-dot.is-red:focus-visible {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding-inline: clamp(6rem, 22vw, 18rem);
+  padding-inline: min(6rem, 20%);
   pointer-events: none;
 }
 

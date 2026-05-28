@@ -269,7 +269,9 @@ onMounted(() => {
   height: 100%;
   padding: 30px 12px 20px 24px;
   overflow: hidden auto;
-  background-color: #184482;
+  background-color: var(
+    --sd-theme-itab-weather-weather-opened-panel-scene-base
+  );
   background-position: center;
   background-repeat: no-repeat;
   background-size: cover;
@@ -284,17 +286,23 @@ onMounted(() => {
 
 .opened-weather-panel.weather-sunny_d,
 .weather-location-card.weather-sunny_d {
-  background-image: linear-gradient(35deg, #154280 30%, #335693, #a8b3d2);
+  background-image: var(
+    --sd-theme-itab-weather-weather-opened-panel-scene-sunny-day
+  );
 }
 
 .opened-weather-panel.weather-sunny_n,
 .weather-location-card.weather-sunny_n {
-  background-image: linear-gradient(45deg, #000012 20%, #29334e);
+  background-image: var(
+    --sd-theme-itab-weather-weather-opened-panel-scene-sunny-night
+  );
 }
 
 .opened-weather-panel.weather-cloudy_d,
 .weather-location-card.weather-cloudy_d {
-  background-image: linear-gradient(35deg, #054989 30%, #72ade0);
+  background-image: var(
+    --sd-theme-itab-weather-weather-opened-panel-scene-cloudy-day
+  );
 }
 
 .opened-weather-panel.weather-cloudy_d::before,
@@ -311,17 +319,23 @@ onMounted(() => {
 
 .opened-weather-panel.weather-cloudy_n,
 .weather-location-card.weather-cloudy_n {
-  background-image: linear-gradient(35deg, #191a2e 30%, #4c5f7f);
+  background-image: var(
+    --sd-theme-itab-weather-weather-opened-panel-scene-cloudy-night
+  );
 }
 
 .opened-weather-panel.weather-yin_d,
 .weather-location-card.weather-yin_d {
-  background-image: linear-gradient(35deg, #354564 30%, #4c5f7f, #8b9bb8);
+  background-image: var(
+    --sd-theme-itab-weather-weather-opened-panel-scene-yin-day
+  );
 }
 
 .opened-weather-panel.weather-yin_n,
 .weather-location-card.weather-yin_n {
-  background-image: linear-gradient(45deg, #211e22 20%, #383a3e);
+  background-image: var(
+    --sd-theme-itab-weather-weather-opened-panel-scene-yin-night
+  );
 }
 
 .opened-weather-panel.weather-rain_d,
@@ -353,22 +367,30 @@ onMounted(() => {
 
 .opened-weather-panel.weather-foggy_d,
 .weather-location-card.weather-foggy_d {
-  background-image: linear-gradient(45deg, #789fb8 20%, #6386a3);
+  background-image: var(
+    --sd-theme-itab-weather-weather-opened-panel-scene-foggy-day
+  );
 }
 
 .opened-weather-panel.weather-foggy_n,
 .weather-location-card.weather-foggy_n {
-  background-image: linear-gradient(45deg, #6c7682 20%, #535d69);
+  background-image: var(
+    --sd-theme-itab-weather-weather-opened-panel-scene-foggy-night
+  );
 }
 
 .opened-weather-panel.weather-haze_d,
 .weather-location-card.weather-haze_d {
-  background-image: linear-gradient(45deg, #8d8882 20%, #bbb7af);
+  background-image: var(
+    --sd-theme-itab-weather-weather-opened-panel-scene-haze-day
+  );
 }
 
 .opened-weather-panel.weather-haze_n,
 .weather-location-card.weather-haze_n {
-  background-image: linear-gradient(45deg, #1b1712 20%, #5b4c49);
+  background-image: var(
+    --sd-theme-itab-weather-weather-opened-panel-scene-haze-night
+  );
 }
 
 .opened-weather-panel.weather-other,
@@ -574,7 +596,7 @@ onMounted(() => {
 .weather-location-list {
   overflow: hidden;
   border-radius: 6px;
-  background: #ffffff08;
+  background: var(--sd-theme-itab-weather-weather-opened-panel-surface-07);
 }
 
 .weather-hour-card {
@@ -629,7 +651,7 @@ onMounted(() => {
 }
 
 .weather-hour-track span:hover {
-  background: #ffffff14;
+  background: var(--sd-theme-itab-weather-weather-opened-panel-surface-08);
 }
 
 .weather-hour-track b,
@@ -698,17 +720,17 @@ onMounted(() => {
 }
 
 .weather-day-grid article.active {
-  background: #ffffff14;
+  background: var(--sd-theme-itab-weather-weather-opened-panel-surface-08);
   color: var(--sd-theme-itab-weather-weather-opened-panel-text-04);
 }
 
 .weather-day-grid article:hover {
-  background: #ffffff0f;
+  background: var(--sd-theme-itab-weather-weather-opened-panel-surface-09);
   color: var(--sd-theme-itab-weather-weather-opened-panel-text-04);
 }
 
 .weather-day-grid article.active:hover {
-  background: #ffffff14;
+  background: var(--sd-theme-itab-weather-weather-opened-panel-surface-08);
   color: var(--sd-theme-itab-weather-weather-opened-panel-text-04);
 }
 
@@ -801,11 +823,13 @@ onMounted(() => {
   border: 0;
   border-radius: 12px;
   overflow: hidden;
-  background-color: #154280;
+  background-color: var(
+    --sd-theme-itab-weather-weather-opened-panel-surface-10
+  );
   background-position: center;
   background-repeat: no-repeat;
   background-size: cover;
-  color: #d5d5d5;
+  color: var(--sd-theme-itab-weather-weather-opened-panel-text-14);
   text-align: left;
 }
 

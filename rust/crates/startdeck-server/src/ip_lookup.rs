@@ -729,6 +729,24 @@ mod tests {
     }
 
     #[test]
+    fn maps_cached_ip_model_to_weather_location_shape() {
+        let body = model_to_response(
+            &sample_model(),
+            Some("121.43.181.220"),
+            "127.0.0.1",
+            true,
+            Some(100),
+            Some(200),
+        );
+        let weather_location = ip_response_to_weather_location(&body).unwrap();
+
+        assert_eq!(body["cached"], true);
+        assert_eq!(weather_location["id"], "101210112");
+        assert_eq!(weather_location["name"], "拱墅");
+        assert_eq!(weather_location["location"], "120.155070,30.274084");
+    }
+
+    #[test]
     fn falls_back_to_local_response_without_coordinates() {
         let body = local_ip_response("127.0.0.1", "127.0.0.1");
 
