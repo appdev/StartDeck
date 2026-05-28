@@ -1,5 +1,12 @@
 <script setup lang="ts">
-import { ref, onMounted, computed, watch } from "vue";
+import {
+  ref,
+  onMounted,
+  onBeforeUnmount,
+  computed,
+  watch,
+  nextTick,
+} from "vue";
 import { useMainStore } from "../stores/main";
 import { VueDraggable } from "vue-draggable-plus";
 import AppButton from "@/components/base/AppButton.vue";
@@ -465,9 +472,21 @@ const apiTotalPages = ref(1);
 const apiLoading = ref(false);
 const apiError = ref("");
 const apiPageSize = 24;
+const apiLoadMoreSentinelRef = ref<HTMLElement | null>(null);
+const API_AUTO_LOAD_DISTANCE = 320;
+let apiScrollRoot: HTMLElement | null = null;
 
 const apiHasMoreWallpapers = computed(
   () => apiPage.value < apiTotalPages.value,
+);
+const canAutoLoadApiWallpapers = computed(
+  () =>
+    props.show &&
+    activeTab.value === "api" &&
+    apiHasMoreWallpapers.value &&
+    !apiLoading.value &&
+    !applyingApi.value &&
+    !apiError.value,
 );
 const apiSourceSummary = computed(() => {
   if (apiLoading.value && !apiWallpapers.value.length) return "正在加载";
@@ -521,6 +540,53 @@ const ensureBingApiWallpapers = () => {
   void loadBingApiWallpapers();
 };
 
+const loadMoreBingApiWallpapers = () => {
+  if (!canAutoLoadApiWallpapers.value) return;
+  void loadBingApiWallpapers(false, apiPage.value + 1);
+};
+
+const handleApiScroll = () => {
+  if (
+    !apiScrollRoot ||
+    apiScrollRoot.scrollTop <= 0 ||
+    !canAutoLoadApiWallpapers.value
+  ) {
+    return;
+  }
+
+  const distanceToBottom =
+    apiScrollRoot.scrollHeight -
+    apiScrollRoot.scrollTop -
+    apiScrollRoot.clientHeight;
+  if (distanceToBottom <= API_AUTO_LOAD_DISTANCE) {
+    loadMoreBingApiWallpapers();
+  }
+};
+
+const detachApiScrollRoot = () => {
+  apiScrollRoot?.removeEventListener("scroll", handleApiScroll);
+  apiScrollRoot = null;
+};
+
+const syncApiScrollRoot = () => {
+  const nextScrollRoot =
+    props.show && activeTab.value === "api"
+      ? (apiLoadMoreSentinelRef.value?.closest(
+          ".sd-modal-body",
+        ) as HTMLElement | null)
+      : null;
+  if (nextScrollRoot === apiScrollRoot) return;
+  detachApiScrollRoot();
+  apiScrollRoot = nextScrollRoot;
+  apiScrollRoot?.addEventListener("scroll", handleApiScroll, {
+    passive: true,
+  });
+};
+
+const syncApiAutoLoad = () => {
+  syncApiScrollRoot();
+};
+
 watch(
   () => props.show,
   (visible) => {
@@ -550,6 +616,33 @@ watch(activeTab, (value) => {
     ensureBingApiWallpapers();
   }
 });
+
+onMounted(async () => {
+  await nextTick();
+  syncApiAutoLoad();
+});
+
+onBeforeUnmount(() => {
+  detachApiScrollRoot();
+});
+
+watch(
+  () =>
+    [
+      props.show,
+      activeTab.value,
+      apiWallpapers.value.length,
+      apiHasMoreWallpapers.value,
+      apiLoading.value,
+      apiError.value,
+      applyingApi.value,
+    ] as const,
+  async () => {
+    await nextTick();
+    syncApiAutoLoad();
+  },
+  { flush: "post" },
+);
 
 const wallpaperStatusBanner = computed(() => {
   if (uploading.value) {
@@ -1108,16 +1201,6 @@ onMounted(() => {
                 >
                   刷新
                 </AppButton>
-                <AppButton
-                  v-if="apiHasMoreWallpapers"
-                  variant="secondary"
-                  size="sm"
-                  :busy="apiLoading"
-                  :disabled="apiLoading || applyingApi"
-                  @click="loadBingApiWallpapers(false, apiPage + 1)"
-                >
-                  加载更多
-                </AppButton>
               </div>
             </div>
 
@@ -1216,6 +1299,19 @@ onMounted(() => {
               class="flex min-h-48 items-center justify-center text-sm text-[var(--sd-color-text-tertiary)]"
             >
               暂无可用壁纸
+            </div>
+
+            <div
+              v-if="apiWallpapers.length"
+              ref="apiLoadMoreSentinelRef"
+              data-testid="wallpaper-api-auto-load-sentinel"
+              class="flex justify-center py-4 text-xs font-medium text-[var(--sd-color-text-tertiary)]"
+              aria-live="polite"
+            >
+              <span v-if="apiLoading">正在加载 Bing 壁纸...</span>
+              <span v-else-if="apiError">加载已暂停</span>
+              <span v-else-if="apiHasMoreWallpapers">还有更多壁纸</span>
+              <span v-else>已全部加载</span>
             </div>
           </AppSectionCard>
         </div>
