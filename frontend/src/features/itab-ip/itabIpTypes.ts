@@ -46,3 +46,9 @@ export interface ItabIpLatencyResult {
   checkedAt: string;
   serverTs: number;
 }
+
+export interface ItabIpHistoryEntry extends ItabIpLookupResult {
+  firstSeenAt: number;
+  lastSeenAt: number;
+  seenCount: number;
+}

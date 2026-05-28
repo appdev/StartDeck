@@ -138,6 +138,7 @@ pub fn app(state: AppState) -> Router {
         .route("/api/icon-cache", post(cache_icon))
         .route("/icons/{*path}", get(icon_service_icon_asset))
         .route("/cache/{*path}", get(icon_service_cache_asset))
+        .route("/api/ip/history", get(ip_lookup::user_ip_history))
         .route("/api/ip", get(ip_lookup::ip_info))
         .route("/api/ping", get(ping))
         .route("/api/rtt", get(rtt))

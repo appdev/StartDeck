@@ -1,11 +1,16 @@
 // @vitest-environment jsdom
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ITAB_IP_LATENCY_PATH, ITAB_IP_PROXY_PATH } from "./itabIpTypes";
-import { fetchItabIpLatency, fetchItabIpLookup } from "./itabIpApi";
+import {
+  fetchItabIpHistory,
+  fetchItabIpLatency,
+  fetchItabIpLookup,
+} from "./itabIpApi";
 
 describe("itabIpApi", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
+    localStorage.clear();
   });
 
   it("requests the StartDeck IP proxy and forwards refresh intent", async () => {
@@ -41,6 +46,81 @@ describe("itabIpApi", () => {
       }),
     );
     expect(fetchMock.mock.calls[0]![0]).toContain("refresh=1");
+  });
+
+  it("sends the stored login token with IP lookup requests so the backend can mark the user", async () => {
+    localStorage.setItem("start-deck-token", "user-token");
+    const fetchMock = vi.fn<
+      (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>
+    >(async () =>
+      Response.json({
+        success: true,
+        ip: "163.125.214.27",
+        country: "中国",
+        region: "广东省",
+        adm2: "深圳",
+        city: "龙华",
+      }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    await fetchItabIpLookup(false);
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringContaining(`${ITAB_IP_PROXY_PATH}?ts=`),
+      expect.objectContaining({
+        headers: {
+          accept: "application/json",
+          Authorization: "Bearer user-token",
+        },
+      }),
+    );
+  });
+
+  it("loads the current user's IP history from the backend", async () => {
+    localStorage.setItem("start-deck-token", "user-token");
+    const fetchMock = vi.fn<
+      (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>
+    >(async () =>
+      Response.json({
+        success: true,
+        data: [
+          {
+            success: true,
+            ip: "163.125.214.27",
+            queryIp: "163.125.214.27",
+            country: "中国",
+            region: "广东省",
+            adm2: "深圳",
+            city: "龙华",
+            firstSeenAt: 100,
+            lastSeenAt: 200,
+            seenCount: 3,
+          },
+        ],
+      }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const history = await fetchItabIpHistory();
+
+    expect(history).toHaveLength(1);
+    expect(history[0]).toMatchObject({
+      ip: "163.125.214.27",
+      city: "龙华",
+      firstSeenAt: 100,
+      lastSeenAt: 200,
+      seenCount: 3,
+    });
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/ip/history",
+      expect.objectContaining({
+        headers: {
+          accept: "application/json",
+          Authorization: "Bearer user-token",
+        },
+      }),
+    );
   });
 
   it("measures the StartDeck server roundtrip latency through /api/rtt", async () => {

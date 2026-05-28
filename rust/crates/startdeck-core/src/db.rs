@@ -120,6 +120,17 @@ pub async fn ensure_schema(pool: &SqlitePool) -> Result<()> {
         )"#,
         r#"CREATE INDEX IF NOT EXISTS idx_ip_location_cache_expires_at
            ON ip_location_cache(expires_at)"#,
+        r#"CREATE TABLE IF NOT EXISTS user_ip_locations (
+            username TEXT NOT NULL,
+            ip TEXT NOT NULL,
+            first_seen_at INTEGER NOT NULL,
+            last_seen_at INTEGER NOT NULL,
+            seen_count INTEGER NOT NULL,
+            PRIMARY KEY(username, ip),
+            FOREIGN KEY(username) REFERENCES users(username) ON DELETE CASCADE
+        )"#,
+        r#"CREATE INDEX IF NOT EXISTS idx_user_ip_locations_username_last_seen
+           ON user_ip_locations(username, last_seen_at DESC)"#,
         r#"CREATE TABLE IF NOT EXISTS config_versions (
             id TEXT PRIMARY KEY,
             label TEXT NOT NULL,
@@ -187,6 +198,7 @@ async fn any_runtime_table_exists(pool: &SqlitePool) -> Result<bool> {
         "memos",
         "runtime_cache",
         "ip_location_cache",
+        "user_ip_locations",
         "config_versions",
         "visitor_stats",
         "icon_records",
@@ -244,6 +256,7 @@ async fn destructive_reset_schema(pool: &SqlitePool) -> Result<()> {
         "DROP TABLE IF EXISTS widgets",
         "DROP TABLE IF EXISTS memos",
         "DROP TABLE IF EXISTS runtime_cache",
+        "DROP TABLE IF EXISTS user_ip_locations",
         "DROP TABLE IF EXISTS ip_location_cache",
         "DROP TABLE IF EXISTS config_versions",
         "DROP TABLE IF EXISTS visitor_stats",

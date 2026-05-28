@@ -1,6 +1,7 @@
 import {
   ITAB_IP_LATENCY_PATH,
   ITAB_IP_PROXY_PATH,
+  type ItabIpHistoryEntry,
   type ItabIpLatencyResult,
   type ItabIpLookupResult,
 } from "./itabIpTypes";
@@ -18,6 +19,19 @@ const formatCheckedAt = () =>
     minute: "2-digit",
   });
 
+const authHeaders = () => {
+  const headers: Record<string, string> = { accept: "application/json" };
+  try {
+    const token = localStorage.getItem("start-deck-token")?.trim();
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+    }
+  } catch {
+    // Ignore storage access failures; /api/ip remains a public lookup endpoint.
+  }
+  return headers;
+};
+
 export const fetchItabIpLookup = async (
   refresh = false,
   signal?: AbortSignal,
@@ -31,7 +45,7 @@ export const fetchItabIpLookup = async (
   const response = await fetch(url.toString(), {
     cache: "no-store",
     credentials: "same-origin",
-    headers: { accept: "application/json" },
+    headers: authHeaders(),
     signal,
   });
   const payload = await response.json().catch(() => null);
@@ -40,6 +54,40 @@ export const fetchItabIpLookup = async (
     throw new Error(`iTab IP request failed: ${response.status}`);
   }
   return normalized;
+};
+
+export const fetchItabIpHistory = async (
+  signal?: AbortSignal,
+): Promise<ItabIpHistoryEntry[]> => {
+  const response = await fetch("/api/ip/history", {
+    cache: "no-store",
+    credentials: "same-origin",
+    headers: authHeaders(),
+    signal,
+  });
+  const payload = await response.json().catch(() => null);
+  if (
+    !response.ok ||
+    payload?.success !== true ||
+    !Array.isArray(payload.data)
+  ) {
+    throw new Error(`iTab IP history request failed: ${response.status}`);
+  }
+  return payload.data
+    .map((entry: unknown) => {
+      const normalized = normalizeItabIpLookupResponse(entry);
+      if (!normalized || typeof entry !== "object" || entry === null) {
+        return null;
+      }
+      const raw = entry as Record<string, unknown>;
+      return {
+        ...normalized,
+        firstSeenAt: Number(raw.firstSeenAt) || 0,
+        lastSeenAt: Number(raw.lastSeenAt) || 0,
+        seenCount: Number(raw.seenCount) || 0,
+      } satisfies ItabIpHistoryEntry;
+    })
+    .filter((entry): entry is ItabIpHistoryEntry => entry !== null);
 };
 
 export const fetchItabIpLatency = async (

@@ -72,9 +72,53 @@ pub(crate) async fn ip_info(
         .get("refresh")
         .map(String::as_str)
         .is_some_and(is_truthy);
-    Ok(Json(
-        resolve_ip_location_response(&state, &headers, query_ip, refresh).await,
-    ))
+    let username = match crate::optional_username_from_headers(&headers, &state) {
+        Ok(username) => username,
+        Err(error) => {
+            tracing::debug!(?error, "skip user ip marker for invalid optional auth");
+            None
+        }
+    };
+    let user_ip = if query_ip.is_none() {
+        request_ip_from_headers(&headers).and_then(public_ipv4)
+    } else {
+        None
+    };
+    let response = resolve_ip_location_response(&state, &headers, query_ip, refresh).await;
+    if let (Some(username), Some(ip)) = (username.as_deref(), user_ip)
+        && let Err(error) = record_user_ip_location(&state.pool, username, ip).await
+    {
+        tracing::warn!(%error, %username, %ip, "failed to record user ip location marker");
+    }
+    Ok(Json(response))
+}
+
+pub(crate) async fn user_ip_history(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+) -> Result<Json<Value>, ApiError> {
+    let username = crate::require_username(&headers, &state)?;
+    let rows = sqlx::query(
+        r#"SELECT u.ip, u.first_seen_at, u.last_seen_at, u.seen_count,
+                  c.model_json, c.source, c.source_status, c.cached_at, c.expires_at
+           FROM user_ip_locations u
+           LEFT JOIN ip_location_cache c ON c.ip = u.ip
+           WHERE u.username = ?
+           ORDER BY u.last_seen_at DESC"#,
+    )
+    .bind(&username)
+    .fetch_all(&state.pool)
+    .await?;
+    let now = Utc::now().timestamp_millis();
+    let entries = rows
+        .into_iter()
+        .map(|row| user_ip_history_row_to_value(&row, now))
+        .collect::<Vec<_>>();
+    Ok(Json(json!({
+        "success": true,
+        "username": username,
+        "data": entries
+    })))
 }
 
 pub(crate) async fn resolve_ip_location_response(
@@ -483,6 +527,65 @@ async fn write_ip_cache(
     .await
     .map_err(|err| err.to_string())?;
     Ok(())
+}
+
+async fn record_user_ip_location(
+    pool: &SqlitePool,
+    username: &str,
+    ip: &str,
+) -> Result<(), String> {
+    let now = Utc::now().timestamp_millis();
+    sqlx::query(
+        r#"INSERT INTO user_ip_locations(username, ip, first_seen_at, last_seen_at, seen_count)
+           VALUES (?, ?, ?, ?, 1)
+           ON CONFLICT(username, ip) DO UPDATE SET
+             last_seen_at=excluded.last_seen_at,
+             seen_count=user_ip_locations.seen_count + 1"#,
+    )
+    .bind(username)
+    .bind(ip)
+    .bind(now)
+    .bind(now)
+    .execute(pool)
+    .await
+    .map_err(|err| err.to_string())?;
+    Ok(())
+}
+
+fn user_ip_history_row_to_value(row: &sqlx::sqlite::SqliteRow, now: i64) -> Value {
+    let ip = row.get::<String, _>("ip");
+    let first_seen_at = row.get::<i64, _>("first_seen_at");
+    let last_seen_at = row.get::<i64, _>("last_seen_at");
+    let seen_count = row.get::<i64, _>("seen_count");
+    let mut value = json!({
+        "ip": ip,
+        "firstSeenAt": first_seen_at,
+        "lastSeenAt": last_seen_at,
+        "seenCount": seen_count,
+        "cached": false,
+        "sourceStatus": ""
+    });
+    let model_json = row.try_get::<String, _>("model_json").ok();
+    let expires_at = row.try_get::<i64, _>("expires_at").ok();
+    if let (Some(model_json), Some(expires_at)) = (model_json, expires_at)
+        && expires_at > now
+        && let Ok(model) = serde_json::from_str::<IpLocationModel>(&model_json)
+    {
+        value = model_to_response(
+            &model,
+            Some(ip.as_str()),
+            ip.as_str(),
+            true,
+            row.try_get::<i64, _>("cached_at").ok(),
+            Some(expires_at),
+        );
+        if let Value::Object(ref mut object) = value {
+            object.insert("firstSeenAt".to_string(), json!(first_seen_at));
+            object.insert("lastSeenAt".to_string(), json!(last_seen_at));
+            object.insert("seenCount".to_string(), json!(seen_count));
+        }
+    }
+    value
 }
 
 async fn delete_ip_cache(pool: &SqlitePool, ip: &str) -> Result<(), String> {

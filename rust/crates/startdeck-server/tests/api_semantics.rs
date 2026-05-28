@@ -656,6 +656,63 @@ async fn route_surface_smoke_covers_auth_and_runtime_semantics() {
     assert_eq!(status, StatusCode::OK);
     assert_eq!(body["queryIp"], "127.0.0.1");
 
+    let response = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method("GET")
+                .uri("/api/ip")
+                .header("authorization", format!("Bearer {token}"))
+                .header("x-forwarded-for", "8.8.8.8")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
+    let body: Value =
+        serde_json::from_slice(&to_bytes(response.into_body(), usize::MAX).await.unwrap()).unwrap();
+    assert_eq!(body["queryIp"], "8.8.8.8");
+
+    let (status, body) = json_call(&app, "GET", "/api/ip/history", Some(&token), None).await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(body["username"], "admin");
+    assert_eq!(body["data"].as_array().unwrap().len(), 1);
+    assert_eq!(body["data"][0]["ip"], "8.8.8.8");
+    assert_eq!(body["data"][0]["seenCount"], 1);
+
+    let response = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method("GET")
+                .uri("/api/ip")
+                .header("authorization", "Bearer invalid-token")
+                .header("x-forwarded-for", "8.8.8.8")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
+    let body: Value =
+        serde_json::from_slice(&to_bytes(response.into_body(), usize::MAX).await.unwrap()).unwrap();
+    assert_eq!(body["queryIp"], "8.8.8.8");
+    let (status, body) = json_call(&app, "GET", "/api/ip/history", Some(&token), None).await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(body["data"][0]["seenCount"], 1);
+
+    let (status, body) = json_call(&app, "GET", "/api/ip?ip=1.1.1.1", Some(&token), None).await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(body["queryIp"], "1.1.1.1");
+    let (status, body) = json_call(&app, "GET", "/api/ip/history", Some(&token), None).await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(body["data"].as_array().unwrap().len(), 1);
+    assert_eq!(body["data"][0]["ip"], "8.8.8.8");
+
+    let (status, _) = json_call(&app, "GET", "/api/ip/history", None, None).await;
+    assert_eq!(status, StatusCode::UNAUTHORIZED);
+
     let (status, body) = json_call(&app, "GET", "/api/ip?ip=not-ip", None, None).await;
     assert_eq!(status, StatusCode::BAD_REQUEST);
     assert_eq!(body["error"], "invalid_ipv4");
