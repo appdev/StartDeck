@@ -88,8 +88,14 @@ describe("home widget interaction styles", () => {
 
   it("keeps edit mode chrome compact and removes the resize grip", () => {
     const deleteBlock = getRuleBlock(mainCssSource, ".sd-home-widget-delete");
+    const gridStackResizeHandleBlock = getRuleBlock(
+      gridLayoutCssSource,
+      ".sd-home-grid-stack > .grid-stack-item > .ui-resizable-handle",
+    );
 
     expect(mainCssSource).not.toContain(".sd-home-widget-resize-grip");
+    expect(gridStackResizeHandleBlock).toContain("display: none !important;");
+    expect(gridStackResizeHandleBlock).toContain("pointer-events: none;");
     expect(deleteBlock).toContain("width: 1.5rem;");
     expect(deleteBlock).toContain("height: 1.5rem;");
     expect(deleteBlock).toContain("top: -0.375rem;");

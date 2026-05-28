@@ -25,10 +25,7 @@ import { useMainStore } from "../stores/main";
 import { canReadResource } from "@/utils/permissions";
 import { useWallpaperRotation } from "../composables/useWallpaperRotation";
 import { useDevice } from "../composables/useDevice";
-import {
-  resolveWidgetSizeState,
-  type WidgetSize,
-} from "../composables/useWidgetResize";
+import { resolveWidgetSizeState } from "../composables/useWidgetResize";
 import { resolveWidgetDisplaySize } from "@/composables/useWidgetDisplaySize";
 import {
   generateLayout,
@@ -42,7 +39,6 @@ import HomeActionBar from "@/components/home/HomeActionBar.vue";
 import HomeTopActions from "@/components/home/HomeTopActions.vue";
 import MainWidgetShell from "@/components/home/MainWidgetShell.vue";
 import WidgetEditFrame from "@/components/home/WidgetEditFrame.vue";
-import WidgetSizeStrip from "@/components/home/WidgetSizeStrip.vue";
 import { toCatalogWidgetSizeKey } from "@/utils/widgetSizePresets";
 import WidgetRuntimeFrame from "@/features/widget-runtime/WidgetRuntimeFrame.vue";
 import WidgetRuntimeMenu from "@/features/widget-runtime/WidgetRuntimeMenu.vue";
@@ -88,6 +84,7 @@ import { ITAB_WALLPAPER_WIDGET_TYPE } from "@/features/itab-wallpaper/itabWallpa
 import { ITAB_MOVIE_CALENDAR_WIDGET_TYPE } from "@/features/itab-movie-calendar/itabMovieCalendarTypes";
 import { ITAB_CALENDAR_WIDGET_TYPE } from "@/features/itab-calendar/itabCalendarTypes";
 import { ITAB_IP_WIDGET_TYPE } from "@/features/itab-ip/itabIpTypes";
+import { useItabIpRuntime } from "@/features/itab-ip/useItabIpRuntime";
 import { ITAB_FOOD_PICKER_WIDGET_TYPE } from "@/features/itab-food-picker/itabFoodPickerTypes";
 import { ITAB_NUMBER_UPPERCASE_WIDGET_TYPE } from "@/features/itab-number-uppercase/itabNumberUppercaseTypes";
 import { createDefaultItabAnniversaryWidget } from "@/features/itab-anniversary/itabAnniversaryModel";
@@ -333,6 +330,20 @@ const beginHomeWidgetDrag = () => {
     finishHomeWidgetDrag();
   }, HOME_WIDGET_OPEN_SUPPRESS_MS + 500);
 };
+const enterEditMode = () => {
+  store.layoutEditInProgress = true;
+  isEditMode.value = true;
+};
+
+const leaveEditMode = async () => {
+  isEditMode.value = false;
+  try {
+    await store.saveData(true);
+  } finally {
+    store.layoutEditInProgress = false;
+  }
+};
+
 /** 切换编辑模式；进入编辑时设 layoutEditInProgress，退出时 await 保存后再清空，避免外网竞态导致布局被覆盖 */
 const toggleEditMode = async () => {
   if (!store.isLogged) {
@@ -342,16 +353,30 @@ const toggleEditMode = async () => {
     return;
   }
   if (isEditMode.value) {
-    isEditMode.value = false;
-    try {
-      await store.saveData(true);
-    } finally {
-      store.layoutEditInProgress = false;
-    }
+    await leaveEditMode();
   } else {
-    store.layoutEditInProgress = true;
-    isEditMode.value = true;
+    enterEditMode();
   }
+};
+
+const isEditableKeyboardTarget = (target: EventTarget | null) => {
+  if (!(target instanceof HTMLElement)) return false;
+  if (target.isContentEditable) return true;
+  return ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName);
+};
+
+const hasActiveOverlayMotion = () =>
+  document.querySelector("[data-overlay-motion-id]") !== null;
+
+const onGlobalHomeKeydown = (event: KeyboardEvent) => {
+  if (event.key !== "Escape" || !isEditMode.value) return;
+  if (hasActiveOverlayMotion() || isEditableKeyboardTarget(event.target))
+    return;
+  event.preventDefault();
+  event.stopPropagation();
+  void leaveEditMode().catch((error) => {
+    console.error("Failed to leave edit mode with Escape", error);
+  });
 };
 
 const handleHomeActionSave = async () => {
@@ -426,6 +451,7 @@ watch(showGroupSettingsModal, (val) => {
 const isLanMode = ref(false);
 const latency = ref(0);
 const isChecking = ref(false);
+const ipRuntime = useItabIpRuntime();
 const networkConfig = computed(() =>
   getNetworkConfig(store.appConfig, store.forceNetworkMode),
 );
@@ -438,23 +464,29 @@ const forceMode = computed({
 const latencyThresholdMs = computed(
   () => networkConfig.value.latencyThresholdMs,
 );
-
-const effectiveIsLan = computed(() => {
-  if (!store.isLanModeInited) return false;
+const currentNetworkLocation = computed(() => ipRuntime.result.value);
+const resolveEffectiveNetworkMode = (measuredLatencyMs = latency.value) => {
   const cfg = networkConfig.value;
-  const result = computeEffectiveNetworkMode(
+  return computeEffectiveNetworkMode(
     window.location.hostname,
     "",
     "",
-    latency.value,
+    measuredLatencyMs,
     {
+      currentLocation: currentNetworkLocation.value,
       internalDomains: cfg.internalDomains,
+      internalLocation: cfg.internalLocation,
       networkRules: cfg.networkRules,
+      whitelistLatencyMode: cfg.whitelistLatencyMode,
       forceNetworkMode: cfg.forceNetworkMode,
       latencyThresholdMs: cfg.latencyThresholdMs,
     },
   );
-  return result.isLan;
+};
+
+const effectiveIsLan = computed(() => {
+  if (!store.isLanModeInited) return false;
+  return resolveEffectiveNetworkMode().isLan;
 });
 const forceModeLabel = computed(() => {
   if (forceMode.value === "lan") return "内网";
@@ -664,9 +696,6 @@ watch(
 const layoutData = ref<GridLayoutItem[]>([]);
 let skipNextLayoutSave = false;
 let isInternalUpdate = false;
-const isHandheld = computed(
-  () => deviceKey.value === "mobile" || deviceKey.value === "tablet",
-);
 const checkVisible = (obj?: WidgetConfig | NavItem) => {
   if (!obj) return false;
   if ("enable" in obj && !obj.enable) return false;
@@ -1225,30 +1254,6 @@ const selectedGridWidget = computed(() => {
     null
   );
 });
-const selectedWidgetSizeState = computed(() => {
-  const widget = selectedGridWidget.value;
-  if (!widget) return null;
-  return resolveWidgetSizeState({
-    widgetType: widget.type,
-    deviceKey: deviceKey.value,
-    runtimeCols: widgetColNum.value,
-    currentSize: {
-      colSpan: widget.w || widget.colSpan || 1,
-      rowSpan: widget.h || widget.rowSpan || 1,
-    },
-  });
-});
-const isWidgetSizeStripVisible = computed(
-  () =>
-    isHomeEditChromeVisible.value &&
-    isHandheld.value &&
-    selectedGridWidget.value !== null,
-);
-const handleWidgetSizeStripSelect = (size: WidgetSize) => {
-  const widget = selectedGridWidget.value;
-  if (!widget) return;
-  handleSizeSelect(widget, size);
-};
 
 watch(isEditMode, (val) => {
   if (val) return;
@@ -1343,19 +1348,7 @@ const checkLatency = async () => {
     latency.value = samples.length > 0 ? Math.min(...samples) : 0;
 
     if (latency.value > 0) {
-      const cfg = networkConfig.value;
-      const result = computeEffectiveNetworkMode(
-        window.location.hostname,
-        "",
-        "",
-        latency.value,
-        {
-          internalDomains: cfg.internalDomains,
-          networkRules: cfg.networkRules,
-          forceNetworkMode: cfg.forceNetworkMode,
-          latencyThresholdMs: cfg.latencyThresholdMs,
-        },
-      );
+      const result = resolveEffectiveNetworkMode(latency.value);
       isLanMode.value = result.isLan;
     }
   } finally {
@@ -1368,19 +1361,7 @@ watch(forceMode, (val) => {
     checkLatency();
   }
   if (store.isLanModeInited) {
-    const cfg = networkConfig.value;
-    const result = computeEffectiveNetworkMode(
-      window.location.hostname,
-      "",
-      "",
-      latency.value,
-      {
-        internalDomains: cfg.internalDomains,
-        networkRules: cfg.networkRules,
-        forceNetworkMode: cfg.forceNetworkMode,
-        latencyThresholdMs: cfg.latencyThresholdMs,
-      },
-    );
+    const result = resolveEffectiveNetworkMode();
     isLanMode.value = result.isLan;
   }
 });
@@ -1388,37 +1369,14 @@ watch(latencyThresholdMs, () => {
   if (forceMode.value === "latency") {
     checkLatency();
   } else if (store.isLanModeInited) {
-    const cfg = networkConfig.value;
-    const result = computeEffectiveNetworkMode(
-      window.location.hostname,
-      "",
-      "",
-      latency.value,
-      {
-        internalDomains: cfg.internalDomains,
-        networkRules: cfg.networkRules,
-        forceNetworkMode: cfg.forceNetworkMode,
-        latencyThresholdMs: cfg.latencyThresholdMs,
-      },
-    );
+    const result = resolveEffectiveNetworkMode();
     isLanMode.value = result.isLan;
   }
 });
 
 onMounted(() => {
-  const cfg = networkConfig.value;
-  const initialResult = computeEffectiveNetworkMode(
-    window.location.hostname,
-    "",
-    "",
-    0,
-    {
-      internalDomains: cfg.internalDomains,
-      networkRules: cfg.networkRules,
-      forceNetworkMode: cfg.forceNetworkMode,
-      latencyThresholdMs: cfg.latencyThresholdMs,
-    },
-  );
+  void ipRuntime.ensureLoaded();
+  const initialResult = resolveEffectiveNetworkMode(0);
   isLanMode.value = initialResult.isLan;
   store.isLanModeInited = true;
   setTimeout(() => checkLatency(), 2000);
@@ -2956,12 +2914,14 @@ watch(
 
 onMounted(() => {
   document.addEventListener("pointerdown", onDocPointerDownCapture, true);
+  document.addEventListener("keydown", onGlobalHomeKeydown, true);
   document.addEventListener("scroll", closeContextMenu, true);
   document.addEventListener("scroll", closeRuntimeContextMenu, true);
 });
 
 onUnmounted(() => {
   document.removeEventListener("pointerdown", onDocPointerDownCapture, true);
+  document.removeEventListener("keydown", onGlobalHomeKeydown, true);
   document.removeEventListener("scroll", closeContextMenu, true);
   document.removeEventListener("scroll", closeRuntimeContextMenu, true);
   clearHomeWidgetDragIdleTimer();
@@ -3491,23 +3451,6 @@ onUnmounted(() => {
             </div>
           </div>
         </div>
-
-        <WidgetSizeStrip
-          v-if="
-            isWidgetSizeStripVisible &&
-            selectedGridWidget &&
-            selectedWidgetSizeState
-          "
-          :options="selectedWidgetSizeState.options"
-          :current-size="{
-            colSpan: selectedGridWidget.w || selectedGridWidget.colSpan || 1,
-            rowSpan: selectedGridWidget.h || selectedGridWidget.rowSpan || 1,
-          }"
-          :target-size="null"
-          :max-size="selectedWidgetSizeState.maxSize"
-          :runtime-cols="widgetColNum"
-          @select="handleWidgetSizeStripSelect"
-        />
 
         <VueDraggable
           v-model="store.groups"

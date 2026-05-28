@@ -96,6 +96,15 @@ export interface WallpaperConfig {
   lastUpdated?: number;
 }
 
+export interface NetworkLocationAddress {
+  key: string;
+  label: string;
+  country: string;
+  province: string;
+  city: string;
+  district: string;
+}
+
 export interface AppConfig {
   background: string;
   mobileBackground?: string;
@@ -120,6 +129,7 @@ export interface AppConfig {
   daylightModeEnabled?: boolean;
   daylightMask?: number;
   internalDomains?: string;
+  internalLocation?: NetworkLocationAddress | null;
   networkRules?: string;
   networkPresets?: {
     tailscale?: boolean;

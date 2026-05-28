@@ -57,6 +57,7 @@
     "hideHeaderOnMobile": false,
     "iconShape": "rounded",
     "internalDomains": "",
+    "internalLocation": null,
     "latencyThresholdMs": 200,
     "marketplaceListUrl": "http://qdnas.icu:23111/",
     "mobileBackground": "/mobile_backgrounds/104933-1741661373383a.jpg",

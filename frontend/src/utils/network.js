@@ -226,12 +226,103 @@ const isDomainInWhitelist = (hostname, whitelistStr) => {
   return false;
 };
 
+const LOCAL_LOCATION_PLACEHOLDER = new Set([
+  "本地网络",
+  "本机",
+  "未知",
+  "定位中",
+]);
+
+const normalizeLocationPart = (value) =>
+  typeof value === "string" ? value.trim() : "";
+
+const normalizeComparableLocationPart = (value) =>
+  String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, "")
+    .replace(/省|市|区|县|地区|特别行政区/g, "");
+
+const splitLocationAddress = (location) =>
+  String(location || "")
+    .split(/[\s,-]+/)
+    .map((part) => part.trim())
+    .filter(Boolean);
+
+export const normalizeNetworkLocationAddress = (input = null) => {
+  if (!input || typeof input !== "object") return null;
+  const country = normalizeLocationPart(input.country);
+  let province =
+    normalizeLocationPart(input.province) ||
+    normalizeLocationPart(input.region) ||
+    normalizeLocationPart(input.adm1);
+  const inputCity = normalizeLocationPart(input.city);
+  let city =
+    normalizeLocationPart(input.adm2) ||
+    (normalizeLocationPart(input.district) ? inputCity : "");
+  let district =
+    normalizeLocationPart(input.district) || (city ? inputCity : "");
+
+  if (!province || !city) {
+    const parts = splitLocationAddress(normalizeLocationPart(input.location));
+    const withoutCountry =
+      parts[0] === country || parts[0] === "中国" ? parts.slice(1) : parts;
+    province = province || withoutCountry[0] || "";
+    city = city || withoutCountry[1] || "";
+    district = district || withoutCountry[2] || district;
+  }
+
+  if (!city && district) {
+    city = district;
+    district = "";
+  }
+  if (city && district === city) {
+    district = "";
+  }
+
+  const rawParts = [country, province, city, district];
+  if (!rawParts.some((part) => part && !LOCAL_LOCATION_PLACEHOLDER.has(part))) {
+    return null;
+  }
+
+  const key = rawParts
+    .map(normalizeComparableLocationPart)
+    .filter(Boolean)
+    .join("|");
+  if (!key) return null;
+
+  const label = [province, city, district]
+    .filter((part, index, values) => part && values.indexOf(part) === index)
+    .join(" / ");
+
+  return {
+    key,
+    label: label || rawParts.filter(Boolean).join(" / "),
+    country,
+    province,
+    city,
+    district,
+  };
+};
+
+export const networkLocationMatches = (current = null, target = null) => {
+  const normalizedCurrent = normalizeNetworkLocationAddress(current);
+  const normalizedTarget = normalizeNetworkLocationAddress(target);
+  if (!normalizedCurrent || !normalizedTarget) return false;
+  return normalizedCurrent.key === normalizedTarget.key;
+};
+
 export const getNetworkConfig = (appConfig = {}, localForceNetworkMode) => {
   const internalDomains =
     typeof appConfig.internalDomains === "string"
       ? appConfig.internalDomains
       : "";
+  const networkRules =
+    typeof appConfig.networkRules === "string" ? appConfig.networkRules : "";
   const whitelistLatencyMode = appConfig.whitelistLatencyMode === true;
+  const internalLocation = normalizeNetworkLocationAddress(
+    appConfig.internalLocation,
+  );
   const mode =
     typeof localForceNetworkMode === "string" ? localForceNetworkMode : "";
   const forceNetworkMode = ["auto", "lan", "wan"].includes(mode)
@@ -243,6 +334,8 @@ export const getNetworkConfig = (appConfig = {}, localForceNetworkMode) => {
   const latencyThresholdMs = Math.min(30000, Math.max(10, base));
   return {
     internalDomains,
+    internalLocation,
+    networkRules,
     whitelistLatencyMode,
     forceNetworkMode,
     latencyThresholdMs,
@@ -256,6 +349,8 @@ export const computeEffectiveNetworkMode = (
   measuredLatencyMs,
   {
     internalDomains = "",
+    internalLocation = null,
+    currentLocation = null,
     whitelistLatencyMode = false,
     forceNetworkMode = "auto",
     latencyThresholdMs = 50,
@@ -270,6 +365,10 @@ export const computeEffectiveNetworkMode = (
     measuredLatencyMs > 0 &&
     measuredLatencyMs <= latencyThresholdMs;
   const isInWhitelist = isDomainInWhitelist(hostname, internalDomains);
+  const locationMatched = networkLocationMatches(
+    currentLocation,
+    internalLocation,
+  );
 
   // 强制模式优先级最高
   if (forceNetworkMode === "lan")
@@ -280,6 +379,10 @@ export const computeEffectiveNetworkMode = (
   // 域名本身是内网地址
   if (hostnameIntrinsicLan)
     return { isLan: true, reason: "hostname_intrinsic", measuredLatencyMs };
+
+  // 当前 IP 粗定位命中用户标记的内网地址
+  if (locationMatched)
+    return { isLan: true, reason: "location_matched", measuredLatencyMs };
 
   // 白名单域名：启用延迟判定时根据延迟判定，未启用则直接判定为外网
   if (isInWhitelist) {

@@ -11,7 +11,6 @@ pub struct RuntimeConfig {
     pub sqlite_file: PathBuf,
     pub public_dir: PathBuf,
     pub server_resource_dir: PathBuf,
-    pub music_dir: PathBuf,
     pub backgrounds_dir: PathBuf,
     pub mobile_backgrounds_dir: PathBuf,
     pub icon_cache_dir: PathBuf,
@@ -87,8 +86,6 @@ impl RuntimeConfig {
             sqlite_file: data_dir.join("startdeck.sqlite3"),
             public_dir,
             server_resource_dir,
-            music_dir: env_path(&["STARTDECK_MUSIC_DIR", "MUSIC_DIR"])
-                .unwrap_or_else(|| base_dir.join("Data").join("music")),
             backgrounds_dir: env_path(&["STARTDECK_PC_DIR", "PC_DIR"])
                 .unwrap_or_else(|| base_dir.join("Data").join("PC")),
             mobile_backgrounds_dir: env_path(&["STARTDECK_APP_DIR", "APP_DIR"])
@@ -116,7 +113,6 @@ impl RuntimeConfig {
             &self.data_dir,
             &self.users_dir,
             &self.public_dir,
-            &self.music_dir,
             &self.backgrounds_dir,
             &self.mobile_backgrounds_dir,
             &self.icon_cache_dir,

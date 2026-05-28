@@ -4,7 +4,6 @@
 
 - `Data/data`: SQLite database, JSON state, cache, and user records.
 - `Data/public`: frontend build output exposed by the backend.
-- `Data/music`: uploaded or mounted music files.
 - `Data/PC`: desktop background images.
 - `Data/APP`: mobile background images.
 - `Data/doc`: transferred documents and uploads.

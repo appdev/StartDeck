@@ -1701,3 +1701,27 @@ Verified:
 Limitations:
 - The reference-site correction used sampled source behavior and representative rendered QA, not an exhaustive pixel audit of every iTab widget state.
 - Browser console warnings during mocked local QA were unrelated auth/resource/API warnings.
+
+## 2026-05-28 - Backend Unused API Removal
+
+Status: pass with one unrelated clippy blocker.
+
+Implemented:
+- Removed unused main-server routes and handlers for memo API, proxy-status, music list/upload/static service, wallpaper resolve/fetch, socket.io placeholder, and itab resource placeholder.
+- Removed `RuntimeConfig.music_dir`, Docker/Debian `MUSIC_DIR` wiring, Vite proxies, README/frontend intro references, and the unused `@types/socket.io-client` dependency.
+- Preserved iconserver routes/data, main icon proxy/cache routes, native `/ws`, and active wallpaper/background APIs.
+- Added API semantics coverage that asserts removed paths return 404.
+
+Verified:
+- `cargo fmt --check --package startdeck-server --package startdeck-core` passed.
+- `cargo test -p startdeck-server --test api_semantics` passed, 6 tests.
+- `cargo test -p startdeck-core` passed, 4 tests.
+- `cargo test -p startdeck-server` passed, 20 tests.
+- `npm --prefix frontend run type-check` passed.
+- `npm --prefix frontend test -- --run src/features/itab-daily-english/itabDailyEnglishModel.spec.ts src/features/itab-daily-english/ItabDailyEnglishWidget.spec.ts src/features/itab-daily-english/ItabDailyEnglishOpenedPanel.spec.ts` passed, 3 files / 6 tests.
+- `bash -n manage.sh deploy_debian.sh debian/manage.sh debian/deploy.sh` passed.
+- Residual runtime/config scan passed; removed endpoint strings only remain in `rust/crates/startdeck-server/tests/api_semantics.rs` as 404 regression assertions.
+
+Limitations:
+- `cargo clippy -p startdeck-server -p startdeck-core --all-targets -- -D warnings` failed on pre-existing dirty files `rust/crates/startdeck-server/src/ip_lookup.rs` and `rust/crates/startdeck-server/src/itab.rs`, not on the cleanup files.
+- Generated `frontend/dist` output was not hand-edited.

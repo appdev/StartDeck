@@ -32,7 +32,6 @@ SERVER_DIR="${INSTALL_DIR}/Data"
 PUBLIC_DIR="${SERVER_DIR}/public"
 CACHE_DIR="${SERVER_DIR}/cache"
 DATA_DIR="${SERVER_DIR}/data"
-MUSIC_DIR="${SERVER_DIR}/music"
 PC_DIR="${SERVER_DIR}/PC"
 APP_DIR="${SERVER_DIR}/APP"
 DOC_DIR="${SERVER_DIR}/doc"
@@ -279,16 +278,6 @@ server {
         proxy_set_header Connection "upgrade";
     }
 
-    location /socket.io/ {
-        proxy_pass http://127.0.0.1:${BACKEND_PORT}/socket.io/;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection "upgrade";
-    }
 }
 EOF
 
@@ -312,7 +301,6 @@ cat > "${CONFIG_FILE}" <<EOF
 PORT=${BACKEND_PORT}
 PUBLIC_DIR=${PUBLIC_DIR}
 DATA_DIR=${DATA_DIR}
-MUSIC_DIR=${MUSIC_DIR}
 PC_DIR=${PC_DIR}
 APP_DIR=${APP_DIR}
 STARTDECK_DEFAULT_TEMPLATE_FILE=${DATA_DIR}/default.json
@@ -440,7 +428,7 @@ create_user
 
 log_info "准备目录结构..."
 mkdir -p "${BIN_DIR}" "${STATIC_DIR}" "${PUBLIC_DIR}" "${CACHE_DIR}" "${LOG_DIR}" "${CONFIG_DIR}" "${ICON_SERVICE_DIR}" "${ICON_DATA_DIR}"
-mkdir -p "${DATA_DIR}" "${MUSIC_DIR}" "${PC_DIR}" "${APP_DIR}" "${DOC_DIR}"
+mkdir -p "${DATA_DIR}" "${PC_DIR}" "${APP_DIR}" "${DOC_DIR}"
 
 # 尝试从 Rust crate 资源、离线包运行时目录或源码目录初始化数据 (仅当目标为空时)
 SOURCE_ROOT="$(dirname "${BASE_DIR}")"
@@ -512,7 +500,6 @@ init_icon_service_data() {
 }
 
 init_data_dir "data" "${DATA_DIR}"
-init_data_dir "music" "${MUSIC_DIR}"
 init_data_dir "PC" "${PC_DIR}"
 init_data_dir "APP" "${APP_DIR}"
 init_data_dir "doc" "${DOC_DIR}"
@@ -572,9 +559,9 @@ chown -R "${APP_USER}:${APP_USER}" "${LOG_DIR}"
 chmod 755 "${CACHE_DIR}"
 chmod 755 "${BIN_DIR}/${ICON_SERVICE_BINARY}"
 # 重新设置数据目录权限 (防止复制过来的文件权限不对)
-chown -R "${APP_USER}:${APP_USER}" "${DATA_DIR}" "${MUSIC_DIR}" "${PC_DIR}" "${APP_DIR}" "${DOC_DIR}"
+chown -R "${APP_USER}:${APP_USER}" "${DATA_DIR}" "${PC_DIR}" "${APP_DIR}" "${DOC_DIR}"
 chown -R "${APP_USER}:${APP_USER}" "${ICON_SERVICE_DIR}"
-chmod -R 755 "${DATA_DIR}" "${MUSIC_DIR}" "${PC_DIR}" "${APP_DIR}" "${DOC_DIR}"
+chmod -R 755 "${DATA_DIR}" "${PC_DIR}" "${APP_DIR}" "${DOC_DIR}"
 chmod -R 755 "${ICON_SERVICE_DIR}"
 
 log_info "生成配置..."

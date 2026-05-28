@@ -117,6 +117,7 @@ export const useConfigStore = defineStore("config", () => {
     autoUltrawide: false,
     marketplaceListUrl: DEFAULT_MARKETPLACE_LIST_URL,
     networkRules: "",
+    internalLocation: null,
     networkPresets: {
       tailscale: false,
       zerotier: false,

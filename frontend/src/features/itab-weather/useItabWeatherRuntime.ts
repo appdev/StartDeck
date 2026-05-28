@@ -104,7 +104,7 @@ const weatherConditionCategoryByCode = (
 
 const weatherConditionCategoryByText = (
   condition: string,
-): ItabWeatherSkinCategory => {
+): ItabWeatherCodeCategory => {
   if (/雷/.test(condition)) return "thunder";
   if (/雪/.test(condition)) return "snow";
   if (/雨/.test(condition)) return "rain";
@@ -112,7 +112,8 @@ const weatherConditionCategoryByText = (
   if (/霾|沙|尘/.test(condition)) return "haze";
   if (/阴/.test(condition)) return "yin";
   if (/云/.test(condition)) return "cloudy";
-  return "sunny";
+  if (/晴/.test(condition)) return "sunny";
+  return "other";
 };
 
 const parseWeatherTimeMinutes = (value: string) => {
@@ -146,160 +147,40 @@ export const resolveItabWeatherSkinClass = (
   if (codeCategory === "other") return "weather-other";
   const category =
     codeCategory || weatherConditionCategoryByText(sample.condition || "");
+  if (category === "other" || !category) return "weather-other";
   return `weather-${category}_${resolveWeatherDayPart(sample)}`;
 };
 
-const fallbackSample = (): WeatherSample => ({
-  code: "104",
-  province: "广东省",
-  city: "龙华",
-  condition: "阴",
-  temp: "27",
-  airQuality: "优/34",
-  high: "29",
-  low: "25",
-  wind: "北风 0级",
-  reportTime: "05-21 21:35",
-  humidity: "88%",
-  pressure: "1003hPa",
-  precipitation: "22.5mm",
-  sunrise: "05:40",
-  sunset: "18:59",
-  description: "各类人群可多参加户外活动，多呼吸一下清新的空气。",
+const EMPTY_WEATHER_LOCATION: ItabWeatherLocation = {
+  id: "",
+  city: "暂无位置",
+  province: "",
+  type: "city",
+};
+
+const emptySample = (): WeatherSample => ({
+  code: "",
+  province: "",
+  city: "暂无位置",
+  condition: "暂无天气",
+  temp: "--",
+  airQuality: "--/--",
+  high: "--",
+  low: "--",
+  wind: "-- --",
+  reportTime: "--",
+  humidity: "--",
+  pressure: "--",
+  precipitation: "--",
+  sunrise: "--",
+  sunset: "--",
+  description: "暂无可用天气数据。",
   icon: weatherIcon("104"),
 });
 
-const fallbackHours = (): WeatherHour[] => [
-  { time: "22时", temp: "26°", icon: weatherIcon("151"), text: "" },
-  { time: "23时", temp: "26°", icon: weatherIcon("302"), text: "" },
-  { time: "0时", temp: "26°", icon: weatherIcon("302"), text: "" },
-  { time: "1时", temp: "26°", icon: weatherIcon("302"), text: "" },
-  { time: "2时", temp: "26°", icon: weatherIcon("302"), text: "" },
-  { time: "3时", temp: "26°", icon: weatherIcon("104"), text: "" },
-  { time: "4时", temp: "26°", icon: weatherIcon("302"), text: "" },
-  { time: "5时", temp: "26°", icon: weatherIcon("302"), text: "" },
-  { time: "6时", temp: "27°", icon: weatherIcon("101"), text: "" },
-  { time: "7时", temp: "28°", icon: weatherIcon("101"), text: "" },
-  { time: "8时", temp: "28°", icon: weatherIcon("302"), text: "" },
-  { time: "9时", temp: "29°", icon: weatherIcon("101"), text: "" },
-  { time: "10时", temp: "29°", icon: weatherIcon("101"), text: "" },
-  { time: "11时", temp: "30°", icon: weatherIcon("100"), text: "" },
-  { time: "12时", temp: "30°", icon: weatherIcon("100"), text: "" },
-  { time: "13时", temp: "30°", icon: weatherIcon("100"), text: "" },
-  { time: "14时", temp: "31°", icon: weatherIcon("100"), text: "" },
-  { time: "15时", temp: "30°", icon: weatherIcon("100"), text: "" },
-  { time: "16时", temp: "30°", icon: weatherIcon("100"), text: "" },
-  { time: "17时", temp: "29°", icon: weatherIcon("100"), text: "" },
-  { time: "18时", temp: "29°", icon: weatherIcon("100"), text: "" },
-  { time: "19时", temp: "28°", icon: weatherIcon("100"), text: "" },
-  { time: "20时", temp: "28°", icon: weatherIcon("150"), text: "" },
-  { time: "21时", temp: "27°", icon: weatherIcon("150"), text: "" },
-];
+const emptyHours = (): WeatherHour[] => [];
 
-const fallbackDays = (): WeatherDay[] => [
-  {
-    day: "今天",
-    date: "05-21",
-    text: "阴",
-    wind: "<3级",
-    low: "25°",
-    high: "29°",
-    icon: weatherIcon("104"),
-    active: true,
-  },
-  {
-    day: "周五",
-    date: "05-22",
-    text: "晴",
-    wind: "3-4级",
-    low: "26°",
-    high: "30°",
-    icon: weatherIcon("100"),
-  },
-  {
-    day: "周六",
-    date: "05-23",
-    text: "晴",
-    wind: "3-4转<3级级",
-    low: "26°",
-    high: "30°",
-    icon: weatherIcon("100"),
-  },
-  {
-    day: "周日",
-    date: "05-24",
-    text: "多云",
-    wind: "3-4转<3级级",
-    low: "26°",
-    high: "33°",
-    icon: weatherIcon("104"),
-  },
-  {
-    day: "周一",
-    date: "05-25",
-    text: "多云",
-    wind: "3-4转<3级级",
-    low: "27°",
-    high: "33°",
-    icon: weatherIcon("104"),
-  },
-  {
-    day: "周二",
-    date: "05-26",
-    text: "多云",
-    wind: "3-4转<3级级",
-    low: "27°",
-    high: "33°",
-    icon: weatherIcon("104"),
-  },
-  {
-    day: "周三",
-    date: "05-27",
-    text: "小雨转多云",
-    wind: "<3级",
-    low: "26°",
-    high: "33°",
-    icon: weatherIcon("104"),
-  },
-];
-
-export const fallbackWeatherCityOptions: ItabWeatherLocation[] = [
-  {
-    id: "101280608",
-    province: "广东省",
-    city: "龙华",
-    adm2: "深圳",
-    type: "city",
-  },
-  {
-    id: "101280601",
-    province: "广东省",
-    city: "深圳",
-    adm2: "深圳",
-    type: "city",
-  },
-  {
-    id: "101280101",
-    province: "广东省",
-    city: "广州",
-    adm2: "广州",
-    type: "city",
-  },
-  {
-    id: "101010100",
-    province: "北京市",
-    city: "北京",
-    adm2: "北京",
-    type: "city",
-  },
-  {
-    id: "101020100",
-    province: "上海市",
-    city: "上海",
-    adm2: "上海",
-    type: "city",
-  },
-];
+const emptyDays = (): WeatherDay[] => [];
 
 export const weatherLifeIndexes: WeatherLifeIndex[] = [
   {
@@ -384,19 +265,20 @@ export const resetItabWeatherRuntimeForTests = () => {
 };
 
 const createRuntimeState = (): RuntimeState => {
-  const sample = reactive(fallbackSample()) as WeatherSample;
-  const active = fallbackWeatherCityOptions[0]!;
+  const sample = reactive(emptySample()) as WeatherSample;
   return {
     initialized: false,
     sample,
-    hours: ref(fallbackHours()),
-    days: ref(fallbackDays()),
+    hours: ref(emptyHours()),
+    days: ref(emptyDays()),
     activeDayIndex: ref(0),
-    cityOptions: ref([...fallbackWeatherCityOptions]),
-    activeLocation: ref(active),
+    cityOptions: ref<
+      Array<ItabWeatherLocation & { condition?: string; temp?: string }>
+    >([]),
+    activeLocation: ref({ ...EMPTY_WEATHER_LOCATION }),
     loading: ref(false),
     error: ref(""),
-    sourceStatus: ref("fallback"),
+    sourceStatus: ref("idle"),
     pickerTarget: ref(""),
     searchText: reactive({ header: "", list: "" }),
     requestSeq: 0,
@@ -505,7 +387,7 @@ const applyWeatherData = (
       temp: `${hour.temp || "--"}°`,
       icon: weatherIconFromCode(hour.icon),
       text: "",
-    })) || fallbackHours();
+    })) || emptyHours();
 
   state.activeDayIndex.value = 0;
   state.days.value = (
@@ -518,7 +400,7 @@ const applyWeatherData = (
       high: `${day.tmp_max || "--"}°`,
       icon: weatherIconFromCode(day.cond_code_d),
       active: index === 0,
-    })) || fallbackDays()
+    })) || emptyDays()
   ).map((day, index) => ({ ...day, active: index === 0 }));
 
   const nextOption = { ...location, condition, temp };
@@ -622,7 +504,7 @@ export const useItabWeatherRuntime = (
           error instanceof Error
             ? error.message
             : "iTab weather request failed";
-        state.sourceStatus.value = "fallback";
+        state.sourceStatus.value = "error";
       }
     } finally {
       if (state.abortController === controller) {
@@ -683,11 +565,12 @@ export const useItabWeatherRuntime = (
     try {
       const results = await searchItabWeatherCities(query, controller.signal);
       if (seq !== state.searchSeq || controller.signal.aborted) return;
-      const currentOption = state.activeLocation.value;
+      const currentOption = state.activeLocation.value.id
+        ? [state.activeLocation.value]
+        : [];
       const nextOptions = [
         ...results.map(toItabWeatherLocation),
-        currentOption,
-        ...fallbackWeatherCityOptions,
+        ...currentOption,
       ];
       const seenIds = new Set<string>();
       state.cityOptions.value = nextOptions
@@ -699,10 +582,9 @@ export const useItabWeatherRuntime = (
         .slice(0, 8);
     } catch {
       if (!controller.signal.aborted) {
-        state.cityOptions.value = [
-          state.activeLocation.value,
-          ...fallbackWeatherCityOptions,
-        ].slice(0, 8);
+        state.cityOptions.value = state.activeLocation.value.id
+          ? [state.activeLocation.value]
+          : [];
       }
     } finally {
       if (state.searchAbortController === controller) {

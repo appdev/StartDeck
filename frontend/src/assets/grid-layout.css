@@ -16,6 +16,11 @@
   box-shadow: none;
 }
 
+.sd-home-grid-stack > .grid-stack-item > .ui-resizable-handle {
+  display: none !important;
+  pointer-events: none;
+}
+
 .sd-home-grid-stack
   > .grid-stack-placeholder
   > .placeholder-content.placeholder-content {

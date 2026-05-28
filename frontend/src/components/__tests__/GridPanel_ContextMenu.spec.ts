@@ -123,7 +123,9 @@ vi.mock("@/utils/network", () => ({
   isInternalNetwork: () => false,
   getNetworkConfig: () => ({
     internalDomains: "",
+    internalLocation: null,
     networkRules: "",
+    whitelistLatencyMode: false,
     forceNetworkMode: "auto",
     latencyThresholdMs: 200,
   }),
@@ -342,6 +344,12 @@ describe("GridPanel Context Menu", () => {
     expect(gridPanelSource).not.toContain("pause: HOME_WIDGET_DRAG_HOLD_MS");
     expect(gridPanelSource).not.toContain("grid-stack-item transition-all");
     expect(gridPanelSource).not.toContain("y: widget.y ?? Infinity");
+  });
+
+  it("does not render direct size controls outside the right-click menu", () => {
+    expect(gridPanelSource).not.toContain("WidgetSizeStrip");
+    expect(gridPanelSource).not.toContain("isWidgetSizeStripVisible");
+    expect(gridPanelSource).toContain('@select-size="selectRuntimeWidgetSize"');
   });
 
   it("allows the number uppercase widget to enter the home grid layout", () => {
@@ -1285,6 +1293,54 @@ describe("GridPanel Context Menu", () => {
     await disableButton.trigger("click");
 
     expect(store.widgets.find((w) => w.id === "custom-1")?.enable).toBe(false);
+  });
+
+  it("exits home edit mode with Escape when no overlay is open", async () => {
+    await wrapper.get('button[aria-label="进入编辑模式"]').trigger("click");
+    await wrapper.vm.$nextTick();
+
+    expect(wrapper.find('[data-testid="home-action-bar"]').exists()).toBe(true);
+
+    document.dispatchEvent(
+      new KeyboardEvent("keydown", {
+        key: "Escape",
+        bubbles: true,
+        cancelable: true,
+      }),
+    );
+    await wrapper.vm.$nextTick();
+    await flushPromises();
+
+    expect(wrapper.find('[data-testid="home-action-bar"]').exists()).toBe(
+      false,
+    );
+    expect(wrapper.find('button[aria-label="进入编辑模式"]').exists()).toBe(
+      true,
+    );
+    expect(store.layoutEditInProgress).toBe(false);
+    expect(store.saveData).toHaveBeenCalledWith(true);
+  });
+
+  it("does not use Escape to exit edit mode while an overlay is open", async () => {
+    await wrapper.get('button[aria-label="进入编辑模式"]').trigger("click");
+    await wrapper.vm.$nextTick();
+    const overlay = document.createElement("div");
+    overlay.dataset.overlayMotionId = "test-overlay";
+    document.body.appendChild(overlay);
+
+    document.dispatchEvent(
+      new KeyboardEvent("keydown", {
+        key: "Escape",
+        bubbles: true,
+        cancelable: true,
+      }),
+    );
+    await wrapper.vm.$nextTick();
+    await flushPromises();
+
+    expect(wrapper.find('[data-testid="home-action-bar"]').exists()).toBe(true);
+    expect(store.layoutEditInProgress).toBe(true);
+    expect(store.saveData).not.toHaveBeenCalled();
   });
 
   it("does not render legacy web group pagination tabs", async () => {

@@ -135,8 +135,8 @@ pub(crate) async fn resolve_ip_location_response(
     let lookup_ip = query_ip
         .and_then(public_ipv4)
         .or_else(|| public_ipv4(client_ip));
-    if query_ip.is_some() && lookup_ip.is_none() {
-        return local_ip_response(query_ip.unwrap(), client_ip);
+    if let (Some(query_ip), None) = (query_ip, lookup_ip) {
+        return local_ip_response(query_ip, client_ip);
     }
     let Some(lookup_ip) = lookup_ip else {
         return local_ip_response(query_ip.unwrap_or(client_ip), client_ip);
@@ -568,14 +568,14 @@ fn user_ip_history_row_to_value(row: &sqlx::sqlite::SqliteRow, now: i64) -> Valu
     let model_json = row.try_get::<String, _>("model_json").ok();
     let expires_at = row.try_get::<i64, _>("expires_at").ok();
     if let (Some(model_json), Some(expires_at)) = (model_json, expires_at)
-        && expires_at > now
         && let Ok(model) = serde_json::from_str::<IpLocationModel>(&model_json)
     {
+        let cache_is_fresh = expires_at > now;
         value = model_to_response(
             &model,
             Some(ip.as_str()),
             ip.as_str(),
-            true,
+            cache_is_fresh,
             row.try_get::<i64, _>("cached_at").ok(),
             Some(expires_at),
         );

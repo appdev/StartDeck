@@ -23,7 +23,6 @@ INSTALL_DIR="/opt/${APP_NAME}"
 SERVER_DIR="${INSTALL_DIR}/server"
 PUBLIC_DIR="${SERVER_DIR}/public"
 DATA_DIR="${SERVER_DIR}/data"
-MUSIC_DIR="${SERVER_DIR}/music"
 PC_DIR="${SERVER_DIR}/PC"
 APP_DIR="${SERVER_DIR}/APP"
 BIN_DIR="${INSTALL_DIR}/bin"
@@ -173,7 +172,6 @@ save_config() {
 PORT=${BACKEND_PORT}
 PUBLIC_DIR=${PUBLIC_DIR}
 DATA_DIR=${DATA_DIR}
-MUSIC_DIR=${MUSIC_DIR}
 PC_DIR=${PC_DIR}
 APP_DIR=${APP_DIR}
 STARTDECK_DEFAULT_TEMPLATE_FILE=${DATA_DIR}/default.json
@@ -243,16 +241,6 @@ server {
         proxy_set_header Connection "upgrade";
     }
 
-    location /socket.io/ {
-        proxy_pass http://127.0.0.1:${BACKEND_PORT}/socket.io/;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection "upgrade";
-    }
 }
 EOF
   else
@@ -294,16 +282,6 @@ server {
         proxy_set_header Connection "upgrade";
     }
 
-    location /socket.io/ {
-        proxy_pass http://127.0.0.1:${BACKEND_PORT}/socket.io/;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection "upgrade";
-    }
 }
 EOF
   fi

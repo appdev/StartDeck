@@ -4,7 +4,6 @@ import { useWindowSize } from "@vueuse/core";
 import { ArrowDown, ArrowUp, Plus, RotateCcw, Trash2 } from "@lucide/vue";
 import { SolarDay } from "tyme4ts";
 import { useMainStore } from "../stores/main";
-import type { SearchEngine, WidgetConfig, NavGroup, NavItem } from "@/types";
 import IconUploader from "./IconUploader.vue";
 import WallpaperLibrary from "./WallpaperLibrary.vue";
 import PasswordConfirmModal from "./PasswordConfirmModal.vue";
@@ -26,7 +25,21 @@ import {
   type DirtyCloseReason,
 } from "@/composables/useDirtyStateGuard";
 import { normalizeThemeMode } from "@/composables/useThemeMode";
+import { fetchItabIpHistory } from "@/features/itab-ip/itabIpApi";
+import type { ItabIpHistoryEntry } from "@/features/itab-ip/itabIpTypes";
+import { useItabIpRuntime } from "@/features/itab-ip/useItabIpRuntime";
 import { useUiFeedbackStore } from "@/stores/uiFeedback";
+import type {
+  NetworkLocationAddress,
+  SearchEngine,
+  WidgetConfig,
+  NavGroup,
+  NavItem,
+} from "@/types";
+import {
+  networkLocationMatches,
+  normalizeNetworkLocationAddress,
+} from "@/utils/network";
 import { getSiteIconUrl, normalizeSiteUrl } from "@/utils/siteMetadata";
 import {
   DEFAULT_SEARCH_ENGINE_KEYS,
@@ -40,6 +53,7 @@ const props = defineProps<{ show: boolean }>();
 const emit = defineEmits(["update:show"]);
 const store = useMainStore();
 const uiFeedback = useUiFeedbackStore();
+const ipRuntime = useItabIpRuntime();
 
 const notify = (
   message: string,
@@ -192,6 +206,126 @@ const resetLatencyThreshold = async () => {
   }, 1200);
 };
 
+interface NetworkLocationHistoryRow {
+  key: string;
+  label: string;
+  address: NetworkLocationAddress;
+  ips: string[];
+  seenCount: number;
+  lastSeenAt: number;
+}
+
+const ipHistoryLoading = ref(false);
+const ipHistoryError = ref("");
+const ipHistoryEntries = ref<ItabIpHistoryEntry[]>([]);
+const currentNetworkLocation = computed(() =>
+  normalizeNetworkLocationAddress(ipRuntime.result.value),
+);
+const internalNetworkLocation = computed(() =>
+  normalizeNetworkLocationAddress(store.appConfig.internalLocation),
+);
+const currentNetworkLocationLabel = computed(
+  () => currentNetworkLocation.value?.label || "定位中",
+);
+const currentLocationIsInternal = computed(() =>
+  networkLocationMatches(
+    currentNetworkLocation.value,
+    internalNetworkLocation.value,
+  ),
+);
+const networkLocationRows = computed<NetworkLocationHistoryRow[]>(() => {
+  const rows = new Map<string, NetworkLocationHistoryRow>();
+  const addEntry = (
+    address: NetworkLocationAddress | null,
+    ip: string,
+    seenCount: number,
+    lastSeenAt: number,
+  ) => {
+    if (!address) return;
+    const existing = rows.get(address.key);
+    if (existing) {
+      if (ip && !existing.ips.includes(ip)) existing.ips.push(ip);
+      existing.seenCount += seenCount;
+      existing.lastSeenAt = Math.max(existing.lastSeenAt, lastSeenAt);
+      return;
+    }
+    rows.set(address.key, {
+      key: address.key,
+      label: address.label,
+      address,
+      ips: ip ? [ip] : [],
+      seenCount,
+      lastSeenAt,
+    });
+  };
+
+  for (const entry of ipHistoryEntries.value) {
+    addEntry(
+      normalizeNetworkLocationAddress(entry),
+      entry.queryIp || entry.ip || "",
+      Math.max(1, entry.seenCount || 0),
+      entry.lastSeenAt || 0,
+    );
+  }
+
+  addEntry(
+    currentNetworkLocation.value,
+    ipRuntime.result.value.queryIp || ipRuntime.result.value.ip || "",
+    0,
+    Date.now(),
+  );
+
+  return Array.from(rows.values()).sort(
+    (left, right) => right.lastSeenAt - left.lastSeenAt,
+  );
+});
+const formatNetworkLocationSeenAt = (timestamp: number) => {
+  if (!timestamp) return "未记录";
+  return new Date(timestamp).toLocaleString("zh-CN", {
+    hour12: false,
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+};
+const formatNetworkLocationMeta = (row: NetworkLocationHistoryRow) => {
+  const ipText =
+    row.ips.length > 0 ? `IP ${row.ips.slice(0, 3).join("、")}` : "当前定位";
+  const seenText = row.seenCount > 0 ? `${row.seenCount} 次` : "本次刷新检测";
+  return `${ipText} · ${seenText} · ${formatNetworkLocationSeenAt(row.lastSeenAt)}`;
+};
+const isInternalLocationRow = (row: NetworkLocationHistoryRow) =>
+  internalNetworkLocation.value?.key === row.key;
+const refreshIpLocationHistory = async () => {
+  if (!store.isLogged) {
+    ipHistoryEntries.value = [];
+    ipHistoryError.value = "";
+    return;
+  }
+  ipHistoryLoading.value = true;
+  ipHistoryError.value = "";
+  try {
+    await ipRuntime.ensureResult().catch(() => null);
+    ipHistoryEntries.value = await fetchItabIpHistory();
+  } catch (error) {
+    ipHistoryError.value =
+      error instanceof Error ? error.message : "地址历史加载失败";
+  } finally {
+    ipHistoryLoading.value = false;
+  }
+};
+const setInternalNetworkLocation = (address: NetworkLocationAddress) => {
+  store.appConfig.internalLocation = { ...address };
+  store.markDirty();
+  notify(`已设为内网地址：${address.label}`, "success", "网络判定");
+};
+const clearInternalNetworkLocation = () => {
+  store.appConfig.internalLocation = null;
+  store.markDirty();
+  notify("已清除内网地址", "info", "网络判定");
+};
+
 type WallpaperLibraryTab = "pc" | "mobile" | "api";
 
 const settingsChildModalZIndex = 140;
@@ -263,6 +397,15 @@ interface SettingsNavGroup {
 }
 
 const activeTab = ref<SettingsTabId>("appearance");
+watch(
+  [() => props.show, activeTab],
+  ([visible, tab]) => {
+    if (visible && tab === "network") {
+      void refreshIpLocationHistory();
+    }
+  },
+  { immediate: true },
+);
 const settingsTabMeta: Record<SettingsTabId, SettingsTabMeta> = {
   appearance: {
     title: "桌面外观",
@@ -2433,6 +2576,96 @@ watch(activeTab, (val) => {
 
           <AppSectionCard
             class="settings-system-card"
+            title="地址判定"
+            description="使用当前 IP 定位得到的省、市、区匹配内网环境。"
+            body-class="settings-system-stack"
+          >
+            <StatusBanner
+              v-if="!store.isLogged"
+              tone="warning"
+              title="未登录"
+              message="登录后会显示当前用户的地址历史。"
+            />
+            <template v-else>
+              <div class="settings-system-mode-row">
+                <div>
+                  <span>当前定位</span>
+                  <strong>{{ currentNetworkLocationLabel }}</strong>
+                  <small>{{
+                    currentLocationIsInternal
+                      ? "已匹配内网地址"
+                      : "未匹配内网地址"
+                  }}</small>
+                </div>
+                <div class="settings-system-row-actions">
+                  <AppButton
+                    size="sm"
+                    variant="secondary"
+                    :disabled="ipHistoryLoading"
+                    @click="refreshIpLocationHistory"
+                  >
+                    刷新
+                  </AppButton>
+                  <AppButton
+                    v-if="internalNetworkLocation"
+                    size="sm"
+                    variant="secondary"
+                    @click="clearInternalNetworkLocation"
+                  >
+                    清除
+                  </AppButton>
+                </div>
+              </div>
+
+              <StatusBanner
+                v-if="ipHistoryError"
+                tone="danger"
+                :message="ipHistoryError"
+              />
+              <StatusBanner
+                v-else-if="internalNetworkLocation"
+                tone="success"
+                :message="`内网地址：${internalNetworkLocation.label}`"
+              />
+              <StatusBanner v-else tone="info" message="尚未设置内网地址。" />
+
+              <div class="settings-system-list settings-location-list">
+                <div
+                  v-if="!ipHistoryLoading && networkLocationRows.length === 0"
+                  class="settings-system-empty"
+                >
+                  暂无地址记录
+                </div>
+                <div
+                  v-for="row in networkLocationRows"
+                  :key="row.key"
+                  class="settings-system-list-row settings-location-row"
+                  :class="{ 'is-selected': isInternalLocationRow(row) }"
+                >
+                  <div>
+                    <strong>
+                      {{ row.label }}
+                      <span v-if="isInternalLocationRow(row)">内网地址</span>
+                    </strong>
+                    <span>{{ formatNetworkLocationMeta(row) }}</span>
+                  </div>
+                  <AppButton
+                    size="sm"
+                    :variant="
+                      isInternalLocationRow(row) ? 'secondary' : 'primary'
+                    "
+                    :disabled="isInternalLocationRow(row)"
+                    @click="setInternalNetworkLocation(row.address)"
+                  >
+                    {{ isInternalLocationRow(row) ? "已设置" : "设为内网" }}
+                  </AppButton>
+                </div>
+              </div>
+            </template>
+          </AppSectionCard>
+
+          <AppSectionCard
+            class="settings-system-card"
             title="域名白名单"
             description="域名按行维护，命中后可继续进入延迟阈值判定。"
             body-class="settings-system-stack"
@@ -3970,6 +4203,23 @@ watch(activeTab, (val) => {
   color: var(--sd-theme-settings-modal-text-12);
   font-size: 0.75rem;
   line-height: 1.25;
+}
+
+.settings-location-list {
+  max-height: 15rem;
+}
+
+.settings-location-row.is-selected {
+  border-color: var(--sd-theme-settings-modal-accent-border-02);
+  background: var(--sd-theme-settings-modal-accent-surface-02);
+}
+
+.settings-location-row strong span {
+  display: inline-flex;
+  margin-left: 0.375rem;
+  border-radius: 999px;
+  background: var(--sd-theme-settings-modal-surface-06);
+  padding: 0.0625rem 0.375rem;
 }
 
 .settings-system-empty {

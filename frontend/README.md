@@ -60,7 +60,7 @@ StartDeck 支持通过后端代理转发请求，以解决内网服务无法直�
 
 ### 调试与排查
 
-- **开关不显示**：请检查后端日志，确认 `PROXY_URL` 格式正确且已生效。访问 `/api/config/proxy-status` 可查看当前代理可用状态。
+- **开关不显示**：请检查后端日志，确认 `PROXY_URL` 格式正确且已生效。
 - **请求失败**：
   - 检查 `PROXY_URL` 指向的代理服务器是否可达。
   - 检查目标 URL 是否触发了 SSRF 防护规则（如禁止访问 localhost）。
@@ -145,7 +145,6 @@ StartDeck 后端集成了智能网络环境识别功能，能够根据用户的�
    docker run -d \
      -p 9001:9001 \
      -v $(pwd)/Data/data:/app/Data/data \
-     -v $(pwd)/Data/music:/app/Data/music \
      -v $(pwd)/Data/PC:/app/Data/PC \
      -v $(pwd)/Data/APP:/app/Data/APP \
      -v $(pwd)/icon-service-data:/app/icon-service/data \
@@ -159,7 +158,7 @@ StartDeck 后端集成了智能网络环境识别功能，能够根据用户的�
      qdnas/startdeck
    ```
 
-   > **注意**: 建议挂载 `Data/data`、`Data/music`、`Data/PC`、`Data/APP` 和 `icon-service-data` 目录，以确保配置数据、媒体文件、自定义壁纸和图标服务缓存不会丢失。若需要使用 Docker 管理功能，必须挂载 `/var/run/docker.sock`。
+   > **注意**: 建议挂载 `Data/data`、`Data/PC`、`Data/APP` 和 `icon-service-data` 目录，以确保配置数据、自定义壁纸和图标服务缓存不会丢失。若需要使用 Docker 管理功能，必须挂载 `/var/run/docker.sock`。
 
 3. **docker-compose**
 
@@ -182,7 +181,6 @@ StartDeck 后端集成了智能网络环境识别功能，能够根据用户的�
          - ICON_SERVER_TIMEOUT_MS=5000
        volumes:
          - ./Data/data:/app/Data/data #映射运行期数据
-         - ./Data/music:/app/Data/music #映射播放器路径
          - ./Data/PC:/app/Data/PC #映射PC端壁纸路径
          - ./Data/APP:/app/Data/APP #映射移动端壁纸路径
          - ./icon-service-data:/app/icon-service/data #映射图标服务运行期数据
@@ -215,7 +213,6 @@ sudo ./deploy.sh install
 
 - **默认密码**: 系统初始密码为 `admin`。Docker 部署可设置 `STARTDECK_ADMIN_PASSWORD`，容器启动时会同步 admin 密码；未设置时请登录后在设置中及时修改。
 - **数据文件**: 所有配置（布局、组件、书签等）均存储在 `Data/data/startdeck.sqlite3` 中，二进制资源保存在 `Data/` 下的对应目录。
-- **音乐文件**: 将 MP3 文件放入 `Data/music` 目录，刷新页面后即可在播放器中看到。
 - **站点图标数据**: Rust crate 下的 `rust/crates/startdeck-iconserver/resources/data` 保存默认种子图标；运行期缓存和站点 metadata 写入 Docker `/app/icon-service/data` 或 Debian `/opt/startdeck/icon-service/data`。
 - **Docker 自动升级镜像**:
   - 入口：设置 → Docker 管理 → 自动升级镜像(每2小时)。

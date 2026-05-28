@@ -97,7 +97,6 @@ ENV TZ=Asia/Shanghai \
     STARTDECK_SERVER_RESOURCE_DIR=/app/startdeck-server-defaults \
     STARTDECK_PUBLIC_DIR=/app/Data/public \
     DATA_DIR=/app/Data/data \
-    MUSIC_DIR=/app/Data/music \
     PC_DIR=/app/Data/PC \
     APP_DIR=/app/Data/APP \
     ICON_SERVICE_DATA_DIR=/app/icon-service/data \
@@ -127,7 +126,7 @@ COPY scripts/docker-entrypoint.sh ./scripts/docker-entrypoint.sh
 COPY --from=frontend-builder /app/frontend/dist ./Data/public
 
 # Create necessary directories for volumes
-RUN mkdir -p Data/data Data/public Data/music Data/PC Data/APP Data/doc icon-service/data/cache \
+RUN mkdir -p Data/data Data/public Data/PC Data/APP Data/doc icon-service/data/cache \
     && chmod +x ./scripts/docker-entrypoint.sh
 
 # Expose port

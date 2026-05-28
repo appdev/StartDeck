@@ -48,7 +48,6 @@ export default defineConfig(({ mode }) => {
         "@": fileURLToPath(new URL("./src", import.meta.url)),
       },
     },
-    // ✨✨✨ 关键修改：增加了 /music 的代理 ✨✨✨
     server: {
       port: 9003,
       host: devHost,
@@ -63,11 +62,6 @@ export default defineConfig(({ mode }) => {
       proxy: {
         // 告诉 Vite：遇到 /api 开头的请求，转给 9001 端口
         "/api": {
-          target: backendTarget,
-          changeOrigin: true,
-        },
-        // ✨ 新增：告诉 Vite：遇到 /music 开头的请求，也转给 9001 端口！
-        "/music": {
           target: backendTarget,
           changeOrigin: true,
         },
@@ -87,12 +81,6 @@ export default defineConfig(({ mode }) => {
         // ✨ CGI 代理
         "^.*\\.cgi.*": {
           target: backendTarget,
-          changeOrigin: true,
-        },
-        // ✨ Socket.IO 代理
-        "/socket.io": {
-          target: backendTarget,
-          ws: true,
           changeOrigin: true,
         },
         // ✨ WebSocket 代理（原生 ws）

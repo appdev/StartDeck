@@ -1,4 +1,15 @@
+import type { NetworkLocationAddress } from "@/types";
+
 export type NetworkTargetType = "lan" | "overlay" | "wan";
+
+export function normalizeNetworkLocationAddress(
+  input?: unknown,
+): NetworkLocationAddress | null;
+
+export function networkLocationMatches(
+  current?: unknown,
+  target?: NetworkLocationAddress | null,
+): boolean;
 
 export const NETWORK_PRESET_RULES: Record<string, string[]>;
 
@@ -24,15 +35,19 @@ export function isInternalNetwork(
 export function getNetworkConfig(
   appConfig?: {
     internalDomains?: string;
+    internalLocation?: NetworkLocationAddress | null;
     networkRules?: string;
     networkPresets?: Record<string, boolean>;
+    whitelistLatencyMode?: boolean;
     latencyThresholdMs?: number;
   },
   localForceNetworkMode?: "auto" | "lan" | "wan" | "latency",
 ): {
   internalDomains: string;
+  internalLocation: NetworkLocationAddress | null;
   networkRules: string;
   forceNetworkMode: "auto" | "lan" | "wan" | "latency";
+  whitelistLatencyMode: boolean;
   latencyThresholdMs: number;
 };
 
@@ -43,7 +58,10 @@ export function computeEffectiveNetworkMode(
   measuredLatencyMs: number,
   config?: {
     internalDomains?: string;
+    internalLocation?: NetworkLocationAddress | null;
+    currentLocation?: unknown;
     networkRules?: string;
+    whitelistLatencyMode?: boolean;
     forceNetworkMode?: "auto" | "lan" | "wan" | "latency";
     latencyThresholdMs?: number;
   },

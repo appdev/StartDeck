@@ -520,21 +520,6 @@ async fn route_surface_smoke_covers_auth_and_runtime_semantics() {
     assert_eq!(status, StatusCode::OK);
     assert_eq!(body["type"], "memo");
 
-    let (status, body) = json_call(&app, "GET", "/api/memo/memo", Some(&token), None).await;
-    assert_eq!(status, StatusCode::OK);
-    assert_eq!(body["content"], "");
-
-    let (status, body) = json_call(
-        &app,
-        "PUT",
-        "/api/memo/memo",
-        Some(&token),
-        Some(json!({"content": "updated memo", "mode": "plain"})),
-    )
-    .await;
-    assert_eq!(status, StatusCode::OK);
-    assert_eq!(body["success"], true);
-
     let (status, body) = json_call(
         &app,
         "POST",
@@ -580,9 +565,6 @@ async fn route_surface_smoke_covers_auth_and_runtime_semantics() {
     let (status, body) = json_call(&app, "GET", "/api/data", Some(&token), None).await;
     assert_eq!(status, StatusCode::OK);
     assert_eq!(body["appConfig"]["customTitle"], "Imported");
-    let (status, body) = json_call(&app, "GET", "/api/memo/memo", Some(&token), None).await;
-    assert_eq!(status, StatusCode::OK);
-    assert_eq!(body["content"], "updated memo");
 
     let (status, body) = json_call(
         &app,
@@ -730,18 +712,11 @@ async fn route_surface_smoke_covers_auth_and_runtime_semantics() {
     let (status, body) = json_call(&app, "GET", "/api/docker-status", None, None).await;
     assert_eq!(status, StatusCode::OK);
     assert_eq!(body["enabled"], false);
-    let (status, body) = json_call(&app, "GET", "/api/config/proxy-status", None, None).await;
-    assert_eq!(status, StatusCode::OK);
-    assert!(body["available"].as_bool().is_some());
     let (status, body) = json_call(&app, "GET", "/api/docker/containers", Some(&token), None).await;
     assert_eq!(status, StatusCode::OK);
     assert_eq!(body["containers"], json!([]));
 
-    for uri in [
-        "/api/music-list",
-        "/api/backgrounds",
-        "/api/mobile_backgrounds",
-    ] {
+    for uri in ["/api/backgrounds", "/api/mobile_backgrounds"] {
         let (status, body) = json_call(&app, "GET", uri, None, None).await;
         assert_eq!(status, StatusCode::OK);
         assert!(body.as_array().is_some());
@@ -800,9 +775,9 @@ async fn route_surface_smoke_covers_auth_and_runtime_semantics() {
     assert_eq!(body["data"]["movieTitle"], "雌雄莫辨");
 
     let (status, body) = json_call(&app, "GET", "/api/itab/weather/location", None, None).await;
-    assert_eq!(status, StatusCode::OK);
-    assert_eq!(body["data"]["id"], "101280608");
-    assert_eq!(body["data"]["name"], "龙华");
+    assert_eq!(status, StatusCode::BAD_GATEWAY);
+    assert_eq!(body["success"], false);
+    assert_eq!(body["error"], "weather_source_unavailable");
 
     let (status, body) = json_call(
         &app,
@@ -812,13 +787,9 @@ async fn route_surface_smoke_covers_auth_and_runtime_semantics() {
         None,
     )
     .await;
-    assert_eq!(status, StatusCode::OK);
-    assert_eq!(body["data"]["sourceStatus"], "fallback");
-    assert_eq!(body["data"]["current"]["now"]["cond_txt"], "阴");
-    assert_eq!(
-        body["data"]["hourly"]["hourly"].as_array().unwrap().len(),
-        24
-    );
+    assert_eq!(status, StatusCode::BAD_GATEWAY);
+    assert_eq!(body["success"], false);
+    assert_eq!(body["error"], "weather_source_unavailable");
 
     let (status, body) = json_call(
         &app,
@@ -828,14 +799,9 @@ async fn route_surface_smoke_covers_auth_and_runtime_semantics() {
         None,
     )
     .await;
-    assert_eq!(status, StatusCode::OK);
-    assert!(
-        body["data"]
-            .as_array()
-            .unwrap()
-            .iter()
-            .any(|city| city["name"] == "深圳")
-    );
+    assert_eq!(status, StatusCode::BAD_GATEWAY);
+    assert_eq!(body["success"], false);
+    assert_eq!(body["error"], "weather_source_unavailable");
 
     let (status, body) = json_call(&app, "GET", "/api/itab/bing-wallpapers", None, None).await;
     assert_eq!(status, StatusCode::OK);
@@ -855,17 +821,6 @@ async fn route_surface_smoke_covers_auth_and_runtime_semantics() {
     assert_eq!(body["data"]["currentPage"], 2);
     assert_eq!(body["data"]["totalPages"], 2);
     assert_eq!(body["data"]["entries"][0]["id"], "fixture-wallpaper-page2");
-
-    let (status, body) = json_call(
-        &app,
-        "POST",
-        "/api/wallpaper/resolve",
-        Some(&token),
-        Some(json!({"url": "http://127.0.0.1/private.jpg"})),
-    )
-    .await;
-    assert_eq!(status, StatusCode::FORBIDDEN);
-    assert_eq!(body["error"], "blocked_host");
 
     let response = app
         .clone()
@@ -887,6 +842,28 @@ async fn route_surface_smoke_covers_auth_and_runtime_semantics() {
         serde_json::from_slice(&to_bytes(response.into_body(), usize::MAX).await.unwrap()).unwrap();
     assert_eq!(body["success"], true);
     assert_eq!(body["files"][0]["path"], "/backgrounds/wall.png");
+
+    for (method, uri, body) in [
+        ("GET", "/api/memo/memo", None),
+        ("PUT", "/api/memo/memo", Some(json!({"content": "removed"}))),
+        ("GET", "/api/config/proxy-status", None),
+        ("GET", "/api/music-list", None),
+        ("POST", "/api/music/upload", None),
+        (
+            "POST",
+            "/api/wallpaper/resolve",
+            Some(json!({"url": "https://example.com/wall.jpg"})),
+        ),
+        (
+            "POST",
+            "/api/wallpaper/fetch",
+            Some(json!({"url": "https://example.com/wall.jpg"})),
+        ),
+        ("GET", "/api/itab-resources/legacy-resource", None),
+    ] {
+        let (status, _) = json_call(&app, method, uri, Some(&token), body).await;
+        assert_eq!(status, StatusCode::NOT_FOUND, "{method} {uri}");
+    }
 
     let (status, body) =
         json_call(&app, "DELETE", "/api/admin/users/alice", Some(&token), None).await;

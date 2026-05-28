@@ -32,7 +32,6 @@ const BACKEND_PREFIXES = [
   "/icon-cache",
   "/public",
   "/proxy",
-  "/socket.io",
 ];
 
 const isBlank = (value: unknown) => String(value ?? "").trim() === "";

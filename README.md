@@ -86,7 +86,7 @@ StartDeck 支持通过后端代理转发请求，以解决内网服务无法直�
 
 ### 调试与排查
 
-- **开关不显示**：请检查后端日志，确认 `PROXY_URL` 格式正确且已生效。访问 `/api/config/proxy-status` 可查看当前代理可用状态。
+- **开关不显示**：请检查后端日志，确认 `PROXY_URL` 格式正确且已生效。
 - **请求失败**：
   - 检查 `PROXY_URL` 指向的代理服务器是否可达。
   - 检查目标 URL 是否触发了 SSRF 防护规则（如禁止访问 localhost）。
@@ -176,7 +176,6 @@ PORT=9001 ICON_SERVER_BASE_URL=http://127.0.0.1:9002 ./startdeck-server
 docker run -d \
   -p 9001:9001 \
   -v $(pwd)/Data/data:/app/Data/data \
-  -v $(pwd)/Data/music:/app/Data/music \
   -v $(pwd)/Data/PC:/app/Data/PC \
   -v $(pwd)/Data/APP:/app/Data/APP \
   -v $(pwd)/icon-service-data:/app/icon-service/data \
@@ -222,7 +221,6 @@ services:
       # - BASE_PATH=/startdeck
     volumes:
       - ./Data/data:/app/Data/data
-      - ./Data/music:/app/Data/music
       - ./Data/PC:/app/Data/PC
       - ./Data/APP:/app/Data/APP
       - ./icon-service-data:/app/icon-service/data
@@ -234,7 +232,6 @@ services:
 
 - **默认密码**: 系统初始密码为 `admin`。Docker 部署可设置 `STARTDECK_ADMIN_PASSWORD`，容器启动时会同步 admin 密码；未设置时请登录后在设置中及时修改。
 - **数据文件**: 所有配置（布局、组件、书签等）均存储在 `Data/data/startdeck.sqlite3` 中，二进制资源保存在 `Data/` 下的对应目录。
-- **音乐文件**: 将 MP3 文件放入 `Data/music` 目录，刷新页面后即可在播放器中看到。
 - **站点图标数据**: Rust 图标服务的默认种子资源位于 `rust/crates/startdeck-iconserver/resources/data`；Docker 运行期挂载为 `/app/icon-service/data`，Debian 安装到 `/opt/startdeck/icon-service/data`。
 - **腾讯地图 IP 定位**: 默认启用，优先通过腾讯地图 IP 定位接口获取经纬度；可通过 `TENCENT_MAP_KEY` 覆盖 Key，通过 `TENCENT_MAP_API_HOST` 覆盖 API Host。未设置 Key 时使用内置默认 Key；接口失败时会继续走后续定位兜底，不影响功能正常使用。
 - **QWeather 备用接口**: 默认关闭。只有同时配置 `QWEATHER_API_HOST`、`QWEATHER_PROJECT_ID`、`QWEATHER_CREDENTIAL_ID` 且 `QWEATHER_PRIVATE_KEY_FILE` 指向容器内可读 PEM 私钥文件时，后端才会启用 QWeather。启用后它会作为城市查询和天气数据的备用 provider；Docker 本地构建可通过 `--build-arg` 或 `docker-compose.yml` 的 `build.args` 传入账号配置；私钥建议用只读 volume 或 Docker secret 挂载，不要把私钥内容写入镜像。

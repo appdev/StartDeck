@@ -283,6 +283,46 @@ describe("ItabWeatherWidget", () => {
     expect(wrapper.text()).toContain("31°");
   });
 
+  it("does not render the old default city when no weather data is available", async () => {
+    const fetchMock = vi.fn(() =>
+      Promise.resolve(
+        Response.json(
+          { success: false, error: "weather_source_unavailable" },
+          { status: 502 },
+        ),
+      ),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const wrapper = mount(ItabWeatherWidget, {
+      props: {
+        sizeKey: "1x2",
+        widget: {
+          id: "weather-empty",
+          type: "itab-weather-00",
+          enable: true,
+          isPublic: true,
+          data: {
+            runtime: "itab-weather",
+            version: 1,
+            sizeKey: "1x2",
+          },
+        },
+      },
+    });
+
+    await flushPromises();
+    await flushPromises();
+    await flushPromises();
+
+    expect(fetchMock).toHaveBeenCalled();
+    expect(wrapper.attributes("data-itab-weather-source-status")).toBe("error");
+    expect(wrapper.text()).toContain("暂无位置");
+    expect(wrapper.text()).toContain("暂无天气");
+    expect(wrapper.text()).not.toContain("龙华");
+    expect(wrapper.text()).not.toContain("27°");
+  });
+
   it("maps source weather codes to fixed source skin classes", () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-05-27T12:00:00+08:00"));
@@ -301,6 +341,17 @@ describe("ItabWeatherWidget", () => {
     expect(resolveItabWeatherSkinClass({ ...daySample, code: "999" })).toBe(
       "weather-other",
     );
+    expect(resolveItabWeatherSkinClass({ ...daySample, code: "" })).toBe(
+      "weather-sunny_d",
+    );
+    expect(
+      resolveItabWeatherSkinClass({
+        condition: "暂无天气",
+        sunrise: "00:00",
+        sunset: "23:59",
+        code: "",
+      }),
+    ).toBe("weather-other");
   });
 
   it("keeps the closed weather cover on source fixed skin colors", () => {

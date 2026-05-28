@@ -7,7 +7,7 @@ export const ITAB_DAILY_ENGLISH_API_REFERENCE =
 export const ITAB_DAILY_ENGLISH_PROVIDER_REFERENCE =
   "https://api.timelessq.com";
 export const ITAB_DAILY_ENGLISH_FALLBACK_IMAGE =
-  "/api/itab-resources/itab-itab-daily-english-14-body-2x4-background-86acdbf74c";
+  "/itab-live-assets/today-shici.svg";
 
 export const fallbackItabDailyEnglishEntry = (): ItabDailyEnglishEntry => ({
   mode: "跟读",

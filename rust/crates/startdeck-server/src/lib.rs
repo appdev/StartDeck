@@ -100,7 +100,6 @@ impl AppState {
 
 pub fn app(state: AppState) -> Router {
     let public_dir = state.config.public_dir.clone();
-    let music_dir = state.config.music_dir.clone();
     let backgrounds_dir = state.config.backgrounds_dir.clone();
     let mobile_dir = state.config.mobile_backgrounds_dir.clone();
     let icon_cache_dir = state.config.icon_cache_dir.clone();
@@ -110,7 +109,6 @@ pub fn app(state: AppState) -> Router {
     Router::new()
         .route("/healthz", get(healthz))
         .route("/ws", get(ws_handler))
-        .route("/socket.io/{*any}", any(socket_io_placeholder))
         .route("/proxy", any(proxy_request))
         .route("/api/login", post(login))
         .route("/api/register", post(register))
@@ -128,7 +126,6 @@ pub fn app(state: AppState) -> Router {
             get(get_system_config).post(update_system_config),
         )
         .route("/api/widgets/{id}", get(get_widget).put(save_widget))
-        .route("/api/memo/{id}", get(get_memo).put(save_memo))
         .route(
             "/api/custom-scripts",
             get(get_custom_scripts).post(save_custom_scripts),
@@ -145,7 +142,6 @@ pub fn app(state: AppState) -> Router {
         .route("/api/visitor/track", post(track_visitor))
         .route("/api/system/stats", get(telemetry::system_stats))
         .route("/api/docker-status", get(docker_api::docker_status))
-        .route("/api/config/proxy-status", get(proxy_status))
         .route("/api/docker/containers", get(docker_api::docker_containers))
         .route("/api/docker/info", get(docker_api::docker_info))
         .route(
@@ -161,7 +157,6 @@ pub fn app(state: AppState) -> Router {
             get(docker_api::docker_inspect),
         )
         .route("/api/docker/export-logs", get(docker_api::docker_logs))
-        .route("/api/music-list", get(music_list))
         .route("/api/backgrounds", get(list_backgrounds))
         .route("/api/mobile_backgrounds", get(list_mobile_backgrounds))
         .route("/api/backgrounds/upload", post(upload_background))
@@ -169,15 +164,12 @@ pub fn app(state: AppState) -> Router {
             "/api/mobile_backgrounds/upload",
             post(upload_mobile_background),
         )
-        .route("/api/music/upload", post(upload_music))
         .route("/api/backgrounds/{name}", delete(delete_background))
         .route(
             "/api/mobile_backgrounds/{name}",
             delete(delete_mobile_background),
         )
         .route("/api/wallpaper/proxy", get(wallpaper_proxy))
-        .route("/api/wallpaper/resolve", post(resolve_wallpaper))
-        .route("/api/wallpaper/fetch", post(fetch_wallpaper))
         .route(
             "/api/config-versions",
             get(list_config_versions).post(save_config_version),
@@ -200,10 +192,6 @@ pub fn app(state: AppState) -> Router {
             get(itab::cached_movie_calendar_image),
         )
         .route(
-            "/api/itab-resources/{resource_id}",
-            get(itab_resource).head(itab_resource_head),
-        )
-        .route(
             "/favicon.ico",
             get_service(ServeFile::new(public_dir.join("favicon.ico"))),
         )
@@ -224,7 +212,6 @@ pub fn app(state: AppState) -> Router {
             "/intro-assets",
             get_service(ServeDir::new(intro_assets_dir)),
         )
-        .nest_service("/music", get_service(ServeDir::new(music_dir)))
         .nest_service("/backgrounds", get_service(ServeDir::new(backgrounds_dir)))
         .nest_service(
             "/mobile_backgrounds",
@@ -260,19 +247,6 @@ struct UserMutationRequest {
 #[derive(Debug, Deserialize)]
 struct LicenseRequest {
     key: String,
-}
-
-#[derive(Debug, Deserialize)]
-struct WallpaperResolveRequest {
-    url: String,
-}
-
-#[derive(Debug, Deserialize)]
-struct WallpaperFetchRequest {
-    url: String,
-    #[serde(rename = "type")]
-    target_type: Option<String>,
-    apply: Option<bool>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -558,55 +532,6 @@ async fn save_widget(
     Ok(Json(json!({"success": true, "id": id})))
 }
 
-async fn get_memo(
-    State(state): State<AppState>,
-    headers: HeaderMap,
-    AxumPath(id): AxumPath<String>,
-) -> Result<Json<Value>, ApiError> {
-    let username = require_username(&headers, &state)?;
-    let row = sqlx::query(
-        "SELECT content, mode, server_ts FROM memos WHERE widget_id = ? AND username = ?",
-    )
-    .bind(id)
-    .bind(username)
-    .fetch_optional(&state.pool)
-    .await?;
-    Ok(Json(if let Some(row) = row {
-        json!({"content": row.get::<String, _>("content"), "mode": row.get::<String, _>("mode"), "server_ts": row.get::<i64, _>("server_ts")})
-    } else {
-        json!({"content": "", "mode": "plain", "server_ts": 0})
-    }))
-}
-
-async fn save_memo(
-    State(state): State<AppState>,
-    headers: HeaderMap,
-    AxumPath(id): AxumPath<String>,
-    Json(body): Json<Value>,
-) -> Result<Json<Value>, ApiError> {
-    let username = require_username(&headers, &state)?;
-    let server_ts = body
-        .get("server_ts")
-        .and_then(Value::as_i64)
-        .unwrap_or_else(|| Utc::now().timestamp_millis());
-    sqlx::query(
-        r#"INSERT INTO memos(widget_id, username, content, mode, server_ts)
-           VALUES (?, ?, ?, ?, ?)
-           ON CONFLICT(widget_id, username) DO UPDATE SET
-             content=excluded.content,
-             mode=excluded.mode,
-             server_ts=excluded.server_ts"#,
-    )
-    .bind(id)
-    .bind(username)
-    .bind(body.get("content").and_then(Value::as_str).unwrap_or(""))
-    .bind(body.get("mode").and_then(Value::as_str).unwrap_or("plain"))
-    .bind(server_ts)
-    .execute(&state.pool)
-    .await?;
-    Ok(Json(json!({"success": true, "server_ts": server_ts})))
-}
-
 async fn get_custom_scripts(State(state): State<AppState>) -> Result<Json<Value>, ApiError> {
     let row = sqlx::query("SELECT value_json FROM runtime_cache WHERE kind = 'custom_scripts' AND cache_key = 'global'")
         .fetch_optional(&state.pool)
@@ -874,21 +799,6 @@ async fn track_visitor(State(state): State<AppState>) -> Result<Json<Value>, Api
     Ok(Json(json!({"success": true})))
 }
 
-async fn proxy_status() -> Json<Value> {
-    let available = std::env::var("HTTP_PROXY")
-        .or_else(|_| std::env::var("HTTPS_PROXY"))
-        .or_else(|_| std::env::var("ALL_PROXY"))
-        .map(|value| !value.trim().is_empty())
-        .unwrap_or(false);
-    Json(json!({"available": available}))
-}
-
-async fn music_list(State(state): State<AppState>) -> Result<Json<Value>, ApiError> {
-    Ok(Json(json!(
-        list_files_with_ext(&state.config.music_dir, &["mp3", "flac", "wav", "ogg"]).await?
-    )))
-}
-
 async fn list_backgrounds(State(state): State<AppState>) -> Result<Json<Value>, ApiError> {
     Ok(Json(json!(
         list_files_with_ext(
@@ -930,15 +840,6 @@ async fn upload_mobile_background(
         multipart,
     )
     .await
-}
-
-async fn upload_music(
-    State(state): State<AppState>,
-    headers: HeaderMap,
-    multipart: Multipart,
-) -> Result<Json<Value>, ApiError> {
-    require_username(&headers, &state)?;
-    save_first_upload(&state.config.music_dir, "/music", multipart).await
 }
 
 async fn delete_background(
@@ -997,85 +898,6 @@ async fn wallpaper_proxy(
         out.headers_mut().insert("x-request-uuid", value);
     }
     Ok(out)
-}
-
-async fn resolve_wallpaper(
-    State(state): State<AppState>,
-    headers: HeaderMap,
-    Json(body): Json<WallpaperResolveRequest>,
-) -> Result<Json<Value>, ApiError> {
-    require_username(&headers, &state)?;
-    let parsed = validate_remote_url(&body.url).await?;
-    if is_blocked_wallpaper_host(parsed.host_str().unwrap_or_default()).await? {
-        return Err(ApiError::forbidden("blocked_host"));
-    }
-    let final_url = match state.http.head(parsed.clone()).send().await {
-        Ok(response) => response.url().to_string(),
-        Err(_) => parsed.to_string(),
-    };
-    Ok(Json(json!({"url": final_url})))
-}
-
-async fn fetch_wallpaper(
-    State(state): State<AppState>,
-    headers: HeaderMap,
-    Json(body): Json<WallpaperFetchRequest>,
-) -> Result<Json<Value>, ApiError> {
-    let username = require_username(&headers, &state)?;
-    let parsed = validate_remote_url(&body.url).await?;
-    if is_blocked_wallpaper_host(parsed.host_str().unwrap_or_default()).await? {
-        return Err(ApiError::forbidden("blocked_host"));
-    }
-    let response = state
-        .http
-        .get(parsed)
-        .send()
-        .await
-        .map_err(|err| ApiError::bad_gateway(err.to_string()))?;
-    if !response.status().is_success() {
-        return Err(ApiError::bad_gateway("download_failed"));
-    }
-    let content_type = response
-        .headers()
-        .get(header::CONTENT_TYPE)
-        .and_then(|value| value.to_str().ok())
-        .unwrap_or("image/jpeg")
-        .to_string();
-    let ext = extension_for_content_type(&content_type).unwrap_or(".jpg");
-    let is_mobile = body
-        .target_type
-        .as_deref()
-        .map(|value| value.eq_ignore_ascii_case("mobile"))
-        .unwrap_or(false);
-    let (dir, prefix, url_prefix) = if is_mobile {
-        (
-            &state.config.mobile_backgrounds_dir,
-            "api_mbg",
-            "/mobile_backgrounds",
-        )
-    } else {
-        (&state.config.backgrounds_dir, "api_bg", "/backgrounds")
-    };
-    fs::create_dir_all(dir).await?;
-    let filename = format!(
-        "{}_{}_{}{}",
-        prefix,
-        sanitize_filename(&username).replace(' ', "_"),
-        Utc::now().timestamp_millis(),
-        ext
-    );
-    let bytes = response
-        .bytes()
-        .await
-        .map_err(|err| ApiError::bad_gateway(err.to_string()))?;
-    fs::write(dir.join(&filename), bytes).await?;
-    let path = format!("{url_prefix}/{filename}");
-    Ok(Json(json!({
-        "success": true,
-        "path": path,
-        "filename": filename,
-        "apply": body.apply.unwrap_or(true)
-    })))
 }
 
 async fn list_config_versions(
@@ -1153,18 +975,6 @@ async fn delete_config_version(
         .execute(&state.pool)
         .await?;
     Ok(Json(json!({"success": true})))
-}
-
-async fn itab_resource(AxumPath(resource_id): AxumPath<String>) -> Response {
-    (
-        StatusCode::NOT_FOUND,
-        Json(json!({"error": "resource_not_migrated", "resourceId": resource_id})),
-    )
-        .into_response()
-}
-
-async fn itab_resource_head() -> StatusCode {
-    StatusCode::NOT_FOUND
 }
 
 async fn ws_handler(State(state): State<AppState>, ws: WebSocketUpgrade) -> impl IntoResponse {
@@ -1249,13 +1059,9 @@ fn handle_ws_text(state: &AppState, text: &str) -> Option<String> {
             .get("payload")
             .cloned()
             .map(|payload| json!({"type": "network_mode", "payload": payload}).to_string()),
-        "memo_update" | "todo_update" => Some(value.to_string()),
+        "todo_update" => Some(value.to_string()),
         _ => None,
     }
-}
-
-async fn socket_io_placeholder() -> Json<Value> {
-    Json(json!({"success": true, "transport": "socket.io-placeholder"}))
 }
 
 async fn proxy_request(
@@ -1287,10 +1093,7 @@ async fn proxy_request(
 }
 
 async fn spa_or_404(State(state): State<AppState>, uri: axum::http::Uri) -> Response {
-    if uri.path().starts_with("/api/")
-        || uri.path().starts_with("/ws")
-        || uri.path().starts_with("/socket.io")
-    {
+    if uri.path().starts_with("/api/") || uri.path().starts_with("/ws") {
         return StatusCode::NOT_FOUND.into_response();
     }
     let path = state.config.public_dir.join("index.html");

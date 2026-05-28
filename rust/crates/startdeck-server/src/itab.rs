@@ -160,9 +160,9 @@ pub(crate) async fn cached_widget_data(
 ) -> Result<Json<Value>, ApiError> {
     let path = uri.path();
     if path.starts_with("/api/itab/weather/") {
-        return Ok(Json(
-            weather_widget_response(&state, &headers, path, &query).await,
-        ));
+        return weather_widget_response(&state, &headers, path, &query)
+            .await
+            .map(Json);
     }
 
     let kind = widget_kind_from_path(path);
@@ -889,9 +889,9 @@ async fn weather_widget_response(
     headers: &HeaderMap,
     path: &str,
     query: &HashMap<String, String>,
-) -> Value {
+) -> Result<Value, ApiError> {
     if !state.remote_itab_fetch_enabled {
-        return weather_fallback_response(path, query, None);
+        return Err(ApiError::bad_gateway("weather_source_unavailable"));
     }
 
     if path == "/api/itab/weather/current" {
@@ -899,8 +899,10 @@ async fn weather_widget_response(
     }
 
     match fetch_live_weather_widget_data(state, headers, path, query).await {
-        Ok(data) => cached_widget_response(data, "ok"),
-        Err(source_error) => weather_fallback_response(path, query, Some(source_error)),
+        Ok(data) => Ok(cached_widget_response(data, "ok")),
+        Err(source_error) => Err(ApiError::bad_gateway(format!(
+            "weather_source_unavailable: {source_error}"
+        ))),
     }
 }
 
@@ -908,7 +910,7 @@ async fn weather_current_response(
     state: &AppState,
     headers: &HeaderMap,
     query: &HashMap<String, String>,
-) -> Value {
+) -> Result<Value, ApiError> {
     let cache_key = weather_current_cache_key(headers, query);
     let now = Utc::now().timestamp_millis();
     let cached = match cached_widget_by_key(state, ITAB_WEATHER_KIND, &cache_key).await {
@@ -918,10 +920,10 @@ async fn weather_current_response(
             None
         }
     };
-    if let Some(row) = cached.as_ref() {
-        if row.expires_at.map(|value| value > now).unwrap_or(true) {
-            return cached_widget_response(row.data.clone(), &row.source_status);
-        }
+    if let Some(row) = cached.as_ref()
+        && row.expires_at.map(|value| value > now).unwrap_or(true)
+    {
+        return Ok(cached_widget_response(row.data.clone(), &row.source_status));
     }
 
     match fetch_live_weather_widget_data(state, headers, "/api/itab/weather/current", query).await {
@@ -939,13 +941,15 @@ async fn weather_current_response(
             {
                 tracing::warn!(?error, %cache_key, "failed to write weather current cache");
             }
-            cached_widget_response(data, "ok")
+            Ok(cached_widget_response(data, "ok"))
         }
         Err(source_error) => {
             if let Some(row) = cached {
-                return cached_widget_response(row.data, "stale");
+                return Ok(cached_widget_response(row.data, "stale"));
             }
-            weather_fallback_response("/api/itab/weather/current", query, Some(source_error))
+            Err(ApiError::bad_gateway(format!(
+                "weather_source_unavailable: {source_error}"
+            )))
         }
     }
 }
@@ -1106,138 +1110,6 @@ async fn fetch_codelife_weather_current_bundle(
         "current": current,
         "hourly": hourly
     }))
-}
-
-fn weather_fallback_response(
-    path: &str,
-    query: &HashMap<String, String>,
-    source_error: Option<String>,
-) -> Value {
-    let mut data = fallback_weather_data(path, query);
-    if let Some(error) = source_error
-        && let Some(object) = data.as_object_mut()
-    {
-        object.insert("sourceError".to_string(), json!(error));
-    }
-    json!({"success": true, "data": data, "sourceStatus": "fallback"})
-}
-
-fn fallback_weather_data(path: &str, query: &HashMap<String, String>) -> Value {
-    match path {
-        "/api/itab/weather/location" => fallback_weather_location(),
-        "/api/itab/weather/search" => {
-            let keyword = query
-                .get("keyword")
-                .map(String::as_str)
-                .unwrap_or_default()
-                .trim();
-            fallback_weather_search(keyword)
-        }
-        "/api/itab/weather/current" => fallback_weather_current_bundle(),
-        _ => json!({"sourceStatus": "fallback"}),
-    }
-}
-
-fn fallback_weather_location() -> Value {
-    json!({
-        "id": "101280608",
-        "name": "龙华",
-        "adm1": "广东省",
-        "adm2": "深圳",
-        "country": "中国",
-        "type": "city",
-        "location": "114.04,22.65",
-        "ip": "127.0.0.1",
-        "sourceStatus": "fallback"
-    })
-}
-
-fn fallback_weather_search(keyword: &str) -> Value {
-    let cities = vec![
-        json!({"id": "101280608", "name": "龙华", "adm1": "广东省", "adm2": "深圳", "country": "中国", "type": "city", "location": "114.04,22.65"}),
-        json!({"id": "101280601", "name": "深圳", "adm1": "广东省", "adm2": "深圳", "country": "中国", "type": "city", "location": "114.05,22.55"}),
-        json!({"id": "101280101", "name": "广州", "adm1": "广东省", "adm2": "广州", "country": "中国", "type": "city", "location": "113.26,23.13"}),
-        json!({"id": "101010100", "name": "北京", "adm1": "北京市", "adm2": "北京", "country": "中国", "type": "city", "location": "116.41,39.90"}),
-        json!({"id": "101020100", "name": "上海", "adm1": "上海市", "adm2": "上海", "country": "中国", "type": "city", "location": "121.47,31.23"}),
-    ];
-    if keyword.is_empty() {
-        return Value::Array(cities);
-    }
-    let filtered: Vec<Value> = cities
-        .iter()
-        .filter(|city| {
-            ["name", "adm1", "adm2"]
-                .iter()
-                .filter_map(|key| city.get(key).and_then(Value::as_str))
-                .any(|value| value.contains(keyword))
-        })
-        .cloned()
-        .collect();
-    Value::Array(if filtered.is_empty() {
-        cities
-    } else {
-        filtered
-    })
-}
-
-fn fallback_weather_current_bundle() -> Value {
-    json!({
-        "sourceStatus": "fallback",
-        "current": {
-            "status": "ok",
-            "rain": {"txt": "各类人群可多参加户外活动，多呼吸一下清新的空气。"},
-            "now": {
-                "cond_code": "104",
-                "cond_txt": "阴",
-                "hum": "88",
-                "pcpn": "22.5",
-                "pres": "1003",
-                "tmp": "27",
-                "wind_dir": "北风",
-                "wind_sc": "0"
-            },
-            "air_now_city": {"qlty": "优", "aqi": "34"},
-            "sun": {"rise": "05:40", "set": "18:59"},
-            "daily_forecast": [
-                {"date": "2026-05-21", "cond_txt_d": "阴", "cond_code_d": "104", "wind_sc": "<3", "tmp_max": "29", "tmp_min": "25"},
-                {"date": "2026-05-22", "cond_txt_d": "晴", "cond_code_d": "100", "wind_sc": "3-4", "tmp_max": "30", "tmp_min": "26"},
-                {"date": "2026-05-23", "cond_txt_d": "晴", "cond_code_d": "100", "wind_sc": "3-4转<3", "tmp_max": "30", "tmp_min": "26"},
-                {"date": "2026-05-24", "cond_txt_d": "多云", "cond_code_d": "104", "wind_sc": "3-4转<3", "tmp_max": "33", "tmp_min": "26"},
-                {"date": "2026-05-25", "cond_txt_d": "多云", "cond_code_d": "104", "wind_sc": "3-4转<3", "tmp_max": "33", "tmp_min": "27"},
-                {"date": "2026-05-26", "cond_txt_d": "多云", "cond_code_d": "104", "wind_sc": "3-4转<3", "tmp_max": "33", "tmp_min": "27"},
-                {"date": "2026-05-27", "cond_txt_d": "小雨转多云", "cond_code_d": "104", "wind_sc": "<3", "tmp_max": "33", "tmp_min": "26"}
-            ]
-        },
-        "hourly": {
-            "updateTime": "2026-05-21T21:35+08:00",
-            "hourly": [
-                {"fxTime": "2026-05-21T22:00+08:00", "icon": "151", "temp": "26"},
-                {"fxTime": "2026-05-21T23:00+08:00", "icon": "302", "temp": "26"},
-                {"fxTime": "2026-05-22T00:00+08:00", "icon": "302", "temp": "26"},
-                {"fxTime": "2026-05-22T01:00+08:00", "icon": "302", "temp": "26"},
-                {"fxTime": "2026-05-22T02:00+08:00", "icon": "302", "temp": "26"},
-                {"fxTime": "2026-05-22T03:00+08:00", "icon": "104", "temp": "26"},
-                {"fxTime": "2026-05-22T04:00+08:00", "icon": "302", "temp": "26"},
-                {"fxTime": "2026-05-22T05:00+08:00", "icon": "302", "temp": "26"},
-                {"fxTime": "2026-05-22T06:00+08:00", "icon": "101", "temp": "27"},
-                {"fxTime": "2026-05-22T07:00+08:00", "icon": "101", "temp": "28"},
-                {"fxTime": "2026-05-22T08:00+08:00", "icon": "302", "temp": "28"},
-                {"fxTime": "2026-05-22T09:00+08:00", "icon": "101", "temp": "29"},
-                {"fxTime": "2026-05-22T10:00+08:00", "icon": "101", "temp": "29"},
-                {"fxTime": "2026-05-22T11:00+08:00", "icon": "100", "temp": "30"},
-                {"fxTime": "2026-05-22T12:00+08:00", "icon": "100", "temp": "30"},
-                {"fxTime": "2026-05-22T13:00+08:00", "icon": "100", "temp": "30"},
-                {"fxTime": "2026-05-22T14:00+08:00", "icon": "100", "temp": "31"},
-                {"fxTime": "2026-05-22T15:00+08:00", "icon": "100", "temp": "30"},
-                {"fxTime": "2026-05-22T16:00+08:00", "icon": "100", "temp": "30"},
-                {"fxTime": "2026-05-22T17:00+08:00", "icon": "100", "temp": "29"},
-                {"fxTime": "2026-05-22T18:00+08:00", "icon": "100", "temp": "29"},
-                {"fxTime": "2026-05-22T19:00+08:00", "icon": "100", "temp": "28"},
-                {"fxTime": "2026-05-22T20:00+08:00", "icon": "150", "temp": "28"},
-                {"fxTime": "2026-05-22T21:00+08:00", "icon": "150", "temp": "27"}
-            ]
-        }
-    })
 }
 
 fn fallback_widget_cache(kind: &str) -> Option<(&'static str, Value, &'static str)> {
