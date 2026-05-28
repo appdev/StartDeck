@@ -25,6 +25,7 @@ import { useMainStore } from "../stores/main";
 import { canReadResource } from "@/utils/permissions";
 import { useWallpaperRotation } from "../composables/useWallpaperRotation";
 import { useDevice } from "../composables/useDevice";
+import { useLoginRequiredToast } from "@/composables/useRequireLogin";
 import { resolveWidgetSizeState } from "../composables/useWidgetResize";
 import { resolveWidgetDisplaySize } from "@/composables/useWidgetDisplaySize";
 import {
@@ -88,6 +89,16 @@ import { useItabIpRuntime } from "@/features/itab-ip/useItabIpRuntime";
 import { ITAB_FOOD_PICKER_WIDGET_TYPE } from "@/features/itab-food-picker/itabFoodPickerTypes";
 import { ITAB_NUMBER_UPPERCASE_WIDGET_TYPE } from "@/features/itab-number-uppercase/itabNumberUppercaseTypes";
 import { createDefaultItabAnniversaryWidget } from "@/features/itab-anniversary/itabAnniversaryModel";
+import {
+  AI_USAGE_CATALOG_ID,
+  AI_USAGE_WIDGET_TYPE,
+} from "@/features/ai-usage/aiUsageTypes";
+import { createDefaultAiUsageWidget } from "@/features/ai-usage/aiUsageModel";
+import {
+  TAPD_DEFECTS_CATALOG_ID,
+  TAPD_DEFECTS_WIDGET_TYPE,
+} from "@/features/tapd-defects/tapdDefectTypes";
+import { createDefaultTapdDefectWidget } from "@/features/tapd-defects/tapdDefectModel";
 import ItabMemoFixedLayer from "@/features/itab-memo/ItabMemoFixedLayer.vue";
 import { useUiFeedbackStore } from "@/stores/uiFeedback";
 import {
@@ -123,6 +134,7 @@ import { cacheNavItemIconToLocal } from "@/utils/navItemAdapter";
 import { isDuplicateSiteShortcut } from "@/utils/siteShortcutCatalog";
 import DOMPurify from "dompurify";
 const uiFeedback = useUiFeedbackStore();
+const { notifyLoginRequired } = useLoginRequiredToast();
 const CHUNK_RELOAD_KEY = "startdeck:chunk-reload-at";
 const loadAsync = <T extends Component>(loader: AsyncComponentLoader<T>) =>
   defineAsyncComponent({
@@ -161,6 +173,10 @@ import LoginModal from "./LoginModal.vue";
 const IconShape = loadAsync(() => import("./IconShape.vue"));
 
 const store = useMainStore();
+const requireStoreLogin = (message?: string) => {
+  if (store.isLogged) return true;
+  return notifyLoginRequired(message);
+};
 useWallpaperRotation();
 const { deviceKey, isMobile } = useDevice(toRef(store.appConfig, "deviceMode"));
 const { width, height } = useWindowSize();
@@ -180,6 +196,8 @@ const gridWidgetTypes = new Set([
   ITAB_IP_WIDGET_TYPE,
   ITAB_NUMBER_UPPERCASE_WIDGET_TYPE,
   ITAB_FOOD_PICKER_WIDGET_TYPE,
+  AI_USAGE_WIDGET_TYPE,
+  TAPD_DEFECTS_WIDGET_TYPE,
   "docker",
   "system-status",
   "custom-css",
@@ -346,10 +364,9 @@ const leaveEditMode = async () => {
 
 /** 切换编辑模式；进入编辑时设 layoutEditInProgress，退出时 await 保存后再清空，避免外网竞态导致布局被覆盖 */
 const toggleEditMode = async () => {
-  if (!store.isLogged) {
+  if (!requireStoreLogin("请先登录后再编辑首页。")) {
     isEditMode.value = false;
     store.layoutEditInProgress = false;
-    showLoginModal.value = true;
     return;
   }
   if (isEditMode.value) {
@@ -434,6 +451,7 @@ const isGridAlive = ref(true);
 
 watch(showGroupSettingsModal, (val) => {
   if (val && !store.isLogged) {
+    notifyLoginRequired("请先登录后再修改分组设置。");
     showGroupSettingsModal.value = false;
     isEditMode.value = false;
     store.layoutEditInProgress = false;
@@ -1394,19 +1412,13 @@ watch(
 );
 
 const openAddModal = (groupId: string) => {
-  if (!store.isLogged) {
-    showLoginModal.value = true;
-    return;
-  }
+  if (!requireStoreLogin("请先登录后再添加图标。")) return;
   currentEditItem.value = null;
   currentGroupId.value = groupId;
   showEditModal.value = true;
 };
 const openEditModal = (item: NavItem, groupId?: string) => {
-  if (!store.isLogged) {
-    showLoginModal.value = true;
-    return;
-  }
+  if (!requireStoreLogin("请先登录后再编辑图标。")) return;
   currentEditItem.value = item;
   if (groupId) {
     currentGroupId.value = groupId;
@@ -1414,8 +1426,7 @@ const openEditModal = (item: NavItem, groupId?: string) => {
   showEditModal.value = true;
 };
 const handleSave = async (payload: { item: NavItem; groupId?: string }) => {
-  if (!store.isLogged) {
-    showLoginModal.value = true;
+  if (!requireStoreLogin("请先登录后再编辑图标。")) {
     throw new Error("请先登录后再编辑");
   }
 
@@ -1457,10 +1468,7 @@ function normalizeGridSpan(value: number) {
   return Math.max(1, Math.round(value));
 }
 const openAddWidgetModal = () => {
-  if (!store.isLogged) {
-    showLoginModal.value = true;
-    return;
-  }
+  if (!requireStoreLogin("请先登录后再添加组件。")) return;
   closeBlankContextMenu();
   selectedWidgetId.value = null;
   showAddWidgetModal.value = true;
@@ -1573,8 +1581,7 @@ const applyWidgetSizeFromPayload = (
 const addWidgetPayload = (
   payload: Extract<AddComponentPayload, { kind: "widget" }>,
 ): AddComponentResult => {
-  if (!store.isLogged) {
-    showLoginModal.value = true;
+  if (!requireStoreLogin("请先登录后再添加组件。")) {
     return { status: "unauthorized", message: "请先登录后再添加组件" };
   }
   const item = getWidgetCatalogItem(payload.catalogItemId);
@@ -1627,8 +1634,7 @@ const addNavItemPayload = async (
     { kind: "site-shortcut" | "custom-icon" }
   >,
 ): Promise<AddComponentResult> => {
-  if (!store.isLogged) {
-    showLoginModal.value = true;
+  if (!requireStoreLogin("请先登录后再添加图标。")) {
     return { status: "unauthorized", message: "请先登录后再添加图标" };
   }
   if (!payload.destinationGroupId) {
@@ -1714,7 +1720,7 @@ const addComponent = async (
 };
 
 const disableWidgetFromGrid = (id: string) => {
-  if (!store.isLogged) return;
+  if (!requireStoreLogin("请先登录后再修改组件。")) return;
   const widget = store.widgets.find((w) => w.id === id);
   if (!widget) return;
   widget.enable = false;
@@ -1750,10 +1756,7 @@ const saveAfterDelete = async () => {
 };
 
 const deleteWidgetFromGridImmediately = async (widget: WidgetConfig) => {
-  if (!store.isLogged) {
-    showLoginModal.value = true;
-    return;
-  }
+  if (!requireStoreLogin("请先登录后再删除组件。")) return;
   closeWidgetFromGrid(widget);
   await saveAfterDelete();
 };
@@ -1827,7 +1830,7 @@ const handleCardClick = (item: NavItem) => {
   // 但存在内网链接（说明是因为未登录被降级了，或者是压根没配外网链接）
   // 此时如果用户未登录，则拦截并提示登录。
   if (!targetUrl && item.lanUrl && !store.isLogged) {
-    showLoginModal.value = true;
+    notifyLoginRequired("请先登录后再访问内网地址。");
     return;
   }
 
@@ -2269,21 +2272,15 @@ const openLogin = () => {
   showLoginModal.value = true;
 };
 const openSettings = () => {
-  if (!store.isLogged) {
-    showLoginModal.value = true;
-  } else {
-    showSettingsModal.value = true;
-  }
+  if (!requireStoreLogin("请先登录后再修改设置。")) return;
+  showSettingsModal.value = true;
 };
 const logoutFromHome = () => {
   void store.logout();
 };
 const openEditOrLogin = () => {
-  if (!store.isLogged) {
-    showLoginModal.value = true;
-  } else {
-    toggleEditMode();
-  }
+  if (!requireStoreLogin("请先登录后再编辑首页。")) return;
+  toggleEditMode();
 };
 
 // const updateGroupName = (id: string, e: Event) => {
@@ -2537,10 +2534,7 @@ const closeRuntimeWidget = () => {
 };
 
 const editRuntimeWidgetIcon = (widget: WidgetConfig) => {
-  if (!store.isLogged) {
-    showLoginModal.value = true;
-    return;
-  }
+  if (!requireStoreLogin("请先登录后再编辑组件。")) return;
   closeRuntimeContextMenu();
   store.layoutEditInProgress = true;
   isEditMode.value = true;
@@ -2548,20 +2542,14 @@ const editRuntimeWidgetIcon = (widget: WidgetConfig) => {
 };
 
 const editRuntimeWidgetHome = () => {
-  if (!store.isLogged) {
-    showLoginModal.value = true;
-    return;
-  }
+  if (!requireStoreLogin("请先登录后再编辑首页。")) return;
   closeRuntimeContextMenu();
   store.layoutEditInProgress = true;
   isEditMode.value = true;
 };
 
 const deleteRuntimeWidget = async (widget: WidgetConfig) => {
-  if (!store.isLogged) {
-    showLoginModal.value = true;
-    return;
-  }
+  if (!requireStoreLogin("请先登录后再删除组件。")) return;
   closeRuntimeContextMenu();
   await deleteWidgetFromGridImmediately(widget);
 };
@@ -2579,6 +2567,7 @@ const updateRuntimeWidgetData = (
   widget: WidgetConfig,
   data: WidgetRuntimeData,
 ) => {
+  if (!requireStoreLogin("请先登录后再修改组件内容。")) return;
   const storeWidget = store.widgets.find((item) => item.id === widget.id);
   const currentSizeKey =
     (storeWidget && resolveWidgetRuntimeSizeKey(storeWidget)) ||
@@ -2615,11 +2604,25 @@ const addRuntimeWidgetData = (
   widget: WidgetConfig,
   data: WidgetRuntimeData,
 ) => {
-  if (widget.type !== ITAB_ANNIVERSARY_WIDGET_TYPE) return;
+  if (!requireStoreLogin("请先登录后再添加组件。")) return;
   const normalized = normalizeWidgetRuntimeData(widget.type, data);
   if (!normalized) return;
-  const newWidget = createDefaultItabAnniversaryWidget();
-  newWidget.id = createRuntimeWidgetInstanceId(ITAB_ANNIVERSARY_CATALOG_ID);
+  const newWidget =
+    widget.type === ITAB_ANNIVERSARY_WIDGET_TYPE
+      ? createDefaultItabAnniversaryWidget()
+      : widget.type === AI_USAGE_WIDGET_TYPE
+        ? createDefaultAiUsageWidget()
+        : widget.type === TAPD_DEFECTS_WIDGET_TYPE
+          ? createDefaultTapdDefectWidget()
+          : null;
+  if (!newWidget) return;
+  newWidget.id = createRuntimeWidgetInstanceId(
+    widget.type === AI_USAGE_WIDGET_TYPE
+      ? AI_USAGE_CATALOG_ID
+      : widget.type === TAPD_DEFECTS_WIDGET_TYPE
+        ? TAPD_DEFECTS_CATALOG_ID
+        : ITAB_ANNIVERSARY_CATALOG_ID,
+  );
   newWidget.data = normalized;
   applyRuntimeWidgetSize(newWidget, normalized.sizeKey);
   store.widgets.push(newWidget);
@@ -2636,6 +2639,7 @@ const selectRuntimeWidgetSize = (
   sizeKey: RuntimeWidgetSizeKey,
 ) => {
   if (!isRuntimeWidget(widget)) return;
+  if (!requireStoreLogin("请先登录后再调整组件尺寸。")) return;
   const storeWidget = store.widgets.find((item) => item.id === widget.id);
   if (!storeWidget) return;
   applyRuntimeWidgetSize(storeWidget, sizeKey);
@@ -2795,10 +2799,7 @@ const handleMenuLanOpen = () => {
   if (!item || !item.lanUrl) return;
 
   // 内网访问依然需要登录权限
-  if (!store.isLogged) {
-    showLoginModal.value = true;
-    return;
-  }
+  if (!requireStoreLogin("请先登录后再访问内网地址。")) return;
 
   window.open(item.lanUrl, "_blank");
 };
@@ -2821,18 +2822,14 @@ const handleMenuEdit = () => {
   const item = contextMenuItem.value;
   const groupId = contextMenuGroupId.value;
   closeContextMenu();
-  if (!store.isLogged) {
-    showLoginModal.value = true;
-    return;
-  }
+  if (!requireStoreLogin("请先登录后再编辑图标。")) return;
   if (item) {
     openEditModal(item, groupId);
   }
 };
 
 const handleMenuDelete = async () => {
-  if (!store.isLogged) {
-    showLoginModal.value = true;
+  if (!requireStoreLogin("请先登录后再删除内容。")) {
     closeContextMenu();
     return;
   }
@@ -2861,28 +2858,21 @@ const cancelDelete = () => {
 };
 
 const openDeleteConfirm = (id: string) => {
-  if (!store.isLogged) {
-    showLoginModal.value = true;
-    return;
-  }
+  if (!requireStoreLogin("请先登录后再删除图标。")) return;
   deleteType.value = "item";
   itemToDelete.value = id;
   showDeleteConfirm.value = true;
 };
 
 const openGroupDeleteConfirm = (id: string) => {
-  if (!store.isLogged) {
-    showLoginModal.value = true;
-    return;
-  }
+  if (!requireStoreLogin("请先登录后再删除分组。")) return;
   deleteType.value = "group";
   groupToDelete.value = id;
   showDeleteConfirm.value = true;
 };
 
 const confirmDelete = async () => {
-  if (!store.isLogged) {
-    showLoginModal.value = true;
+  if (!requireStoreLogin("请先登录后再删除内容。")) {
     cancelDelete();
     return;
   }
@@ -2931,10 +2921,7 @@ onUnmounted(() => {
 const activeGroupId = ref<string | null>(null);
 
 const toggleGroupSettings = (id: string) => {
-  if (!store.isLogged) {
-    showLoginModal.value = true;
-    return;
-  }
+  if (!requireStoreLogin("请先登录后再修改分组设置。")) return;
   activeGroupId.value = id;
   showGroupSettingsModal.value = true;
 };

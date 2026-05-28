@@ -31,7 +31,7 @@ describe("iconCache", () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
-  it("inlines app image paths before caching so backend localhost blocking is avoided", async () => {
+  it("inlines Icon Server image paths before caching so backend localhost blocking is avoided", async () => {
     class TestFileReader {
       result: string | null = null;
       onload: (() => void) | null = null;
@@ -64,14 +64,25 @@ describe("iconCache", () => {
       );
     vi.stubGlobal("fetch", fetchMock);
 
-    await expect(cacheIconToLocal("/favicon.svg")).resolves.toEqual({
+    await expect(cacheIconToLocal("/icons/resource.svg")).resolves.toEqual({
       path: "/icon-cache/local.svg",
       error: null,
     });
     expect(fetchMock).toHaveBeenCalledTimes(2);
     expect(String(fetchMock.mock.calls[0]?.[0])).toBe(
-      "http://localhost:3000/favicon.svg",
+      "http://localhost:3000/icons/resource.svg",
     );
+  });
+
+  it("rejects non Icon Server local image paths", async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await cacheIconToLocal("/favicon.svg");
+
+    expect(result.path).toBeNull();
+    expect(result.error).toContain("Icon Server 图标路径");
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it("rejects non-url icon tokens before trying to cache them", async () => {

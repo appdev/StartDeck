@@ -8,6 +8,8 @@ import type {
   AddComponentResult,
 } from "@/utils/addComponentTypes";
 import type { WidgetConfig } from "@/types";
+import { AI_USAGE_CATALOG_ID } from "@/features/ai-usage/aiUsageTypes";
+import { TAPD_DEFECTS_CATALOG_ID } from "@/features/tapd-defects/tapdDefectTypes";
 import { ITAB_FOOD_PICKER_CATALOG_ID } from "@/features/itab-food-picker/itabFoodPickerTypes";
 import { ITAB_NUMBER_UPPERCASE_CATALOG_ID } from "@/features/itab-number-uppercase/itabNumberUppercaseTypes";
 
@@ -337,6 +339,72 @@ describe("AddWidgetModal iTab add UI", () => {
       expect.objectContaining({
         kind: "widget",
         catalogItemId: ITAB_NUMBER_UPPERCASE_CATALOG_ID,
+        destinationGroupId: "home",
+        saveMode: "dirty",
+        sizeKey: "2x2",
+      }),
+    );
+  });
+
+  it("maps the AI usage catalog card to the multi-instance add flow", async () => {
+    const addSpy = vi.fn(async (payload: AddComponentPayload) => ({
+      status: "success" as const,
+      id: payload.kind === "widget" ? payload.catalogItemId : "created",
+      groupId: payload.destinationGroupId,
+    }));
+    const wrapper = mountModal(addSpy);
+
+    await wrapper.find('[data-testid="itab-add-search"]').setValue("AI 使用量");
+    await wrapper.vm.$nextTick();
+
+    const aiUsageCard = wrapper
+      .findAll('[data-testid="itab-add-widget-card"]')
+      .find((card) => card.find("h3").text() === "AI 使用量");
+    if (!aiUsageCard) throw new Error("AI usage catalog card not found");
+
+    const addButton = aiUsageCard.find('[data-testid="itab-add-card-add"]');
+    expect(addButton.text()).toBe("添加");
+    expect(addButton.attributes("disabled")).toBeUndefined();
+
+    await addButton.trigger("click");
+
+    expect(addSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        kind: "widget",
+        catalogItemId: AI_USAGE_CATALOG_ID,
+        destinationGroupId: "home",
+        saveMode: "dirty",
+        sizeKey: "2x2",
+      }),
+    );
+  });
+
+  it("maps the TAPD defects catalog card to the multi-instance add flow", async () => {
+    const addSpy = vi.fn(async (payload: AddComponentPayload) => ({
+      status: "success" as const,
+      id: payload.kind === "widget" ? payload.catalogItemId : "created",
+      groupId: payload.destinationGroupId,
+    }));
+    const wrapper = mountModal(addSpy);
+
+    await wrapper.find('[data-testid="itab-add-search"]').setValue("TAPD 缺陷");
+    await wrapper.vm.$nextTick();
+
+    const tapdCard = wrapper
+      .findAll('[data-testid="itab-add-widget-card"]')
+      .find((card) => card.find("h3").text() === "TAPD 缺陷");
+    if (!tapdCard) throw new Error("TAPD defects catalog card not found");
+
+    const addButton = tapdCard.find('[data-testid="itab-add-card-add"]');
+    expect(addButton.text()).toBe("添加");
+    expect(addButton.attributes("disabled")).toBeUndefined();
+
+    await addButton.trigger("click");
+
+    expect(addSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        kind: "widget",
+        catalogItemId: TAPD_DEFECTS_CATALOG_ID,
         destinationGroupId: "home",
         saveMode: "dirty",
         sizeKey: "2x2",

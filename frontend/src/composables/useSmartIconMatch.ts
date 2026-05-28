@@ -3,6 +3,7 @@ import {
   fetchSiteMetadata,
   getSiteIconUrl,
   normalizeSiteUrl,
+  type SiteMetadataData,
 } from "@/utils/siteMetadata";
 import { normalizeIconBackgroundColor } from "@/utils/iconAppearance";
 
@@ -157,6 +158,7 @@ export const useSmartIconMatch = ({
   const selectedSmartMatchCandidateUrl = ref("");
   const showSmartMatchModal = ref(false);
   const isSmartMatching = ref(false);
+  const lastSiteMetadata = shallowRef<SiteMetadataData | null>(null);
   const activeRunId = ref(0);
 
   const announce = notify ?? (() => undefined);
@@ -169,6 +171,14 @@ export const useSmartIconMatch = ({
   const closeSmartMatchModal = () => {
     cancelActiveRun();
     showSmartMatchModal.value = false;
+  };
+
+  const resetSmartMatchState = () => {
+    cancelActiveRun();
+    smartMatchCandidates.value = [];
+    selectedSmartMatchCandidateUrl.value = "";
+    showSmartMatchModal.value = false;
+    lastSiteMetadata.value = null;
   };
 
   const applySmartMatchCandidate = (candidate: SmartIconCandidate) => {
@@ -199,11 +209,13 @@ export const useSmartIconMatch = ({
     isSmartMatching.value = true;
     smartMatchCandidates.value = [];
     selectedSmartMatchCandidateUrl.value = "";
+    lastSiteMetadata.value = null;
     showSmartMatchModal.value = true;
 
     try {
       const metadata = await fetchSiteMetadata(targetUrl);
       if (activeRunId.value !== runId) return;
+      lastSiteMetadata.value = metadata;
 
       const metadataTitle = metadata?.title?.trim();
       if (metadataTitle) {
@@ -256,8 +268,10 @@ export const useSmartIconMatch = ({
     selectedSmartMatchCandidateUrl,
     showSmartMatchModal,
     isSmartMatching,
+    lastSiteMetadata,
     smartMatchIcons,
     selectSmartMatchCandidate,
     closeSmartMatchModal,
+    resetSmartMatchState,
   };
 };

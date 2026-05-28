@@ -150,8 +150,8 @@ export const useMainStore = defineStore("main", () => {
   const mergedWidgets = computed(() => widgetsStore.mergedWidgets);
   const setWidgetUiState = widgetsStore.setWidgetUiState;
   const saveWidget = async (id?: string, data?: unknown) => {
-    await widgetsStore.saveWidget(id, data);
-    sync.markDirty();
+    const saved = await widgetsStore.saveWidget(id, data);
+    if (saved) sync.markDirty();
   };
   const saveSingleWidget = (
     widgetId: string,
@@ -165,18 +165,6 @@ export const useMainStore = defineStore("main", () => {
         sync.dataVersion = v;
       },
     });
-  const applyMarketplaceItem = (
-    item: Parameters<typeof widgetsStore.applyMarketplaceItem>[0],
-  ) => {
-    const changed = widgetsStore.applyMarketplaceItem(
-      item,
-      configStore.appConfig as unknown as Record<string, unknown>,
-    );
-    if (changed) {
-      updateCustomScripts();
-    }
-  };
-
   // ---- Sync / WS ----
   const isConnected = computed(() => sync.isConnected);
   const wsSend = sync.wsSend;
@@ -314,7 +302,6 @@ export const useMainStore = defineStore("main", () => {
     setWidgetUiState,
     saveWidget,
     saveSingleWidget,
-    applyMarketplaceItem,
     // Sync / WS
     isConnected,
     wsSend,

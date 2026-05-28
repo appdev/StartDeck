@@ -6,6 +6,8 @@ describe("storeHelpers", () => {
     expect(
       stripForceNetworkMode({
         forceNetworkMode: "lan",
+        customJsDisclaimerAgreed: true,
+        marketplaceListUrl: "removed",
         widgetAreaSize: 4,
         widgetAreaCols: 4,
         widgetAreaRows: 4,

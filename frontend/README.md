@@ -2,7 +2,7 @@
 
 [![GitHub](https://img.shields.io/badge/GitHub-StartDeck-181717?style=flat&logo=github&logoColor=white)](https://github.com/Garry-QD/StartDeck)
 [![Gitee](https://img.shields.io/badge/Gitee-StartDeck-C71D23?style=flat&logo=gitee&logoColor=white)](https://gitee.com/gjx0808/StartDeck)
-[![Docker Image](https://img.shields.io/badge/Docker-qdnas%2Fstartdeck-2496ED?style=flat&logo=docker&logoColor=white)](https://hub.docker.com/r/qdnas/startdeck)
+[![Docker Image](https://img.shields.io/badge/Docker-apkdv%2Fstartdeck-2496ED?style=flat&logo=docker&logoColor=white)](https://hub.docker.com/r/apkdv/startdeck)
 
 StartDeck 是一个轻量级、高度可定制的个人导航页与仪表盘系统。它基于 Vue 3、Rust 与 SQLite 构建，旨在为 NAS 用户、极客和开发者提供一个优雅的浏览器起始页。
 交流QQ群:613835409
@@ -155,7 +155,7 @@ StartDeck 后端集成了智能网络环境识别功能，能够根据用户的�
      -e ICON_SERVER_TIMEOUT_MS=5000 \
      -v /var/run/docker.sock:/var/run/docker.sock \
      --name startdeck \
-     qdnas/startdeck
+     apkdv/startdeck
    ```
 
    > **注意**: 建议挂载 `Data/data`、`Data/PC`、`Data/APP` 和 `icon-service-data` 目录，以确保配置数据、自定义壁纸和图标服务缓存不会丢失。若需要使用 Docker 管理功能，必须挂载 `/var/run/docker.sock`。
@@ -167,7 +167,7 @@ StartDeck 后端集成了智能网络环境识别功能，能够根据用户的�
 
    services:
      startdeck:
-       image: qdnas/startdeck:latest
+       image: apkdv/startdeck:latest
        container_name: startdeck
        restart: unless-stopped
        ports:

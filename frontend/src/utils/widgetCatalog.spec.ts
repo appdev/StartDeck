@@ -43,6 +43,14 @@ import {
   ITAB_FOOD_PICKER_CATALOG_ID,
   ITAB_FOOD_PICKER_WIDGET_TYPE,
 } from "@/features/itab-food-picker/itabFoodPickerTypes";
+import {
+  AI_USAGE_CATALOG_ID,
+  AI_USAGE_WIDGET_TYPE,
+} from "@/features/ai-usage/aiUsageTypes";
+import {
+  TAPD_DEFECTS_CATALOG_ID,
+  TAPD_DEFECTS_WIDGET_TYPE,
+} from "@/features/tapd-defects/tapdDefectTypes";
 
 const runtimeTypes = [
   "docker",
@@ -62,6 +70,8 @@ const runtimeTypes = [
   ITAB_CALENDAR_WIDGET_TYPE,
   ITAB_NUMBER_UPPERCASE_WIDGET_TYPE,
   ITAB_FOOD_PICKER_WIDGET_TYPE,
+  AI_USAGE_WIDGET_TYPE,
+  TAPD_DEFECTS_WIDGET_TYPE,
 ];
 const catalogItabTypes = [
   ...new Set([...WIDGET_SIZE_FAMILY_TYPES, ...runtimeTypes]),
@@ -893,6 +903,61 @@ describe("widgetCatalog", () => {
     });
     expect(foodPicker.data.menuItems).toContain("牛肉粉");
     expect(foodPicker.id).toMatch(/^food-picker-/);
+  });
+
+  it("creates addable AI usage widgets from the user-facing item", () => {
+    const aiUsage = createWidgetFromCatalog(
+      getWidgetCatalogItem(AI_USAGE_CATALOG_ID)!,
+    );
+
+    expect(aiUsage).toMatchObject({
+      type: AI_USAGE_WIDGET_TYPE,
+      colSpan: 2,
+      rowSpan: 2,
+      w: 2,
+      h: 2,
+      isPublic: false,
+      data: {
+        runtime: "ai-usage",
+        version: 1,
+        sizeKey: "2x2",
+        providerId: "openai",
+        credentialStorage: "browser",
+      },
+    });
+    expect(aiUsage.id).toMatch(/^ai-usage-/);
+    expect(getWidgetCatalogItem(AI_USAGE_WIDGET_TYPE)?.id).toBe(
+      AI_USAGE_CATALOG_ID,
+    );
+  });
+
+  it("creates addable TAPD defect widgets from the user-facing item", () => {
+    const tapdDefects = createWidgetFromCatalog(
+      getWidgetCatalogItem(TAPD_DEFECTS_CATALOG_ID)!,
+    );
+
+    expect(tapdDefects).toMatchObject({
+      type: TAPD_DEFECTS_WIDGET_TYPE,
+      colSpan: 2,
+      rowSpan: 2,
+      w: 2,
+      h: 2,
+      isPublic: false,
+      data: {
+        runtime: "tapd-defects",
+        version: 1,
+        sizeKey: "2x2",
+        visibilityScope: "owned-by-current-user",
+        query: {
+          limit: 100,
+          order: "modified desc",
+        },
+      },
+    });
+    expect(tapdDefects.id).toMatch(/^tapd-defects-/);
+    expect(getWidgetCatalogItem(TAPD_DEFECTS_WIDGET_TYPE)?.id).toBe(
+      TAPD_DEFECTS_CATALOG_ID,
+    );
   });
 
   it("creates canonical iTab Pomodoro widgets from the user-facing Pomodoro item", () => {

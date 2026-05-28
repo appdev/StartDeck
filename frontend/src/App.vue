@@ -11,7 +11,7 @@ import ToastHost from "@/components/base/ToastHost.vue";
 import { useMainStore } from "./stores/main";
 import { useUiFeedbackStore } from "./stores/uiFeedback";
 import { useThemeMode } from "@/composables/useThemeMode";
-import type { CustomScript, MarketplaceItem } from "@/types";
+import type { CustomScript } from "@/types";
 import { useWindowScroll, useWindowSize } from "@vueuse/core";
 
 const store = useMainStore();
@@ -322,7 +322,7 @@ const customJsRuntime = (() => {
     scheduleUpdate();
   };
 
-  const apply = async (input: string | CustomScript[], agreed: boolean) => {
+  const apply = async (input: string | CustomScript[]) => {
     currentNonce++;
     const nonce = currentNonce;
     await doDestroy();
@@ -331,8 +331,6 @@ const customJsRuntime = (() => {
 
     const w = window as unknown as Record<string, unknown>;
     w.StartDeckCustomCtx = ctx;
-
-    if (!agreed) return;
 
     let scripts: CustomScript[] = [];
     if (Array.isArray(input)) {
@@ -430,16 +428,12 @@ const fetch = async (input, init) => {
 })();
 
 watch(
-  [
-    () => store.appConfig.customJs,
-    () => store.appConfig.customJsList,
-    () => store.appConfig.customJsDisclaimerAgreed,
-  ],
-  ([newJs, newList, agreed]) => {
+  [() => store.appConfig.customJs, () => store.appConfig.customJsList],
+  ([newJs, newList]) => {
     if (newList && newList.length > 0) {
-      void customJsRuntime.apply(newList, Boolean(agreed));
+      void customJsRuntime.apply(newList);
     } else {
-      void customJsRuntime.apply(String(newJs || ""), Boolean(agreed));
+      void customJsRuntime.apply(String(newJs || ""));
     }
   },
   { immediate: true },
@@ -449,60 +443,6 @@ onMounted(() => {
   if (isStandaloneRoute.value) {
     return;
   }
-
-  // Listen for marketplace install events from new windows/tabs (Component Store)
-  window.addEventListener("message", async (event: MessageEvent) => {
-    // Validate message structure
-    const { type, payload } = event.data || {};
-    if (type !== "INSTALL_COMPONENT" || !payload) return;
-
-    // Optional: Validate origin if needed. For now we trust the user's browser context.
-    // If strict security is needed, we should check against store.appConfig.marketplaceListUrl
-
-    const item = payload as MarketplaceItem;
-
-    // JS Disclaimer
-    if (item.js && !store.appConfig.customJsDisclaimerAgreed) {
-      const ok = await uiFeedback.confirm({
-        title: "安全提示",
-        message:
-          `组件 "${item.name}" 包含自定义 JavaScript 脚本。\n` +
-          "自定义脚本具有较高权限，可能存在安全风险。\n\n" +
-          "请确认您信任该组件来源，是否继续安装？",
-        confirmLabel: "继续安装",
-        cancelLabel: "取消",
-        tone: "danger",
-      });
-      if (!ok) return;
-      store.appConfig.customJsDisclaimerAgreed = true;
-    }
-
-    try {
-      store.applyMarketplaceItem(item);
-
-      // Notify source window
-      if (event.source) {
-        (event.source as Window).postMessage(
-          { type: "INSTALL_SUCCESS", id: item.id },
-          event.origin,
-        );
-      }
-
-      // Notify user in main window
-      uiFeedback.notify({
-        title: "组件已安装",
-        message: `组件 "${item.name}" 已加入当前面板。`,
-        tone: "success",
-      });
-    } catch (e) {
-      console.error(e);
-      uiFeedback.alert({
-        title: "组件安装失败",
-        message: `组件 "${item.name}" 安装失败：${e instanceof Error ? e.message : String(e)}`,
-        tone: "danger",
-      });
-    }
-  });
 
   store.initGlobalDrag();
   const win = window as Window & { __startdeckSaveFetchWrapped?: boolean };

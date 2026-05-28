@@ -18,6 +18,147 @@ import {
   type WidgetCatalogSizePreset,
 } from "@/utils/widgetCatalog";
 import type { WidgetConfig } from "@/types";
+import {
+  AI_USAGE_CATALOG_ID,
+  AI_USAGE_WIDGET_TYPE,
+} from "@/features/ai-usage/aiUsageTypes";
+import {
+  TAPD_DEFECTS_CATALOG_ID,
+  TAPD_DEFECTS_WIDGET_TYPE,
+} from "@/features/tapd-defects/tapdDefectTypes";
+
+const applyAiUsagePreviewState = (widget: WidgetConfig) => {
+  if (widget.id !== AI_USAGE_CATALOG_ID && widget.type !== AI_USAGE_WIDGET_TYPE)
+    return;
+  const data =
+    widget.data &&
+    typeof widget.data === "object" &&
+    !Array.isArray(widget.data)
+      ? widget.data
+      : {};
+  const query = (data as { query?: unknown }).query;
+  widget.data = {
+    ...data,
+    providerId: "openai",
+    displayName: "Codex 共享额度",
+    accountLabel: "OpenAI · 当前组件实例",
+    credentialStorage: "browser",
+    credentialType: "access_token",
+    lastSummary: {
+      providerId: "openai",
+      status: "connected",
+      primaryRemainingPercent: 85,
+      weeklyRemainingPercent: 40,
+      primaryResetLabel: "18:52",
+      weeklyResetLabel: "2026年5月31日 9:42",
+      lastSyncedAt: "17:00",
+    },
+  };
+};
+
+const applyTapdDefectsPreviewState = (widget: WidgetConfig) => {
+  if (
+    widget.id !== TAPD_DEFECTS_CATALOG_ID &&
+    widget.type !== TAPD_DEFECTS_WIDGET_TYPE
+  )
+    return;
+  const data =
+    widget.data &&
+    typeof widget.data === "object" &&
+    !Array.isArray(widget.data)
+      ? widget.data
+      : {};
+  widget.data = {
+    ...data,
+    catalogPreview: true,
+    workspaceId: "20358627",
+    projectName: "支付平台",
+    visibilityScope: "owned-by-current-user",
+    hasServerCredential: true,
+    credentialType: "basic",
+    credentialAccountHint: "tapd_user",
+    blockedBugIds: ["1751", "1688", "1611"],
+    blockedBugSnapshots: [
+      {
+        id: "1751",
+        title: "历史环境噪音告警",
+        blockedAt: "2026-05-28T08:30:00+08:00",
+      },
+      {
+        id: "1688",
+        title: "已迁移模块遗留缺陷",
+        blockedAt: "2026-05-28T08:40:00+08:00",
+      },
+      {
+        id: "1611",
+        title: "重复记录的导入问题",
+        blockedAt: "2026-05-28T08:50:00+08:00",
+      },
+    ],
+    query: {
+      ...(query && typeof query === "object" && !Array.isArray(query)
+        ? query
+        : {}),
+      currentUser: "tapd_user",
+      limit: 100,
+      order: "modified desc",
+    },
+    lastSummary: {
+      status: "connected",
+      workspaceId: "20358627",
+      projectName: "支付平台",
+      total: 26,
+      visibleTotal: 23,
+      blockedTotal: 3,
+      verificationTotal: 5,
+      critical: 6,
+      assignedToCurrentUser: 23,
+      visibleScope: "owned-by-current-user",
+      page: 1,
+      limit: 100,
+      lastSyncedAt: "2026-05-28T10:42:00+08:00",
+      items: [
+        {
+          id: "1824",
+          severity: "p0",
+          priorityLabel: "P0",
+          title: "支付回调失败导致订单挂起",
+          status: "处理中",
+          currentOwner: "tapd_user",
+          modified: "2026-05-28 10:21:00",
+          url: "https://www.tapd.cn/20358627/bugtrace/bugs/view/1824",
+        },
+        {
+          id: "1819",
+          severity: "p1",
+          priorityLabel: "P1",
+          title: "发票预览在窄屏布局错位",
+          status: "待验证",
+          currentOwner: "tapd_user",
+          modified: "2026-05-28 09:48:00",
+          url: "https://www.tapd.cn/20358627/bugtrace/bugs/view/1819",
+        },
+        {
+          id: "1812",
+          severity: "p2",
+          priorityLabel: "P2",
+          title: "搜索条件清空后仍保留旧结果",
+          status: "已指派",
+          currentOwner: "tapd_user",
+          modified: "2026-05-27 18:12:00",
+          url: "https://www.tapd.cn/20358627/bugtrace/bugs/view/1812",
+        },
+      ],
+    },
+  };
+};
+
+const markCatalogPreview = (widget: WidgetConfig) => {
+  widget.data = {
+    ...(widget.data && typeof widget.data === "object" ? widget.data : {}),
+    catalogPreview: true,
+  };
+};
 
 const query = computed(() =>
   typeof window === "undefined"
@@ -52,12 +193,14 @@ const previewWidget = computed<WidgetConfig | undefined>(() => {
   widget.id = `preview-${item.id}`;
   widget.enable = true;
   widget.isPublic = true;
-  widget.data = {
-    ...(widget.data && typeof widget.data === "object" ? widget.data : {}),
-    catalogPreview: true,
-  };
+  markCatalogPreview(widget);
+  applyAiUsagePreviewState(widget);
+  applyTapdDefectsPreviewState(widget);
   if (isRuntimeWidget(widget)) {
     applyRuntimeWidgetSize(widget, size.key as RuntimeWidgetSizeKey);
+    markCatalogPreview(widget);
+    applyAiUsagePreviewState(widget);
+    applyTapdDefectsPreviewState(widget);
     return widget;
   }
   return isItabWidgetSizeKey(size.key)

@@ -304,7 +304,6 @@ describe("component color policy", () => {
       "frontend/src/components/base/ConfirmDialog.vue",
       "frontend/src/components/WallpaperLibrary.vue",
       "frontend/src/components/IconSelectionModal.vue",
-      "frontend/src/components/MarketplaceModal.vue",
     ]) {
       expect(
         auditedFiles.has(file),

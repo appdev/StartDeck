@@ -331,30 +331,25 @@ watch(
 .todo-icon-content.is-board .todo-icon-main {
   padding: 10px 0;
   scrollbar-width: thin;
-  scrollbar-color: color-mix(
-      in srgb,
-      var(--sd-theme-itab-todo-todo-widget-text-01) 26%,
-      transparent
-    )
-    transparent;
+  scrollbar-color: var(--sd-scrollbar-thumb) var(--sd-scrollbar-track);
 }
 
 .todo-icon-content.is-board .todo-icon-main::-webkit-scrollbar {
   display: block;
-  width: 6px;
+  width: var(--sd-scrollbar-size);
 }
 
 .todo-icon-content.is-board .todo-icon-main::-webkit-scrollbar-thumb {
   border-radius: 999px;
-  background: color-mix(
-    in srgb,
-    var(--sd-theme-itab-todo-todo-widget-text-01) 26%,
-    transparent
-  );
+  background: var(--sd-scrollbar-thumb);
+}
+
+.todo-icon-content.is-board .todo-icon-main::-webkit-scrollbar-thumb:hover {
+  background: var(--sd-scrollbar-thumb-hover);
 }
 
 .todo-icon-content.is-board .todo-icon-main::-webkit-scrollbar-track {
-  background: transparent;
+  background: var(--sd-scrollbar-track);
 }
 
 .todo-icon-content.is-board .todo-icon-title {

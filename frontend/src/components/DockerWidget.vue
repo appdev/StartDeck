@@ -3,6 +3,7 @@ import { ref, onMounted, onUnmounted, computed, watch, type Ref } from "vue";
 import { useMainStore } from "@/stores/main";
 import type { WidgetConfig } from "@/types";
 import { useResumeRefresh } from "@/composables/useResumeRefresh";
+import { useLoginRequiredToast } from "@/composables/useRequireLogin";
 import AppButton from "@/components/base/AppButton.vue";
 import AppModalShell from "@/components/base/AppModalShell.vue";
 import AppSwitch from "@/components/base/AppSwitch.vue";
@@ -69,6 +70,11 @@ type DockerInfoResponse = {
 };
 
 const store = useMainStore();
+const { notifyLoginRequired } = useLoginRequiredToast();
+const requireDockerWidgetMutation = () => {
+  if (store.isLogged) return true;
+  return notifyLoginRequired("请先登录后再修改 Docker 组件。");
+};
 const showManualPortPrompt = ref(false);
 const manualPortValue = ref("");
 const manualPortError = ref("");
@@ -375,30 +381,35 @@ const ensureDockerWidgetData = () => {
   return widget.data as Record<string, unknown>;
 };
 const setDockerWidgetEnabled = (enabled: boolean) => {
+  if (!requireDockerWidgetMutation()) return;
   const widget = dockerWidgetModel.value;
   if (!widget) return;
   widget.enable = enabled;
   store.markDirty();
 };
 const setDockerWidgetPublic = (enabled: boolean) => {
+  if (!requireDockerWidgetMutation()) return;
   const widget = dockerWidgetModel.value;
   if (!widget) return;
   widget.isPublic = enabled;
   store.markDirty();
 };
 const setDockerWidgetMobileVisible = (visible: boolean) => {
+  if (!requireDockerWidgetMutation()) return;
   const widget = dockerWidgetModel.value;
   if (!widget) return;
   widget.hideOnMobile = !visible;
   store.markDirty();
 };
 const setDockerAutoUpdate = (enabled: boolean) => {
+  if (!requireDockerWidgetMutation()) return;
   const data = ensureDockerWidgetData();
   if (!data) return;
   data.autoUpdate = enabled;
   store.markDirty();
 };
 const setDockerKeepImages = (rawValue: string) => {
+  if (!requireDockerWidgetMutation()) return;
   const data = ensureDockerWidgetData();
   if (!data) return;
   const parsed = Number.parseInt(rawValue, 10);
@@ -408,6 +419,7 @@ const setDockerKeepImages = (rawValue: string) => {
   store.markDirty();
 };
 const setDockerMinFreeGb = (rawValue: string) => {
+  if (!requireDockerWidgetMutation()) return;
   const data = ensureDockerWidgetData();
   if (!data) return;
   const parsed = Number.parseFloat(rawValue);
@@ -417,6 +429,7 @@ const setDockerMinFreeGb = (rawValue: string) => {
   store.markDirty();
 };
 const setDockerLanHost = (value: string) => {
+  if (!requireDockerWidgetMutation()) return;
   const data = ensureDockerWidgetData();
   if (!data) return;
   data.lanHost = value.trim();
@@ -1017,6 +1030,7 @@ const isAutoUpdateDisabled = (id: string) => {
 };
 
 const toggleAutoUpdateDisabled = (id: string, disabled: boolean) => {
+  if (!requireDockerWidgetMutation()) return;
   if (!props.widget) return;
 
   const widgetInStore = store.widgets.find((w) => w.id === props.widget!.id);
@@ -1048,6 +1062,7 @@ const openContainerPublicUrl = (c: DockerContainer) => {
 };
 
 const addToHome = (c: DockerContainer) => {
+  if (!requireDockerWidgetMutation()) return;
   // 1. Find or create "Docker" group
   let dockerGroup = store.groups.find((g) => g.title === "Docker");
   if (!dockerGroup) {
@@ -1143,6 +1158,7 @@ const promptPublicHost = (c: DockerContainer) => {
   editingPublicId.value = c.Id;
 };
 const savePublicHost = (c: DockerContainer) => {
+  if (!requireDockerWidgetMutation()) return;
   const w = store.widgets.find((x) => x.id === props.widget?.id);
   if (!w) return;
   if (!w.data) w.data = {};
@@ -2613,20 +2629,6 @@ const cancelPublicHost = () => {
 
 .docker-widget.is-compact .docker-container-card {
   padding: 0.45rem 0.5rem;
-}
-
-.custom-scrollbar::-webkit-scrollbar {
-  width: 4px;
-}
-.custom-scrollbar::-webkit-scrollbar-track {
-  background: transparent;
-}
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  background: var(--sd-theme-docker-widget-surface-10);
-  border-radius: 2px;
-}
-.custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: var(--sd-theme-docker-widget-surface-11);
 }
 
 .docker-settings-section {

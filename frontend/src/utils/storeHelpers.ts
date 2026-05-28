@@ -8,6 +8,8 @@ import type { WidgetConfig, AppConfig } from "@/types";
 const WIDGET_UI_KEYS = ["collapsed", "editing", "dragging"] as const;
 const UNSYNCED_APP_CONFIG_KEYS = [
   "forceNetworkMode",
+  "customJsDisclaimerAgreed",
+  "marketplaceListUrl",
   "widgetAreaSize",
   "widgetAreaCols",
   "widgetAreaRows",
@@ -145,7 +147,7 @@ export function normalizeVersion(value: unknown): number {
 }
 
 /**
- * Strip client-only and deprecated layout settings before appConfig persistence.
+ * Strip client-only and removed app config fields before appConfig persistence.
  */
 export function stripForceNetworkMode<
   T extends Record<string, unknown> | undefined,

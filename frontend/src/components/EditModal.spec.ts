@@ -8,14 +8,14 @@ import type { NavItem } from "@/types";
 
 const editModalSource = readFileSync("src/components/EditModal.vue", "utf8");
 
-const mountEditModal = (data: NavItem) =>
+const mountEditModal = (data: NavItem, onSave = vi.fn(async () => undefined)) =>
   mount(EditModal, {
     attachTo: document.body,
     props: {
       show: true,
       data,
       groupId: "links",
-      onSave: vi.fn(async () => undefined),
+      onSave,
     },
     global: {
       plugins: [
@@ -107,7 +107,7 @@ describe("EditModal", () => {
     expect(uploadButton).not.toBeNull();
     expect(uploadButton?.textContent).toContain("上传图标");
     expect(
-      document.body.querySelector(".edit-card-icon-editor"),
+      document.body.querySelector(".edit-card-icon-appearance-grid"),
     ).not.toBeNull();
     expect(
       document.body.querySelector(".edit-card-icon-url-row"),
@@ -122,7 +122,7 @@ describe("EditModal", () => {
     expect(inputClick).toHaveBeenCalledTimes(1);
   });
 
-  it("moves smart match next to the external link and removes item title color editing", async () => {
+  it("places links before base info and keeps extra addresses collapsed by default", async () => {
     wrapper = mountEditModal({
       id: "link-1",
       title: "Link Card",
@@ -133,18 +133,97 @@ describe("EditModal", () => {
     });
     await wrapper.vm.$nextTick();
 
+    const bodyText = document.body.textContent || "";
+    expect(bodyText.indexOf("链接")).toBeLessThan(bodyText.indexOf("基础信息"));
+
     const linkMatchRow = document.body.querySelector(
       ".edit-card-link-match-row",
     );
     expect(linkMatchRow).not.toBeNull();
-    expect(linkMatchRow?.textContent).toContain("智能匹配");
+    expect(linkMatchRow?.textContent).toContain("自动获取");
     expect(
-      document.body.querySelector(".edit-card-icon-toolbar")?.textContent,
-    ).not.toContain("智能匹配");
+      document.body.querySelector(".edit-card-section-link"),
+    ).not.toBeNull();
+    expect(
+      document.body.querySelector('[data-testid="edit-card-backup-url-row"]'),
+    ).toBeNull();
+    expect(
+      document.body.querySelector(
+        '[data-testid="edit-card-backup-lan-url-row"]',
+      ),
+    ).toBeNull();
+    const addExtraButton = Array.from(
+      document.body.querySelectorAll<HTMLButtonElement>("button"),
+    ).find((button) => button.textContent?.includes("添加其他地址"));
+    expect(addExtraButton).not.toBeNull();
+
+    addExtraButton?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    await wrapper.vm.$nextTick();
+
+    expect(
+      document.body.querySelectorAll(
+        '[data-testid="edit-card-backup-url-row"]',
+      ),
+    ).toHaveLength(1);
+    const addWanButton = Array.from(
+      document.body.querySelectorAll<HTMLButtonElement>("button"),
+    ).find((button) => button.textContent?.includes("添加备用公网"));
+    addWanButton?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    await wrapper.vm.$nextTick();
+    const addLanButton = Array.from(
+      document.body.querySelectorAll<HTMLButtonElement>("button"),
+    ).find((button) => button.textContent?.includes("添加备用内网"));
+    addLanButton?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    addLanButton?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    await wrapper.vm.$nextTick();
+
+    expect(
+      document.body.querySelectorAll(
+        '[data-testid="edit-card-backup-url-row"]',
+      ),
+    ).toHaveLength(2);
+    expect(
+      document.body.querySelectorAll(
+        '[data-testid="edit-card-backup-lan-url-row"]',
+      ),
+    ).toHaveLength(2);
+    expect(document.body.textContent).toContain("公网地址");
+    expect(document.body.textContent).toContain("内网地址");
+    expect(document.body.querySelector(".edit-card-icon-toolbar")).toBeNull();
     expect(document.body.textContent).not.toContain("标题颜色");
     expect(editModalSource).not.toContain(
       '<label class="sd-label">标题颜色</label>',
     );
+  });
+
+  it("preserves legacy titleColor and group save wiring without showing group in base info", async () => {
+    wrapper = mountEditModal({
+      id: "link-1",
+      title: "Link Card",
+      url: "https://example.com",
+      icon: "https://example.com/favicon.ico",
+      titleColor: "#123456",
+      isPublic: true,
+    });
+    await wrapper.vm.$nextTick();
+
+    const basicText =
+      document.body.querySelector(".edit-card-section-basic")?.textContent ||
+      "";
+    const advancedText =
+      document.body.querySelector(".edit-card-section-advanced")?.textContent ||
+      "";
+    expect(basicText).toContain("标题");
+    expect(basicText).toContain("公开");
+    expect(basicText).not.toContain("分组");
+    expect(advancedText).toContain("分组");
+    expect(editModalSource).toContain("groupId: localGroupId.value");
+
+    expect(editModalSource).toContain(
+      'titleColor: props.data.titleColor || ""',
+    );
+    expect(editModalSource).toContain("item: { ...form.value");
+    expect(editModalSource).toContain("groupId: localGroupId.value");
   });
 
   it("keeps shared window control dots out of edit-card header button theming", () => {
@@ -154,6 +233,10 @@ describe("EditModal", () => {
     expect(editModalSource).toContain(
       ".edit-card-header-actions :deep(button:not(.sd-window-control-dot):hover)",
     );
+    expect(editModalSource).toContain(
+      'class="edit-card-form-pane custom-scrollbar"',
+    );
+    expect(editModalSource).toContain("<AppButton");
     expect(editModalSource).not.toContain(
       ".edit-card-header-actions :deep(button) {",
     );

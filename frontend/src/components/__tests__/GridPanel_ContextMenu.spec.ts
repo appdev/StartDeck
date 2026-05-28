@@ -1192,6 +1192,7 @@ describe("GridPanel Context Menu", () => {
     const vm = wrapper.vm as unknown as {
       addComponent: (payload: AddComponentPayload) => Promise<unknown>;
     };
+    const feedback = useUiFeedbackStore();
     Object.defineProperty(store, "isLogged", {
       configurable: true,
       get: () => false,
@@ -1213,6 +1214,13 @@ describe("GridPanel Context Menu", () => {
     expect(
       store.widgets.filter((item) => item.type === "custom-css"),
     ).toHaveLength(customCssCount);
+    expect(feedback.notify).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: "需要登录",
+        message: "请先登录后再添加组件。",
+        tone: "warning",
+      }),
+    );
   });
 
   it("keeps link-card delete confirmation open on outside click and Escape, then clears it on cancel", async () => {

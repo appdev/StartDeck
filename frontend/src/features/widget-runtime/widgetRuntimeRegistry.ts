@@ -38,6 +38,10 @@ import ItabNumberUppercaseOpenedPanel from "@/features/itab-number-uppercase/Ita
 import ItabNumberUppercaseWidget from "@/features/itab-number-uppercase/ItabNumberUppercaseWidget.vue";
 import ItabFoodPickerOpenedPanel from "@/features/itab-food-picker/ItabFoodPickerOpenedPanel.vue";
 import ItabFoodPickerWidget from "@/features/itab-food-picker/ItabFoodPickerWidget.vue";
+import AiUsageOpenedPanel from "@/features/ai-usage/AiUsageOpenedPanel.vue";
+import AiUsageWidget from "@/features/ai-usage/AiUsageWidget.vue";
+import TapdDefectsOpenedPanel from "@/features/tapd-defects/TapdDefectsOpenedPanel.vue";
+import TapdDefectsWidget from "@/features/tapd-defects/TapdDefectsWidget.vue";
 import {
   ITAB_WEATHER_DEFAULT_SIZE,
   ITAB_WEATHER_RUNTIME,
@@ -123,6 +127,18 @@ import {
   type ItabFoodPickerWidgetData,
 } from "@/features/itab-food-picker/itabFoodPickerTypes";
 import {
+  AI_USAGE_DEFAULT_SIZE,
+  AI_USAGE_RUNTIME,
+  AI_USAGE_WIDGET_TYPE,
+  type AiUsageWidgetData,
+} from "@/features/ai-usage/aiUsageTypes";
+import {
+  TAPD_DEFECTS_DEFAULT_SIZE,
+  TAPD_DEFECTS_RUNTIME,
+  TAPD_DEFECTS_WIDGET_TYPE,
+  type TapdDefectWidgetData,
+} from "@/features/tapd-defects/tapdDefectTypes";
+import {
   normalizeItabWeatherWidgetData,
   applyItabWeatherSizeToWidget,
 } from "@/features/itab-weather/itabWeatherModel";
@@ -178,6 +194,14 @@ import {
   applyItabFoodPickerSizeToWidget,
   normalizeItabFoodPickerWidgetData,
 } from "@/features/itab-food-picker/itabFoodPickerModel";
+import {
+  applyAiUsageSizeToWidget,
+  normalizeAiUsageWidgetData,
+} from "@/features/ai-usage/aiUsageModel";
+import {
+  applyTapdDefectSizeToWidget,
+  normalizeTapdDefectWidgetData,
+} from "@/features/tapd-defects/tapdDefectModel";
 import {
   DOCKER_DEFAULT_SIZE,
   DOCKER_RUNTIME,
@@ -259,6 +283,10 @@ const itabNumberUppercaseFamily = resolveRuntimeWidgetSizeFamily(
 const itabFoodPickerFamily = resolveRuntimeWidgetSizeFamily(
   ITAB_FOOD_PICKER_WIDGET_TYPE,
 );
+const aiUsageFamily = resolveRuntimeWidgetSizeFamily(AI_USAGE_WIDGET_TYPE);
+const tapdDefectsFamily = resolveRuntimeWidgetSizeFamily(
+  TAPD_DEFECTS_WIDGET_TYPE,
+);
 const dockerFamily = resolveRuntimeWidgetSizeFamily(DOCKER_WIDGET_TYPE);
 const systemStatusFamily = resolveRuntimeWidgetSizeFamily(
   SYSTEM_STATUS_WIDGET_TYPE,
@@ -282,7 +310,9 @@ export type WidgetRuntimeData =
   | ItabIpWidgetData
   | ItabCalendarWidgetData
   | ItabNumberUppercaseWidgetData
-  | ItabFoodPickerWidgetData;
+  | ItabFoodPickerWidgetData
+  | AiUsageWidgetData
+  | TapdDefectWidgetData;
 
 export const WIDGET_RUNTIME_DEFINITIONS: Record<
   string,
@@ -560,6 +590,38 @@ export const WIDGET_RUNTIME_DEFINITIONS: Record<
       trafficVisible: true,
     },
   },
+  [AI_USAGE_WIDGET_TYPE]: {
+    type: AI_USAGE_WIDGET_TYPE,
+    runtime: AI_USAGE_RUNTIME,
+    title: "AI 使用量",
+    component: AiUsageWidget,
+    openedPanel: AiUsageOpenedPanel,
+    defaultSizeKey: AI_USAGE_DEFAULT_SIZE,
+    supportedSizes: aiUsageFamily?.supported || [],
+    openedShell: {
+      width: 1000,
+      height: 602,
+      maxWidthInset: 42,
+      maxHeightInset: 64,
+      trafficVisible: true,
+    },
+  },
+  [TAPD_DEFECTS_WIDGET_TYPE]: {
+    type: TAPD_DEFECTS_WIDGET_TYPE,
+    runtime: TAPD_DEFECTS_RUNTIME,
+    title: "TAPD 缺陷",
+    component: TapdDefectsWidget,
+    openedPanel: TapdDefectsOpenedPanel,
+    defaultSizeKey: TAPD_DEFECTS_DEFAULT_SIZE,
+    supportedSizes: tapdDefectsFamily?.supported || [],
+    openedShell: {
+      width: 1100,
+      height: 720,
+      maxWidthInset: 42,
+      maxHeightInset: 64,
+      trafficVisible: true,
+    },
+  },
 };
 
 export const getWidgetRuntimeDefinition = (type: string) =>
@@ -635,6 +697,12 @@ export const normalizeWidgetRuntimeData = (
   if (type === ITAB_FOOD_PICKER_WIDGET_TYPE) {
     return normalizeItabFoodPickerWidgetData(data);
   }
+  if (type === AI_USAGE_WIDGET_TYPE) {
+    return normalizeAiUsageWidgetData(data);
+  }
+  if (type === TAPD_DEFECTS_WIDGET_TYPE) {
+    return normalizeTapdDefectWidgetData(data);
+  }
   return undefined;
 };
 
@@ -699,5 +767,11 @@ export const applyRuntimeWidgetSize = (
   }
   if (widget.type === ITAB_FOOD_PICKER_WIDGET_TYPE) {
     if (itabSizeKey) applyItabFoodPickerSizeToWidget(widget, itabSizeKey);
+  }
+  if (widget.type === AI_USAGE_WIDGET_TYPE) {
+    if (itabSizeKey) applyAiUsageSizeToWidget(widget, itabSizeKey);
+  }
+  if (widget.type === TAPD_DEFECTS_WIDGET_TYPE) {
+    if (itabSizeKey) applyTapdDefectSizeToWidget(widget, itabSizeKey);
   }
 };

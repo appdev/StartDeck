@@ -51,6 +51,8 @@ import {
 } from "@/features/itab-calendar/itabCalendarTypes";
 import { ITAB_NUMBER_UPPERCASE_WIDGET_TYPE } from "@/features/itab-number-uppercase/itabNumberUppercaseTypes";
 import { ITAB_FOOD_PICKER_WIDGET_TYPE } from "@/features/itab-food-picker/itabFoodPickerTypes";
+import { AI_USAGE_WIDGET_TYPE } from "@/features/ai-usage/aiUsageTypes";
+import { TAPD_DEFECTS_WIDGET_TYPE } from "@/features/tapd-defects/tapdDefectTypes";
 import {
   applyItabWeatherSizeToWidget,
   normalizeItabWeatherWidgetData,
@@ -103,6 +105,14 @@ import {
   applyItabFoodPickerSizeToWidget,
   normalizeItabFoodPickerWidgetData,
 } from "@/features/itab-food-picker/itabFoodPickerModel";
+import {
+  applyAiUsageSizeToWidget,
+  normalizeAiUsageWidgetData,
+} from "@/features/ai-usage/aiUsageModel";
+import {
+  applyTapdDefectSizeToWidget,
+  normalizeTapdDefectWidgetData,
+} from "@/features/tapd-defects/tapdDefectModel";
 import {
   hasItabGridSchema,
   withItabGridData,
@@ -461,6 +471,28 @@ export function normalizeIncomingWidgets(
     widget.enable = widget.enable !== false;
     widget.isPublic = widget.isPublic ?? true;
     applyItabFoodPickerSizeToWidget(widget, normalizedData.sizeKey);
+  }
+
+  const aiUsageCandidates = nextWidgets.filter(
+    (widget) => widget.type === AI_USAGE_WIDGET_TYPE,
+  );
+  for (const widget of aiUsageCandidates) {
+    const normalizedData = normalizeAiUsageWidgetData(widget.data);
+    widget.type = AI_USAGE_WIDGET_TYPE;
+    widget.enable = widget.enable !== false;
+    widget.isPublic = widget.isPublic ?? false;
+    applyAiUsageSizeToWidget(widget, normalizedData.sizeKey);
+  }
+
+  const tapdDefectCandidates = nextWidgets.filter(
+    (widget) => widget.type === TAPD_DEFECTS_WIDGET_TYPE,
+  );
+  for (const widget of tapdDefectCandidates) {
+    const normalizedData = normalizeTapdDefectWidgetData(widget.data);
+    widget.type = TAPD_DEFECTS_WIDGET_TYPE;
+    widget.enable = widget.enable !== false;
+    widget.isPublic = widget.isPublic ?? false;
+    applyTapdDefectSizeToWidget(widget, normalizedData.sizeKey);
   }
 
   const customCssCandidates = nextWidgets.filter(

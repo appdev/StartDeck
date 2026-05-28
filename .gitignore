@@ -118,8 +118,6 @@ backend/startdeck-backend
 backend/startdeck-server
 backend/startdeck-linux
 backend/startdeck-backend
-backend/flatnas-backend
-backend/flatnas-server
 backend/server
 backend/test_build
 backend/debug_weather.go.bak
@@ -166,8 +164,6 @@ debian/Data/doc/**
 debian/startdeck
 debian/startdeck-server
 debian/startdeck-iconserver
-debian/flatnas
-debian/flatnas-server
 Data/index.html
 
 # Keep default.json if it is a template, but ensure no secrets
@@ -195,7 +191,10 @@ go/
 docs/
 .cursor
 .fnsync_temp_dir
-.github
+.github/*
+!.github/workflows/
+!.github/workflows/*.yml
+!.github/workflows/*.yaml
 .vscode
 LOG.md
 

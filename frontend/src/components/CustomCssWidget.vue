@@ -3,6 +3,7 @@ import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import type { WidgetConfig } from "../types";
 import { useMainStore } from "@/stores/main";
 import { useUiFeedbackStore } from "@/stores/uiFeedback";
+import { useLoginRequiredToast } from "@/composables/useRequireLogin";
 import {
   normalizeCustomCssWidgetData,
   type CustomCssWidgetRuntimeData,
@@ -29,6 +30,7 @@ const emit = defineEmits<{
 
 const store = useMainStore();
 const uiFeedback = useUiFeedbackStore();
+const { notifyLoginRequired } = useLoginRequiredToast();
 const canEdit = computed(() => store.isLogged);
 const activeTab = ref<"html" | "css" | "js">("html");
 const isOpenedVariant = computed(() => props.variant === "opened");
@@ -213,7 +215,10 @@ const applyRuntime = () => {
 };
 
 const save = () => {
-  if (!canEdit.value) return;
+  if (!canEdit.value) {
+    notifyLoginRequired("请先登录后再修改自定义组件。");
+    return;
+  }
   const current = readData();
   const next = normalizeCustomCssWidgetData({
     ...current,

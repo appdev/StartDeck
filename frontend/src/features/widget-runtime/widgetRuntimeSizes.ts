@@ -60,6 +60,14 @@ import {
   ITAB_FOOD_PICKER_DEFAULT_SIZE,
   ITAB_FOOD_PICKER_WIDGET_TYPE,
 } from "@/features/itab-food-picker/itabFoodPickerTypes";
+import {
+  AI_USAGE_DEFAULT_SIZE,
+  AI_USAGE_WIDGET_TYPE,
+} from "@/features/ai-usage/aiUsageTypes";
+import {
+  TAPD_DEFECTS_DEFAULT_SIZE,
+  TAPD_DEFECTS_WIDGET_TYPE,
+} from "@/features/tapd-defects/tapdDefectTypes";
 
 export type RuntimeWidgetSizeScope = "itab";
 export type RuntimeWidgetSizeKey = ItabWidgetSizeKey | "4x4";
@@ -280,6 +288,17 @@ const runtimeWidgetSizeFamilies = new Map<string, RuntimeWidgetSizeFamily>([
     createItabRuntimeSizeFamily(
       ITAB_FOOD_PICKER_WIDGET_TYPE,
       ITAB_FOOD_PICKER_DEFAULT_SIZE,
+    ),
+  ],
+  [
+    AI_USAGE_WIDGET_TYPE,
+    createItabRuntimeSizeFamily(AI_USAGE_WIDGET_TYPE, AI_USAGE_DEFAULT_SIZE),
+  ],
+  [
+    TAPD_DEFECTS_WIDGET_TYPE,
+    createItabRuntimeSizeFamily(
+      TAPD_DEFECTS_WIDGET_TYPE,
+      TAPD_DEFECTS_DEFAULT_SIZE,
     ),
   ],
 ]);

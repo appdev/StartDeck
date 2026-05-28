@@ -19,8 +19,6 @@ export type IconCacheResult = {
   error: string | null;
 };
 
-const ICON_IMAGE_PATH_RE = /\.(png|jpe?g|gif|webp|svg|ico)(?:[?#].*)?$/i;
-
 const extractIconCacheError = (data: IconCacheErrorResponse | null): string => {
   if (!data) return "图标缓存失败，请稍后重试";
   if (typeof data.error === "string") return data.error;
@@ -65,15 +63,6 @@ const iconUrlToDataUrl = async (url: string): Promise<string | null> => {
   }
 };
 
-const normalizeLocalImagePathForCache = (value: string) => {
-  if (!ICON_IMAGE_PATH_RE.test(value)) return "";
-  if (value.startsWith("//") || /^[a-zA-Z][a-zA-Z\d+\-.]*:/.test(value)) {
-    return "";
-  }
-  if (value.includes("..")) return "";
-  return value.startsWith("/") ? value : `/${value.replace(/^\.\//, "")}`;
-};
-
 const normalizeIconUrlForCache = (
   value: string,
 ): NormalizedIconCacheSource | null => {
@@ -95,16 +84,6 @@ const normalizeIconUrlForCache = (
   if (value.startsWith("icons/")) {
     return {
       url: new URL(toAppUrl(`/${value}`), window.location.origin).toString(),
-      inlineBeforeCache: true,
-    };
-  }
-  const localPath = normalizeLocalImagePathForCache(value);
-  if (localPath) {
-    return {
-      url: new URL(
-        resolveManagedUrl(localPath),
-        window.location.origin,
-      ).toString(),
       inlineBeforeCache: true,
     };
   }
@@ -144,7 +123,7 @@ export const cacheIconToLocal = async (
       path: null,
       error:
         payloadError ||
-        "图标地址格式不支持本地缓存，请改为上传图片、http/https 链接或应用内图片路径",
+        "图标地址格式不支持本地缓存，请改为上传图片、http/https 链接或 Icon Server 图标路径",
     };
   }
 

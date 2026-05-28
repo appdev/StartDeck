@@ -61,6 +61,14 @@ import {
   ITAB_FOOD_PICKER_CATALOG_ID,
   ITAB_FOOD_PICKER_WIDGET_TYPE,
 } from "@/features/itab-food-picker/itabFoodPickerTypes";
+import {
+  AI_USAGE_CATALOG_ID,
+  AI_USAGE_WIDGET_TYPE,
+} from "@/features/ai-usage/aiUsageTypes";
+import {
+  TAPD_DEFECTS_CATALOG_ID,
+  TAPD_DEFECTS_WIDGET_TYPE,
+} from "@/features/tapd-defects/tapdDefectTypes";
 import { createDefaultItabWeatherWidget } from "@/features/itab-weather/itabWeatherModel";
 import { createDefaultItabTodoWidget } from "@/features/itab-todo/itabTodoModel";
 import { createDefaultItabMemoWidget } from "@/features/itab-memo/itabMemoModel";
@@ -75,6 +83,8 @@ import { createDefaultItabIpWidget } from "@/features/itab-ip/itabIpModel";
 import { createDefaultItabCalendarWidget } from "@/features/itab-calendar/itabCalendarModel";
 import { createDefaultItabNumberUppercaseWidget } from "@/features/itab-number-uppercase/itabNumberUppercaseModel";
 import { createDefaultItabFoodPickerWidget } from "@/features/itab-food-picker/itabFoodPickerModel";
+import { createDefaultAiUsageWidget } from "@/features/ai-usage/aiUsageModel";
+import { createDefaultTapdDefectWidget } from "@/features/tapd-defects/tapdDefectModel";
 import { buildItabPersistedData } from "@/features/itab-widgets/itabAdapters";
 import { withItabGridData } from "@/features/itab-widgets/itabGrid";
 import { resolveItabWidgetEntry } from "@/features/itab-widgets/itabWidgetRegistry";
@@ -287,6 +297,24 @@ export const WIDGET_CATALOG: WidgetCatalogItem[] = [
     glyph: "吃",
   }),
   catalogItem({
+    id: AI_USAGE_CATALOG_ID,
+    type: AI_USAGE_WIDGET_TYPE,
+    title: "AI 使用量",
+    description: "查看 OpenAI/Codex 等 provider 的额度余额",
+    category: "tool",
+    mode: "multi",
+    glyph: "AI",
+  }),
+  catalogItem({
+    id: TAPD_DEFECTS_CATALOG_ID,
+    type: TAPD_DEFECTS_WIDGET_TYPE,
+    title: "TAPD 缺陷",
+    description: "浏览当前账号可见缺陷、待验证状态和屏蔽列表",
+    category: "tool",
+    mode: "multi",
+    glyph: "TAPD",
+  }),
+  catalogItem({
     id: "docker",
     type: "docker",
     title: "Docker",
@@ -336,6 +364,8 @@ const WIDGET_CATALOG_ALIASES = new Map([
   [ITAB_CALENDAR_WIDGET_TYPE, ITAB_CALENDAR_CATALOG_ID],
   [ITAB_NUMBER_UPPERCASE_WIDGET_TYPE, ITAB_NUMBER_UPPERCASE_CATALOG_ID],
   [ITAB_FOOD_PICKER_WIDGET_TYPE, ITAB_FOOD_PICKER_CATALOG_ID],
+  [AI_USAGE_WIDGET_TYPE, AI_USAGE_CATALOG_ID],
+  [TAPD_DEFECTS_WIDGET_TYPE, TAPD_DEFECTS_CATALOG_ID],
 ]);
 
 export const getWidgetCatalogItem = (id: string) => {
@@ -455,6 +485,16 @@ export const createWidgetFromCatalog = (
   }
   if (item.type === ITAB_FOOD_PICKER_WIDGET_TYPE) {
     const widget = createDefaultItabFoodPickerWidget();
+    widget.enable = true;
+    return assignCatalogInstanceId(widget, item);
+  }
+  if (item.type === AI_USAGE_WIDGET_TYPE) {
+    const widget = createDefaultAiUsageWidget();
+    widget.enable = true;
+    return assignCatalogInstanceId(widget, item);
+  }
+  if (item.type === TAPD_DEFECTS_WIDGET_TYPE) {
+    const widget = createDefaultTapdDefectWidget();
     widget.enable = true;
     return assignCatalogInstanceId(widget, item);
   }

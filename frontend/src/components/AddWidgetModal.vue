@@ -600,21 +600,25 @@ const addWidget = async (item: WidgetCatalogItem) => {
   overflow-y: auto;
   overscroll-behavior: contain;
   padding-right: 0;
-  scrollbar-color: var(--sd-theme-add-widget-modal-text-05) transparent;
+  scrollbar-color: var(--sd-scrollbar-thumb) var(--sd-scrollbar-track);
   scrollbar-width: thin;
 }
 
 .itab-add-widget-grid::-webkit-scrollbar {
-  width: 8px;
+  width: var(--sd-scrollbar-size);
 }
 
 .itab-add-widget-grid::-webkit-scrollbar-track {
-  background: transparent;
+  background: var(--sd-scrollbar-track);
 }
 
 .itab-add-widget-grid::-webkit-scrollbar-thumb {
   border-radius: 999px;
-  background: var(--sd-theme-add-widget-modal-surface-07);
+  background: var(--sd-scrollbar-thumb);
+}
+
+.itab-add-widget-grid::-webkit-scrollbar-thumb:hover {
+  background: var(--sd-scrollbar-thumb-hover);
 }
 
 .itab-add-widget-grid {

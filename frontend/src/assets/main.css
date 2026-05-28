@@ -143,6 +143,12 @@
   --sd-window-bar-height: 52px;
   --sd-settings-window-height: 724px;
   --sd-settings-window-max-height: 750px;
+  --sd-scrollbar-size: 7px;
+  --sd-scrollbar-track: transparent;
+  --sd-scrollbar-thumb: var(--sd-theme-itab-todo-todo-opened-panel-surface-03);
+  --sd-scrollbar-thumb-hover: var(
+    --sd-theme-itab-todo-todo-opened-panel-surface-04
+  );
 }
 
 @media (prefers-color-scheme: dark) {
@@ -7175,34 +7181,68 @@ button.sd-window-control-dot.is-red:focus-visible {
   }
 }
 
-.scrollbar-glass {
+* {
+  scrollbar-color: var(--sd-scrollbar-thumb) var(--sd-scrollbar-track);
   scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.32) rgba(255, 255, 255, 0.06);
 }
 
-.scrollbar-glass::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
+*::-webkit-scrollbar {
+  width: var(--sd-scrollbar-size);
+  height: var(--sd-scrollbar-size);
 }
 
-.scrollbar-glass::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 9999px;
+*::-webkit-scrollbar-track {
+  background: var(--sd-scrollbar-track);
 }
 
-.scrollbar-glass::-webkit-scrollbar-thumb {
-  background-color: rgba(255, 255, 255, 0.18);
-  border-radius: 9999px;
-  border: 2px solid rgba(0, 0, 0, 0);
-  background-clip: padding-box;
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.18);
+*::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: var(--sd-scrollbar-thumb);
 }
 
-.scrollbar-glass:hover::-webkit-scrollbar-thumb {
-  background-color: rgba(255, 255, 255, 0.28);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.25);
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--sd-scrollbar-thumb-hover);
 }
 
-.scrollbar-glass::-webkit-scrollbar-corner {
+*::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+.scrollbar-todo,
+.scrollbar-glass,
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: var(--sd-scrollbar-thumb) var(--sd-scrollbar-track);
+}
+
+.scrollbar-todo::-webkit-scrollbar,
+.scrollbar-glass::-webkit-scrollbar,
+.custom-scrollbar::-webkit-scrollbar {
+  width: var(--sd-scrollbar-size);
+  height: var(--sd-scrollbar-size);
+}
+
+.scrollbar-todo::-webkit-scrollbar-track,
+.scrollbar-glass::-webkit-scrollbar-track,
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: var(--sd-scrollbar-track);
+}
+
+.scrollbar-todo::-webkit-scrollbar-thumb,
+.scrollbar-glass::-webkit-scrollbar-thumb,
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: var(--sd-scrollbar-thumb);
+}
+
+.scrollbar-todo:hover::-webkit-scrollbar-thumb,
+.scrollbar-glass:hover::-webkit-scrollbar-thumb,
+.custom-scrollbar:hover::-webkit-scrollbar-thumb {
+  background: var(--sd-scrollbar-thumb-hover);
+}
+
+.scrollbar-todo::-webkit-scrollbar-corner,
+.scrollbar-glass::-webkit-scrollbar-corner,
+.custom-scrollbar::-webkit-scrollbar-corner {
   background: transparent;
 }

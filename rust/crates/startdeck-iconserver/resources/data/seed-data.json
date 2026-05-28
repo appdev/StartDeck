@@ -257,14 +257,6 @@
       "icon_local_host": "bookmarks"
     },
     {
-      "title": "组件商城",
-      "url": "itab://store",
-      "icon_url": "data/icons/store.svg",
-      "original_icon_url": "https://files.codelife.cc/icons/store.svg",
-      "background_color": "#2989fe",
-      "icon_local_host": "store"
-    },
-    {
       "title": "历史记录",
       "url": "chrome://history/",
       "icon_url": "data/icons/history.svg",
@@ -35495,14 +35487,6 @@
       "original_icon_url": "https://files.codelife.cc/icons/add.svg",
       "background_color": "#ffffff",
       "icon_local_host": "add"
-    },
-    {
-      "title": "组件商城",
-      "url": "itab://store",
-      "icon_url": "data/icons/store.svg",
-      "original_icon_url": "https://files.codelife.cc/icons/store.svg",
-      "background_color": "#2989fe",
-      "icon_local_host": "store"
     },
     {
       "title": "设置",

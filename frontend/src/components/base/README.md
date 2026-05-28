@@ -47,5 +47,4 @@ This directory owns the non-home shared UI primitives and shells for the macOS r
 ## Current Consumers
 
 - `ContextMenuSurface.vue` is currently used by `GridPanel.vue`.
-- Compact `AppModalShell` variants are currently used by `MarketplaceModal.vue`.
 - `useDirtyStateGuard.ts` is currently used by `EditModal.vue` to route dirty close into a blocking discard confirmation.

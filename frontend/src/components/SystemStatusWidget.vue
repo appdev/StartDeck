@@ -3,6 +3,7 @@ import { computed, onMounted, onUnmounted, type Ref } from "vue";
 import AppButton from "@/components/base/AppButton.vue";
 import AppSwitch from "@/components/base/AppSwitch.vue";
 import { useResumeRefresh } from "@/composables/useResumeRefresh";
+import { useLoginRequiredToast } from "@/composables/useRequireLogin";
 import { useWidgetDisplaySize } from "@/composables/useWidgetDisplaySize";
 import { useSharedSystemStatusRuntimeState } from "@/features/widget-runtime/systemStatusRuntimeState";
 import { useMainStore } from "@/stores/main";
@@ -81,6 +82,11 @@ const SYSTEM_STATUS_PREVIEW_STATS: SystemStats = {
 };
 
 const store = useMainStore();
+const { notifyLoginRequired } = useLoginRequiredToast();
+const requireSystemWidgetMutation = () => {
+  if (store.isLogged) return true;
+  return notifyLoginRequired("请先登录后再修改系统状态组件。");
+};
 const props = defineProps<{
   widget?: WidgetConfig;
   variant?: "card" | "opened";
@@ -279,18 +285,21 @@ const ensureSystemWidgetData = () => {
   return widget.data as Record<string, unknown>;
 };
 const setSystemWidgetEnabled = (enabled: boolean) => {
+  if (!requireSystemWidgetMutation()) return;
   const widget = systemWidgetModel.value;
   if (!widget) return;
   widget.enable = enabled;
   store.markDirty();
 };
 const setSystemWidgetPublic = (enabled: boolean) => {
+  if (!requireSystemWidgetMutation()) return;
   const widget = systemWidgetModel.value;
   if (!widget) return;
   widget.isPublic = enabled;
   store.markDirty();
 };
 const setSystemWidgetMobileVisible = (visible: boolean) => {
+  if (!requireSystemWidgetMutation()) return;
   const widget = systemWidgetModel.value;
   if (!widget) return;
   widget.hideOnMobile = !visible;
@@ -1217,23 +1226,6 @@ onUnmounted(() => {
   );
   font-size: 0.78rem;
   font-weight: 700;
-}
-
-.custom-scrollbar::-webkit-scrollbar {
-  width: 4px;
-}
-
-.custom-scrollbar::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  border-radius: 2px;
-  background: var(--sd-theme-system-status-widget-surface-06);
-}
-
-.custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: var(--sd-theme-system-status-widget-surface-07);
 }
 
 @media (max-width: 640px) {

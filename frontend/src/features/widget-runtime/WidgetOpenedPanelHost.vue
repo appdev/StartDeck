@@ -276,6 +276,26 @@ const openedPanelClass = computed(() => {
   backdrop-filter: none;
 }
 
+.sd-widget-opened-window.opened-ai-usage {
+  border: 1px solid var(--sd-component-border);
+  background: var(--sd-component-surface);
+  color: var(--sd-component-text-primary);
+  font-size: 14px;
+  line-height: 21px;
+  box-shadow: var(--sd-shadow-window);
+  backdrop-filter: none;
+}
+
+.sd-widget-opened-window.opened-tapd-defects {
+  border: 1px solid var(--sd-component-border);
+  background: var(--sd-component-surface);
+  color: var(--sd-component-text-primary);
+  font-size: 14px;
+  line-height: 21px;
+  box-shadow: var(--sd-shadow-window);
+  backdrop-filter: none;
+}
+
 .sd-widget-opened-window.opened-docker {
   overflow: hidden;
   border: 1px solid var(--sd-component-border);

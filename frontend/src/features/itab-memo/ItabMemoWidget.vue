@@ -179,29 +179,24 @@ watch(
   height: calc(100% - 38px);
   overflow: hidden auto;
   scrollbar-width: thin;
-  scrollbar-color: color-mix(
-      in srgb,
-      var(--sd-theme-itab-memo-memo-widget-text-01) 26%,
-      transparent
-    )
-    transparent;
+  scrollbar-color: var(--sd-scrollbar-thumb) var(--sd-scrollbar-track);
 }
 
 .itab-memo-widget.is-board .memo-widget-content::-webkit-scrollbar {
-  width: 6px;
+  width: var(--sd-scrollbar-size);
 }
 
 .itab-memo-widget.is-board .memo-widget-content::-webkit-scrollbar-thumb {
   border-radius: 999px;
-  background: color-mix(
-    in srgb,
-    var(--sd-theme-itab-memo-memo-widget-text-01) 26%,
-    transparent
-  );
+  background: var(--sd-scrollbar-thumb);
+}
+
+.itab-memo-widget.is-board .memo-widget-content::-webkit-scrollbar-thumb:hover {
+  background: var(--sd-scrollbar-thumb-hover);
 }
 
 .itab-memo-widget.is-board .memo-widget-content::-webkit-scrollbar-track {
-  background: transparent;
+  background: var(--sd-scrollbar-track);
 }
 
 .itab-memo-widget[data-itab-memo-size="1x1"] .memo-widget-content,

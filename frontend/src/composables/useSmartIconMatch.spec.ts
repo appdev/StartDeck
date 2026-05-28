@@ -114,6 +114,8 @@ describe("useSmartIconMatch", () => {
 
     expect(form.value.title).toBe("Example");
     expect(form.value.icon).toBe("icons/current.svg");
+    expect("description1" in form.value).toBe(false);
+    expect(smartIconMatch.lastSiteMetadata.value?.description).toBe("Demo");
     expect(smartIconMatch.isSmartMatching.value).toBe(false);
     expect(smartIconMatch.smartMatchCandidates.value).toEqual([
       {

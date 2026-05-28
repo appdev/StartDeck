@@ -333,16 +333,6 @@ export const useSyncStore = defineStore("sync", () => {
         mergedConfig,
       ) as typeof configStore.appConfig;
     }
-    if (
-      !configStore.appConfig.marketplaceListUrl ||
-      configStore.appConfig.marketplaceListUrl ===
-        cacheStore.DEV_MARKETPLACE_LIST_URL ||
-      configStore.appConfig.marketplaceListUrl ===
-        cacheStore.LEGACY_DEFAULT_MARKETPLACE_LIST_URL
-    ) {
-      configStore.appConfig.marketplaceListUrl =
-        cacheStore.DEFAULT_MARKETPLACE_LIST_URL;
-    }
     // Migrations
     const ac = configStore.appConfig;
     if (ac.customCss && !ac.customCssList?.length)

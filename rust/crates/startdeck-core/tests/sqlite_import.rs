@@ -7,6 +7,65 @@ use startdeck_core::{
 };
 
 #[tokio::test]
+async fn creates_ai_usage_credentials_table_with_user_widget_scope() {
+    let temp = tempfile::tempdir().unwrap();
+    let config = RuntimeConfig::from_base_dir(temp.path().to_path_buf());
+    let pool = connect_sqlite(&config).await.unwrap();
+
+    let columns = sqlx::query("PRAGMA table_info(ai_usage_credentials)")
+        .fetch_all(&pool)
+        .await
+        .unwrap()
+        .into_iter()
+        .map(|row| row.get::<String, _>("name"))
+        .collect::<Vec<_>>();
+
+    for column in [
+        "username",
+        "widget_id",
+        "provider_id",
+        "credential_type",
+        "encrypted_secret",
+        "encrypted_account_id",
+        "nonce",
+        "account_nonce",
+        "key_version",
+        "created_at",
+        "updated_at",
+    ] {
+        assert!(columns.iter().any(|existing| existing == column));
+    }
+}
+
+#[tokio::test]
+async fn creates_tapd_credentials_table_with_user_widget_scope() {
+    let temp = tempfile::tempdir().unwrap();
+    let config = RuntimeConfig::from_base_dir(temp.path().to_path_buf());
+    let pool = connect_sqlite(&config).await.unwrap();
+
+    let columns = sqlx::query("PRAGMA table_info(tapd_credentials)")
+        .fetch_all(&pool)
+        .await
+        .unwrap()
+        .into_iter()
+        .map(|row| row.get::<String, _>("name"))
+        .collect::<Vec<_>>();
+
+    for column in [
+        "username",
+        "widget_id",
+        "credential_type",
+        "encrypted_material",
+        "nonce",
+        "key_version",
+        "created_at",
+        "updated_at",
+    ] {
+        assert!(columns.iter().any(|existing| existing == column));
+    }
+}
+
+#[tokio::test]
 async fn imports_legacy_navigation_widgets_and_icon_seed_into_relational_tables() {
     let temp = tempfile::tempdir().unwrap();
     let base = temp.path();

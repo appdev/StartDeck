@@ -1,0 +1,98 @@
+name: Publish Docker Hub Image
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Docker image version tag, for example 1.2.2 or v1.2.2"
+        required: true
+        type: string
+      image_name:
+        description: "Docker Hub image name"
+        required: true
+        default: "apkdv/startdeck"
+        type: string
+      push_latest:
+        description: "Also update the latest tag"
+        required: true
+        default: true
+        type: boolean
+
+concurrency:
+  group: docker-hub-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    name: Build and push Docker image
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Validate image inputs
+        id: release
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          version="${{ inputs.version }}"
+          image_name="${{ inputs.image_name }}"
+
+          if [[ ! "$version" =~ ^v?[0-9]+(\.[0-9]+){1,3}([.-][0-9A-Za-z][0-9A-Za-z.-]*)?$ ]]; then
+            echo "Version must look like 1.2.2, v1.2.2, or 1.2.2-rc.1." >&2
+            exit 1
+          fi
+
+          if [[ ! "$image_name" =~ ^[a-z0-9]+([._-][a-z0-9]+)*/[a-z0-9]+([._-][a-z0-9]+)*$ ]]; then
+            echo "Image name must look like namespace/repository, for example apkdv/startdeck." >&2
+            exit 1
+          fi
+
+          {
+            echo "version=$version"
+            echo "image_name=$image_name"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v4
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Prepare Docker metadata
+        id: meta
+        uses: docker/metadata-action@v6
+        with:
+          images: ${{ steps.release.outputs.image_name }}
+          tags: |
+            type=raw,value=${{ steps.release.outputs.version }}
+            type=raw,value=latest,enable=${{ inputs.push_latest }}
+          labels: |
+            org.opencontainers.image.version=${{ steps.release.outputs.version }}
+
+      - name: Build and push
+        id: build
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: ./Dockerfile
+          platforms: linux/amd64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Print published image digest
+        shell: bash
+        run: |
+          echo "Published ${{ steps.release.outputs.image_name }}:${{ steps.release.outputs.version }}"
+          echo "Digest: ${{ steps.build.outputs.digest }}"

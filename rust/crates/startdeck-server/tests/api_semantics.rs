@@ -225,6 +225,10 @@ async fn json_call(
 }
 
 async fn login_token(app: &axum::Router) -> String {
+    login_token_for(app, "admin", "secret").await
+}
+
+async fn login_token_for(app: &axum::Router, username: &str, password: &str) -> String {
     let response = app
         .clone()
         .oneshot(
@@ -232,7 +236,10 @@ async fn login_token(app: &axum::Router) -> String {
                 .method("POST")
                 .uri("/api/login")
                 .header("content-type", "application/json")
-                .body(Body::from(r#"{"username":"admin","password":"secret"}"#))
+                .body(Body::from(
+                    serde_json::to_vec(&json!({"username": username, "password": password}))
+                        .unwrap(),
+                ))
                 .unwrap(),
         )
         .await
@@ -241,6 +248,233 @@ async fn login_token(app: &axum::Router) -> String {
     let body: Value =
         serde_json::from_slice(&to_bytes(response.into_body(), usize::MAX).await.unwrap()).unwrap();
     body["token"].as_str().unwrap().to_string()
+}
+
+#[tokio::test]
+async fn ai_usage_credentials_are_encrypted_scoped_and_never_echoed() {
+    let app = test_app().await;
+    let token = login_token(&app).await;
+
+    let (status, _) = json_call(
+        &app,
+        "GET",
+        "/api/ai-usage/credentials/ai-widget/openai",
+        None,
+        None,
+    )
+    .await;
+    assert_eq!(status, StatusCode::UNAUTHORIZED);
+
+    let (status, body) = json_call(
+        &app,
+        "PUT",
+        "/api/ai-usage/credentials/ai-widget/openai",
+        Some(&token),
+        Some(json!({
+            "credentialType": "session_cookie",
+            "credential": "sk-live-secret-123456",
+            "accountId": "acct-visible-1234",
+            "serverStorageAcknowledged": true
+        })),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(body["hasServerCredential"], true);
+    assert_eq!(body["credentialType"], "session_cookie");
+    assert_eq!(body["accountIdHint"], "****1234");
+    let body_text = body.to_string();
+    assert!(!body_text.contains("sk-live-secret-123456"));
+    assert!(!body_text.contains("acct-visible-1234"));
+
+    let (status, body) = json_call(
+        &app,
+        "GET",
+        "/api/ai-usage/credentials/ai-widget/openai",
+        Some(&token),
+        None,
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(body["hasServerCredential"], true);
+    assert_eq!(body["accountIdHint"], "****1234");
+    assert!(!body.to_string().contains("sk-live-secret-123456"));
+
+    let (status, body) = json_call(&app, "GET", "/api/data", Some(&token), None).await;
+    assert_eq!(status, StatusCode::OK);
+    let body_text = body.to_string();
+    assert!(!body_text.contains("sk-live-secret-123456"));
+    assert!(!body_text.contains("acct-visible-1234"));
+
+    let (status, _) = json_call(
+        &app,
+        "POST",
+        "/api/admin/users",
+        Some(&token),
+        Some(json!({"username": "alice", "password": "secret"})),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK);
+    let alice_token = login_token_for(&app, "alice", "secret").await;
+    let (status, body) = json_call(
+        &app,
+        "GET",
+        "/api/ai-usage/credentials/ai-widget/openai",
+        Some(&alice_token),
+        None,
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(body["hasServerCredential"], false);
+
+    let (status, body) = json_call(
+        &app,
+        "POST",
+        "/api/ai-usage/query",
+        Some(&token),
+        Some(json!({
+            "widgetId": "ai-widget",
+            "providerId": "claude",
+            "credentialStorage": "once",
+            "credentialType": "access_token",
+            "credential": "planned-provider-secret"
+        })),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(body["status"], "error");
+    assert_eq!(body["errorCode"], "provider_query_planned");
+    assert!(!body.to_string().contains("planned-provider-secret"));
+
+    let (status, body) = json_call(
+        &app,
+        "DELETE",
+        "/api/ai-usage/credentials/ai-widget/openai",
+        Some(&token),
+        None,
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(body["success"], true);
+    let (status, body) = json_call(
+        &app,
+        "GET",
+        "/api/ai-usage/credentials/ai-widget/openai",
+        Some(&token),
+        None,
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(body["hasServerCredential"], false);
+}
+
+#[tokio::test]
+async fn tapd_credentials_are_encrypted_scoped_and_never_echoed() {
+    let app = test_app().await;
+    let token = login_token(&app).await;
+
+    let (status, _) = json_call(
+        &app,
+        "GET",
+        "/api/tapd-defects/credentials/tapd-widget",
+        None,
+        None,
+    )
+    .await;
+    assert_eq!(status, StatusCode::UNAUTHORIZED);
+
+    let (status, body) = json_call(
+        &app,
+        "PUT",
+        "/api/tapd-defects/credentials/tapd-widget",
+        Some(&token),
+        Some(json!({
+            "credentialType": "basic",
+            "apiUser": "tapd_api_user",
+            "apiPassword": "tapd-api-password-secret",
+            "serverStorageAcknowledged": true
+        })),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(body["hasServerCredential"], true);
+    assert_eq!(body["credentialType"], "basic");
+    assert_eq!(body["accountHint"], "tapd_api_user");
+    assert!(!body.to_string().contains("tapd-api-password-secret"));
+
+    let (status, body) = json_call(
+        &app,
+        "GET",
+        "/api/tapd-defects/credentials/tapd-widget",
+        Some(&token),
+        None,
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(body["hasServerCredential"], true);
+    assert!(!body.to_string().contains("tapd-api-password-secret"));
+
+    let (status, body) = json_call(&app, "GET", "/api/data", Some(&token), None).await;
+    assert_eq!(status, StatusCode::OK);
+    assert!(!body.to_string().contains("tapd-api-password-secret"));
+
+    let (status, _) = json_call(
+        &app,
+        "POST",
+        "/api/admin/users",
+        Some(&token),
+        Some(json!({"username": "tapd_alice", "password": "secret"})),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK);
+    let alice_token = login_token_for(&app, "tapd_alice", "secret").await;
+    let (status, body) = json_call(
+        &app,
+        "GET",
+        "/api/tapd-defects/credentials/tapd-widget",
+        Some(&alice_token),
+        None,
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(body["hasServerCredential"], false);
+
+    let (status, body) = json_call(
+        &app,
+        "PUT",
+        "/api/tapd-defects/credentials/tapd-widget",
+        Some(&token),
+        Some(json!({
+            "credentialType": "bearer",
+            "accessToken": "tapd-access-token-secret",
+            "serverStorageAcknowledged": true
+        })),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(body["credentialType"], "bearer");
+    assert_eq!(body["accountHint"], "****cret");
+    assert!(!body.to_string().contains("tapd-access-token-secret"));
+
+    let (status, body) = json_call(
+        &app,
+        "DELETE",
+        "/api/tapd-defects/credentials/tapd-widget",
+        Some(&token),
+        None,
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(body["success"], true);
+    let (status, body) = json_call(
+        &app,
+        "GET",
+        "/api/tapd-defects/credentials/tapd-widget",
+        Some(&token),
+        None,
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(body["hasServerCredential"], false);
 }
 
 #[tokio::test]

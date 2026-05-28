@@ -8,32 +8,42 @@
     />
     <meta
       name="description"
-      content="StartDeck 是面向 NAS、家庭服务器和个人工作流的轻量级导航页与仪表盘系统。"
+      content="StartDeck 是面向 NAS、家庭服务器和个人工作流的自托管浏览器工作台，集成智能导航、组件仪表盘、Docker 运维、图标元数据和本地 SQLite 数据。"
     />
-    <meta name="theme-color" content="#111827" />
-    <meta property="og:title" content="StartDeck 即将发布" />
+    <meta name="theme-color" content="#05070a" />
+    <meta property="og:title" content="StartDeck 自托管浏览器工作台" />
     <meta
       property="og:description"
-      content="把内网服务、常用网站、Docker 管理和个人组件聚合成每天打开的第一屏。"
+      content="把常用入口、内外网地址、组件、Docker 状态、AI 额度和研发信息放进每天打开的第一屏。"
     />
     <meta property="og:type" content="website" />
-    <link rel="icon" href="./favicon.ico" />
-    <title>StartDeck | 发布介绍</title>
+    <link
+      rel="icon"
+      href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="%2305070a"/><path d="M17 18h30v8H17z" fill="%23f4d35e"/><path d="M12 29h40v8H12z" fill="%2388d8b0"/><path d="M19 40h26v8H19z" fill="%238fc7ff"/></svg>'
+    />
+    <title>StartDeck | 自托管浏览器工作台</title>
     <style>
       :root {
-        color-scheme: light;
-        --ink: #111827;
-        --muted: #5f6775;
-        --line: #d9dee7;
-        --paper: #f7f8fb;
-        --surface: #ffffff;
-        --surface-soft: #eef3f7;
-        --green: #16a34a;
-        --blue: #2563eb;
-        --amber: #d97706;
-        --red: #dc2626;
-        --cyan: #0891b2;
-        --shadow: 0 24px 70px rgba(15, 23, 42, 0.16);
+        color-scheme: dark;
+        --bg: #05070a;
+        --bg-elevated: #0a0f15;
+        --bg-soft: #101721;
+        --text: #f5f7fb;
+        --text-muted: rgba(245, 247, 251, 0.72);
+        --text-soft: rgba(245, 247, 251, 0.5);
+        --line: rgba(245, 247, 251, 0.14);
+        --line-soft: rgba(245, 247, 251, 0.08);
+        --surface: rgba(255, 255, 255, 0.055);
+        --surface-strong: rgba(255, 255, 255, 0.09);
+        --blue: #8fc7ff;
+        --green: #88d8b0;
+        --yellow: #f4d35e;
+        --pink: #e8a6ff;
+        --shadow: 0 40px 110px rgba(0, 0, 0, 0.45);
+        --radius-sm: 8px;
+        --radius-md: 14px;
+        --radius-lg: 22px;
+        --header-height: 72px;
       }
 
       * {
@@ -46,24 +56,52 @@
 
       body {
         margin: 0;
-        background: var(--paper);
-        color: var(--ink);
+        background:
+          radial-gradient(circle at 50% -12%, rgba(143, 199, 255, 0.16), transparent 34rem),
+          linear-gradient(180deg, #05070a 0%, #080c12 48%, #05070a 100%);
+        color: var(--text);
         font-family:
           Inter,
+          ui-sans-serif,
           -apple-system,
           BlinkMacSystemFont,
           "Segoe UI",
           "PingFang SC",
           "Microsoft YaHei",
           sans-serif;
-        line-height: 1.65;
+        line-height: 1.6;
         text-rendering: optimizeLegibility;
         -webkit-font-smoothing: antialiased;
       }
 
-      img {
-        max-width: 100%;
-        display: block;
+      body::before {
+        position: fixed;
+        inset: 0;
+        z-index: -2;
+        pointer-events: none;
+        content: "";
+        background-image:
+          linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+        background-size: 72px 72px;
+        mask-image: linear-gradient(to bottom, transparent 0%, #000 18%, #000 68%, transparent 100%);
+      }
+
+      body::after {
+        position: fixed;
+        inset: auto -18% 0 -18%;
+        z-index: -1;
+        height: 46vh;
+        pointer-events: none;
+        content: "";
+        background:
+          linear-gradient(90deg, transparent, rgba(143, 199, 255, 0.11), transparent),
+          linear-gradient(110deg, transparent 20%, rgba(136, 216, 176, 0.1), transparent 64%),
+          linear-gradient(70deg, transparent 32%, rgba(244, 211, 94, 0.08), transparent 72%);
+        filter: blur(22px);
+        opacity: 0.76;
+        transform: translate3d(0, 0, 0);
+        animation: light-drift 18s ease-in-out infinite alternate;
       }
 
       a {
@@ -71,149 +109,169 @@
         text-decoration: none;
       }
 
+      button,
       code,
       pre {
-        font-family:
-          "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+        font: inherit;
+      }
+
+      h1,
+      h2,
+      h3,
+      p,
+      figure {
+        margin: 0;
+      }
+
+      img {
+        display: block;
+        max-width: 100%;
+      }
+
+      .container {
+        width: min(1180px, calc(100% - 48px));
+        margin: 0 auto;
       }
 
       .site-header {
-        position: absolute;
+        position: fixed;
         top: 0;
+        right: 0;
         left: 0;
-        z-index: 10;
-        width: 100%;
-        padding: 22px max(24px, env(safe-area-inset-right)) 0
-          max(24px, env(safe-area-inset-left));
+        z-index: 50;
+        border-bottom: 1px solid var(--line-soft);
+        background: rgba(5, 7, 10, 0.68);
+        backdrop-filter: blur(24px) saturate(130%);
       }
 
       .nav-shell {
-        max-width: 1180px;
-        margin: 0 auto;
+        min-height: var(--header-height);
         display: flex;
         align-items: center;
         justify-content: space-between;
-        gap: 18px;
-        color: #fff;
+        gap: 26px;
       }
 
       .brand {
         display: inline-flex;
         align-items: center;
         gap: 12px;
-        font-size: 1.05rem;
-        font-weight: 800;
+        font-size: 1rem;
+        font-weight: 850;
       }
 
-      .brand img {
-        width: 36px;
-        height: 36px;
-        border-radius: 8px;
+      .brand-mark {
+        position: relative;
+        width: 34px;
+        height: 34px;
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        border-radius: 10px;
+        background: linear-gradient(145deg, rgba(255, 255, 255, 0.13), rgba(255, 255, 255, 0.03));
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18);
+      }
+
+      .brand-mark span {
+        position: absolute;
+        left: 7px;
+        height: 5px;
+        border-radius: 999px;
+      }
+
+      .brand-mark span:nth-child(1) {
+        top: 8px;
+        width: 20px;
+        background: var(--yellow);
+      }
+
+      .brand-mark span:nth-child(2) {
+        top: 15px;
+        width: 17px;
+        background: var(--green);
+      }
+
+      .brand-mark span:nth-child(3) {
+        top: 22px;
+        width: 13px;
+        background: var(--blue);
       }
 
       .nav-links {
         display: flex;
         align-items: center;
-        gap: 8px;
-        padding: 6px;
-        border: 1px solid rgba(255, 255, 255, 0.22);
-        border-radius: 8px;
-        background: rgba(17, 24, 39, 0.36);
-        backdrop-filter: blur(18px);
+        gap: 4px;
       }
 
       .nav-links a {
-        padding: 8px 12px;
-        border-radius: 6px;
-        color: rgba(255, 255, 255, 0.82);
-        font-size: 0.92rem;
-        font-weight: 700;
+        padding: 8px 11px;
+        border-radius: var(--radius-sm);
+        color: var(--text-muted);
+        font-size: 0.88rem;
+        font-weight: 740;
       }
 
       .nav-links a:hover,
       .nav-links a:focus-visible {
-        background: rgba(255, 255, 255, 0.12);
-        color: #fff;
+        background: var(--surface);
+        color: var(--text);
         outline: none;
       }
 
       .hero {
         position: relative;
-        min-height: 82svh;
-        display: flex;
+        min-height: 94svh;
+        display: grid;
         align-items: center;
+        padding: calc(var(--header-height) + 56px) 0 58px;
         overflow: hidden;
-        color: #fff;
-        background:
-          linear-gradient(
-            90deg,
-            rgba(5, 10, 20, 0.92) 0%,
-            rgba(12, 18, 31, 0.76) 46%,
-            rgba(12, 18, 31, 0.34) 100%
-          ),
-          url("./intro-assets/hero-dashboard.png") center / cover no-repeat;
+        border-bottom: 1px solid var(--line-soft);
       }
 
-      .hero::after {
-        content: "";
+      .hero::before {
         position: absolute;
-        inset: auto 0 0;
-        height: 160px;
-        background: linear-gradient(
-          180deg,
-          rgba(247, 248, 251, 0),
-          var(--paper)
-        );
-        pointer-events: none;
-      }
-
-      .hero-content {
-        position: relative;
-        z-index: 1;
-        width: min(1180px, calc(100% - 48px));
-        margin: 0 auto;
-        padding: 104px 0 72px;
-      }
-
-      .eyebrow {
-        display: inline-flex;
-        align-items: center;
-        gap: 10px;
-        margin-bottom: 24px;
-        color: rgba(255, 255, 255, 0.9);
-        font-size: 0.95rem;
-        font-weight: 800;
-      }
-
-      .eyebrow::before {
+        inset: 14% -20% auto 42%;
+        height: 52%;
         content: "";
-        width: 10px;
-        height: 10px;
-        border-radius: 50%;
-        background: var(--green);
-        box-shadow: 0 0 0 5px rgba(22, 163, 74, 0.18);
+        background:
+          linear-gradient(90deg, transparent, rgba(143, 199, 255, 0.18), transparent),
+          linear-gradient(100deg, transparent 10%, rgba(136, 216, 176, 0.1), transparent 72%);
+        filter: blur(20px);
+        transform: rotate(-8deg);
+        animation: beam-slide 12s ease-in-out infinite alternate;
       }
 
-      h1,
-      h2,
-      h3,
-      p {
-        margin: 0;
+      .hero-layout {
+        position: relative;
+        display: grid;
+        grid-template-columns: minmax(0, 0.82fr) minmax(520px, 1.18fr);
+        align-items: center;
+        gap: 50px;
+      }
+
+      .hero-copy-block {
+        position: relative;
+        z-index: 2;
       }
 
       h1 {
-        max-width: 760px;
-        padding-bottom: 4px;
-        font-size: 3.75rem;
-        line-height: 1.05;
+        max-width: 690px;
+        font-size: 5.35rem;
+        line-height: 1.02;
         font-weight: 900;
-        overflow-wrap: break-word;
+        letter-spacing: 0;
+      }
+
+      .gradient-text {
+        display: inline-block;
+        color: transparent;
+        background: linear-gradient(96deg, #ffffff 0%, #dcecff 40%, #a8e9ca 76%, #fff0af 100%);
+        -webkit-background-clip: text;
+        background-clip: text;
       }
 
       .hero-copy {
-        max-width: 720px;
-        margin-top: 22px;
-        color: rgba(255, 255, 255, 0.82);
+        max-width: 600px;
+        margin-top: 28px;
+        color: var(--text-muted);
         font-size: 1.14rem;
       }
 
@@ -225,451 +283,921 @@
       }
 
       .button {
+        position: relative;
         display: inline-flex;
+        min-height: 48px;
         align-items: center;
         justify-content: center;
-        min-height: 46px;
-        padding: 0 18px;
+        gap: 10px;
+        overflow: hidden;
+        border-radius: 999px;
+        padding: 0 22px;
         border: 1px solid transparent;
-        border-radius: 8px;
-        font-weight: 800;
+        font-size: 0.94rem;
+        font-weight: 820;
         transition:
-          transform 160ms ease,
-          border-color 160ms ease,
-          background 160ms ease;
+          transform 180ms ease,
+          border-color 180ms ease,
+          background 180ms ease;
       }
 
-      .button:hover,
-      .button:focus-visible {
-        transform: translateY(-1px);
-        outline: none;
+      .button svg {
+        width: 18px;
+        height: 18px;
+        fill: none;
+        stroke: currentColor;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        stroke-width: 2;
       }
 
       .button.primary {
-        background: #fff;
-        color: #111827;
+        color: #06110d;
+        background: linear-gradient(100deg, #ffffff, #d9ecff 40%, #c7f1d7 74%, #f8df83);
+        box-shadow:
+          0 18px 54px rgba(143, 199, 255, 0.19),
+          0 12px 38px rgba(136, 216, 176, 0.14);
+      }
+
+      .button.primary::after {
+        position: absolute;
+        inset: 0;
+        content: "";
+        background: linear-gradient(110deg, transparent 0%, rgba(255, 255, 255, 0.65) 42%, transparent 68%);
+        transform: translateX(-120%);
+        animation: button-sheen 4.8s ease-in-out infinite;
       }
 
       .button.secondary {
-        border-color: rgba(255, 255, 255, 0.3);
-        background: rgba(255, 255, 255, 0.1);
-        color: #fff;
-        backdrop-filter: blur(14px);
+        border-color: var(--line);
+        color: var(--text);
+        background: rgba(255, 255, 255, 0.03);
       }
 
-      .hero-stats {
+      .button:hover {
+        transform: translateY(-2px);
+      }
+
+      .hero-points {
         display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-        gap: 10px;
-        max-width: 780px;
-        margin: 44px 0 0;
-        padding: 0;
-        list-style: none;
+        gap: 13px;
+        max-width: 580px;
+        margin-top: 36px;
       }
 
-      .hero-stats li {
-        min-height: 96px;
-        padding: 18px;
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        border-radius: 8px;
-        background: rgba(17, 24, 39, 0.38);
-        backdrop-filter: blur(16px);
+      .hero-point {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        color: var(--text-muted);
+        font-size: 0.95rem;
       }
 
-      .hero-stats strong {
+      .point-dot {
+        width: 9px;
+        height: 9px;
+        border-radius: 999px;
+        background: var(--green);
+        box-shadow: 0 0 22px rgba(136, 216, 176, 0.75);
+      }
+
+      .hero-stage {
+        position: relative;
+        z-index: 1;
+      }
+
+      .stage-shell {
+        position: relative;
+        width: min(820px, 100%);
+        margin-left: auto;
+        border: 1px solid rgba(255, 255, 255, 0.16);
+        border-radius: 26px;
+        padding: 11px;
+        background:
+          linear-gradient(145deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.04)),
+          rgba(7, 11, 17, 0.68);
+        box-shadow: var(--shadow);
+        animation: stage-float 7s ease-in-out infinite;
+      }
+
+      .stage-shell::before {
+        position: absolute;
+        inset: -1px;
+        border-radius: inherit;
+        padding: 1px;
+        pointer-events: none;
+        content: "";
+        background: linear-gradient(120deg, rgba(143, 199, 255, 0.68), transparent 32%, rgba(136, 216, 176, 0.38), transparent 72%, rgba(244, 211, 94, 0.5));
+        mask:
+          linear-gradient(#000 0 0) content-box,
+          linear-gradient(#000 0 0);
+        mask-composite: exclude;
+      }
+
+      .stage-screen {
+        position: relative;
+        overflow: hidden;
+        border-radius: 18px;
+        background: #0a0f15;
+      }
+
+      .stage-screen img {
+        width: 100%;
+        height: auto;
+      }
+
+      .stage-note {
+        position: absolute;
+        right: 3%;
+        bottom: -28px;
+        width: min(330px, 54%);
+        border: 1px solid rgba(255, 255, 255, 0.16);
+        border-radius: 18px;
+        padding: 16px 18px;
+        background: rgba(7, 12, 18, 0.74);
+        backdrop-filter: blur(22px) saturate(140%);
+        box-shadow: 0 24px 80px rgba(0, 0, 0, 0.34);
+      }
+
+      .stage-note strong {
         display: block;
-        color: #fff;
-        font-size: 1.28rem;
-        font-weight: 900;
+        font-size: 0.95rem;
       }
 
-      .hero-stats span {
+      .stage-note span {
         display: block;
-        margin-top: 4px;
-        color: rgba(255, 255, 255, 0.72);
-        font-size: 0.9rem;
+        margin-top: 5px;
+        color: var(--text-muted);
+        font-size: 0.82rem;
+        line-height: 1.55;
       }
 
       .section {
-        padding: 84px 24px;
+        position: relative;
+        padding: 122px 0;
       }
 
-      .section.white {
-        background: var(--surface);
+      .section.compact {
+        padding-top: 88px;
       }
 
-      .section.tint {
-        background: #eef3f7;
-      }
-
-      .container {
-        width: min(1180px, 100%);
-        margin: 0 auto;
+      .section.alt {
+        background:
+          linear-gradient(180deg, rgba(255, 255, 255, 0.025), transparent 38%),
+          rgba(255, 255, 255, 0.018);
+        border-top: 1px solid var(--line-soft);
+        border-bottom: 1px solid var(--line-soft);
       }
 
       .section-head {
         display: grid;
-        grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
-        gap: 36px;
+        grid-template-columns: minmax(0, 0.95fr) minmax(300px, 0.72fr);
+        gap: 58px;
         align-items: end;
-        margin-bottom: 36px;
+        margin-bottom: 48px;
       }
 
-      .section-kicker {
-        color: var(--green);
-        font-size: 0.86rem;
-        font-weight: 900;
-        text-transform: uppercase;
-      }
-
-      h2 {
-        margin-top: 10px;
-        font-size: 2.25rem;
-        line-height: 1.15;
-        font-weight: 900;
+      .section-head h2 {
+        max-width: 760px;
+        font-size: 3.1rem;
+        line-height: 1.08;
+        font-weight: 880;
+        letter-spacing: 0;
       }
 
       .section-head p {
-        color: var(--muted);
-        font-size: 1.02rem;
+        color: var(--text-muted);
+        font-size: 1.03rem;
       }
 
-      .feature-grid {
+      .intro-strip {
+        margin-top: -44px;
+        position: relative;
+        z-index: 4;
+      }
+
+      .strip-grid {
         display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-        gap: 14px;
-      }
-
-      .feature-card {
-        min-height: 222px;
-        padding: 22px;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        overflow: hidden;
         border: 1px solid var(--line);
-        border-radius: 8px;
-        background: var(--surface);
-        box-shadow: 0 12px 36px rgba(15, 23, 42, 0.05);
+        border-radius: 20px;
+        background: rgba(8, 12, 18, 0.72);
+        box-shadow: 0 24px 80px rgba(0, 0, 0, 0.32);
+        backdrop-filter: blur(22px) saturate(130%);
       }
 
-      .feature-card .mark {
-        width: 42px;
-        height: 42px;
+      .strip-item {
+        min-height: 138px;
+        padding: 22px;
+        border-right: 1px solid var(--line-soft);
+      }
+
+      .strip-item:last-child {
+        border-right: 0;
+      }
+
+      .strip-item strong {
+        display: block;
+        font-size: 1.03rem;
+      }
+
+      .strip-item span {
+        display: block;
+        margin-top: 10px;
+        color: var(--text-muted);
+        font-size: 0.92rem;
+      }
+
+      .problem-solution {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        gap: 20px;
+        align-items: stretch;
+      }
+
+      .narrative-panel {
+        position: relative;
+        min-height: 380px;
+        overflow: hidden;
+        border: 1px solid var(--line);
+        border-radius: 24px;
+        padding: 34px;
+        background: rgba(255, 255, 255, 0.04);
+      }
+
+      .narrative-panel::before {
+        position: absolute;
+        right: -12%;
+        bottom: 18%;
+        left: -12%;
+        height: 1px;
+        content: "";
+        background: linear-gradient(90deg, transparent, currentColor, transparent);
+        opacity: 0.42;
+      }
+
+      .narrative-panel.problem {
+        color: rgba(255, 150, 150, 0.85);
+      }
+
+      .narrative-panel.solution {
+        color: rgba(136, 216, 176, 0.9);
+      }
+
+      .narrative-panel h3 {
+        position: relative;
+        z-index: 1;
+        color: var(--text);
+        font-size: 2.15rem;
+        line-height: 1.14;
+        font-weight: 840;
+      }
+
+      .narrative-panel ul {
+        position: relative;
+        z-index: 1;
+        display: grid;
+        gap: 15px;
+        margin: 32px 0 0;
+        padding: 0;
+        list-style: none;
+      }
+
+      .narrative-panel li {
+        display: flex;
+        gap: 12px;
+        color: var(--text-muted);
+      }
+
+      .narrative-panel li::before {
+        flex: 0 0 auto;
+        width: 22px;
+        height: 22px;
+        border-radius: 999px;
         display: grid;
         place-items: center;
-        margin-bottom: 18px;
-        border-radius: 8px;
-        color: #fff;
-        font-weight: 900;
+        border: 1px solid currentColor;
+        color: currentColor;
+        content: "×";
+        font-size: 0.82rem;
+        line-height: 1;
       }
 
-      .mark.green {
-        background: var(--green);
+      .narrative-panel.solution li::before {
+        content: "✓";
       }
 
-      .mark.blue {
-        background: var(--blue);
-      }
-
-      .mark.amber {
-        background: var(--amber);
-      }
-
-      .mark.red {
-        background: var(--red);
-      }
-
-      .mark.cyan {
-        background: var(--cyan);
-      }
-
-      .mark.dark {
-        background: #111827;
-      }
-
-      .feature-card h3 {
-        font-size: 1.12rem;
-        font-weight: 900;
-      }
-
-      .feature-card p {
-        margin-top: 10px;
-        color: var(--muted);
-      }
-
-      .showcase {
+      .workbench {
         display: grid;
-        grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
-        gap: 34px;
+        grid-template-columns: minmax(0, 1.32fr) minmax(280px, 0.68fr);
+        gap: 26px;
         align-items: center;
       }
 
-      .preview-image {
-        width: 100%;
-        aspect-ratio: 930 / 340;
-        object-fit: cover;
-        border: 1px solid rgba(255, 255, 255, 0.7);
-        border-radius: 8px;
+      .shot-frame {
+        position: relative;
+        overflow: hidden;
+        border: 1px solid rgba(255, 255, 255, 0.16);
+        border-radius: 26px;
+        padding: 10px;
+        background: linear-gradient(145deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.04));
         box-shadow: var(--shadow);
       }
 
-      .showcase-list {
+      .shot-frame img {
+        width: 100%;
+        border-radius: 18px;
+      }
+
+      .shot-caption {
+        padding: 14px 4px 2px;
+        color: var(--text-soft);
+        font-size: 0.82rem;
+      }
+
+      .proof-list {
         display: grid;
+        gap: 12px;
+      }
+
+      .proof-item {
+        display: grid;
+        grid-template-columns: 46px 1fr;
         gap: 14px;
-      }
-
-      .showcase-item {
-        display: grid;
-        grid-template-columns: 52px minmax(0, 1fr);
-        gap: 16px;
         align-items: start;
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        padding: 18px;
+        background: rgba(255, 255, 255, 0.045);
       }
 
-      .showcase-item img {
-        width: 52px;
-        height: 52px;
-        border-radius: 8px;
-        background: #fff;
-        box-shadow: 0 10px 30px rgba(15, 23, 42, 0.12);
+      .proof-index {
+        color: var(--blue);
+        font-size: 0.82rem;
+        font-weight: 840;
       }
 
-      .showcase-item h3 {
-        font-size: 1.06rem;
-        font-weight: 900;
+      .proof-item h3 {
+        font-size: 1rem;
       }
 
-      .showcase-item p {
-        margin-top: 4px;
-        color: var(--muted);
+      .proof-item p {
+        margin-top: 5px;
+        color: var(--text-muted);
+        font-size: 0.9rem;
       }
 
-      .audience-grid {
+      .widget-showcase {
+        display: grid;
+        gap: 22px;
+      }
+
+      .widget-gallery {
+        display: grid;
+        grid-template-columns: 1.1fr 0.9fr 0.55fr 0.55fr;
+        gap: 16px;
+        align-items: stretch;
+      }
+
+      .widget-shot {
+        overflow: hidden;
+        border: 1px solid var(--line);
+        border-radius: 20px;
+        background: rgba(255, 255, 255, 0.045);
+      }
+
+      .widget-shot img {
+        width: 100%;
+        height: auto;
+      }
+
+      .widget-shot figcaption {
+        min-height: 58px;
+        padding: 14px 16px;
+        color: var(--text-muted);
+        font-size: 0.88rem;
+      }
+
+      .catalog-grid {
         display: grid;
         grid-template-columns: repeat(3, minmax(0, 1fr));
         gap: 14px;
       }
 
-      .audience {
-        padding: 26px;
-        min-height: 220px;
-        border-radius: 8px;
-        color: #fff;
+      .catalog-card,
+      .ops-panel,
+      .extend-card,
+      .command-panel {
+        border: 1px solid var(--line);
+        border-radius: 20px;
+        background: rgba(255, 255, 255, 0.045);
+      }
+
+      .catalog-card {
+        min-height: 150px;
+        padding: 22px;
+      }
+
+      .catalog-card strong,
+      .extend-card strong {
+        display: block;
+        font-size: 1rem;
+      }
+
+      .catalog-card span,
+      .extend-card span {
+        display: block;
+        margin-top: 10px;
+        color: var(--text-muted);
+        font-size: 0.92rem;
+      }
+
+      .ops-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 0.78fr) minmax(0, 1.22fr);
+        gap: 22px;
+      }
+
+      .ops-panel {
+        padding: 28px;
+      }
+
+      .ops-panel h3 {
+        font-size: 1.55rem;
+      }
+
+      .ops-panel p {
+        margin-top: 14px;
+        color: var(--text-muted);
+      }
+
+      .metric-rows {
+        display: grid;
+        gap: 17px;
+        margin-top: 32px;
+      }
+
+      .metric-row {
+        display: grid;
+        grid-template-columns: 70px 1fr 54px;
+        gap: 14px;
+        align-items: center;
+        color: var(--text-muted);
+        font-size: 0.9rem;
+      }
+
+      .meter {
+        height: 8px;
         overflow: hidden;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.09);
       }
 
-      .audience.nas {
-        background: #14532d;
+      .meter span {
+        display: block;
+        height: 100%;
+        border-radius: inherit;
+        background: var(--green);
+        animation: meter-pulse 3s ease-in-out infinite alternate;
       }
 
-      .audience.dev {
-        background: #1f2937;
+      .meter.sky span {
+        background: var(--blue);
       }
 
-      .audience.home {
-        background: #7c2d12;
+      .meter.amber span {
+        background: var(--yellow);
       }
 
-      .audience h3 {
-        font-size: 1.2rem;
-        font-weight: 900;
+      .pipeline {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 12px;
       }
 
-      .audience p {
+      .pipe-step {
+        position: relative;
+        min-height: 260px;
+        overflow: hidden;
+        border: 1px solid var(--line);
+        border-radius: 20px;
+        padding: 22px;
+        background: rgba(255, 255, 255, 0.045);
+      }
+
+      .pipe-step::after {
+        position: absolute;
+        right: 22px;
+        bottom: 22px;
+        left: 22px;
+        height: 2px;
+        border-radius: 999px;
+        content: "";
+        background: linear-gradient(90deg, var(--blue), var(--green), var(--yellow));
+        transform: scaleX(0.2);
+        transform-origin: left;
+        animation: rail-grow 4s ease-in-out infinite alternate;
+      }
+
+      .pipe-step strong {
+        color: var(--text-soft);
+        font-size: 0.8rem;
+        text-transform: uppercase;
+      }
+
+      .pipe-step h3 {
+        margin-top: 18px;
+        font-size: 1.25rem;
+      }
+
+      .pipe-step p {
         margin-top: 12px;
-        color: rgba(255, 255, 255, 0.82);
+        color: var(--text-muted);
+        font-size: 0.9rem;
+      }
+
+      .extend-layout {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(300px, 0.72fr);
+        gap: 22px;
+        align-items: start;
+      }
+
+      .code-panel {
+        overflow: hidden;
+        border: 1px solid rgba(143, 199, 255, 0.23);
+        border-radius: 20px;
+        background: #070b11;
+        box-shadow: 0 30px 90px rgba(0, 0, 0, 0.34);
+      }
+
+      .code-head,
+      .command-head {
+        min-height: 58px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        border-bottom: 1px solid var(--line-soft);
+        padding: 0 18px;
+        color: var(--text-muted);
+        font-size: 0.88rem;
+      }
+
+      pre {
+        margin: 0;
+        overflow-x: auto;
+        padding: 22px;
+        color: #d7e5f4;
+        font-family:
+          "SFMono-Regular",
+          Consolas,
+          "Liberation Mono",
+          monospace;
+        font-size: 0.84rem;
+        line-height: 1.75;
+      }
+
+      .extend-list {
+        display: grid;
+        gap: 12px;
+      }
+
+      .extend-card {
+        padding: 20px;
       }
 
       .deploy-grid {
         display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 14px;
+        gap: 18px;
       }
 
       .command-panel {
-        border: 1px solid var(--line);
-        border-radius: 8px;
-        background: var(--surface);
         overflow: hidden;
-      }
-
-      .command-head {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 12px;
-        padding: 18px 18px 0;
+        background: rgba(5, 7, 10, 0.8);
       }
 
       .command-head h3 {
         font-size: 1rem;
-        font-weight: 900;
       }
 
       .copy-button {
-        min-height: 34px;
-        padding: 0 12px;
         border: 1px solid var(--line);
-        border-radius: 6px;
-        background: #fff;
-        color: var(--ink);
+        border-radius: 999px;
+        padding: 7px 12px;
+        color: var(--text);
+        background: rgba(255, 255, 255, 0.05);
         cursor: pointer;
-        font-weight: 800;
       }
 
-      .copy-button:hover,
-      .copy-button:focus-visible {
-        border-color: var(--blue);
-        outline: none;
-      }
-
-      pre {
-        margin: 0;
-        padding: 18px;
-        overflow: auto;
-        color: #e5edf8;
-        background: #101827;
-        font-size: 0.88rem;
-        line-height: 1.6;
+      .copy-button:hover {
+        background: var(--surface-strong);
       }
 
       .final-cta {
         display: grid;
         grid-template-columns: minmax(0, 1fr) auto;
-        gap: 24px;
+        gap: 32px;
         align-items: center;
-        padding: 32px;
-        border-radius: 8px;
-        background: #111827;
-        color: #fff;
+        border: 1px solid var(--line);
+        border-radius: 26px;
+        padding: 42px;
+        background:
+          linear-gradient(120deg, rgba(143, 199, 255, 0.12), transparent 36%),
+          linear-gradient(280deg, rgba(136, 216, 176, 0.1), transparent 40%),
+          rgba(255, 255, 255, 0.045);
       }
 
       .final-cta h2 {
-        margin: 0;
-        font-size: 2rem;
+        max-width: 760px;
+        font-size: 2.45rem;
+        line-height: 1.12;
       }
 
       .final-cta p {
-        margin-top: 10px;
-        color: rgba(255, 255, 255, 0.72);
+        max-width: 780px;
+        margin-top: 14px;
+        color: var(--text-muted);
       }
 
       footer {
-        padding: 34px 24px;
-        color: var(--muted);
-        background: #fff;
+        border-top: 1px solid var(--line-soft);
+        color: var(--text-soft);
       }
 
       .footer-inner {
-        width: min(1180px, 100%);
-        margin: 0 auto;
+        min-height: 86px;
         display: flex;
-        flex-wrap: wrap;
         align-items: center;
         justify-content: space-between;
-        gap: 14px;
-        font-size: 0.92rem;
+        gap: 20px;
+        font-size: 0.9rem;
       }
 
       .footer-links {
         display: flex;
-        flex-wrap: wrap;
-        gap: 12px;
+        gap: 14px;
       }
 
-      .footer-links a {
-        color: #374151;
-        font-weight: 800;
+      .reveal {
+        opacity: 1;
+        transform: translateY(18px);
+        transition:
+          opacity 720ms ease,
+          filter 720ms ease,
+          transform 720ms ease;
       }
 
-      @media (max-width: 900px) {
+      .reveal:not(.in-view) {
+        filter: saturate(0.96);
+      }
+
+      .reveal.in-view {
+        filter: saturate(1);
+        transform: translateY(0);
+      }
+
+      @keyframes light-drift {
+        from {
+          transform: translateX(-3%) skewX(-8deg);
+        }
+        to {
+          transform: translateX(3%) skewX(8deg);
+        }
+      }
+
+      @keyframes beam-slide {
+        from {
+          transform: translateX(-5%) rotate(-8deg);
+          opacity: 0.55;
+        }
+        to {
+          transform: translateX(5%) rotate(-8deg);
+          opacity: 0.86;
+        }
+      }
+
+      @keyframes stage-float {
+        0%,
+        100% {
+          transform: translate3d(0, 0, 0);
+        }
+        50% {
+          transform: translate3d(0, -8px, 0);
+        }
+      }
+
+      @keyframes button-sheen {
+        0%,
+        45% {
+          transform: translateX(-120%);
+        }
+        75%,
+        100% {
+          transform: translateX(120%);
+        }
+      }
+
+      @keyframes meter-pulse {
+        from {
+          filter: brightness(0.88);
+        }
+        to {
+          filter: brightness(1.25);
+        }
+      }
+
+      @keyframes rail-grow {
+        from {
+          transform: scaleX(0.22);
+          opacity: 0.46;
+        }
+        to {
+          transform: scaleX(1);
+          opacity: 0.92;
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+          scroll-behavior: auto !important;
+          animation-duration: 1ms !important;
+          animation-iteration-count: 1 !important;
+          transition-duration: 1ms !important;
+        }
+      }
+
+      @media (max-width: 1080px) {
+        .hero-layout,
+        .section-head,
+        .workbench,
+        .ops-grid,
+        .extend-layout,
+        .deploy-grid,
+        .final-cta {
+          grid-template-columns: 1fr;
+        }
+
+        h1 {
+          font-size: 4.4rem;
+        }
+
+        .hero-stage {
+          margin-top: 18px;
+        }
+
+        .stage-shell {
+          width: 100%;
+          transform: none;
+          animation: none;
+        }
+
+        .strip-grid,
+        .catalog-grid,
+        .pipeline {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .widget-gallery {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+
+      @media (max-width: 760px) {
+        :root {
+          --header-height: 64px;
+        }
+
+        .container {
+          width: min(100% - 28px, 1180px);
+        }
+
+        .nav-shell {
+          gap: 12px;
+        }
+
         .nav-links {
           display: none;
         }
 
         .hero {
-          min-height: 84svh;
-          background-position: center top;
+          min-height: auto;
+          padding: calc(var(--header-height) + 38px) 0 48px;
+        }
+
+        .hero-layout {
+          gap: 32px;
         }
 
         h1 {
-          font-size: 2.55rem;
+          font-size: 3.2rem;
         }
 
         .hero-copy {
           font-size: 1rem;
         }
 
-        .hero-stats,
-        .feature-grid,
-        .audience-grid,
-        .deploy-grid,
-        .showcase,
-        .section-head,
-        .final-cta {
-          grid-template-columns: 1fr;
-        }
-
-        .hero-stats li {
-          min-height: auto;
-        }
-
-        .section {
-          padding: 62px 20px;
-        }
-
-        h2 {
-          font-size: 1.85rem;
-        }
-
-        .final-cta {
-          padding: 24px;
-        }
-      }
-
-      @media (max-width: 520px) {
-        .site-header {
-          padding-top: 16px;
-        }
-
-        .hero-content {
-          width: min(100% - 36px, 1180px);
-          padding: 88px 0 56px;
-        }
-
-        h1 {
-          font-size: 2.25rem;
+        .hero-actions {
+          flex-direction: column;
+          align-items: stretch;
         }
 
         .button {
           width: 100%;
         }
 
-        .hero-stats {
-          display: none;
+        .stage-note {
+          position: static;
+          width: auto;
+          margin-top: 12px;
         }
 
-        .feature-card,
-        .audience {
+        .intro-strip {
+          margin-top: 0;
+        }
+
+        .section {
+          padding: 82px 0;
+        }
+
+        .section-head {
+          gap: 18px;
+          margin-bottom: 30px;
+        }
+
+        .section-head h2,
+        .final-cta h2 {
+          font-size: 2.18rem;
+        }
+
+        .problem-solution,
+        .strip-grid,
+        .catalog-grid,
+        .pipeline,
+        .widget-gallery {
+          grid-template-columns: 1fr;
+        }
+
+        .strip-item {
+          border-right: 0;
+          border-bottom: 1px solid var(--line-soft);
+        }
+
+        .strip-item:last-child {
+          border-bottom: 0;
+        }
+
+        .narrative-panel {
           min-height: auto;
+          padding: 24px;
         }
 
-        .command-head {
+        .widget-shot img,
+        .widget-shot.compact img {
+          height: auto;
+        }
+
+        .metric-row {
+          grid-template-columns: 64px 1fr 44px;
+          gap: 10px;
+        }
+
+        .final-cta {
+          padding: 26px;
+        }
+
+        .footer-inner {
           align-items: flex-start;
           flex-direction: column;
+          justify-content: center;
+          padding: 22px 0;
         }
       }
     </style>
   </head>
   <body>
-    <header class="site-header" aria-label="StartDeck 发布页导航">
-      <div class="nav-shell">
-        <a class="brand" href="#top" aria-label="StartDeck 首页">
-          <img src="./ICON.PNG" alt="" />
+    <header class="site-header" aria-label="StartDeck 产品介绍导航">
+      <div class="container nav-shell">
+        <a class="brand" href="#top" aria-label="StartDeck">
+          <span class="brand-mark" aria-hidden="true">
+            <span></span>
+            <span></span>
+            <span></span>
+          </span>
           <span>StartDeck</span>
         </a>
         <nav class="nav-links" aria-label="页面导航">
-          <a href="#features">功能</a>
-          <a href="#scenes">场景</a>
+          <a href="#capabilities">功能</a>
+          <a href="#workbench">工作台</a>
+          <a href="#widgets">组件</a>
+          <a href="#ops">架构</a>
           <a href="#deploy">部署</a>
           <a
-            href="https://github.com/Garry-QD/StartDeck"
+            href="https://github.com/appdev/StartDeck"
             target="_blank"
             rel="noreferrer"
             >GitHub</a
@@ -679,224 +1207,416 @@
     </header>
 
     <main id="top">
-      <section class="hero" aria-label="StartDeck 发布介绍">
-        <div class="hero-content">
-          <div class="eyebrow">StartDeck 即将发布</div>
-          <h1>把你的 NAS 和日常服务整理成第一屏。</h1>
-          <p class="hero-copy">
-            StartDeck 是一个轻量级、可自定义的个人导航页与仪表盘系统。
-            它把内网服务、常用网站、Docker 管理、天气、RSS
-            和个人组件放在同一个高效入口。
-          </p>
-          <div class="hero-actions" aria-label="主要操作">
-            <a class="button primary" href="#deploy">查看部署方式</a>
-            <a class="button secondary" href="#features">浏览发布亮点</a>
-          </div>
-          <ul class="hero-stats" aria-label="核心亮点">
-            <li>
-              <strong>轻量运行</strong>
-              <span>面向 NAS 与家庭服务器，资源占用低</span>
-            </li>
-            <li>
-              <strong>60,000+ 图标</strong>
-              <span>内置图标库与站点元数据服务</span>
-            </li>
-            <li>
-              <strong>一屏管理</strong>
-              <span>书签、组件、Docker 状态集中展示</span>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <section class="section white" id="features">
-        <div class="container">
-          <div class="section-head">
-            <div>
-              <div class="section-kicker">Release Highlights</div>
-              <h2>为自托管用户准备的完整起始页。</h2>
-            </div>
-            <p>
-              这不是一个只放链接的书签页。StartDeck
-              提供可拖拽布局、实用组件、本地数据存储和 Go
-              后端能力，让浏览器首页真正连接你的服务、文件和设备。
+      <section class="hero" aria-label="StartDeck 自托管浏览器工作台">
+        <div class="container hero-layout">
+          <div class="hero-copy-block reveal">
+            <h1><span class="gradient-text">StartDeck</span> 自托管浏览器工作台</h1>
+            <p class="hero-copy">
+              把 NAS、内网服务、Docker 状态、AI 使用量和每天会用到的链接，整理成浏览器打开后的第一屏。真实运行、自己部署、数据留在本地。
             </p>
-          </div>
-
-          <div class="feature-grid">
-            <article class="feature-card">
-              <div class="mark green">01</div>
-              <h3>自由布局与分组</h3>
-              <p>
-                用网格拖拽组织卡片、组件和书签。常用服务、收藏夹、Docker、PT、影音等场景可以独立分组。
-              </p>
-            </article>
-            <article class="feature-card">
-              <div class="mark blue">02</div>
-              <h3>内外网智能切换</h3>
-              <p>
-                结合访问来源、域名和延迟判断网络环境，优先跳转到更适合当前设备的内网或公网地址。
-              </p>
-            </article>
-            <article class="feature-card">
-              <div class="mark amber">03</div>
-              <h3>组件化工作台</h3>
-              <p>
-                内置天气、RSS、热榜、系统状态和自定义组件，把日常信息整理到稳定入口。
-              </p>
-            </article>
-            <article class="feature-card">
-              <div class="mark red">04</div>
-              <h3>Docker 管理组件</h3>
-              <p>
-                查看容器状态，执行启动、停止、重启和镜像升级。常见服务维护可以直接在仪表盘完成。
-              </p>
-            </article>
-            <article class="feature-card">
-              <div class="mark cyan">05</div>
-              <h3>丰富组件生态</h3>
-              <p>
-                天气、日历、待办、RSS、热搜、计算器、音乐播放器、系统监控和自定义
-                HTML 组件开箱可用。
-              </p>
-            </article>
-            <article class="feature-card">
-              <div class="mark dark">06</div>
-              <h3>数据自己掌握</h3>
-              <p>
-                配置与运行数据保存在本地目录，支持备份、迁移和版本保存；Docker
-                部署也可以挂载持久目录。
-              </p>
-            </article>
-          </div>
-        </div>
-      </section>
-
-      <section class="section tint" id="scenes">
-        <div class="container showcase">
-          <img
-            class="preview-image"
-            src="./intro-assets/hero-widgets.png"
-            alt="StartDeck 组件预览：待办、热搜与计算器等组件"
-          />
-          <div class="showcase-list">
-            <div class="showcase-item">
-              <img src="./icons/CasaOS_B+CasaOS.png" alt="" />
-              <div>
-                <h3>家庭服务器入口</h3>
-                <p>
-                  把 CasaOS、群晖、飞牛、OpenWRT、qBittorrent、Emby
-                  等服务放进统一桌面。
-                </p>
-              </div>
+            <div class="hero-actions" aria-label="主要操作">
+              <a
+                class="button primary"
+                href="https://github.com/appdev/StartDeck"
+                target="_blank"
+                rel="noreferrer"
+              >
+                获取 StartDeck
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M5 12h14" />
+                  <path d="m13 6 6 6-6 6" />
+                </svg>
+              </a>
+              <a class="button secondary" href="#deploy">
+                查看部署方式
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M12 3v12" />
+                  <path d="m7 10 5 5 5-5" />
+                  <path d="M5 21h14" />
+                </svg>
+              </a>
             </div>
-            <div class="showcase-item">
-              <img src="./icons/NginxProxyManager_A+NPM反向代理.png" alt="" />
-              <div>
-                <h3>复杂网络可读可管</h3>
-                <p>
-                  适配
-                  DDNS、反代、内网穿透、子路径部署等环境，减少“能不能打开”的手动判断。
-                </p>
+            <div class="hero-points" aria-label="StartDeck 关键能力">
+              <div class="hero-point">
+                <span class="point-dot" aria-hidden="true"></span>
+                <span>真实首页截图展示，不用虚构产品界面。</span>
               </div>
-            </div>
-            <div class="showcase-item">
-              <img src="./icons/ChatGPT_A+ChatGPT.png" alt="" />
-              <div>
-                <h3>工作流一屏聚合</h3>
-                <p>
-                  把 AI
-                  工具、文档、监控、文件临时传输和待办事项放在同一个可定制工作面板。
-                </p>
+              <div class="hero-point">
+                <span class="point-dot" aria-hidden="true"></span>
+                <span>前端、Rust 主服务、独立 Icon Server 和 SQLite 组成完整自托管链路。</span>
+              </div>
+              <div class="hero-point">
+                <span class="point-dot" aria-hidden="true"></span>
+                <span>Docker 或 Debian/Ubuntu 脚本部署，默认 Web 入口为 9001。</span>
               </div>
             </div>
           </div>
-        </div>
-      </section>
 
-      <section class="section white">
-        <div class="container">
-          <div class="section-head">
-            <div>
-              <div class="section-kicker">Who It Fits</div>
-              <h2>适合把服务长期跑在自己机器上的人。</h2>
+          <div class="hero-stage reveal" aria-label="StartDeck 当前首页实际渲染图">
+            <figure class="stage-shell">
+              <div class="stage-screen">
+                <img
+                  src="./intro-assets/startdeck-home-real.jpg"
+                  alt="StartDeck 当前 PC 端首页真实渲染图"
+                  width="2880"
+                  height="1800"
+                  loading="eager"
+                  decoding="async"
+                />
+              </div>
+            </figure>
+            <div class="stage-note">
+              <strong>当前版本真实渲染</strong>
+              <span>搜索、站点入口、桌面组件、网络状态和登录入口都来自项目当前页面截图。</span>
             </div>
-            <p>
-              StartDeck
-              的重点是实际使用效率：打开浏览器就能看到服务状态、入口、任务和需要处理的内容。
-            </p>
-          </div>
-          <div class="audience-grid">
-            <article class="audience nas">
-              <h3>NAS 用户</h3>
-              <p>统一整理内网应用、影音服务、下载器、面板和路由器入口。</p>
-            </article>
-            <article class="audience dev">
-              <h3>开发者与极客</h3>
-              <p>
-                把本地服务、测试环境、监控、脚本组件和常用工具收束到一个稳定首页。
-              </p>
-            </article>
-            <article class="audience home">
-              <h3>家庭服务器玩家</h3>
-              <p>
-                用 Docker
-                管理、网络识别和自定义组件，让家庭服务不再散落在多个标签页里。
-              </p>
-            </article>
           </div>
         </div>
       </section>
 
-      <section class="section tint" id="deploy">
+      <div class="container intro-strip reveal" aria-label="StartDeck 核心事实">
+        <div class="strip-grid">
+          <div class="strip-item">
+            <strong>整理入口</strong>
+            <span>站点、分组、搜索引擎和组件共享同一套首页布局。</span>
+          </div>
+          <div class="strip-item">
+            <strong>识别网络</strong>
+            <span>同一服务可维护公网和内网地址，访问时自动选择入口。</span>
+          </div>
+          <div class="strip-item">
+            <strong>看见状态</strong>
+            <span>天气、日历、待办、AI 额度、系统状态都回到第一屏。</span>
+          </div>
+          <div class="strip-item">
+            <strong>保留控制权</strong>
+            <span>SQLite、上传资源和图标缓存都留在自己的服务器上。</span>
+          </div>
+        </div>
+      </div>
+
+      <section class="section compact" id="capabilities">
         <div class="container">
-          <div class="section-head">
-            <div>
-              <div class="section-kicker">Deploy</div>
-              <h2>Docker 或 Debian 脚本，按你的环境上线。</h2>
-            </div>
+          <div class="section-head reveal">
+            <h2>它不是更漂亮的书签页，而是自托管入口层。</h2>
             <p>
-              发布包提供 Docker 镜像与 Debian/Ubuntu
-              部署脚本。数据目录、音乐目录、文件目录和图标服务数据都可以持久化。
+              家庭服务器和 NAS 的日常问题通常不是没有服务，而是入口、地址、状态和工具被拆散在很多地方。StartDeck 把它们收进一个可维护的页面。
             </p>
           </div>
+          <div class="problem-solution">
+            <article class="narrative-panel problem reveal">
+              <h3>分散之后，每次打开都要重新找。</h3>
+              <ul>
+                <li>服务入口散落在浏览器收藏夹、备忘录和群晖面板里。</li>
+                <li>公网地址、内网地址、反代地址需要人工判断。</li>
+                <li>Docker、系统资源、AI 额度和研发状态不在同一屏。</li>
+                <li>站点图标、标题和描述需要重复手动补齐。</li>
+              </ul>
+            </article>
+            <article class="narrative-panel solution reveal">
+              <h3>集中之后，第一屏就能开始操作。</h3>
+              <ul>
+                <li>站点、分组、搜索和组件用同一套网格组织。</li>
+                <li>公网/内网地址、客户端 IP 和延迟探测一起参与入口选择。</li>
+                <li>天气、日历、待办、AI 使用量、TAPD 和系统状态进入首页。</li>
+                <li>独立 Icon Server 负责默认图标、站点元数据和本地缓存。</li>
+              </ul>
+            </article>
+          </div>
+        </div>
+      </section>
 
+      <section class="section alt" id="workbench">
+        <div class="container">
+          <div class="section-head reveal">
+            <h2>第一屏负责操作，不只负责展示。</h2>
+            <p>
+              搜索、打开服务、查看状态、切换网络入口和进入组件工作流都发生在首页。下面仍然使用当前项目真实截图。
+            </p>
+          </div>
+          <div class="workbench">
+            <figure class="shot-frame reveal">
+              <img
+                src="./intro-assets/startdeck-home-real.jpg"
+                alt="StartDeck 当前 PC 端首页真实渲染图"
+                width="2880"
+                height="1800"
+                loading="eager"
+                decoding="async"
+              />
+              <figcaption class="shot-caption">
+                当前版本 PC 端真实渲染图，包含搜索、站点入口、状态组件和桌面组件布局。
+              </figcaption>
+            </figure>
+            <div class="proof-list">
+              <article class="proof-item reveal">
+                <span class="proof-index">01</span>
+                <div>
+                  <h3>打开服务</h3>
+                  <p>搜索引擎、站点卡片和分组入口并列出现，减少来回跳转。</p>
+                </div>
+              </article>
+              <article class="proof-item reveal">
+                <span class="proof-index">02</span>
+                <div>
+                  <h3>查看状态</h3>
+                  <p>天气、日历、待办、AI 额度和研发状态作为信息层常驻首页。</p>
+                </div>
+              </article>
+              <article class="proof-item reveal">
+                <span class="proof-index">03</span>
+                <div>
+                  <h3>切换网络</h3>
+                  <p>同一个服务维护公网和内网访问方式，适配家庭、公司和公网访问。</p>
+                </div>
+              </article>
+              <article class="proof-item reveal">
+                <span class="proof-index">04</span>
+                <div>
+                  <h3>补齐资产</h3>
+                  <p>站点标题、描述、图标、上传图标和背景色由图标服务统一补齐。</p>
+                </div>
+              </article>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="widgets">
+        <div class="container">
+          <div class="section-head reveal">
+            <h2>组件负责承载信息，而不是填满页面。</h2>
+            <p>
+              组件以真实尺寸进入首页：小组件负责关键状态，打开态负责详细操作。这里展示当前版本的真实渲染片段。
+            </p>
+          </div>
+          <div class="widget-showcase">
+            <div class="widget-gallery" aria-label="当前组件实际渲染图">
+              <figure class="widget-shot wide reveal">
+                <img
+                  src="./intro-assets/widget-weather-real.jpg"
+                  alt="天气组件实际渲染图"
+                  width="990"
+                  height="453"
+                  loading="eager"
+                  decoding="async"
+                />
+                <figcaption>天气：实时天气、预报和打开态详情</figcaption>
+              </figure>
+              <figure class="widget-shot wide reveal">
+                <img
+                  src="./intro-assets/widget-todo-real.jpg"
+                  alt="待办组件实际渲染图"
+                  width="990"
+                  height="993"
+                  loading="eager"
+                  decoding="async"
+                />
+                <figcaption>待办：轻量任务列表与首页状态</figcaption>
+              </figure>
+              <figure class="widget-shot compact reveal">
+                <img
+                  src="./intro-assets/widget-ai-usage-real.jpg"
+                  alt="AI 使用量组件实际渲染图"
+                  width="450"
+                  height="453"
+                  loading="eager"
+                  decoding="async"
+                />
+                <figcaption>AI 使用量</figcaption>
+              </figure>
+              <figure class="widget-shot compact reveal">
+                <img
+                  src="./intro-assets/widget-tapd-real.jpg"
+                  alt="TAPD 缺陷组件实际渲染图"
+                  width="450"
+                  height="453"
+                  loading="eager"
+                  decoding="async"
+                />
+                <figcaption>TAPD 缺陷</figcaption>
+              </figure>
+            </div>
+            <div class="catalog-grid">
+              <article class="catalog-card reveal">
+                <strong>时间与内容</strong>
+                <span>时钟、天气、日历、纪念日、今日诗词、今日英语、电影日历和壁纸。</span>
+              </article>
+              <article class="catalog-card reveal">
+                <strong>任务与工具</strong>
+                <span>待办、备忘录、番茄时钟、金额换算、今天吃什么和本机 IP。</span>
+              </article>
+              <article class="catalog-card reveal">
+                <strong>研发工作流</strong>
+                <span>AI 使用量和 TAPD 缺陷组件适合把研发状态、额度和待处理事项放进首页。</span>
+              </article>
+              <article class="catalog-card reveal">
+                <strong>系统组件</strong>
+                <span>Docker、系统状态、访客统计、版本检测和镜像更新检查服务服务器场景。</span>
+              </article>
+              <article class="catalog-card reveal">
+                <strong>自定义组件</strong>
+                <span>HTML、CSS、JS、iframe、代理请求和脚本生命周期让用户继续扩展。</span>
+              </article>
+              <article class="catalog-card reveal">
+                <strong>多尺寸适配</strong>
+                <span>组件支持不同网格尺寸和打开态面板，首页展示与深度操作分开处理。</span>
+              </article>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section alt" id="ops">
+        <div class="container">
+          <div class="section-head reveal">
+            <h2>NAS 和家庭服务器需要的是入口，也是运行面板。</h2>
+            <p>
+              StartDeck 的服务器能力不是“另一个后台页面”，而是把常看的运行状态收进首页：容器、CPU、内存、磁盘、IP、图标缓存和代理链路。
+            </p>
+          </div>
+          <div class="ops-grid">
+            <article class="ops-panel reveal">
+              <h3>系统状态一眼可见</h3>
+              <p>
+                系统状态组件用于查看 CPU、内存、磁盘等基础资源；Docker 组件用于查看容器状态，并执行启动、停止、重启和镜像更新等动作。
+              </p>
+              <div class="metric-rows" aria-label="系统状态示意">
+                <div class="metric-row">
+                  <span>CPU</span>
+                  <span class="meter"><span style="width: 38%"></span></span>
+                  <span>38%</span>
+                </div>
+                <div class="metric-row">
+                  <span>Memory</span>
+                  <span class="meter sky"><span style="width: 61%"></span></span>
+                  <span>61%</span>
+                </div>
+                <div class="metric-row">
+                  <span>Disk</span>
+                  <span class="meter amber"><span style="width: 72%"></span></span>
+                  <span>72%</span>
+                </div>
+              </div>
+            </article>
+            <div class="pipeline" aria-label="StartDeck 运行链路">
+              <article class="pipe-step reveal">
+                <strong>Frontend</strong>
+                <h3>Vue 3 工作台</h3>
+                <p>负责首页、组件运行态、设置、搜索、拖拽和响应式展示。</p>
+              </article>
+              <article class="pipe-step reveal">
+                <strong>Backend</strong>
+                <h3>Rust 主服务</h3>
+                <p>提供认证、配置、Docker、代理、天气、IP 与站点元数据接口。</p>
+              </article>
+              <article class="pipe-step reveal">
+                <strong>Icon Service</strong>
+                <h3>图标元数据</h3>
+                <p>独立处理内置图标库、站点图标识别、缓存和标题描述补齐。</p>
+              </article>
+              <article class="pipe-step reveal">
+                <strong>Storage</strong>
+                <h3>SQLite + Data</h3>
+                <p>布局、书签、组件配置和运行资源保存在自己的服务器上。</p>
+              </article>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="extend">
+        <div class="container">
+          <div class="section-head reveal">
+            <h2>高级用户可以继续把自己的工具接进来。</h2>
+            <p>
+              StartDeck 保留自托管项目该有的扩展入口：全局自定义 CSS、全局自定义 JS、自定义组件、iframe、后端代理和上传资源管理。
+            </p>
+          </div>
+          <div class="extend-layout">
+            <div class="code-panel reveal" aria-label="自定义组件代码示例">
+              <div class="code-head">
+                <span>自定义组件示例</span>
+                <span>HTML / CSS / JS</span>
+              </div>
+              <pre><code>&lt;div class="service-panel"&gt;
+  &lt;h3&gt;家庭服务器&lt;/h3&gt;
+  &lt;p&gt;当前在线服务：12&lt;/p&gt;
+  &lt;button data-action="refresh"&gt;刷新状态&lt;/button&gt;
+&lt;/div&gt;
+
+.service-panel {
+  height: 100%;
+  display: grid;
+  align-content: center;
+  gap: 8px;
+}
+
+ctx.proxy("/api/custom/status").then(updatePanel);</code></pre>
+            </div>
+            <div class="extend-list">
+              <article class="extend-card reveal">
+                <strong>自定义 HTML/CSS/JS</strong>
+                <span>把内部工具、统计信息或脚本面板包装成首页组件。</span>
+              </article>
+              <article class="extend-card reveal">
+                <strong>iframe 与代理请求</strong>
+                <span>嵌入内部服务，或通过后端代理解决跨域和网络访问问题。</span>
+              </article>
+              <article class="extend-card reveal">
+                <strong>外观与资源管理</strong>
+                <span>壁纸、移动端壁纸、卡片背景、图标上传、图标底色和全局 CSS。</span>
+              </article>
+              <article class="extend-card reveal">
+                <strong>凭据边界清晰</strong>
+                <span>天气、AI、TAPD 等外部服务凭据按服务端配置和本地存储边界管理。</span>
+              </article>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section alt" id="deploy">
+        <div class="container">
+          <div class="section-head reveal">
+            <h2>用 Docker 或 Debian/Ubuntu 脚本部署到自己的服务器。</h2>
+            <p>
+              默认 Web 入口为 9001，图标服务为 9002。Docker 镜像内同时启动主服务与图标服务；Debian/Ubuntu 脚本适合非容器部署。
+            </p>
+          </div>
           <div class="deploy-grid">
-            <article class="command-panel">
+            <article class="command-panel reveal">
               <div class="command-head">
                 <h3>Docker CLI</h3>
-                <button
-                  class="copy-button"
-                  type="button"
-                  data-copy="docker-command"
-                >
+                <button class="copy-button" type="button" data-copy="docker-command">
                   复制
                 </button>
               </div>
               <pre id="docker-command"><code>docker run -d \
-  -p 23000:3000 \
-  -v $(pwd)/data:/app/Data/data \
-  -v $(pwd)/icon-service-data:/app/icon-service/data \
-  -e ICON_SERVICE_DATA_DIR=/app/icon-service/data \
-  -v /var/run/docker.sock:/var/run/docker.sock \
-  -e STARTDECK_ADMIN_PASSWORD=admin \
   --name startdeck \
-  qdnas/startdeck:latest</code></pre>
+  --restart unless-stopped \
+  -p 9001:9001 \
+  -v $(pwd)/Data/data:/app/Data/data \
+  -v $(pwd)/Data/PC:/app/Data/PC \
+  -v $(pwd)/Data/APP:/app/Data/APP \
+  -v $(pwd)/icon-service-data:/app/icon-service/data \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  -e PORT=9001 \
+  -e STARTDECK_ADMIN_PASSWORD=change-me \
+  -e ICON_SERVICE_PORT=9002 \
+  -e ICON_SERVICE_DATA_DIR=/app/icon-service/data \
+  -e ICON_SERVER_BASE_URL=http://127.0.0.1:9002 \
+  apkdv/startdeck:latest</code></pre>
             </article>
 
-            <article class="command-panel">
+            <article class="command-panel reveal">
               <div class="command-head">
                 <h3>Debian / Ubuntu</h3>
-                <button
-                  class="copy-button"
-                  type="button"
-                  data-copy="debian-command"
-                >
+                <button class="copy-button" type="button" data-copy="debian-command">
                   复制
                 </button>
               </div>
               <pre id="debian-command"><code>wget -O deploy_debian.sh \
-  https://raw.githubusercontent.com/Garry-QD/StartDeck/main/deploy_debian.sh
+  https://raw.githubusercontent.com/appdev/StartDeck/main/deploy_debian.sh
 chmod +x deploy_debian.sh
 sudo ./deploy_debian.sh</code></pre>
             </article>
@@ -904,75 +1624,109 @@ sudo ./deploy_debian.sh</code></pre>
         </div>
       </section>
 
-      <section class="section white">
-        <div class="container final-cta">
+      <section class="section">
+        <div class="container final-cta reveal">
           <div>
-            <h2>准备把 StartDeck 放到你的首页。</h2>
+            <h2>把自托管服务的入口层，交给一个真正可维护的首页。</h2>
             <p>
-              开源、可自托管、可迁移。发布后可通过 GitHub、Gitee 或 Docker
-              镜像获取最新版本。
+              StartDeck 适合 NAS、家庭服务器、开发环境和长期维护个人入口的用户。开源、自托管、数据在本地，部署后访问浏览器第一屏即可开始使用。
             </p>
           </div>
           <a
             class="button primary"
-            href="https://github.com/Garry-QD/StartDeck"
+            href="https://github.com/appdev/StartDeck"
             target="_blank"
             rel="noreferrer"
-            >查看项目</a
           >
+            获取 StartDeck
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M5 12h14" />
+              <path d="m13 6 6 6-6 6" />
+            </svg>
+          </a>
         </div>
       </section>
     </main>
 
     <footer>
-      <div class="footer-inner">
+      <div class="container footer-inner">
         <span>StartDeck · AGPLv3 · 交流群 QQ 613835409</span>
         <div class="footer-links">
-          <a
-            href="https://github.com/Garry-QD/StartDeck"
-            target="_blank"
-            rel="noreferrer"
-            >GitHub</a
-          >
-          <a
-            href="https://gitee.com/gjx0808/StartDeck"
-            target="_blank"
-            rel="noreferrer"
-            >Gitee</a
-          >
-          <a
-            href="https://hub.docker.com/r/qdnas/startdeck"
-            target="_blank"
-            rel="noreferrer"
-            >Docker</a
-          >
+          <a href="https://github.com/appdev/StartDeck" target="_blank" rel="noreferrer">GitHub</a>
+          <a href="https://gitee.com/gjx0808/StartDeck" target="_blank" rel="noreferrer">Gitee</a>
+          <a href="https://hub.docker.com/r/apkdv/startdeck" target="_blank" rel="noreferrer">Docker</a>
         </div>
       </div>
     </footer>
 
     <script>
-      const copyButtons = document.querySelectorAll("[data-copy]");
+      const copyText = async (text) => {
+        if (navigator.clipboard?.writeText) {
+          try {
+            await navigator.clipboard.writeText(text);
+            return;
+          } catch {
+            // Local file previews may not have clipboard permission.
+          }
+        }
 
-      copyButtons.forEach((button) => {
+        const field = document.createElement("textarea");
+        field.value = text;
+        field.setAttribute("readonly", "");
+        field.style.position = "fixed";
+        field.style.inset = "0 auto auto -9999px";
+        document.body.appendChild(field);
+        field.select();
+        const ok = document.execCommand("copy");
+        field.remove();
+        if (!ok) throw new Error("copy command failed");
+      };
+
+      const selectText = (target) => {
+        const range = document.createRange();
+        range.selectNodeContents(target);
+        const selection = window.getSelection();
+        selection.removeAllRanges();
+        selection.addRange(range);
+      };
+
+      document.querySelectorAll("[data-copy]").forEach((button) => {
         button.addEventListener("click", async () => {
           const target = document.getElementById(button.dataset.copy);
           const text = target ? target.innerText.trim() : "";
           if (!text) return;
 
           try {
-            await navigator.clipboard.writeText(text);
+            await copyText(text);
             const original = button.textContent;
             button.textContent = "已复制";
             window.setTimeout(() => {
               button.textContent = original;
             }, 1600);
           } catch {
-            button.textContent = "复制失败";
+            selectText(target);
+            button.textContent = "已选中";
             window.setTimeout(() => {
               button.textContent = "复制";
             }, 1600);
           }
         });
+      });
+
+      const revealObserver = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              entry.target.classList.add("in-view");
+              revealObserver.unobserve(entry.target);
+            }
+          });
+        },
+        { rootMargin: "0px 0px -8% 0px", threshold: 0.12 },
+      );
+
+      document.querySelectorAll(".reveal").forEach((element) => {
+        revealObserver.observe(element);
       });
     </script>
   </body>

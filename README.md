@@ -1,327 +1,371 @@
 # StartDeck
 
-[![GitHub](https://img.shields.io/badge/GitHub-StartDeck-181717?style=flat&logo=github&logoColor=white)](https://github.com/Garry-QD/StartDeck)
+[![GitHub](https://img.shields.io/badge/GitHub-StartDeck-181717?style=flat&logo=github&logoColor=white)](https://github.com/appdev/StartDeck)
 [![Gitee](https://img.shields.io/badge/Gitee-StartDeck-C71D23?style=flat&logo=gitee&logoColor=white)](https://gitee.com/gjx0808/StartDeck)
-[![Docker Image](https://img.shields.io/badge/Docker-qdnas%2Fstartdeck-2496ED?style=flat&logo=docker&logoColor=white)](https://hub.docker.com/r/qdnas/startdeck)
+[![Docker Image](https://img.shields.io/badge/Docker-apkdv%2Fstartdeck-2496ED?style=flat&logo=docker&logoColor=white)](https://hub.docker.com/r/apkdv/startdeck)
+[![License](https://img.shields.io/badge/License-AGPL--3.0-blue.svg)](LICENSE)
 
-StartDeck 是一个轻量级、高度可定制的个人导航页与仪表盘系统。它基于 Vue 3、Rust 与 SQLite 构建，旨在为 NAS 用户、极客和开发者提供一个优雅的浏览器起始页。
-交流QQ群:613835409
-![debian/1.png](public/1.png)
-![debian/7.png](public/7.png)
-![debian/9.png](public/9.png)
+StartDeck 是一个面向 NAS、家庭服务器和个人工作流的自托管浏览器起始页。它把常用站点、内网服务、系统状态、Docker 管理、天气日历、任务备忘和可扩展组件整合到一个可控、可迁移、可长期运行的个人仪表盘中。
 
-### ✨ 功能概览
+![StartDeck 当前首页实际渲染图](frontend/public/intro-assets/startdeck-home-real.jpg)
 
-- **多端统一入口**: 把常用网站、内网服务和工具聚合在同一仪表盘。
-- **媒体与壁纸能力**: 内置音乐播放器和壁纸管理。
-- **内外网智能切换**: 自动识别网络环境并路由到最佳地址。
-- **本地数据可控**: 配置与数据存储在本地目录，迁移与备份更方便。
-- **可视化组件生态**: 内置多种组件，支持自定义 CSS/JS 深度扩展。
-- **资源内存占用极低**: NAS端占用100MB内存，访问端真实内存占用不到80兆。
-- **支持docker管理**: 内置docker管理组件，支持查看、启动、停止、重启docker容器、升级镜像等。
+## 为什么选择 StartDeck
 
-### 🖥️ 仪表盘与布局
+传统浏览器首页通常只解决“入口收藏”。StartDeck 更关注自托管环境里的真实使用场景：服务很多、地址分内外网、图标和元数据需要自动补齐、系统状态需要一眼可见、个人工具和研发信息也希望留在同一个工作台里。
 
-- **网格布局**: 自由拖拽布局，支持不同尺寸的组件。
-- **分组管理**: 支持创建多个分组，分类管理应用和书签。
-- **响应式设计**: 完美适配桌面端和移动端访问。
-- **编辑模式**: 直观的所见即所得编辑体验，轻松添加、删除和重新排列组件。
+StartDeck 的目标是成为每天打开浏览器时的第一个生产力界面：
 
-### 🧩 丰富的小组件
+- **自托管优先**：数据、布局、书签、组件配置和上传资源保存在自己的服务器上。
+- **NAS / 家庭服务器友好**：适合集中管理内网服务、Docker 容器、工具站点和公网入口。
+- **组件化工作台**：时钟、天气、日历、待办、备忘录、Docker、系统状态、AI 使用量、TAPD 缺陷等组件可自由组合。
+- **智能访问体验**：支持内网/公网地址配置，结合访问来源与网络状态选择更合适的访问地址。
+- **可扩展**：支持自定义 HTML/CSS/JS、iframe、后端代理、全局自定义 CSS 和图标管理。
+- **轻量可靠**：Vue 3 前端、Rust 后端、SQLite 本地存储，部署和备份边界清晰。
 
-StartDeck 内置了多种实用的小组件，满足日常需求：
-![tools.png](public/tools.png)
+产品介绍页：部署后访问 `/intro.html`。
 
-- **书签组件**: 快速访问常用网站，支持自定义图标。首次启动时会自动填充常用的 10 个网站（如 GitHub, Bilibili 等）。
-- **时钟与天气**: 实时显示当前时间、日期及当地天气情况。
-- **高德地图组件**: 支持添加高德地图组件，显示当前位置及地图导航。
-- **待办事项 (Todo)**: 简单的任务管理，随时记录灵感和待办。
-- **音乐播放器**: 内置 MiniPlayer，支持播放服务器端的本地音乐文件。
-- **Docker管理**: 内置docker管理组件，支持查看、启动、停止、重启docker容器、升级镜像等。
-- **系统监控**: 内置系统监控组件，支持查看CPU、内存、磁盘、网络等系统信息。
-- **iframe组件**: 支持嵌入外部网页，如视频、地图等。
-- **自定义组件**: 支持添加自定义 HTML 组件，实现更多功能。
-- **道理鱼组件**: 支持添加道理鱼音乐组件。
-  ![高德天气.png](public/高德天气.png)
+## 功能概览
 
-### 🎨 个性化定制
+| 能力         | 说明                                                                                                 |
+| ------------ | ---------------------------------------------------------------------------------------------------- |
+| 可视化首页   | 网格布局、分组管理、搜索引擎切换、站点卡片、组件卡片、编辑模式                                       |
+| 组件系统     | 时钟、天气、日历、纪念日、今日诗词、今日英语、电影日历、待办、备忘录、番茄时钟、金额换算、今天吃什么 |
+| 系统与运维   | Docker 管理、系统状态、本机 IP、访客统计、版本检测、Docker 镜像更新检测                              |
+| 研发工作流   | AI 使用量、TAPD 缺陷组件，适合把研发和 AI 额度信息放进首页                                           |
+| 智能网络     | 支持内网地址、公网地址、客户端 IP、访问域名、延迟探测和复杂反代环境                                  |
+| 图标与元数据 | 独立 Rust 图标服务，支持站点标题、描述、图标识别和内置图标库                                         |
+| 个性化       | 壁纸、移动端壁纸、卡片背景、图标背景色、上传图标、全局 CSS                                           |
+| 扩展能力     | 自定义 HTML/CSS/JS 组件、iframe、代理请求、自定义脚本生命周期                                        |
 
-StartDeck 提供了丰富的自定义选项，并自建了60000个图标的图标库，满足不同用户的需求：
-![icon.png](public/icon.png)
+## 当前界面
 
-- **自定义组件**: 支持添加自定义 HTML 组件，实现更多功能。
-- **自定义CSS**: 支持添加自定义 CSS 样式，实现更多定制化效果。
-- **自定义JS**: 支持添加自定义 JS 脚本，实现更多功能。
-- **自定义HTML**: 支持添加自定义 HTML 代码，实现更多定制化效果。
-- **天气组件**: 支持添加天气组件，显示当前天气情况。
-- **图标管理**: 内置图标库，支持上传自定义图片，并全面支持 **Hex 颜色代码** (如 `#ffffff`) 自定义图标背景色。
-- **站点元数据服务**: 通过独立 Rust 图标服务获取网站标题、描述和图标，部署脚本会随 StartDeck 一起安装。
-- **背景设置**: 支持自定义壁纸。
-- **分组卡片背景**: 支持在分组设置中统一配置该组所有卡片的背景（图片、模糊、遮罩），实现风格统一的视觉效果。
-- **访客统计**: 底部页脚显示网站总访问量、今日访问量及当前在线时长（需在设置中开启）。
-- **数据安全**:
-  - 本地 SQLite 存储配置与运行数据，数据完全掌握在自己手中。
-  - 简单的密码访问保护（默认密码：`admin`，Docker 可通过 `STARTDECK_ADMIN_PASSWORD` 指定），保护隐私配置。
-- **更新提醒**: 内置版本检测功能，自动检查 GitHub 最新 Release 版本，并在设置面板提示 Docker 更新。
-  ![自定义脚本.png](public/自定义脚本.png)
+以下图片来自当前版本的真实页面与组件渲染。
 
-## 🌐 代理配置
+| 天气组件                                                                    | 待办组件                                                                 | AI 使用量                                                                         | TAPD 缺陷                                                                     |
+| --------------------------------------------------------------------------- | ------------------------------------------------------------------------ | --------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| ![天气组件实际渲染图](frontend/public/intro-assets/widget-weather-real.jpg) | ![待办组件实际渲染图](frontend/public/intro-assets/widget-todo-real.jpg) | ![AI 使用量组件实际渲染图](frontend/public/intro-assets/widget-ai-usage-real.jpg) | ![TAPD 缺陷组件实际渲染图](frontend/public/intro-assets/widget-tapd-real.jpg) |
 
-StartDeck 支持通过后端代理转发请求，以解决内网服务无法直接访问外网资源的问题，或实现简单的隐私保护。
+## 架构
 
-### 启用方法
+StartDeck 由三个主要部分组成：
 
-1. **设置环境变量**
-   在 `docker-compose.yml` 或启动命令中添加 `PROXY_URL` 环境变量。
-
-   ```yaml
-   environment:
-     - PROXY_URL=http://127.0.0.1:7890
-     # 支持协议：http, https, socks5, socks5h
-     # 格式：protocol://[user:pass@]host:port
-   ```
-
-2. **前端开启**
-   当环境变量配置正确后，在卡片编辑或万能窗口配置中，会显示“代理”开关。开启后，该组件的所有请求将通过 StartDeck 后端服务器代为转发。
-
-### 调试与排查
-
-- **开关不显示**：请检查后端日志，确认 `PROXY_URL` 格式正确且已生效。
-- **请求失败**：
-  - 检查 `PROXY_URL` 指向的代理服务器是否可达。
-  - 检查目标 URL 是否触发了 SSRF 防护规则（如禁止访问 localhost）。
-  - 查看后端日志 `[Proxy Error]` 获取详细错误信息。
-
-## 🌐 智能网络环境检测
-
-StartDeck 后端集成了智能网络环境识别功能，能够根据用户的访问来源自动切换内外网访问策略，完美解决混合网络环境下的访问难题。
-
-- **多维度识别**: 结合 **客户端 IP**、**访问域名** 和 **网络延迟** 三个维度，精准判断用户当前所处的网络环境（局域网/互联网）。
-- **自动路由**: 当检测到用户处于局域网（LAN）时，系统会自动优先使用配置的 **内网地址 (LanUrl)**，实现高速直连；在公网环境则自动切换至 **外网地址**。
-- **无感切换**: 用户无需手动干预，无论是在家（内网）还是外出（外网），点击同一个图标即可自动跳转至最佳地址。
-
-### 复杂网络环境部署
-
-如果你的环境包含：
-
-- DDNS / 公网直连
-- Nginx / 宝塔反代
-- Cloudflare 代理或 Cloudflare Tunnel
-- FRP / 其他内网穿透
-- 子路径部署，如 `/startdeck/`
-- 前后端分离部署
-
-请参考专门说明：[`README_NETWORK.md`](README_NETWORK.md)
-
-## 📦 安装与部署
-
-### 1. Debian/Ubuntu，一键部署
-
-适用于 Debian/Ubuntu，无需 Docker，脚本会自动下载最新 Release 并完成部署。
-
-```bash
-wget -O deploy_debian.sh https://raw.githubusercontent.com/Garry-QD/StartDeck/main/deploy_debian.sh
-chmod +x deploy_debian.sh
-sudo ./deploy_debian.sh
+```text
+Browser
+  |
+  | HTTP / WebSocket
+  v
+Vue 3 Frontend
+  |
+  | /api, static assets
+  v
+Rust startdeck-server
+  |
+  | SQLite, runtime files, Docker socket, icon API
+  v
+Rust startdeck-iconserver
 ```
 
-#### Debian/Ubuntu 管理面板（管理脚本）
+- **Frontend**：Vue 3、TypeScript、Pinia、GridStack，负责首页、设置、组件运行态和交互。
+- **Backend**：Rust + Axum，提供认证、配置持久化、站点元数据、代理、Docker、系统状态、天气/IP 等接口。
+- **Icon Service**：独立 Rust 服务，负责图标库、站点图标和图标缓存数据。
+- **Storage**：SQLite 保存配置和运行数据，`Data/` 保存上传资源、背景图和构建后的静态文件。
 
-部署完成后，使用管理脚本进行常用运维操作（查看状态、修改端口、配置 HTTPS、查看日志、卸载）。
+## 快速开始
 
-```bash
-wget -O manage.sh https://raw.githubusercontent.com/Garry-QD/StartDeck/main/manage.sh
-chmod +x manage.sh
-sudo ./manage.sh
-```
+### Docker CLI
 
-菜单功能说明：
-
-- 查看服务状态：查看前后端端口、HTTPS 状态与服务运行情况
-- 修改端口配置：修改前端端口与后端端口并自动重启服务
-- 配置 HTTPS：写入证书并更新 Nginx 配置
-- 查看实时日志：跟随服务日志
-- 重启所有服务：重启 Nginx 与 StartDeck 服务
-- 卸载服务：彻底卸载 StartDeck、配置与日志
-
-#### Debian/Ubuntu 卸载（命令行）
-
-如果需要卸载，也可以直接运行管理脚本并选择“卸载服务”。
-
-```bash
-sudo ./debian/manage.sh
-```
-
-### 2. 本地安装（Release 包）
-
-适用于已能访问服务器的场景，上传 Release 包内容后直接运行。
-
-1. 从 GitHub Releases 下载 `release.zip`
-2. 上传到服务器并解压到任意目录（例如 `/opt/startdeck`）
-3. 进入解压目录并启动服务
-
-```bash
-cd /opt/startdeck
-chmod +x startdeck-server
-chmod +x startdeck-iconserver
-ICON_SERVICE_PORT=9002 ./startdeck-iconserver &
-PORT=9001 ICON_SERVER_BASE_URL=http://127.0.0.1:9002 ./startdeck-server
-```
-
-访问地址：`http://<服务器IP>:9001`
-
-### 3. Docker CLI 部署
+适合希望最快启动的单机部署。默认 Web 入口为 `9001`，图标服务在容器内通过 `9002` 提供给主服务使用。
 
 ```bash
 docker run -d \
+  --name startdeck \
+  --restart unless-stopped \
   -p 9001:9001 \
   -v $(pwd)/Data/data:/app/Data/data \
   -v $(pwd)/Data/PC:/app/Data/PC \
   -v $(pwd)/Data/APP:/app/Data/APP \
   -v $(pwd)/icon-service-data:/app/icon-service/data \
   -e PORT=9001 \
+  -e STARTDECK_ADMIN_PASSWORD=change-me \
   -e ICON_SERVICE_PORT=9002 \
   -e ICON_SERVICE_DATA_DIR=/app/icon-service/data \
   -e ICON_SERVER_BASE_URL=http://127.0.0.1:9002 \
   -e ICON_SERVER_TIMEOUT_MS=5000 \
   -v /var/run/docker.sock:/var/run/docker.sock \
-  --name startdeck \
-  qdnas/startdeck:latest
+  apkdv/startdeck:latest
 ```
 
-### 4. Docker Compose 部署
+访问：
 
-```bash
-version: '3.8'
+```text
+http://<server-ip>:9001
+```
+
+默认管理员密码为 `admin`。生产部署建议通过 `STARTDECK_ADMIN_PASSWORD` 设置初始密码，并在首次登录后立即修改。
+
+### Docker Compose
+
+```yaml
+version: "3.8"
 
 services:
   startdeck:
-    image: qdnas/startdeck:latest
+    image: apkdv/startdeck:latest
     container_name: startdeck
     restart: unless-stopped
     ports:
-      - '9001:9001'
+      - "9001:9001"
     environment:
-      - HOST=0.0.0.0
       - PORT=9001
-      - STARTDECK_ADMIN_PASSWORD=violet
+      - STARTDECK_ADMIN_PASSWORD=change-me
       - ICON_SERVICE_PORT=9002
       - ICON_SERVICE_DATA_DIR=/app/icon-service/data
+      - ICON_SERVICE_RESOURCE_DIR=/app/icon-service-defaults/data
       - ICON_SERVER_BASE_URL=http://127.0.0.1:9002
       - ICON_SERVER_TIMEOUT_MS=5000
-      # 可选：配置完整后才启用 QWeather 备用 IP GeoAPI。
-      # - QWEATHER_API_HOST=https://geoapi.qweather.com
-      # - QWEATHER_PROJECT_ID=<project-id>
-      # - QWEATHER_CREDENTIAL_ID=<credential-id>
-      # - QWEATHER_PRIVATE_KEY_FILE=/run/secrets/qweather-ed25519-private.pem
-      # 可选：覆盖腾讯地图 IP 定位 Key，未设置时使用内置默认 Key。
-      # - TENCENT_MAP_API_HOST=https://apis.map.qq.com
-      # - TENCENT_MAP_KEY=<map-key>
-      # 如需让后端自己识别子路径，可启用：
-      # - BASE_PATH=/startdeck
     volumes:
       - ./Data/data:/app/Data/data
       - ./Data/PC:/app/Data/PC
       - ./Data/APP:/app/Data/APP
       - ./icon-service-data:/app/icon-service/data
-      # - ./ed25519-private.pem:/run/secrets/qweather-ed25519-private.pem:ro
       - /var/run/docker.sock:/var/run/docker.sock
 ```
 
-## ⚙️ 配置说明
+如果不需要 Docker 组件管理容器，可以不挂载 `/var/run/docker.sock`。
 
-- **默认密码**: 系统初始密码为 `admin`。Docker 部署可设置 `STARTDECK_ADMIN_PASSWORD`，容器启动时会同步 admin 密码；未设置时请登录后在设置中及时修改。
-- **数据文件**: 所有配置（布局、组件、书签等）均存储在 `Data/data/startdeck.sqlite3` 中，二进制资源保存在 `Data/` 下的对应目录。
-- **站点图标数据**: Rust 图标服务的默认种子资源位于 `rust/crates/startdeck-iconserver/resources/data`；Docker 运行期挂载为 `/app/icon-service/data`，Debian 安装到 `/opt/startdeck/icon-service/data`。
-- **腾讯地图 IP 定位**: 默认启用，优先通过腾讯地图 IP 定位接口获取经纬度；可通过 `TENCENT_MAP_KEY` 覆盖 Key，通过 `TENCENT_MAP_API_HOST` 覆盖 API Host。未设置 Key 时使用内置默认 Key；接口失败时会继续走后续定位兜底，不影响功能正常使用。
-- **QWeather 备用接口**: 默认关闭。只有同时配置 `QWEATHER_API_HOST`、`QWEATHER_PROJECT_ID`、`QWEATHER_CREDENTIAL_ID` 且 `QWEATHER_PRIVATE_KEY_FILE` 指向容器内可读 PEM 私钥文件时，后端才会启用 QWeather。启用后它会作为城市查询和天气数据的备用 provider；Docker 本地构建可通过 `--build-arg` 或 `docker-compose.yml` 的 `build.args` 传入账号配置；私钥建议用只读 volume 或 Docker secret 挂载，不要把私钥内容写入镜像。
-- **Docker 自动升级镜像**:
-  - 入口：设置 → Docker 管理 → 自动升级镜像(每2小时)。
-  - 关闭时：后台不会进行任何镜像拉取或版本对比。
-  - 开启时：每 2 小时对运行中的容器执行“拉取并对比镜像 ID”，发现新版本则自动重建容器。
-  - 镜像清理：升级完成后自动清理旧镜像，默认每个镜像名保留 2 个版本（可配置 1–20）。
-  - 磁盘保护：当 Docker 所在磁盘可用空间低于阈值时跳过本轮升级，默认阈值 5GB（可配置）。
-  - 监控指标：镜像数量、磁盘使用率、自动升级日志中的 pulls/updates/pruned/error 计数。
-  - 升级后验证：开启开关等待一个周期（或手动触发一次更新检测），确认日志中 pulls/updates 变化且镜像数量不持续增长。
-  - 灰度验证（建议）：准备 2 个环境分别开启/关闭该开关，各运行 24 小时，对比以下数据以确认“开关状态=后台行为”且无镜像堆积：
-    - 服务器日志：筛选 `[AutoUpdate]` 与 `[UpdateChecker]` 关键字，统计 pulls/updates/pruned/error 次数与频率。
-    - Docker 镜像数量：对比 24 小时前后 `docker images -q | wc -l`（Linux）或 `docker images -q | Measure-Object -Line`（PowerShell）。
-    - Docker 根目录磁盘：对比 24 小时前后磁盘可用空间（或使用 `docker info` + 系统磁盘监控）。
+### Debian / Ubuntu 安装脚本
 
-### 🎨 全局自定义 CSS
+适合不使用 Docker 的服务器。
 
-在 **设置** -> **自定义 CSS** 中，您可以编写全局生效的 CSS 样式。
-
-**增强语法：**
-StartDeck 支持以下自定义标签，自动转换为媒体查询，方便响应式适配：
-
-- `<mobile>...</mobile>`: 仅在移动端生效 (`max-width: 768px`)
-- `<desktop>...</desktop>`: 仅在桌面端生效 (`min-width: 769px`)
-- `<dark>...</dark>`: 仅在深色模式下生效
-- `<light>...</light>`: 仅在浅色模式下生效
-
-**示例:**
-
-```css
-/* 全局修改滚动条样式 */
-::-webkit-scrollbar {
-  width: 6px;
-}
-
-/* 仅在移动端隐藏侧边栏 */
-<mobile>
-.sidebar { display: none; }
-</mobile>
+```bash
+wget -O deploy_debian.sh https://raw.githubusercontent.com/appdev/StartDeck/main/deploy_debian.sh
+chmod +x deploy_debian.sh
+sudo ./deploy_debian.sh
 ```
 
-### ⚡ 全局自定义 JS
+部署完成后可使用管理脚本查看状态、修改端口、配置 HTTPS、查看日志、重启或卸载服务：
 
-在 **设置** -> **自定义 JS** 中，您可以注入 JavaScript 代码以实现高级交互或逻辑增强。
-_注意：启用此功能需要同意安全免责声明。_
+```bash
+wget -O manage.sh https://raw.githubusercontent.com/appdev/StartDeck/main/manage.sh
+chmod +x manage.sh
+sudo ./manage.sh
+```
 
-**运行环境 (Runtime Context):**
+### Release 包手动启动
 
-代码将在沙箱环境中运行，并提供 `ctx` 对象用于与系统交互。支持直接编写代码或导出生命周期钩子。
+适合已经下载 Release 包并希望自行托管进程的场景。
 
-**生命周期钩子 (推荐):**
+```bash
+cd /opt/startdeck
+chmod +x startdeck-server startdeck-iconserver
+ICON_SERVICE_PORT=9002 ./startdeck-iconserver &
+PORT=9001 ICON_SERVER_BASE_URL=http://127.0.0.1:9002 ./startdeck-server
+```
+
+## 生产配置
+
+| 变量                        | 默认值                   | 说明                                                    |
+| --------------------------- | ------------------------ | ------------------------------------------------------- |
+| `PORT`                      | `9001`                   | StartDeck 主服务监听端口                                |
+| `STARTDECK_ADMIN_PASSWORD`  | `admin`                  | 容器启动时同步的管理员密码                              |
+| `DATA_DIR`                  | `/app/Data/data`         | SQLite 与运行数据目录                                   |
+| `PC_DIR`                    | `/app/Data/PC`           | 桌面端背景图目录                                        |
+| `APP_DIR`                   | `/app/Data/APP`          | 移动端背景图目录                                        |
+| `ICON_SERVICE_PORT`         | `9002`                   | 图标服务端口                                            |
+| `ICON_SERVICE_DATA_DIR`     | `/app/icon-service/data` | 图标服务运行期数据目录                                  |
+| `ICON_SERVER_BASE_URL`      | `http://127.0.0.1:9002`  | 主服务访问图标服务的地址                                |
+| `ICON_SERVER_TIMEOUT_MS`    | `5000`                   | 图标服务请求超时时间                                    |
+| `PROXY_URL`                 | 空                       | 后端代理地址，支持 `http`、`https`、`socks5`、`socks5h` |
+| `BASE_PATH`                 | 空                       | 子路径部署时使用，例如 `/startdeck`                     |
+| `TENCENT_MAP_KEY`           | 内置默认 Key             | 覆盖腾讯地图 IP 定位 Key                                |
+| `TENCENT_MAP_API_HOST`      | 腾讯地图默认地址         | 覆盖腾讯地图 API Host                                   |
+| `QWEATHER_API_HOST`         | 空                       | QWeather 备用接口 Host                                  |
+| `QWEATHER_PROJECT_ID`       | 空                       | QWeather 项目 ID                                        |
+| `QWEATHER_CREDENTIAL_ID`    | 空                       | QWeather 凭证 ID                                        |
+| `QWEATHER_PRIVATE_KEY_FILE` | 空                       | QWeather Ed25519 私钥文件路径                           |
+
+QWeather 相关变量需要同时配置后才会启用。私钥建议通过只读 volume 或 Docker secret 挂载，不要写入镜像或仓库。
+
+## 数据、备份与迁移
+
+StartDeck 的运行数据默认集中在以下目录：
+
+```text
+Data/data/startdeck.sqlite3        # 布局、书签、组件配置、系统配置
+Data/PC/                           # 桌面端背景图
+Data/APP/                          # 移动端背景图
+icon-service-data/                 # 图标服务运行期缓存和数据
+```
+
+备份建议：
+
+1. 停止容器或服务，避免 SQLite 正在写入。
+2. 备份 `Data/data`、`Data/PC`、`Data/APP`、`icon-service-data`。
+3. 迁移到新服务器后使用相同 volume 路径启动。
+
+## 网络与反向代理
+
+StartDeck 支持常见自托管网络形态：
+
+- 局域网直连
+- DDNS / 公网直连
+- Nginx、宝塔等反向代理
+- Cloudflare Tunnel
+- FRP 或其他内网穿透
+- 子路径部署，例如 `/startdeck/`
+- 前后端分离部署
+
+复杂网络环境请参考 [`README_NETWORK.md`](README_NETWORK.md)。如果需要通过后端代理访问外部资源，可配置 `PROXY_URL`，并在卡片或自定义组件中开启代理请求。
+
+## 安全与隐私
+
+- **本地优先**：配置和运行数据保存在自己的服务器与 SQLite 中。
+- **密码保护**：默认提供管理员密码保护；生产环境请设置强密码。
+- **Docker Socket 权限**：只有需要 Docker 管理能力时才挂载 `/var/run/docker.sock`。该权限较高，请只在可信服务器上启用。
+- **自定义 JS 风险**：全局自定义 JS 和自定义组件脚本具有扩展能力，启用前应确认代码来源可信。
+- **代理请求边界**：后端代理适合解决自托管网络访问问题，但不应暴露给不可信用户滥用。
+- **密钥管理**：地图、天气、AI、TAPD 等外部服务凭证应通过环境变量、服务端配置或本地安全存储管理，不要提交到仓库。
+
+## 自定义与扩展
+
+### 全局自定义 CSS
+
+在设置面板中可以编写全局 CSS。StartDeck 支持以下语法标签，便于按端和主题拆分样式：
+
+```css
+<mobile>
+.my-widget {
+  display: none;
+}
+</mobile>
+
+<desktop>
+.my-widget {
+  border-radius: 18px;
+}
+</desktop>
+
+<dark>
+.my-widget {
+  color: #fff;
+}
+</dark>
+```
+
+### 全局自定义 JS
+
+自定义 JS 支持生命周期钩子和 `ctx` 上下文：
 
 ```javascript
 // @module
-// 必须使用 export default 导出钩子对象
 export default {
-  /**
-   * 初始化时调用
-   * @param {object} ctx - 上下文对象
-   */
   init(ctx) {
-    console.log("Custom JS Initialized");
-    // 示例：监听事件
-    ctx.on("widget-click", (e) => {
-      console.log("Widget clicked:", e.detail);
+    ctx.on("widget-click", (event) => {
+      console.log("Widget clicked:", event.detail);
     });
   },
-
-  /**
-   * 更新时调用 (如配置变更)
-   */
   update(ctx) {
-    console.log("Custom JS Updated");
+    console.log("Custom JS updated");
   },
-
-  /**
-   * 销毁时调用 (清理资源)
-   */
   destroy(ctx) {
-    console.log("Custom JS Destroyed");
-    // 清理定时器、事件监听等
+    console.log("Custom JS destroyed");
   },
 };
 ```
 
-## 📜 开源协议
+## 本地开发
 
-本项目采用 [GNU AGPLv3](LICENSE) 协议开源。
+### 环境要求
 
----
+- Node.js `^20.19.0` 或 `>=22.12.0`
+- Rust `1.94`
+- npm
 
-Enjoy your StartDeck! 🚀
+### 启动开发环境
+
+```bash
+cd frontend
+npm ci
+npm run start:hot
+```
+
+也可以分开启动：
+
+```bash
+# 终端 1：图标服务
+npm --prefix frontend run icon-server
+
+# 终端 2：主服务
+npm --prefix frontend run server:hot
+
+# 终端 3：前端开发服务器
+npm --prefix frontend run dev
+```
+
+默认端口：
+
+| 服务          | 地址                    |
+| ------------- | ----------------------- |
+| 前端 Vite     | `http://127.0.0.1:9003` |
+| StartDeck API | `http://127.0.0.1:9001` |
+| Icon Service  | `http://127.0.0.1:9002` |
+
+### 常用命令
+
+```bash
+# 前端
+cd frontend
+npm run build
+npm test
+npm run test:e2e
+npm run lint
+
+# 后端
+cargo test --workspace
+cargo clippy --workspace --all-targets -- -D warnings
+cargo run --bin startdeck-server
+cargo run --bin startdeck-iconserver
+```
+
+## 目录结构
+
+```text
+frontend/                                  # Vue 3 frontend
+  src/components/                          # UI components
+  src/features/                            # Runtime widgets and feature modules
+  src/stores/                              # Pinia stores
+  public/                                  # Source static assets
+rust/crates/startdeck-server/              # Main Rust backend
+rust/crates/startdeck-iconserver/          # Icon metadata service
+rust/crates/startdeck-core/                # Shared SQLite/domain code
+Data/                                      # Runtime data and generated public assets
+debian/                                    # Debian/Ubuntu packaging and service files
+Dockerfile
+docker-compose.yml
+README_NETWORK.md
+```
+
+## 发布前检查
+
+```bash
+cd frontend
+npm run build
+npm test
+
+cd ..
+cargo test --workspace
+cargo clippy --workspace --all-targets -- -D warnings
+docker compose up --build
+```
+
+对于涉及页面、组件、拖拽、移动端布局或浏览器交互的改动，建议额外执行 Playwright 或浏览器手工验收。
+
+## 社区与支持
+
+- GitHub: <https://github.com/appdev/StartDeck>
+- Gitee: <https://gitee.com/gjx0808/StartDeck>
+- QQ 群：613835409
+
+## License
+
+StartDeck is released under the [GNU AGPLv3](LICENSE).

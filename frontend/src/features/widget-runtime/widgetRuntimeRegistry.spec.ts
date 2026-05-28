@@ -31,12 +31,22 @@ import {
   ITAB_FOOD_PICKER_RUNTIME,
   ITAB_FOOD_PICKER_WIDGET_TYPE,
 } from "@/features/itab-food-picker/itabFoodPickerTypes";
+import {
+  AI_USAGE_RUNTIME,
+  AI_USAGE_WIDGET_TYPE,
+} from "@/features/ai-usage/aiUsageTypes";
+import {
+  TAPD_DEFECTS_RUNTIME,
+  TAPD_DEFECTS_WIDGET_TYPE,
+} from "@/features/tapd-defects/tapdDefectTypes";
 
 describe("widgetRuntimeRegistry", () => {
   it("registers Docker and system status as first-class runtime widgets", () => {
     expect(isRuntimeWidget({ type: "docker" })).toBe(true);
     expect(isRuntimeWidget({ type: "system-status" })).toBe(true);
     expect(isRuntimeWidget({ type: "custom-css" })).toBe(true);
+    expect(isRuntimeWidget({ type: AI_USAGE_WIDGET_TYPE })).toBe(true);
+    expect(isRuntimeWidget({ type: TAPD_DEFECTS_WIDGET_TYPE })).toBe(true);
 
     expect(getWidgetRuntimeDefinition("docker")).toMatchObject({
       type: "docker",
@@ -68,6 +78,28 @@ describe("widgetRuntimeRegistry", () => {
       openedShell: {
         width: 1000,
         height: 602,
+        trafficVisible: true,
+      },
+    });
+    expect(getWidgetRuntimeDefinition(AI_USAGE_WIDGET_TYPE)).toMatchObject({
+      type: AI_USAGE_WIDGET_TYPE,
+      runtime: AI_USAGE_RUNTIME,
+      title: "AI 使用量",
+      defaultSizeKey: "2x2",
+      openedShell: {
+        width: 1000,
+        height: 602,
+        trafficVisible: true,
+      },
+    });
+    expect(getWidgetRuntimeDefinition(TAPD_DEFECTS_WIDGET_TYPE)).toMatchObject({
+      type: TAPD_DEFECTS_WIDGET_TYPE,
+      runtime: TAPD_DEFECTS_RUNTIME,
+      title: "TAPD 缺陷",
+      defaultSizeKey: "2x2",
+      openedShell: {
+        width: 1100,
+        height: 720,
         trafficVisible: true,
       },
     });

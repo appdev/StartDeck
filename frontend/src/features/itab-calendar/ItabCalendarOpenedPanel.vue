@@ -1162,19 +1162,25 @@ const selectFestivalEvent = (event: CalendarFestivalEvent) => {
   padding-right: 2px;
   overscroll-behavior: contain;
   scrollbar-gutter: stable;
+  scrollbar-color: var(--sd-scrollbar-thumb) var(--sd-scrollbar-track);
+  scrollbar-width: thin;
 }
 
 .festival-list::-webkit-scrollbar {
-  width: 6px;
+  width: var(--sd-scrollbar-size);
 }
 
 .festival-list::-webkit-scrollbar-thumb {
   border-radius: 999px;
-  background: var(--sd-theme-itab-calendar-calendar-opened-panel-surface-11);
+  background: var(--sd-scrollbar-thumb);
+}
+
+.festival-list::-webkit-scrollbar-thumb:hover {
+  background: var(--sd-scrollbar-thumb-hover);
 }
 
 .festival-list::-webkit-scrollbar-track {
-  background: transparent;
+  background: var(--sd-scrollbar-track);
 }
 
 .festival-row {

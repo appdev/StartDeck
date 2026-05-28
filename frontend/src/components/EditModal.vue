@@ -50,9 +50,6 @@ const uiFeedback = useUiFeedbackStore();
 
 let smartMatchToastTimer: number | null = null;
 const editModalTitle = computed(() => (props.data ? "修改项目" : "添加新项目"));
-const editModalSubtitle = computed(() =>
-  props.data ? "调整卡片信息、链接、图标和背景。" : "创建新的快捷卡片。",
-);
 
 onUnmounted(() => {
   if (smartMatchToastTimer) window.clearTimeout(smartMatchToastTimer);
@@ -95,19 +92,6 @@ const autoResize = (event: Event) => {
 const showIconSelection = ref(false);
 const iconCandidates = shallowRef<string[]>([]);
 const searchSource = ref<"local" | "api">("api");
-
-// 辅助函数：从 URL 提取图标名称
-const getIconNameFromUrl = (url: string): string => {
-  try {
-    const parts = url.split("/");
-    const lastPart = parts[parts.length - 1];
-    if (!lastPart) return url;
-    const name = lastPart.split(".")[0] || "";
-    return decodeURIComponent(name);
-  } catch {
-    return url;
-  }
-};
 
 const localGroupId = ref("");
 const initialFormSnapshot = ref("");
@@ -234,18 +218,6 @@ const iconCustomColorValue = computed(
     "#111827",
 );
 
-const resolveCandidateBackground = (backgroundColor?: string) =>
-  resolveIconBackground(
-    {
-      iconBackgroundMode: "auto",
-      iconAutoBackgroundColor: backgroundColor || "",
-    },
-    {
-      fallback: "bg-gray-100",
-      shape: effectiveIconShape.value,
-    },
-  ).color;
-
 const onIconSelect = (result: SmartIconMatchResult) => {
   form.value.icon = result.icon;
   const backgroundColor = normalizeIconBackgroundColor(result.backgroundColor);
@@ -276,21 +248,75 @@ const showSmartMatchToast = (message: string) => {
 
 const {
   smartMatchCandidates,
-  selectedSmartMatchCandidateUrl,
-  showSmartMatchModal,
   isSmartMatching,
+  lastSiteMetadata,
   smartMatchIcons,
-  selectSmartMatchCandidate,
   closeSmartMatchModal,
+  resetSmartMatchState,
 } = useSmartIconMatch({
   form,
   onSelect: onIconSelect,
   notify: showSmartMatchToast,
 });
 
+const showExtraLinks = ref(false);
+
+const hasExtraLinks = computed(
+  () =>
+    (form.value.backupUrls && form.value.backupUrls.length > 0) ||
+    (form.value.backupLanUrls && form.value.backupLanUrls.length > 0),
+);
+
+const metadataFetchParts = computed(() => {
+  const metadata = lastSiteMetadata.value;
+  if (!metadata) return [];
+  return [
+    metadata.title ? "标题" : "",
+    metadata.icon ? "图标" : "",
+    metadata.description ? "描述" : "",
+  ].filter(Boolean);
+});
+
+const metadataFetchSummary = computed(() => {
+  if (isSmartMatching.value) return "正在获取站点信息...";
+  const parts = metadataFetchParts.value;
+  if (parts.length > 0) return `已获取${parts.join("、")}`;
+  if (lastSiteMetadata.value) return "未获取到可用站点信息";
+  return "填写公网地址后可自动获取标题、图标和摘要";
+});
+
+const hasFetchedMetadata = computed(() => metadataFetchParts.value.length > 0);
+
+const previewTitle = computed(
+  () => lastSiteMetadata.value?.title || form.value.title || "未命名卡片",
+);
+
+const previewUrl = computed(
+  () => lastSiteMetadata.value?.url || form.value.url || "https://example.com",
+);
+
+const previewDescription = computed(
+  () => lastSiteMetadata.value?.description || "",
+);
+
+const previewIcon = computed(
+  () => lastSiteMetadata.value?.icon || form.value.icon || "",
+);
+
+const openExtraLinks = () => {
+  showExtraLinks.value = true;
+  if (!hasExtraLinks.value) addBackupUrl();
+};
+
+const runSmartMetadataFetch = async () => {
+  await smartMatchIcons();
+  closeSmartMatchModal();
+};
+
 const openCandidateSelection = async () => {
   if (smartMatchCandidates.value.length === 0 && form.value.url) {
     await smartMatchIcons();
+    closeSmartMatchModal();
   }
   iconCandidates.value = smartMatchCandidates.value
     .map((candidate) => candidate.url)
@@ -315,6 +341,7 @@ watch(
       modalOpenedAt.value = Date.now();
       showDiscardConfirm.value = false;
       localGroupId.value = props.groupId || "";
+      resetSmartMatchState();
       if (props.data) {
         // 编辑模式：回填数据
         form.value = {
@@ -336,7 +363,7 @@ watch(
             props.data.iconBackgroundMode === "custom" ? "custom" : "auto",
           iconAutoBackgroundColor: props.data.iconAutoBackgroundColor || "",
           iconCustomBackgroundColor: props.data.iconCustomBackgroundColor || "",
-          titleColor: "",
+          titleColor: props.data.titleColor || "",
           backgroundImage: props.data.backgroundImage || "",
           backgroundBlur: props.data.backgroundBlur ?? 6,
           backgroundMask: props.data.backgroundMask ?? 0.3,
@@ -346,6 +373,7 @@ watch(
         // 新增模式：重置表单
         form.value = createEmptyForm();
       }
+      showExtraLinks.value = hasExtraLinks.value;
       nextTick(() => {
         initialFormSnapshot.value = serializeFormState();
       });
@@ -353,6 +381,8 @@ watch(
       modalOpenedAt.value = 0;
       initialFormSnapshot.value = "";
       showDiscardConfirm.value = false;
+      showExtraLinks.value = false;
+      resetSmartMatchState();
       clearSmartMatchToast();
     }
   },
@@ -360,6 +390,7 @@ watch(
 );
 
 const addBackupUrl = () => {
+  showExtraLinks.value = true;
   if (!form.value.backupUrls) form.value.backupUrls = [];
   form.value.backupUrls.push({ name: "", url: "" });
 };
@@ -371,6 +402,7 @@ const removeBackupUrl = (index: number) => {
 };
 
 const addBackupLanUrl = () => {
+  showExtraLinks.value = true;
   if (!form.value.backupLanUrls) form.value.backupLanUrls = [];
   form.value.backupLanUrls.push({ name: "", url: "" });
 };
@@ -614,14 +646,13 @@ const submit = async () => {
 <template>
   <AppModalShell
     :show="show"
-    :z-index="70"
+    :z-index="130"
     :close-on-overlay="!isDirty"
     :close-on-escape="!isDirty"
     overlay-class="edit-card-overlay"
     panel-class="edit-card-panel"
     surface-class="edit-card-surface"
     :title="editModalTitle"
-    :subtitle="editModalSubtitle"
     scheme="auto"
     body-class="edit-card-body"
     footer-class="edit-card-footer"
@@ -631,8 +662,6 @@ const submit = async () => {
   >
     <template #headerActions>
       <div class="edit-card-header-actions">
-        <GroupSelector v-model="localGroupId" />
-        <AppSwitch v-model="form.isPublic" label="公开" />
         <AppWindowControls
           class="edit-card-window-controls"
           aria-label="编辑卡片窗口控制"
@@ -642,491 +671,499 @@ const submit = async () => {
       </div>
     </template>
 
-    <div>
-      <label class="sd-label">标题 <span class="text-red-500">*</span></label>
-      <div class="relative">
-        <input
-          v-model="form.title"
-          type="text"
-          class="sd-input"
-          placeholder="例如：我的博客"
-        />
-      </div>
-    </div>
+    <div class="edit-card-layout">
+      <aside class="edit-card-preview-pane">
+        <div class="edit-card-preview-title">卡片预览</div>
+        <div class="edit-card-preview-card">
+          <button
+            type="button"
+            class="edit-card-preview-open"
+            title="打开链接"
+            aria-label="打开链接"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M14 5h5v5m0-5L10 14m-5 5h14"
+              />
+            </svg>
+          </button>
+          <div class="edit-card-preview-main">
+            <div class="edit-card-preview-icon">
+              <IconShape
+                v-if="previewIcon && !isIconHidden"
+                :shape="effectiveIconShape"
+                :size="72"
+                :imgScale="form.iconSize"
+                :bgClass="iconBackgroundResolution.color"
+                :icon="previewIcon"
+              />
+              <span v-else>{{ previewTitle.slice(0, 1) }}</span>
+            </div>
+            <div class="edit-card-preview-copy">
+              <div class="edit-card-preview-name">{{ previewTitle }}</div>
+              <div class="edit-card-preview-public">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <circle cx="12" cy="12" r="9" stroke-width="2" />
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"
+                  />
+                </svg>
+                {{ form.isPublic ? "公开" : "私有" }}
+              </div>
+              <div class="edit-card-preview-url">{{ previewUrl }}</div>
+            </div>
+          </div>
+        </div>
 
-    <div v-if="!isVertical">
-      <label class="sd-label">描述 (水平模式显示，每行对应一行文字)</label>
-      <textarea
-        v-model="mergedDescription"
-        @input="autoResize"
-        class="sd-textarea text-sm resize-none overflow-hidden"
-        placeholder="第一行 (上)
-第二行 (中)
-第三行 (下)"
-        rows="3"
-      ></textarea>
-    </div>
-
-    <div>
-      <label class="sd-label"
-        >外网链接 <span class="text-red-500">*</span>
-        <button
-          @click="addBackupUrl"
-          class="ml-2 text-xs text-gray-500 hover:text-gray-900 hover:underline"
-          title="添加备用外网地址"
-        >
-          + 备用地址
-        </button>
-      </label>
-      <div class="edit-card-link-match-row">
-        <input
-          v-model="form.url"
-          type="text"
-          class="sd-input"
-          placeholder="https://example.com"
-        />
-        <button
-          type="button"
-          @click.prevent="smartMatchIcons"
-          :disabled="isSmartMatching"
-          class="sd-btn edit-card-smart-match-button"
-          :class="isSmartMatching ? 'sd-btn-secondary' : 'sd-btn-primary'"
-        >
+        <div class="edit-card-metadata-header">
+          <span>已获取的信息</span>
           <span
-            v-if="isSmartMatching"
-            class="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin"
-          ></span>
-          <svg
-            v-else
-            class="w-3.5 h-3.5"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
+            class="edit-card-metadata-badge"
+            :class="{ 'is-muted': !hasFetchedMetadata }"
           >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M13 10V3L4 14h7v7l9-11h-7z"
-            />
-          </svg>
-          {{ isSmartMatching ? "匹配中..." : "智能匹配" }}
-        </button>
-      </div>
-      <!-- Backup URLs -->
-      <div
-        v-if="form.backupUrls && form.backupUrls.length > 0"
-        class="space-y-2 mt-2"
-      >
-        <div
-          v-for="(item, index) in form.backupUrls"
-          :key="'backup-wan-' + index"
-          data-testid="edit-card-backup-url-row"
-          class="flex flex-col sm:flex-row gap-2 items-start sm:items-center p-2 bg-gray-50 rounded-lg border border-gray-100"
-        >
-          <!-- URL Field -->
-          <div class="relative flex-[2] w-full sm:w-auto">
-            <input
-              v-model="item.url"
-              type="text"
-              maxlength="500"
-              class="sd-input sd-input-action text-sm"
-              :class="
-                isValidUrl(item.url)
-                  ? 'border-gray-200'
-                  : 'border-red-300 bg-red-50'
-              "
-              placeholder="请输入完整URL地址"
-              @keydown.enter.prevent
-            />
-            <button
-              v-if="item.url"
-              @click="item.url = ''"
-              class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-red-500 rounded-full p-0.5"
-              title="清除"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-                class="w-3 h-3"
-              >
-                <path
-                  d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z"
-                />
-              </svg>
-            </button>
-          </div>
-
-          <!-- Name Field -->
-          <div class="relative flex-1 w-full sm:w-auto">
-            <input
-              v-model="item.name"
-              type="text"
-              maxlength="50"
-              class="sd-input sd-input-action text-sm"
-              :class="[
-                form.backupUrls.filter(
-                  (i, idx) => i.name && i.name === item.name && idx !== index,
-                ).length > 0
-                  ? 'border-red-300'
-                  : 'border-gray-200',
-              ]"
-              placeholder="名称"
-              @keydown.enter.prevent
-              @keydown.tab="focusNextInput($event)"
-            />
-            <button
-              v-if="item.name"
-              @click="item.name = ''"
-              class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-red-500 rounded-full p-0.5"
-              title="清除"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-                class="w-3 h-3"
-              >
-                <path
-                  d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z"
-                />
-              </svg>
-            </button>
-          </div>
-
-          <button
-            @click="removeBackupUrl(index)"
-            class="text-gray-400 hover:text-red-500 p-2 sm:p-1 self-end sm:self-center"
-            title="删除"
-          >
-            ✕
-          </button>
+            {{ metadataFetchSummary }}
+          </span>
         </div>
-      </div>
-    </div>
 
-    <div>
-      <label class="sd-label"
-        >内网链接
-        <span class="text-gray-400 text-xs">(选填，内网访问时优先跳转)</span>
-        <button
-          @click="addBackupLanUrl"
-          class="ml-2 text-xs text-gray-500 hover:text-gray-900 hover:underline"
-          title="添加备用内网地址"
-        >
-          + 备用地址
-        </button>
-      </label>
-      <input
-        v-model="form.lanUrl"
-        type="text"
-        placeholder="http://192.168.1.x:8080"
-        class="sd-input"
-      />
-      <!-- Backup LAN URLs -->
-      <div
-        v-if="form.backupLanUrls && form.backupLanUrls.length > 0"
-        class="space-y-2 mt-2"
-      >
-        <div
-          v-for="(item, index) in form.backupLanUrls"
-          :key="'backup-lan-' + index"
-          class="flex flex-col sm:flex-row gap-2 items-start sm:items-center p-2 bg-gray-50 rounded-lg border border-gray-100"
-        >
-          <!-- Name Field -->
-          <div class="relative flex-1 w-full sm:w-auto">
-            <input
-              v-model="item.name"
-              type="text"
-              maxlength="50"
-              class="sd-input sd-input-action text-sm"
-              :class="[
-                form.backupLanUrls.filter(
-                  (i, idx) => i.name && i.name === item.name && idx !== index,
-                ).length > 0
-                  ? 'border-red-300'
-                  : 'border-gray-200',
-              ]"
-              placeholder="名称"
-              @keydown.enter.prevent
-              @keydown.tab="focusNextInput($event)"
-            />
-            <button
-              v-if="item.name"
-              @click="item.name = ''"
-              class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-red-500 rounded-full p-0.5"
-              title="清除"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-                class="w-3 h-3"
-              >
-                <path
-                  d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z"
-                />
-              </svg>
-            </button>
-          </div>
-
-          <!-- URL Field -->
-          <div class="relative flex-[2] w-full sm:w-auto">
-            <input
-              v-model="item.url"
-              type="text"
-              maxlength="500"
-              class="sd-input sd-input-action text-sm"
-              :class="
-                isValidUrl(item.url)
-                  ? 'border-gray-200'
-                  : 'border-red-300 bg-red-50'
-              "
-              placeholder="请输入完整URL地址"
-              @keydown.enter.prevent
-            />
-            <button
-              v-if="item.url"
-              @click="item.url = ''"
-              class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-red-500 rounded-full p-0.5"
-              title="清除"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-                class="w-3 h-3"
-              >
-                <path
-                  d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z"
-                />
-              </svg>
-            </button>
-          </div>
-
-          <button
-            @click="removeBackupLanUrl(index)"
-            class="text-gray-400 hover:text-red-500 p-2 sm:p-1 self-end sm:self-center"
-            title="删除"
-          >
-            ✕
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <div>
-      <label class="sd-label mb-3">图标</label>
-
-      <div class="edit-card-icon-editor">
-        <!-- 预览框 -->
-        <button
-          type="button"
-          class="edit-card-icon-preview"
-          aria-label="上传图标"
-          title="上传图标"
-          @click="triggerIconUpload"
-        >
-          <IconShape
-            v-if="form.icon && !isIconHidden"
-            :shape="effectiveIconShape"
-            :size="64"
-            :imgScale="form.iconSize"
-            :bgClass="iconBackgroundResolution.color"
-            :icon="form.icon"
-            class="transition-transform duration-200"
-            @error="handleIconError"
-            @load="onImgLoad"
-          />
-          <span v-else class="text-gray-300 text-xs">{{
-            isIconHidden ? "隐藏" : "预览"
-          }}</span>
-        </button>
-
-        <!-- 操作区 -->
-        <div class="edit-card-icon-controls">
-          <div class="edit-card-icon-toolbar">
-            <button
-              type="button"
-              @click="saveIconToLocal = !saveIconToLocal"
-              class="sd-btn min-h-0 px-3 py-1.5 text-xs"
-              :class="saveIconToLocal ? 'sd-btn-primary' : 'sd-btn-secondary'"
-            >
-              {{ saveIconToLocal ? "已缓存" : "缓存到本地" }}
-            </button>
-            <button
-              type="button"
-              class="sd-btn sd-btn-secondary min-h-0 px-3 py-1.5 text-xs shrink-0"
-              data-testid="edit-card-upload-icon"
-              @click="triggerIconUpload"
-            >
-              <svg
-                class="w-3.5 h-3.5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
+        <div class="edit-card-metadata-list">
+          <div class="edit-card-metadata-row">
+            <span class="edit-card-metadata-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
                 <path
                   stroke-linecap="round"
                   stroke-linejoin="round"
                   stroke-width="2"
-                  d="M12 16V4m0 0l-4 4m4-4l4 4M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2"
+                  d="M9 7h6m-7 4h8m-9 8h10a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2Z"
                 />
               </svg>
-              上传图标
-            </button>
+            </span>
+            <span class="edit-card-metadata-label">标题</span>
+            <span class="edit-card-metadata-value">{{ previewTitle }}</span>
+          </div>
+          <div v-if="previewDescription" class="edit-card-metadata-row">
+            <span class="edit-card-metadata-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M8 7h8M8 12h8m-8 5h5M5 3h14v18H5z"
+                />
+              </svg>
+            </span>
+            <span class="edit-card-metadata-label">描述</span>
+            <span class="edit-card-metadata-value">
+              {{ previewDescription }}
+            </span>
+          </div>
+          <div class="edit-card-metadata-row">
+            <span class="edit-card-metadata-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M4 16l4-4 3 3 5-6 4 5M5 5h14v14H5z"
+                />
+              </svg>
+            </span>
+            <span class="edit-card-metadata-label">图标</span>
+            <span class="edit-card-metadata-value">
+              <IconShape
+                v-if="previewIcon && !isIconHidden"
+                :shape="effectiveIconShape"
+                :size="28"
+                :imgScale="form.iconSize"
+                :bgClass="iconBackgroundResolution.color"
+                :icon="previewIcon"
+              />
+              <span v-else>未设置</span>
+            </span>
+          </div>
+          <div class="edit-card-metadata-row">
+            <span class="edit-card-metadata-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M10 13a5 5 0 0 0 7.07 0l2.12-2.12a5 5 0 0 0-7.07-7.07L11 4.93M14 11a5 5 0 0 0-7.07 0L4.81 13.12a5 5 0 0 0 7.07 7.07L13 19.07"
+                />
+              </svg>
+            </span>
+            <span class="edit-card-metadata-label">链接</span>
+            <span class="edit-card-metadata-value">{{ previewUrl }}</span>
+          </div>
+        </div>
+
+        <p class="edit-card-metadata-note">
+          信息来自公网地址自动获取，描述仅作预览，不会自动写入卡片描述。
+        </p>
+      </aside>
+
+      <section class="edit-card-form-pane custom-scrollbar">
+        <section class="edit-card-section edit-card-section-link">
+          <div class="edit-card-section-heading">
+            <span class="edit-card-section-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M10 13a5 5 0 0 0 7.07 0l2.12-2.12a5 5 0 0 0-7.07-7.07L11 4.93M14 11a5 5 0 0 0-7.07 0L4.81 13.12a5 5 0 0 0 7.07 7.07L13 19.07"
+                />
+              </svg>
+            </span>
+            <span>链接</span>
           </div>
 
-          <div
-            v-if="showSmartMatchModal"
-            class="sd-section border-blue-100 bg-blue-50/70 px-3 py-2.5"
-          >
-            <div class="flex items-center justify-between gap-3">
-              <div class="flex items-center gap-2 min-w-0">
+          <div class="edit-card-field-grid is-link-row">
+            <label class="sd-label" for="edit-card-url">
+              公网地址 <span class="text-red-500">*</span>
+            </label>
+            <div class="edit-card-link-match-row">
+              <input
+                id="edit-card-url"
+                v-model="form.url"
+                type="text"
+                class="sd-input"
+                placeholder="https://example.com"
+              />
+              <AppButton
+                variant="primary"
+                :busy="isSmartMatching"
+                class="edit-card-smart-match-button"
+                @click.prevent="runSmartMetadataFetch"
+              >
                 <span
                   v-if="isSmartMatching"
-                  class="w-3.5 h-3.5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin shrink-0"
+                  class="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin"
                 ></span>
-                <span class="text-xs text-gray-600 truncate">
-                  {{
-                    isSmartMatching
-                      ? "正在抓取图标..."
-                      : smartMatchCandidates.length
-                        ? "选择一个图标即可应用"
-                        : "未找到合适图标"
-                  }}
-                </span>
-              </div>
-              <button
-                type="button"
-                @click="closeSmartMatchModal"
-                class="text-xs text-gray-400 hover:text-gray-600 shrink-0"
-                title="收起"
-              >
-                收起
-              </button>
-            </div>
-
-            <div
-              v-if="smartMatchCandidates.length > 0"
-              class="mt-2 flex flex-wrap gap-2"
-            >
-              <button
-                v-for="candidate in smartMatchCandidates"
-                :key="candidate.url"
-                type="button"
-                @click="selectSmartMatchCandidate(candidate)"
-                :title="candidate.label || getIconNameFromUrl(candidate.url)"
-                class="group w-20 h-20 rounded-xl border-2 bg-white/90 hover:border-blue-200 hover:bg-white hover:shadow-sm flex items-center justify-center overflow-hidden transition-all"
-                :class="
-                  selectedSmartMatchCandidateUrl === candidate.url
-                    ? 'border-blue-500 ring-2 ring-blue-100 shadow-sm'
-                    : 'border-transparent'
-                "
-              >
-                <IconShape
-                  :shape="effectiveIconShape"
-                  :size="56"
-                  :imgScale="86"
-                  :bgClass="
-                    resolveCandidateBackground(candidate.backgroundColor)
-                  "
-                  :icon="candidate.url"
-                  class="transition-transform group-hover:scale-110"
-                />
-              </button>
-            </div>
-
-            <div
-              v-else-if="!isSmartMatching"
-              class="mt-2 text-xs text-gray-400"
-            >
-              请尝试修改标题、链接，或直接手动上传图标。
+                <svg
+                  v-else
+                  class="w-3.5 h-3.5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M13 10V3L4 14h7v7l9-11h-7z"
+                  />
+                </svg>
+                {{ isSmartMatching ? "获取中..." : "自动获取" }}
+              </AppButton>
             </div>
           </div>
 
-          <!-- 缩放滑块 -->
           <div
-            class="flex items-center gap-2 bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-100"
+            class="edit-card-fetch-state"
+            :class="{ 'is-muted': !hasFetchedMetadata }"
           >
-            <span class="text-xs text-gray-400 whitespace-nowrap">缩放</span>
-            <input
-              type="range"
-              v-model.number="form.iconSize"
-              min="20"
-              max="200"
-              step="5"
-              class="sd-range flex-1"
-            />
-            <span class="text-xs text-gray-500 w-8 text-right"
-              >{{ form.iconSize }}%</span
-            >
+            <span class="edit-card-fetch-dot">✓</span>
+            <span>{{ metadataFetchSummary }}</span>
           </div>
 
-          <div v-if="!isIconHidden" class="sd-section space-y-2 px-3 py-2.5">
-            <div class="flex items-center justify-between gap-3">
-              <span class="text-xs text-gray-400 whitespace-nowrap">背景</span>
+          <div class="edit-card-field-grid">
+            <label class="sd-label" for="edit-card-lan-url">
+              内网地址 <span class="text-gray-400 text-xs">(可选)</span>
+            </label>
+            <input
+              id="edit-card-lan-url"
+              v-model="form.lanUrl"
+              type="text"
+              placeholder="例如：http://192.168.1.10:8080"
+              class="sd-input"
+            />
+          </div>
+
+          <AppButton
+            v-if="!showExtraLinks"
+            variant="secondary"
+            class="edit-card-add-links-button"
+            @click="openExtraLinks"
+          >
+            <span>＋</span>
+            添加其他地址
+          </AppButton>
+
+          <div v-if="showExtraLinks" class="edit-card-extra-links">
+            <div class="edit-card-extra-links-head">
+              <span>其他地址</span>
+              <span>用于公网/内网备用入口，可按需添加多个。</span>
+            </div>
+
+            <div class="edit-card-extra-links-block">
+              <div class="edit-card-extra-links-title">
+                <span>备用公网地址</span>
+                <button type="button" @click="addBackupUrl">
+                  ＋ 添加备用公网
+                </button>
+              </div>
               <div
-                class="flex rounded-lg bg-white border border-gray-200 p-0.5"
+                v-if="form.backupUrls && form.backupUrls.length > 0"
+                class="edit-card-backup-list"
               >
+                <div
+                  v-for="(item, index) in form.backupUrls"
+                  :key="'backup-wan-' + index"
+                  data-testid="edit-card-backup-url-row"
+                  class="edit-card-backup-row"
+                >
+                  <input
+                    v-model="item.name"
+                    type="text"
+                    maxlength="50"
+                    class="sd-input"
+                    :class="[
+                      form.backupUrls.filter(
+                        (i, idx) =>
+                          i.name && i.name === item.name && idx !== index,
+                      ).length > 0
+                        ? 'border-red-300'
+                        : 'border-gray-200',
+                    ]"
+                    placeholder="名称"
+                    @keydown.enter.prevent
+                    @keydown.tab="focusNextInput($event)"
+                  />
+                  <input
+                    v-model="item.url"
+                    type="text"
+                    maxlength="500"
+                    class="sd-input"
+                    :class="
+                      isValidUrl(item.url)
+                        ? 'border-gray-200'
+                        : 'border-red-300 bg-red-50'
+                    "
+                    placeholder="请输入完整 URL 地址"
+                    @keydown.enter.prevent
+                  />
+                  <button
+                    type="button"
+                    class="edit-card-remove-link"
+                    title="删除"
+                    @click="removeBackupUrl(index)"
+                  >
+                    ×
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div class="edit-card-extra-links-block">
+              <div class="edit-card-extra-links-title">
+                <span>备用内网地址</span>
+                <button type="button" @click="addBackupLanUrl">
+                  ＋ 添加备用内网
+                </button>
+              </div>
+              <div
+                v-if="form.backupLanUrls && form.backupLanUrls.length > 0"
+                class="edit-card-backup-list"
+              >
+                <div
+                  v-for="(item, index) in form.backupLanUrls"
+                  :key="'backup-lan-' + index"
+                  data-testid="edit-card-backup-lan-url-row"
+                  class="edit-card-backup-row"
+                >
+                  <input
+                    v-model="item.name"
+                    type="text"
+                    maxlength="50"
+                    class="sd-input"
+                    :class="[
+                      form.backupLanUrls.filter(
+                        (i, idx) =>
+                          i.name && i.name === item.name && idx !== index,
+                      ).length > 0
+                        ? 'border-red-300'
+                        : 'border-gray-200',
+                    ]"
+                    placeholder="名称"
+                    @keydown.enter.prevent
+                    @keydown.tab="focusNextInput($event)"
+                  />
+                  <input
+                    v-model="item.url"
+                    type="text"
+                    maxlength="500"
+                    class="sd-input"
+                    :class="
+                      isValidUrl(item.url)
+                        ? 'border-gray-200'
+                        : 'border-red-300 bg-red-50'
+                    "
+                    placeholder="请输入完整 URL 地址"
+                    @keydown.enter.prevent
+                  />
+                  <button
+                    type="button"
+                    class="edit-card-remove-link"
+                    title="删除"
+                    @click="removeBackupLanUrl(index)"
+                  >
+                    ×
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="edit-card-section edit-card-section-basic">
+          <div class="edit-card-section-heading">
+            <span class="edit-card-section-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M9 5h6m-8 4h10M7 13h10m-7 4h4"
+                />
+              </svg>
+            </span>
+            <span>基础信息</span>
+          </div>
+
+          <div class="edit-card-basic-row">
+            <div class="edit-card-field-grid">
+              <label class="sd-label" for="edit-card-title">
+                标题 <span class="text-red-500">*</span>
+              </label>
+              <input
+                id="edit-card-title"
+                v-model="form.title"
+                type="text"
+                class="sd-input"
+                placeholder="例如：我的博客"
+              />
+            </div>
+            <div class="edit-card-public-control">
+              <span>公开</span>
+              <AppSwitch v-model="form.isPublic" />
+            </div>
+          </div>
+
+          <details
+            v-if="
+              !isVertical ||
+              form.description1 ||
+              form.description2 ||
+              form.description3
+            "
+            class="edit-card-description-details"
+          >
+            <summary>水平卡片描述</summary>
+            <textarea
+              v-model="mergedDescription"
+              @input="autoResize"
+              class="sd-textarea text-sm resize-none overflow-hidden"
+              placeholder="第一行（上）
+第二行（中）
+第三行（下）"
+              rows="3"
+            ></textarea>
+          </details>
+        </section>
+
+        <section class="edit-card-section">
+          <div class="edit-card-section-heading">
+            <span class="edit-card-section-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M4 16l4-4 3 3 5-6 4 5M5 5h14v14H5z"
+                />
+              </svg>
+            </span>
+            <span>图标外观</span>
+          </div>
+
+          <div class="edit-card-icon-appearance-grid">
+            <div class="edit-card-upload-stack">
+              <span class="edit-card-control-label">上传图标</span>
+              <AppButton
+                variant="secondary"
+                size="sm"
+                data-testid="edit-card-upload-icon"
+                @click="triggerIconUpload"
+              >
+                <svg
+                  class="w-3.5 h-3.5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M12 16V4m0 0l-4 4m4-4l4 4M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"
+                  />
+                </svg>
+                上传图标
+              </AppButton>
+            </div>
+
+            <div class="edit-card-icon-scale">
+              <span class="edit-card-control-label">缩放</span>
+              <input
+                type="range"
+                v-model.number="form.iconSize"
+                min="20"
+                max="200"
+                step="5"
+                class="sd-range"
+              />
+              <span class="edit-card-percent">{{ form.iconSize }}%</span>
+            </div>
+
+            <div v-if="!isIconHidden" class="edit-card-icon-bg-control">
+              <span class="edit-card-control-label">图标底色</span>
+              <div class="edit-card-background-mode">
                 <button
                   v-for="mode in iconBackgroundModes"
                   :key="mode.value"
                   type="button"
                   @click="setIconBackgroundMode(mode.value)"
-                  class="px-2 py-1 text-xs rounded-md transition-colors"
                   :class="
                     (form.iconBackgroundMode || 'auto') === mode.value
-                      ? 'bg-gray-900 text-white'
-                      : 'text-gray-500 hover:text-gray-900'
+                      ? 'is-active'
+                      : ''
                   "
                 >
                   {{ mode.label }}
                 </button>
               </div>
-            </div>
-
-            <div
-              v-if="form.iconBackgroundMode === 'custom'"
-              class="flex flex-col gap-2"
-            >
-              <div class="flex flex-wrap items-center gap-2">
+              <div class="edit-card-color-row">
                 <button
                   v-for="color in iconBackgroundPresets"
                   :key="color"
                   type="button"
-                  class="h-5 w-5 shrink-0 rounded-full border transition-all"
-                  :class="
-                    iconCustomColorValue === color
-                      ? 'border-gray-900 ring-2 ring-gray-300'
-                      : 'border-gray-200 hover:border-gray-400'
-                  "
+                  class="edit-card-color-swatch"
+                  :class="{ 'is-active': iconCustomColorValue === color }"
                   :style="{ backgroundColor: color }"
                   :title="color"
                   @click="setCustomIconBackgroundColor(color)"
                 ></button>
-              </div>
-              <div
-                class="grid grid-cols-[32px_minmax(0,1fr)] items-center gap-2"
-              >
                 <input
                   :value="iconCustomColorValue"
                   type="color"
-                  class="h-8 w-8 shrink-0 cursor-pointer rounded border border-gray-200 bg-transparent p-0"
-                  title="选择图标背景色"
-                  @input="
-                    setCustomIconBackgroundColor(
-                      ($event.target as HTMLInputElement).value,
-                    )
-                  "
-                />
-                <input
-                  :value="iconCustomColorValue"
-                  type="text"
-                  maxlength="7"
-                  class="sd-input min-h-0 w-full min-w-0 px-2 py-1 text-xs"
-                  placeholder="#111827"
+                  class="edit-card-color-input"
+                  title="选择图标底色"
                   @input="
                     setCustomIconBackgroundColor(
                       ($event.target as HTMLInputElement).value,
@@ -1135,140 +1172,120 @@ const submit = async () => {
                 />
               </div>
             </div>
-
-            <div class="text-[11px] leading-4 text-gray-400">
-              <span v-if="isIconShapeNone"
-                >当前形状不显示背景，颜色会保留供切换形状后使用。</span
-              >
-              <span v-else-if="iconBackgroundResolution.source === 'auto'"
-                >已使用推荐背景色。</span
-              >
-              <span v-else-if="iconBackgroundResolution.source === 'legacy'"
-                >正在读取旧图标背景配置。</span
-              >
-              <span v-else>未获取到推荐色时使用浅灰背景。</span>
-            </div>
           </div>
-        </div>
-      </div>
 
-      <!-- 图标 URL 输入 -->
-      <div class="edit-card-icon-url-row">
-        <input
-          v-model="form.icon"
-          type="text"
-          placeholder="图片 URL 地址..."
-          class="sd-input text-sm edit-card-icon-url-input"
-          @focus="iconInputFocused = true"
-          @blur="onIconInputBlur"
-        />
-        <AppButton
-          variant="secondary"
-          size="sm"
-          class="edit-card-icon-candidate-button"
-          @click="openCandidateSelection"
-        >
-          查看候选图标
-        </AppButton>
-      </div>
-
-      <input
-        ref="iconFileInput"
-        type="file"
-        accept="image/*"
-        class="hidden"
-        data-testid="edit-card-icon-file-input"
-        @change="onIconFileChange"
-      />
-    </div>
-
-    <div class="pt-4 border-t border-gray-100">
-      <label class="sd-label"
-        >卡片背景
-        <span class="text-xs text-gray-400 font-normal"
-          >(可选，支持模糊和遮罩效果)</span
-        ></label
-      >
-      <div class="space-y-3">
-        <div class="flex items-center gap-2">
           <input
-            v-model="form.backgroundImage"
-            type="text"
-            placeholder="背景图 URL..."
-            class="sd-input flex-1 text-sm"
+            ref="iconFileInput"
+            type="file"
+            accept="image/*"
+            class="hidden"
+            data-testid="edit-card-icon-file-input"
+            @change="onIconFileChange"
           />
-          <button
-            v-if="form.backgroundImage"
-            @click="form.backgroundImage = ''"
-            class="text-gray-400 hover:text-red-500 px-2"
-            title="清除背景"
-          >
-            ✕
-          </button>
-        </div>
-        <IconUploader
-          v-model="form.backgroundImage"
-          :crop="false"
-          :uploadOnly="true"
-          :previewStyle="{
-            filter: `blur(${form.backgroundBlur ?? 6}px)`,
-            transform: 'scale(1.1)',
-          }"
-          :overlayStyle="{
-            backgroundColor: `rgba(0,0,0,${form.backgroundMask ?? 0.3})`,
-          }"
-        />
+        </section>
 
-        <div
-          v-if="form.backgroundImage"
-          class="sd-section grid grid-cols-2 gap-4 mt-2 p-3"
-        >
-          <div>
-            <label
-              class="block text-xs text-gray-500 mb-1 flex justify-between"
-            >
+        <section class="edit-card-section edit-card-section-background">
+          <div class="edit-card-section-heading">
+            <span class="edit-card-section-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M4 16l5-5 4 4 3-3 4 4M5 5h14v14H5z"
+                />
+              </svg>
+            </span>
+            <span>卡片背景 <small>（可选）</small></span>
+          </div>
+
+          <div class="edit-card-background-uploader">
+            <IconUploader
+              v-model="form.backgroundImage"
+              :crop="false"
+              :uploadOnly="true"
+              :previewStyle="{
+                filter: `blur(${form.backgroundBlur ?? 6}px)`,
+                transform: 'scale(1.1)',
+              }"
+              :overlayStyle="{
+                backgroundColor: `rgba(0,0,0,${form.backgroundMask ?? 0.3})`,
+              }"
+            />
+            <p>不上传则使用默认卡片样式</p>
+          </div>
+
+          <div
+            v-if="form.backgroundImage"
+            class="edit-card-background-controls"
+          >
+            <label>
               <span>模糊半径</span>
-              <span>{{ form.backgroundBlur }}px</span>
+              <strong>{{ form.backgroundBlur }}px</strong>
+              <input
+                type="range"
+                v-model.number="form.backgroundBlur"
+                min="0"
+                max="20"
+                step="1"
+                class="sd-range"
+              />
             </label>
-            <input
-              type="range"
-              v-model.number="form.backgroundBlur"
-              min="0"
-              max="20"
-              step="1"
-              class="sd-range"
-            />
-          </div>
-          <div>
-            <label
-              class="block text-xs text-gray-500 mb-1 flex justify-between"
-            >
+            <label>
               <span>遮罩浓度</span>
-              <span>{{ Math.round((form.backgroundMask || 0) * 100) }}%</span>
+              <strong>
+                {{ Math.round((form.backgroundMask || 0) * 100) }}%
+              </strong>
+              <input
+                type="range"
+                v-model.number="form.backgroundMask"
+                min="0"
+                max="1"
+                step="0.1"
+                class="sd-range"
+              />
             </label>
-            <input
-              type="range"
-              v-model.number="form.backgroundMask"
-              min="0"
-              max="1"
-              step="0.1"
-              class="sd-range"
-            />
-          </div>
-          <div class="col-span-2 text-right">
             <button
+              type="button"
               @click="
                 form.backgroundImage = '';
                 form.backgroundBlur = 6;
                 form.backgroundMask = 0.3;
               "
-              class="text-xs text-red-500 hover:text-red-700 underline"
             >
               移除背景
             </button>
           </div>
-        </div>
-      </div>
+        </section>
+
+        <section class="edit-card-section edit-card-section-advanced">
+          <details class="edit-card-icon-url-details">
+            <summary>分组与高级图标</summary>
+            <div class="edit-card-field-grid edit-card-group-field">
+              <label class="sd-label">分组</label>
+              <GroupSelector v-model="localGroupId" />
+            </div>
+            <div class="edit-card-icon-url-row">
+              <input
+                v-model="form.icon"
+                type="text"
+                placeholder="图片 URL 地址..."
+                class="sd-input text-sm edit-card-icon-url-input"
+                @focus="iconInputFocused = true"
+                @blur="onIconInputBlur"
+              />
+              <AppButton
+                variant="secondary"
+                size="sm"
+                class="edit-card-icon-candidate-button"
+                @click="openCandidateSelection"
+              >
+                查看候选图标
+              </AppButton>
+            </div>
+          </details>
+        </section>
+      </section>
     </div>
     <template #footer>
       <AppButton variant="secondary" @click="close()">取消</AppButton>
@@ -1381,7 +1398,7 @@ const submit = async () => {
 }
 
 :global(.edit-card-panel) {
-  width: min(760px, calc(100vw - 32px));
+  width: min(1248px, calc(100vw - 48px));
 }
 
 :global(.edit-card-panel:focus),
@@ -1392,7 +1409,7 @@ const submit = async () => {
 :global(.edit-card-surface) {
   overflow: hidden;
   border: 1px solid var(--sd-shell-border);
-  border-radius: 20px;
+  border-radius: 18px;
   background: var(--sd-shell-surface);
   box-shadow: var(--sd-shadow-window);
   -webkit-backdrop-filter: var(--sd-shell-surface-filter);
@@ -1400,16 +1417,16 @@ const submit = async () => {
 }
 
 :global(.edit-card-surface > .sd-window-bar) {
-  min-height: 58px;
+  min-height: 66px;
   border-bottom-color: var(--sd-shell-border);
   background: var(--sd-shell-surface-muted);
-  padding: 0.8rem 1rem 0.75rem 1.15rem;
+  padding: 0.9rem 1.35rem;
 }
 
 :global(.edit-card-surface .sd-window-title-layer) {
   align-items: center;
   justify-content: flex-start;
-  padding: 0 320px 0 18px;
+  padding: 0 96px 0 1.35rem;
 }
 
 :global(.edit-card-surface .sd-window-title-stack) {
@@ -1420,7 +1437,7 @@ const submit = async () => {
 
 :global(.edit-card-surface .sd-window-title) {
   color: var(--sd-shell-text-primary);
-  font-size: 15px;
+  font-size: 20px;
   font-weight: 800;
   letter-spacing: 0;
 }
@@ -1435,36 +1452,22 @@ const submit = async () => {
 }
 
 :global(.edit-card-body) {
-  display: grid;
-  max-height: min(660px, calc(100vh - 172px));
-  gap: 17px;
-  overflow-y: auto;
-  padding: 18px;
+  height: min(750px, calc(100dvh - 138px));
+  max-height: min(750px, calc(100dvh - 138px));
+  overflow: hidden;
+  padding: 0;
   color: var(--sd-theme-edit-modal-text-01);
   overscroll-behavior: contain;
-}
-
-:global(.edit-card-body::-webkit-scrollbar) {
-  width: 8px;
-}
-
-:global(.edit-card-body::-webkit-scrollbar-track) {
-  background: var(--sd-theme-edit-modal-surface-01);
-}
-
-:global(.edit-card-body::-webkit-scrollbar-thumb) {
-  border-radius: 999px;
-  background: var(--sd-theme-edit-modal-surface-02);
 }
 
 :global(.edit-card-footer) {
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 10px;
+  gap: 14px;
   border-top-color: var(--sd-theme-edit-modal-border-01);
   background: var(--sd-theme-edit-modal-surface-03);
-  padding: 12px 18px;
+  padding: 14px 24px;
 }
 
 .edit-card-header-actions {
@@ -1681,6 +1684,668 @@ const submit = async () => {
   transform: scale(1.08);
 }
 
+.edit-card-layout {
+  display: grid;
+  height: 100%;
+  min-height: 0;
+  grid-template-columns: 438px minmax(0, 1fr);
+}
+
+.edit-card-preview-pane {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 20px;
+  border-right: 1px solid var(--sd-theme-edit-modal-border-01);
+  padding: 28px 24px 24px;
+  background: color-mix(
+    in srgb,
+    var(--sd-shell-surface-muted) 42%,
+    transparent
+  );
+}
+
+.edit-card-preview-title,
+.edit-card-metadata-header {
+  color: var(--sd-theme-edit-modal-text-01);
+  font-size: 16px;
+  font-weight: 800;
+  line-height: 22px;
+}
+
+.edit-card-preview-card {
+  position: relative;
+  min-height: 214px;
+  overflow: hidden;
+  border: 1px solid var(--sd-theme-edit-modal-border-03);
+  border-radius: 12px;
+  background:
+    radial-gradient(
+      circle at 70% 30%,
+      color-mix(in srgb, var(--sd-state-info) 10%, transparent),
+      transparent 34%
+    ),
+    linear-gradient(
+      145deg,
+      var(--sd-theme-edit-modal-surface-08),
+      var(--sd-theme-edit-modal-surface-04)
+    );
+  box-shadow: 0 16px 36px color-mix(in srgb, black 10%, transparent);
+}
+
+.edit-card-preview-card::before,
+.edit-card-preview-card::after {
+  position: absolute;
+  right: -18%;
+  bottom: -38%;
+  width: 86%;
+  height: 74%;
+  border-radius: 999px 0 0 0;
+  background: color-mix(in srgb, var(--sd-state-info) 8%, transparent);
+  content: "";
+  transform: rotate(-10deg);
+}
+
+.edit-card-preview-card::after {
+  right: -8%;
+  bottom: -48%;
+  background: color-mix(in srgb, white 42%, transparent);
+}
+
+.edit-card-preview-open {
+  position: absolute;
+  top: 24px;
+  right: 24px;
+  z-index: 2;
+  display: inline-flex;
+  width: 26px;
+  height: 26px;
+  align-items: center;
+  justify-content: center;
+  color: var(--sd-theme-edit-modal-text-03);
+}
+
+.edit-card-preview-open svg {
+  width: 18px;
+  height: 18px;
+}
+
+.edit-card-preview-main {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 26px;
+  padding: 42px 26px;
+}
+
+.edit-card-preview-icon {
+  display: flex;
+  width: 104px;
+  height: 104px;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--sd-shell-border) 70%, transparent);
+  border-radius: 18px;
+  background: var(--sd-theme-edit-modal-surface-08);
+  color: var(--sd-theme-edit-modal-text-02);
+  font-size: 40px;
+  font-weight: 800;
+  box-shadow: 0 16px 34px color-mix(in srgb, black 12%, transparent);
+}
+
+.edit-card-preview-copy {
+  min-width: 0;
+}
+
+.edit-card-preview-name {
+  overflow: hidden;
+  color: var(--sd-theme-edit-modal-text-01);
+  font-size: 25px;
+  font-weight: 800;
+  line-height: 32px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.edit-card-preview-public,
+.edit-card-preview-url {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  color: var(--sd-theme-edit-modal-text-03);
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.edit-card-preview-public {
+  color: var(--sd-state-success);
+  font-weight: 700;
+}
+
+.edit-card-preview-public svg {
+  width: 17px;
+  height: 17px;
+}
+
+.edit-card-preview-url {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.edit-card-metadata-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.edit-card-metadata-badge {
+  max-width: 205px;
+  overflow: hidden;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--sd-state-success) 14%, transparent);
+  color: var(--sd-state-success);
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 22px;
+  padding: 0 10px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.edit-card-metadata-badge.is-muted {
+  background: var(--sd-theme-edit-modal-surface-04);
+  color: var(--sd-theme-edit-modal-text-03);
+}
+
+.edit-card-metadata-list {
+  overflow: hidden;
+  border: 1px solid var(--sd-theme-edit-modal-border-03);
+  border-radius: 12px;
+  background: var(--sd-theme-edit-modal-surface-08);
+}
+
+.edit-card-metadata-row {
+  display: grid;
+  grid-template-columns: 24px 58px minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  min-height: 54px;
+  border-bottom: 1px solid var(--sd-theme-edit-modal-border-03);
+  padding: 9px 14px;
+}
+
+.edit-card-metadata-row:last-child {
+  border-bottom: 0;
+}
+
+.edit-card-metadata-icon {
+  display: inline-flex;
+  width: 22px;
+  height: 22px;
+  align-items: center;
+  justify-content: center;
+  color: var(--sd-theme-edit-modal-text-03);
+}
+
+.edit-card-metadata-icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.edit-card-metadata-label {
+  color: var(--sd-theme-edit-modal-text-03);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.edit-card-metadata-value {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--sd-theme-edit-modal-text-02);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 18px;
+  text-overflow: ellipsis;
+}
+
+.edit-card-metadata-note {
+  margin-top: auto;
+  color: var(--sd-theme-edit-modal-text-03);
+  font-size: 12px;
+  line-height: 20px;
+}
+
+.edit-card-form-pane {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 0;
+  overflow-y: auto;
+  padding: 20px 18px 24px;
+  scrollbar-gutter: stable;
+  scrollbar-color: var(--sd-scrollbar-thumb) var(--sd-scrollbar-track);
+  scrollbar-width: thin;
+}
+
+.edit-card-form-pane::-webkit-scrollbar {
+  width: var(--sd-scrollbar-size, 7px);
+}
+
+.edit-card-form-pane::-webkit-scrollbar-track {
+  border-radius: 999px;
+  background: var(--sd-scrollbar-track);
+}
+
+.edit-card-form-pane::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: var(--sd-scrollbar-thumb);
+}
+
+.edit-card-section {
+  border-bottom: 1px solid var(--sd-theme-edit-modal-border-01);
+  padding: 20px 12px;
+}
+
+.edit-card-section:first-child {
+  padding-top: 4px;
+}
+
+.edit-card-section:last-child {
+  border-bottom: 0;
+}
+
+.edit-card-section-heading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  color: var(--sd-theme-edit-modal-text-01);
+  font-size: 17px;
+  font-weight: 800;
+  line-height: 24px;
+}
+
+.edit-card-section-heading small {
+  color: var(--sd-theme-edit-modal-text-03);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.edit-card-section-icon {
+  display: inline-flex;
+  width: 22px;
+  height: 22px;
+  align-items: center;
+  justify-content: center;
+  color: var(--sd-state-info);
+}
+
+.edit-card-section-icon svg {
+  width: 20px;
+  height: 20px;
+}
+
+.edit-card-field-grid {
+  display: grid;
+  grid-template-columns: 118px minmax(0, 1fr);
+  align-items: center;
+  gap: 14px;
+}
+
+.edit-card-field-grid + .edit-card-field-grid,
+.edit-card-fetch-state + .edit-card-field-grid {
+  margin-top: 16px;
+}
+
+.edit-card-field-grid.is-link-row {
+  align-items: start;
+}
+
+.edit-card-fetch-state {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 10px 0 0 118px;
+  color: var(--sd-state-success);
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 18px;
+}
+
+.edit-card-fetch-state.is-muted {
+  color: var(--sd-theme-edit-modal-text-03);
+  font-weight: 700;
+}
+
+.edit-card-fetch-dot {
+  display: inline-flex;
+  width: 16px;
+  height: 16px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  font-size: 11px;
+  line-height: 1;
+}
+
+.edit-card-add-links-button {
+  width: calc(100% - 118px);
+  margin: 18px 0 0 118px;
+  border-style: dashed;
+  background: transparent;
+}
+
+.edit-card-extra-links {
+  display: grid;
+  gap: 12px;
+  margin: 16px 0 0 118px;
+  border: 1px solid var(--sd-theme-edit-modal-border-03);
+  border-radius: 12px;
+  background: var(--sd-theme-edit-modal-surface-08);
+  padding: 12px;
+}
+
+.edit-card-extra-links-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--sd-theme-edit-modal-text-03);
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.edit-card-extra-links-head span:first-child,
+.edit-card-extra-links-title span {
+  color: var(--sd-theme-edit-modal-text-01);
+  font-weight: 800;
+}
+
+.edit-card-extra-links-block {
+  display: grid;
+  gap: 8px;
+}
+
+.edit-card-extra-links-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 12px;
+}
+
+.edit-card-extra-links-title button,
+.edit-card-remove-link,
+.edit-card-smart-candidates-head button,
+.edit-card-background-controls button {
+  color: var(--sd-theme-edit-modal-text-03);
+  font-size: 12px;
+  font-weight: 800;
+  transition: color 0.16s ease;
+}
+
+.edit-card-extra-links-title button:hover,
+.edit-card-smart-candidates-head button:hover {
+  color: var(--sd-theme-edit-modal-text-01);
+}
+
+.edit-card-backup-list {
+  display: grid;
+  gap: 8px;
+}
+
+.edit-card-backup-row {
+  display: grid;
+  grid-template-columns: minmax(120px, 0.52fr) minmax(0, 1fr) 34px;
+  gap: 10px;
+  align-items: center;
+}
+
+.edit-card-remove-link {
+  display: inline-flex;
+  width: 34px;
+  height: 34px;
+  align-items: center;
+  justify-content: center;
+  color: var(--sd-theme-edit-modal-text-06);
+  font-size: 24px;
+  line-height: 1;
+}
+
+.edit-card-remove-link:hover {
+  color: var(--sd-theme-edit-modal-accent-text-01);
+}
+
+.edit-card-basic-row {
+  display: grid;
+  grid-template-columns: minmax(0, 430px) minmax(140px, 1fr);
+  align-items: end;
+  gap: 18px;
+}
+
+.edit-card-basic-row .edit-card-field-grid {
+  grid-template-columns: 64px minmax(0, 1fr);
+}
+
+.edit-card-group-field {
+  grid-template-columns: 44px minmax(0, 1fr) !important;
+  margin-top: 12px;
+}
+
+.edit-card-public-control {
+  display: flex;
+  min-height: 44px;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 14px;
+  color: var(--sd-theme-edit-modal-text-01);
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.edit-card-description-details,
+.edit-card-icon-url-details {
+  margin-top: 14px;
+  color: var(--sd-theme-edit-modal-text-03);
+  font-size: 12px;
+}
+
+.edit-card-description-details summary,
+.edit-card-icon-url-details summary {
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.edit-card-description-details .sd-textarea,
+.edit-card-icon-url-row {
+  margin-top: 10px;
+}
+
+.edit-card-icon-appearance-grid {
+  display: grid;
+  grid-template-columns: 140px 190px minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.edit-card-upload-stack,
+.edit-card-icon-scale,
+.edit-card-icon-bg-control {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+
+.edit-card-control-label {
+  color: var(--sd-theme-edit-modal-text-01);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.edit-card-icon-scale .sd-range {
+  width: 100%;
+}
+
+.edit-card-percent {
+  width: fit-content;
+  min-width: 58px;
+  border: 1px solid var(--sd-theme-edit-modal-border-03);
+  border-radius: 8px;
+  background: var(--sd-theme-edit-modal-surface-08);
+  color: var(--sd-theme-edit-modal-text-01);
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 32px;
+  padding: 0 10px;
+  text-align: center;
+}
+
+.edit-card-background-mode {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  width: 190px;
+  border: 1px solid var(--sd-theme-edit-modal-border-03);
+  border-radius: 8px;
+  background: var(--sd-theme-edit-modal-surface-04);
+  padding: 2px;
+}
+
+.edit-card-background-mode button {
+  min-height: 32px;
+  border-radius: 6px;
+  color: var(--sd-theme-edit-modal-text-03);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.edit-card-background-mode button.is-active {
+  border: 1px solid var(--sd-theme-edit-modal-accent-border-03);
+  background: color-mix(in srgb, var(--sd-state-info) 12%, transparent);
+  color: var(--sd-state-info);
+}
+
+.edit-card-color-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.edit-card-color-swatch,
+.edit-card-color-input {
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--sd-theme-edit-modal-border-03);
+  border-radius: 7px;
+}
+
+.edit-card-color-swatch.is-active {
+  box-shadow:
+    0 0 0 2px var(--sd-shell-surface),
+    0 0 0 4px var(--sd-state-info);
+}
+
+.edit-card-color-input {
+  overflow: hidden;
+  padding: 0;
+}
+
+.edit-card-icon-url-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.edit-card-icon-url-input {
+  min-width: 0;
+}
+
+.edit-card-icon-candidate-button {
+  white-space: nowrap;
+}
+
+.edit-card-background-uploader {
+  border: 1px dashed var(--sd-theme-edit-modal-border-03);
+  border-radius: 12px;
+  background: var(--sd-theme-edit-modal-surface-08);
+  padding: 8px 10px;
+  text-align: center;
+}
+
+.edit-card-background-uploader :deep(.h-32) {
+  height: 44px;
+  border-width: 1px;
+  border-radius: 10px;
+}
+
+.edit-card-background-uploader :deep(.text-2xl) {
+  margin-bottom: 0;
+  font-size: 20px;
+  line-height: 20px;
+}
+
+.edit-card-background-uploader :deep(.text-xs) {
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.edit-card-background-uploader p {
+  margin: 4px 0 0;
+  color: var(--sd-theme-edit-modal-text-03);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.edit-card-background-controls {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) auto;
+  align-items: end;
+  gap: 14px;
+  margin-top: 14px;
+  border: 1px solid var(--sd-theme-edit-modal-border-03);
+  border-radius: 12px;
+  background: var(--sd-theme-edit-modal-surface-08);
+  padding: 12px;
+}
+
+.edit-card-background-controls label {
+  display: grid;
+  gap: 8px;
+  color: var(--sd-theme-edit-modal-text-03);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.edit-card-background-controls label strong {
+  color: var(--sd-theme-edit-modal-text-01);
+  font-size: 13px;
+}
+
+.edit-card-background-controls button {
+  color: var(--sd-theme-edit-modal-accent-text-01);
+  white-space: nowrap;
+}
+
+:global(.edit-card-surface .edit-card-form-pane .sd-label) {
+  margin-bottom: 0;
+  font-size: 13px;
+  line-height: 44px;
+}
+
+:global(.edit-card-surface .sd-input),
+:global(.edit-card-surface .sd-textarea),
+:global(.edit-card-surface .sd-select) {
+  min-height: 44px;
+}
+
 @media (max-width: 767px) {
   :global(.edit-card-panel) {
     width: min(100vw, calc(100vw - 16px));
@@ -1692,14 +2357,14 @@ const submit = async () => {
 
   :global(.edit-card-surface > .sd-window-bar) {
     align-items: flex-start;
-    min-height: 86px;
+    min-height: 68px;
     padding: 13px 14px 10px;
   }
 
   :global(.edit-card-surface .sd-window-title-layer) {
     align-items: flex-start;
     justify-content: flex-start;
-    padding: 12px 78px 0 0;
+    padding: 10px 78px 0 14px;
   }
 
   :global(.edit-card-surface .sd-window-title-stack) {
@@ -1712,7 +2377,6 @@ const submit = async () => {
   }
 
   .edit-card-header-actions {
-    flex-wrap: wrap;
     justify-content: flex-end;
     gap: 8px;
   }
@@ -1763,12 +2427,90 @@ const submit = async () => {
   }
 
   :global(.edit-card-body) {
-    max-height: min(650px, calc(100dvh - 168px));
-    gap: 14px;
-    padding: 14px;
+    height: min(760px, calc(100dvh - 132px));
+    max-height: min(760px, calc(100dvh - 132px));
+  }
+
+  .edit-card-layout {
+    grid-template-columns: 1fr;
+    overflow-y: auto;
+  }
+
+  .edit-card-preview-pane {
+    order: 2;
+    border-right: 0;
+    border-bottom: 1px solid var(--sd-theme-edit-modal-border-01);
+    padding: 18px 14px;
+  }
+
+  .edit-card-preview-card {
+    min-height: 176px;
+  }
+
+  .edit-card-preview-main {
+    gap: 16px;
+    padding: 32px 18px;
+  }
+
+  .edit-card-preview-icon {
+    width: 82px;
+    height: 82px;
+    border-radius: 16px;
+  }
+
+  .edit-card-preview-name {
+    font-size: 21px;
+    line-height: 28px;
+  }
+
+  .edit-card-form-pane {
+    order: 1;
+    overflow: visible;
+    padding: 12px 10px 18px;
+  }
+
+  .edit-card-section {
+    padding: 16px 4px;
+  }
+
+  .edit-card-field-grid,
+  .edit-card-basic-row,
+  .edit-card-icon-appearance-grid,
+  .edit-card-background-controls {
+    grid-template-columns: 1fr;
+  }
+
+  .edit-card-basic-row {
+    gap: 12px;
+  }
+
+  .edit-card-basic-row .edit-card-field-grid,
+  .edit-card-group-field {
+    grid-template-columns: 1fr !important;
+  }
+
+  :global(.edit-card-surface .edit-card-form-pane .sd-label) {
+    line-height: 20px;
+  }
+
+  .edit-card-fetch-state,
+  .edit-card-add-links-button,
+  .edit-card-extra-links {
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .edit-card-backup-row {
+    grid-template-columns: 1fr 1fr 32px;
+  }
+
+  .edit-card-public-control {
+    justify-content: space-between;
   }
 
   :global(.edit-card-footer) {
+    flex-direction: row;
+    align-items: center;
     padding: 10px 14px;
   }
 

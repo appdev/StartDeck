@@ -92,6 +92,37 @@ pub async fn ensure_schema(pool: &SqlitePool) -> Result<()> {
             FOREIGN KEY(username) REFERENCES users(username) ON DELETE CASCADE
         )"#,
         r#"CREATE INDEX IF NOT EXISTS idx_widgets_username_order ON widgets(username, sort_order)"#,
+        r#"CREATE TABLE IF NOT EXISTS ai_usage_credentials (
+            username TEXT NOT NULL,
+            widget_id TEXT NOT NULL,
+            provider_id TEXT NOT NULL,
+            credential_type TEXT NOT NULL,
+            encrypted_secret TEXT NOT NULL,
+            encrypted_account_id TEXT,
+            nonce TEXT NOT NULL,
+            account_nonce TEXT,
+            key_version INTEGER NOT NULL,
+            created_at INTEGER NOT NULL,
+            updated_at INTEGER NOT NULL,
+            PRIMARY KEY(username, widget_id, provider_id),
+            FOREIGN KEY(username) REFERENCES users(username) ON DELETE CASCADE
+        )"#,
+        r#"CREATE INDEX IF NOT EXISTS idx_ai_usage_credentials_username
+           ON ai_usage_credentials(username, updated_at DESC)"#,
+        r#"CREATE TABLE IF NOT EXISTS tapd_credentials (
+            username TEXT NOT NULL,
+            widget_id TEXT NOT NULL,
+            credential_type TEXT NOT NULL,
+            encrypted_material TEXT NOT NULL,
+            nonce TEXT NOT NULL,
+            key_version INTEGER NOT NULL,
+            created_at INTEGER NOT NULL,
+            updated_at INTEGER NOT NULL,
+            PRIMARY KEY(username, widget_id),
+            FOREIGN KEY(username) REFERENCES users(username) ON DELETE CASCADE
+        )"#,
+        r#"CREATE INDEX IF NOT EXISTS idx_tapd_credentials_username
+           ON tapd_credentials(username, updated_at DESC)"#,
         r#"CREATE TABLE IF NOT EXISTS memos (
             widget_id TEXT NOT NULL,
             username TEXT NOT NULL,
@@ -195,6 +226,8 @@ async fn any_runtime_table_exists(pool: &SqlitePool) -> Result<bool> {
         "nav_groups",
         "nav_items",
         "widgets",
+        "ai_usage_credentials",
+        "tapd_credentials",
         "memos",
         "runtime_cache",
         "ip_location_cache",
@@ -254,6 +287,8 @@ async fn destructive_reset_schema(pool: &SqlitePool) -> Result<()> {
         "DROP TABLE IF EXISTS icon_assets",
         "DROP TABLE IF EXISTS nav_items",
         "DROP TABLE IF EXISTS widgets",
+        "DROP TABLE IF EXISTS ai_usage_credentials",
+        "DROP TABLE IF EXISTS tapd_credentials",
         "DROP TABLE IF EXISTS memos",
         "DROP TABLE IF EXISTS runtime_cache",
         "DROP TABLE IF EXISTS user_ip_locations",

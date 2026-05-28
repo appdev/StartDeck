@@ -32,6 +32,8 @@ describe("widgetRuntimeSizes", () => {
     ["itab-calendar-01", "2x2"],
     ["itab-number-uppercase-35", "2x2"],
     ["itab-food-picker-15", "2x2"],
+    ["ai-usage", "2x2"],
+    ["tapd-defects", "2x2"],
   ])(
     "uses iTab %s size semantics without StartDeck 1x2/2x1 inversion",
     (type, defaultSizeKey) => {

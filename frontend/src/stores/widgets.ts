@@ -7,15 +7,13 @@ import {
   buildServerLayoutSignature,
 } from "@/utils/storeHelpers";
 import { normalizeIncomingWidgets as normalizeIncomingWidgetsUtil } from "@/utils/widgetUtils";
-import type { WidgetConfig, MarketplaceItem } from "@/types";
+import type { WidgetConfig } from "@/types";
 import { useAuthStore } from "./auth";
-import {
-  CUSTOM_CSS_DEFAULT_SIZE,
-  applyCustomCssWidgetSizeToWidget,
-  normalizeCustomCssWidgetData,
-} from "@/features/widget-runtime/customCssRuntimeModel";
+import { useUiFeedbackStore } from "./uiFeedback";
 
 export const useWidgetsStore = defineStore("widgets", () => {
+  const auth = useAuthStore();
+  const uiFeedback = useUiFeedbackStore();
   const widgets = ref<WidgetConfig[]>([]);
 
   type WidgetUiState = {
@@ -166,11 +164,23 @@ export const useWidgetsStore = defineStore("widgets", () => {
     }
   };
 
+  const requireWidgetMutationPermission = () => {
+    if (auth.isLogged) return true;
+    uiFeedback.notify({
+      title: "需要登录",
+      message: "请先登录后再修改组件内容。",
+      tone: "warning",
+    });
+    return false;
+  };
+
   const saveWidget = async (id?: string, data?: unknown) => {
+    if (!requireWidgetMutationPermission()) return false;
     if (typeof id === "string") {
       const w = widgets.value.find((x) => x.id === id);
       if (w) w.data = data as WidgetConfig["data"];
     }
+    return true;
   };
 
   // Phase 3: Fine-grained widget save via PUT /api/widgets/:id
@@ -181,6 +191,7 @@ export const useWidgetsStore = defineStore("widgets", () => {
     getHeaders: () => Record<string, string>,
     dataVersion: { value: number },
   ): Promise<boolean> => {
+    if (!requireWidgetMutationPermission()) return false;
     try {
       const w = widgets.value.find((x) => x.id === widgetId);
       const widgetVersion = w
@@ -217,7 +228,7 @@ export const useWidgetsStore = defineStore("widgets", () => {
         return true;
       }
       if (res.status === 401) {
-        useAuthStore().logout();
+        auth.logout();
       }
       return false;
     } catch (e) {
@@ -270,59 +281,6 @@ export const useWidgetsStore = defineStore("widgets", () => {
     await saveData(true, true);
   };
 
-  const applyMarketplaceItem = (
-    item: MarketplaceItem,
-    appConfig: Record<string, unknown>,
-  ) => {
-    let changed = false;
-
-    if (item.css) {
-      if (!appConfig.customCssList) appConfig.customCssList = [];
-      const newId = item.id ? `css-${item.id}` : `css-${Date.now()}`;
-      (appConfig.customCssList as unknown[]).push({
-        id: newId,
-        name: item.name || "Unknown CSS",
-        content: item.css,
-        enable: true,
-        useProxy: item.useProxy ?? false,
-      });
-      changed = true;
-    }
-
-    if (item.js) {
-      if (!appConfig.customJsList) appConfig.customJsList = [];
-      const newId = item.id ? `js-${item.id}` : `js-${Date.now()}`;
-      (appConfig.customJsList as unknown[]).push({
-        id: newId,
-        name: item.name || "Unknown JS",
-        content: item.js,
-        enable: true,
-        useProxy: item.useProxy ?? false,
-      });
-      changed = true;
-    }
-
-    if (item.component) {
-      const newId = "custom-css-" + Date.now();
-      const widget: WidgetConfig = {
-        id: newId,
-        type: "custom-css",
-        enable: true,
-        data: normalizeCustomCssWidgetData(item.component),
-        colSpan: 1,
-        rowSpan: 1,
-        w: 1,
-        h: 1,
-        isPublic: true,
-      };
-      applyCustomCssWidgetSizeToWidget(widget, CUSTOM_CSS_DEFAULT_SIZE);
-      widgets.value.push(widget);
-      changed = true;
-    }
-
-    return changed;
-  };
-
   return {
     widgets,
     mergedWidgets,
@@ -343,6 +301,5 @@ export const useWidgetsStore = defineStore("widgets", () => {
     undoLayout,
     stripWidgetUiState,
     applyWidgetUiState,
-    applyMarketplaceItem,
   };
 });

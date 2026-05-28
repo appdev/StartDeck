@@ -1372,10 +1372,7 @@ onBeforeUnmount(() => {
   padding: 16px;
   border-radius: 6px;
   background: transparent;
-  scrollbar-color: var(
-      --sd-theme-itab-anniversary-anniversary-opened-panel-text-07
-    )
-    transparent;
+  scrollbar-color: var(--sd-scrollbar-thumb) var(--sd-scrollbar-track);
   scrollbar-width: thin;
 }
 

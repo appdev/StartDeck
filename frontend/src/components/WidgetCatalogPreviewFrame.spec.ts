@@ -11,7 +11,7 @@ const mountPreview = (search: string) => {
         WidgetRuntimeFrame: {
           props: ["widget"],
           template:
-            '<div class="runtime-frame-stub" :data-size-key="widget.data?.sizeKey" :data-span="`${widget.w}x${widget.h}`" :data-catalog-preview="widget.data?.catalogPreview ? \'true\' : \'false\'"></div>',
+            '<div class="runtime-frame-stub" :data-size-key="widget.data?.sizeKey" :data-span="`${widget.w}x${widget.h}`" :data-catalog-preview="widget.data?.catalogPreview ? \'true\' : \'false\'" :data-primary="widget.data?.lastSummary?.primaryRemainingPercent" :data-weekly="widget.data?.lastSummary?.weeklyRemainingPercent" :data-tapd-visible="widget.data?.lastSummary?.visibleTotal" :data-tapd-workspace="widget.data?.workspaceId"></div>',
         },
       },
     },
@@ -61,6 +61,30 @@ describe("WidgetCatalogPreviewFrame", () => {
       "data-size-key": "2x2",
       "data-span": "2x2",
       "data-catalog-preview": "true",
+    });
+  });
+
+  it("uses design-state data for AI usage previews", () => {
+    const wrapper = mountPreview("?catalogId=ai-usage&size=2x4");
+
+    expect(wrapper.find(".runtime-frame-stub").attributes()).toMatchObject({
+      "data-size-key": "2x4",
+      "data-span": "4x2",
+      "data-catalog-preview": "true",
+      "data-primary": "85",
+      "data-weekly": "40",
+    });
+  });
+
+  it("uses design-state data for TAPD defect previews", () => {
+    const wrapper = mountPreview("?catalogId=tapd-defects&size=2x4");
+
+    expect(wrapper.find(".runtime-frame-stub").attributes()).toMatchObject({
+      "data-size-key": "2x4",
+      "data-span": "4x2",
+      "data-catalog-preview": "true",
+      "data-tapd-visible": "23",
+      "data-tapd-workspace": "20358627",
     });
   });
 });

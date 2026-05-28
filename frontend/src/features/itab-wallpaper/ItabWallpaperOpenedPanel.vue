@@ -9,6 +9,7 @@ import {
 } from "vue";
 import type { WidgetConfig } from "@/types";
 import { useMainStore } from "@/stores/main";
+import { useLoginRequiredToast } from "@/composables/useRequireLogin";
 import { patchItabWallpaperData } from "./itabWallpaperModel";
 import { useItabWallpaperRuntime } from "./useItabWallpaperRuntime";
 import type {
@@ -26,6 +27,7 @@ const emit = defineEmits<{
 }>();
 
 const store = useMainStore();
+const { notifyLoginRequired } = useLoginRequiredToast();
 const widgetRef = computed(() => props.widget);
 const runtime = useItabWallpaperRuntime(widgetRef);
 const applyingWallpaperId = ref("");
@@ -115,6 +117,10 @@ const persistWidgetWallpaperState = (entry: ItabWallpaperEntry) => {
 };
 
 const applyWallpaper = async (entry: ItabWallpaperEntry) => {
+  if (!store.isLogged) {
+    notifyLoginRequired("请先登录后再应用壁纸。");
+    return;
+  }
   runtime.selectWallpaper(entry);
   persistWidgetWallpaperState(entry);
   store.appConfig.background = entry.downloadUrl;

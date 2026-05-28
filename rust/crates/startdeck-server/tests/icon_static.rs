@@ -21,6 +21,11 @@ async fn spawn_icon_service(base: &std::path::Path) -> (String, tokio::task::Joi
     )
     .unwrap();
     std::fs::write(
+        icon_resource_dir.join("icons/Bilibili_A+哔哩哔哩+bilibili.com.png"),
+        r#"icon-with-unicode-path"#,
+    )
+    .unwrap();
+    std::fs::write(
         icon_data_dir.join("cache/runtime-cache.svg"),
         r#"<svg id="runtime-cache"/>"#,
     )
@@ -47,6 +52,7 @@ async fn main_app(icon_service_base: String, base: &std::path::Path) -> axum::Ro
     std::fs::create_dir_all(&data_dir).unwrap();
     std::fs::create_dir_all(public_dir.join("icons")).unwrap();
     std::fs::write(public_dir.join("index.html"), "<main>StartDeck</main>").unwrap();
+    // This file must be ignored by /icons routing; Icon Server is the only icon source.
     std::fs::write(
         public_dir.join("icons/main-public.svg"),
         r#"<svg id="main-public"/>"#,
@@ -73,8 +79,11 @@ async fn proxies_icon_service_static_resources_over_http() {
     let app = main_app(icon_service_base, &base).await;
 
     for (uri, expected) in [
-        ("/icons/main-public.svg", r#"<svg id="main-public"/>"#),
         ("/icons/resource.svg", r#"<svg id="resource"/>"#),
+        (
+            "/icons/Bilibili_A+%E5%93%94%E5%93%A9%E5%93%94%E5%93%A9+bilibili.com.png",
+            r#"icon-with-unicode-path"#,
+        ),
         ("/cache/runtime-cache.svg", r#"<svg id="runtime-cache"/>"#),
     ] {
         let response = app
@@ -86,6 +95,18 @@ async fn proxies_icon_service_static_resources_over_http() {
         let body = to_bytes(response.into_body(), usize::MAX).await.unwrap();
         assert_eq!(body.as_ref(), expected.as_bytes(), "{uri}");
     }
+
+    let response = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .uri("/icons/main-public.svg")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::NOT_FOUND);
 
     icon_service.abort();
 }
