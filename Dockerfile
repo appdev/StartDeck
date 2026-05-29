@@ -54,6 +54,9 @@ RUN strip target/release/startdeck-server target/release/startdeck-iconserver
 # Stage 3: Runtime files copied into the slim final image.
 FROM debian:bookworm-slim AS runtime-deps
 
+ENV DEBIAN_FRONTEND=noninteractive \
+    TZ=Asia/Shanghai
+
 RUN apt-get update \
     && apt-get install -y --no-install-recommends ca-certificates tzdata \
     && rm -rf /var/lib/apt/lists/*
