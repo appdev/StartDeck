@@ -43,7 +43,7 @@ async fn test_app_with_widget_cache(include_poem_cache: bool) -> axum::Router {
                 "id": "guest-group",
                 "title": "Guest Group",
                 "items": [
-                    {"id": "public-link", "title": "Public Link", "url": "https://example.com", "icon": "", "isPublic": true},
+                    {"id": "public-link", "title": "Public Link", "url": "https://example.com/path?q=1", "icon": "/icon-cache/missing.svg", "isPublic": true},
                     {"id": "private-link", "title": "Private Link", "url": "https://secret.example.com", "icon": "", "isPublic": false}
                 ]
             }],
@@ -547,6 +547,10 @@ async fn login_and_read_data_snapshot() {
     assert_eq!(body["appConfig"]["customTitle"], "Guest Default");
     assert_eq!(body["groups"][0]["title"], "Guest Group");
     assert_eq!(body["groups"][0]["items"][0]["id"], "public-link");
+    assert_eq!(
+        body["groups"][0]["items"][0]["icon"],
+        "/api/site/icon?url=https%3A%2F%2Fexample.com%2Fpath%3Fq%3D1"
+    );
     assert_eq!(body["groups"][0]["items"].as_array().unwrap().len(), 1);
     assert_eq!(body["widgets"][0]["id"], "memo");
     assert_eq!(body["widgets"].as_array().unwrap().len(), 1);

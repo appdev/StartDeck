@@ -1132,7 +1132,10 @@ async fn default_template_to_api_value(state: &AppState) -> Result<Value, ApiErr
     let template = load_default_template(state).await?;
     let system = system_config(&state.pool).await?;
     let mut out = object_from_value(template);
-    let groups = public_template_groups(out.remove("groups").unwrap_or_else(|| json!([])));
+    let groups = public_template_groups(
+        state.config.as_ref(),
+        out.remove("groups").unwrap_or_else(|| json!([])),
+    );
     let widgets = public_template_widgets(out.remove("widgets").unwrap_or_else(|| json!([])));
     out.entry("appConfig".to_string())
         .or_insert_with(|| json!({}));
@@ -1146,7 +1149,7 @@ async fn default_template_to_api_value(state: &AppState) -> Result<Value, ApiErr
     Ok(Value::Object(out))
 }
 
-fn public_template_groups(value: Value) -> Value {
+fn public_template_groups(config: &RuntimeConfig, value: Value) -> Value {
     let Value::Array(groups) = value else {
         return json!([]);
     };
@@ -1157,7 +1160,7 @@ fn public_template_groups(value: Value) -> Value {
             .map(|mut group| {
                 if let Some(object) = group.as_object_mut() {
                     let items = object.remove("items").unwrap_or_else(|| json!([]));
-                    object.insert("items".to_string(), public_template_items(items));
+                    object.insert("items".to_string(), public_template_items(config, items));
                 }
                 group
             })
@@ -1165,11 +1168,69 @@ fn public_template_groups(value: Value) -> Value {
     )
 }
 
-fn public_template_items(value: Value) -> Value {
+fn public_template_items(config: &RuntimeConfig, value: Value) -> Value {
     let Value::Array(items) = value else {
         return json!([]);
     };
-    Value::Array(items.into_iter().filter(template_entry_is_public).collect())
+    Value::Array(
+        items
+            .into_iter()
+            .filter(template_entry_is_public)
+            .map(|mut item| {
+                normalize_public_template_item_icon(config, &mut item);
+                item
+            })
+            .collect(),
+    )
+}
+
+fn normalize_public_template_item_icon(config: &RuntimeConfig, item: &mut Value) {
+    let Some(object) = item.as_object_mut() else {
+        return;
+    };
+    let Some(icon) = object.get("icon").and_then(Value::as_str) else {
+        return;
+    };
+    if !public_template_icon_cache_missing(config, icon) {
+        return;
+    }
+    let Some(site_url) = object.get("url").and_then(Value::as_str) else {
+        return;
+    };
+    let site_url = site_url.trim();
+    if site_url.is_empty() {
+        return;
+    }
+    if let Some(fallback) = icon_server_icon_url(site_url) {
+        object.insert("icon".to_string(), Value::String(fallback));
+    }
+}
+
+fn public_template_icon_cache_missing(config: &RuntimeConfig, icon: &str) -> bool {
+    let path = icon
+        .trim()
+        .split(['?', '#'])
+        .next()
+        .unwrap_or_default()
+        .trim_start_matches('/');
+    if let Some(name) = path.strip_prefix("icon-cache/") {
+        return !config.icon_cache_dir.join(name).is_file();
+    }
+    if let Some(name) = path.strip_prefix("cache/") {
+        return !config
+            .icon_service_data_dir
+            .join("cache")
+            .join(name)
+            .is_file();
+    }
+    false
+}
+
+fn icon_server_icon_url(site_url: &str) -> Option<String> {
+    let parsed =
+        Url::parse_with_params("http://startdeck.local/api/site/icon", [("url", site_url)]).ok()?;
+    let query = parsed.query()?;
+    Some(format!("/api/site/icon?{query}"))
 }
 
 fn public_template_widgets(value: Value) -> Value {
