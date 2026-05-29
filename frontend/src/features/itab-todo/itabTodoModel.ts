@@ -1,7 +1,5 @@
 import type { WidgetConfig } from "@/types";
-import {
-  toItabWidgetSizeKey,
-} from "@/features/itab-widgets/itabSizePresets";
+import { toItabWidgetSizeKey } from "@/features/itab-widgets/itabSizePresets";
 import { ITAB_GRID_SCHEMA_VERSION } from "@/features/itab-widgets/itabGrid";
 import {
   resolveRuntimeWidgetSize,
@@ -110,12 +108,14 @@ export const applyItabTodoSizeToWidget = (
 };
 
 export const syncItabTodoSizeFromWidgetSpans = (widget: WidgetConfig) => {
-  const sizeKey = toItabWidgetSizeKey({
-    colSpan: widget.w ?? widget.colSpan,
-    rowSpan: widget.h ?? widget.rowSpan,
-  }) || resolveRuntimeWidgetSizeKey(ITAB_TODO_WIDGET_TYPE, {
-    colSpan: widget.w ?? widget.colSpan,
-    rowSpan: widget.h ?? widget.rowSpan,
-  });
+  const sizeKey =
+    toItabWidgetSizeKey({
+      colSpan: widget.w ?? widget.colSpan,
+      rowSpan: widget.h ?? widget.rowSpan,
+    }) ||
+    resolveRuntimeWidgetSizeKey(ITAB_TODO_WIDGET_TYPE, {
+      colSpan: widget.w ?? widget.colSpan,
+      rowSpan: widget.h ?? widget.rowSpan,
+    });
   if (sizeKey) applyItabTodoSizeToWidget(widget, sizeKey);
 };

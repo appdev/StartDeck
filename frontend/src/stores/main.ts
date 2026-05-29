@@ -25,7 +25,6 @@ export const useMainStore = defineStore("main", () => {
     }
     return success;
   };
-  const register = auth.register;
   const changePassword = auth.changePassword;
   const fetchUsers = auth.fetchUsers;
   const addUser = auth.addUser;
@@ -257,7 +256,6 @@ export const useMainStore = defineStore("main", () => {
     isLogged,
     password,
     login,
-    register,
     logout,
     changePassword,
     fetchUsers,

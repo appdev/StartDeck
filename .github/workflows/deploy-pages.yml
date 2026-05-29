@@ -1,0 +1,86 @@
+name: Deploy GitHub Pages Site
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/deploy-pages.yml"
+      - "frontend/public/intro.html"
+      - "frontend/public/favicon.ico"
+      - "frontend/public/favicon.svg"
+      - "frontend/public/intro-assets/**"
+  workflow_dispatch:
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  build:
+    name: Build static Pages artifact
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v6
+
+      - name: Assemble official site
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          rm -rf _site
+          mkdir -p _site
+
+          cp frontend/public/intro.html _site/index.html
+          cp frontend/public/intro.html _site/intro.html
+          cp frontend/public/favicon.ico _site/favicon.ico
+          cp frontend/public/favicon.svg _site/favicon.svg
+          cp -R frontend/public/intro-assets _site/intro-assets
+          touch _site/.nojekyll
+
+          cat > _site/robots.txt <<'ROBOTS'
+          User-agent: *
+          Allow: /
+
+          Sitemap: https://appdev.github.io/StartDeck/sitemap.xml
+          ROBOTS
+
+          cat > _site/sitemap.xml <<'SITEMAP'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+            <url>
+              <loc>https://appdev.github.io/StartDeck/</loc>
+            </url>
+            <url>
+              <loc>https://appdev.github.io/StartDeck/intro.html</loc>
+            </url>
+          </urlset>
+          SITEMAP
+
+      - name: Upload GitHub Pages artifact
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: _site
+
+  deploy:
+    name: Deploy to GitHub Pages
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Deploy GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v5

@@ -40,22 +40,6 @@ export const useAuthStore = defineStore("auth", () => {
     }
   };
 
-  const register = async (usr: string, pwd: string): Promise<boolean> => {
-    try {
-      const res = await fetch("/api/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username: usr, password: pwd }),
-      });
-      if (res.ok) return true;
-      const data = await res.json();
-      throw new Error(data.error || "Register failed");
-    } catch (e: unknown) {
-      console.error(e);
-      throw e;
-    }
-  };
-
   const logout = () => {
     token.value = "";
     username.value = "";
@@ -142,7 +126,6 @@ export const useAuthStore = defineStore("auth", () => {
     password,
     getHeaders,
     login,
-    register,
     logout,
     changePassword,
     fetchUsers,

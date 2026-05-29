@@ -10,7 +10,7 @@ use reqwest::Client;
 use serde_json::{Value, json};
 use startdeck_core::system_config;
 
-use super::{ApiError, AppState, require_username};
+use super::{ApiError, AppState, require_admin};
 
 const DEFAULT_DOCKER_SOCKET: &str = "/var/run/docker.sock";
 
@@ -107,7 +107,7 @@ pub(super) async fn docker_containers(
     State(state): State<AppState>,
     headers: HeaderMap,
 ) -> Result<Json<Value>, ApiError> {
-    require_username(&headers, &state)?;
+    require_admin(&headers, &state)?;
     if !system_config(&state.pool).await?.enable_docker {
         return Ok(Json(json!({
             "success": false,
@@ -157,7 +157,7 @@ pub(super) async fn docker_info(
     State(state): State<AppState>,
     headers: HeaderMap,
 ) -> Result<Json<Value>, ApiError> {
-    require_username(&headers, &state)?;
+    require_admin(&headers, &state)?;
     if !system_config(&state.pool).await?.enable_docker {
         return Ok(Json(json!({
             "success": false,
@@ -192,7 +192,7 @@ pub(super) async fn docker_check_updates(
     State(state): State<AppState>,
     headers: HeaderMap,
 ) -> Result<Json<Value>, ApiError> {
-    require_username(&headers, &state)?;
+    require_admin(&headers, &state)?;
     if !system_config(&state.pool).await?.enable_docker {
         return Ok(Json(json!({
             "success": false,
@@ -223,7 +223,7 @@ pub(super) async fn docker_container_action(
     headers: HeaderMap,
     AxumPath((id, action)): AxumPath<(String, String)>,
 ) -> Result<Json<Value>, ApiError> {
-    require_username(&headers, &state)?;
+    require_admin(&headers, &state)?;
     if !system_config(&state.pool).await?.enable_docker {
         return Ok(Json(json!({
             "success": false,
@@ -278,7 +278,7 @@ pub(super) async fn docker_inspect(
     headers: HeaderMap,
     AxumPath(id): AxumPath<String>,
 ) -> Result<Json<Value>, ApiError> {
-    require_username(&headers, &state)?;
+    require_admin(&headers, &state)?;
     if !system_config(&state.pool).await?.enable_docker {
         return Ok(Json(json!({
             "success": false,
@@ -316,7 +316,7 @@ pub(super) async fn docker_logs(
     State(state): State<AppState>,
     headers: HeaderMap,
 ) -> Result<Response, ApiError> {
-    require_username(&headers, &state)?;
+    require_admin(&headers, &state)?;
     if !system_config(&state.pool).await?.enable_docker {
         return Ok((
             StatusCode::SERVICE_UNAVAILABLE,

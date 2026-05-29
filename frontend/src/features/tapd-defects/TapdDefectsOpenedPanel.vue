@@ -99,11 +99,14 @@ const persistData = (next: TapdDefectWidgetData) => {
   return true;
 };
 
-const applySummary = (next: TapdDefectSummary) => {
+const applySummary = (
+  next: TapdDefectSummary,
+  base: TapdDefectWidgetData = data.value,
+) => {
   return persistData({
-    ...data.value,
-    projectName: next.projectName || data.value.projectName,
-    visibilityScope: activeScope.value,
+    ...base,
+    projectName: next.projectName || base.projectName,
+    visibilityScope: base.visibilityScope,
     lastSummary: next,
   });
 };
@@ -111,13 +114,19 @@ const applySummary = (next: TapdDefectSummary) => {
 const refreshDefects = async (
   nextPage = page.value,
   options: { notifyAuth?: boolean } = {},
+  sourceData?: TapdDefectWidgetData,
 ) => {
+  const requestData = sourceData
+    ? normalizeTapdDefectWidgetData(sourceData)
+    : data.value;
+  const requestScope = requestData.visibilityScope;
+  const requestNeedsConfig = !hasTapdDefectConnection(requestData);
   if (!auth.isLogged) {
     if (options.notifyAuth !== false) requireTapdMutation();
     return;
   }
-  if (busy.value || needsConfig.value) {
-    if (needsConfig.value) message.value = "请先配置 TAPD 连接参数";
+  if (busy.value || requestNeedsConfig) {
+    if (requestNeedsConfig) message.value = "请先配置 TAPD 连接参数";
     return;
   }
   busy.value = true;
@@ -125,18 +134,18 @@ const refreshDefects = async (
   try {
     const next = await queryTapdDefects({
       widgetId: props.widget.id,
-      workspaceId: data.value.workspaceId,
+      workspaceId: requestData.workspaceId,
       page: nextPage,
-      limit: data.value.query.limit,
-      order: data.value.query.order,
-      fields: data.value.query.fields,
-      visibilityScope: activeScope.value,
-      currentUser: data.value.query.currentUser,
-      filters: buildTapdFilters(data.value.query),
-      blockedBugIds: data.value.blockedBugIds,
+      limit: requestData.query.limit,
+      order: requestData.query.order,
+      fields: requestData.query.fields,
+      visibilityScope: requestScope,
+      currentUser: requestData.query.currentUser,
+      filters: buildTapdFilters(requestData.query),
+      blockedBugIds: requestData.blockedBugIds,
     });
     page.value = next.page;
-    applySummary(next);
+    applySummary(next, requestData);
     message.value =
       next.status === "connected"
         ? `已同步 ${next.visibleTotal} 条待处理结果`
@@ -148,23 +157,26 @@ const refreshDefects = async (
       errorCode === "server_credential_missing" ||
       errorCode === "current_user_required"
     ) {
-      applySummary({
-        status: "error",
-        workspaceId: data.value.workspaceId,
-        projectName: needsConfig.value ? undefined : data.value.projectName,
-        total: 0,
-        visibleTotal: 0,
-        blockedTotal: data.value.blockedBugIds.length,
-        verificationTotal: 0,
-        critical: 0,
-        assignedToCurrentUser: 0,
-        visibleScope: activeScope.value,
-        page: nextPage,
-        limit: data.value.query.limit,
-        lastSyncedAt: new Date().toISOString(),
-        errorCode,
-        items: [],
-      });
+      applySummary(
+        {
+          status: "error",
+          workspaceId: requestData.workspaceId,
+          projectName: requestNeedsConfig ? undefined : requestData.projectName,
+          total: 0,
+          visibleTotal: 0,
+          blockedTotal: requestData.blockedBugIds.length,
+          verificationTotal: 0,
+          critical: 0,
+          assignedToCurrentUser: 0,
+          visibleScope: requestScope,
+          page: nextPage,
+          limit: requestData.query.limit,
+          lastSyncedAt: new Date().toISOString(),
+          errorCode,
+          items: [],
+        },
+        requestData,
+      );
     }
   } finally {
     busy.value = false;
@@ -253,9 +265,14 @@ const saveConfig = (
   next: TapdDefectWidgetData,
   options?: TapdConfigSaveOptions,
 ) => {
-  if (!persistData(next)) return;
+  const normalizedNext = normalizeTapdDefectWidgetData(next);
+  if (!persistData(normalizedNext)) return;
   if (options?.close !== false) {
     showConfig.value = false;
+    if (hasTapdDefectConnection(normalizedNext)) {
+      page.value = 1;
+      void refreshDefects(1, { notifyAuth: false }, normalizedNext);
+    }
   }
 };
 

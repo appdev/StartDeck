@@ -118,6 +118,11 @@ async fn test_app_with_widget_cache(include_poem_cache: bool) -> axum::Router {
     let public_dir = base.join("Data/public");
     std::fs::create_dir_all(&public_dir).unwrap();
     std::fs::write(public_dir.join("index.html"), "<main>StartDeck</main>").unwrap();
+    std::fs::write(
+        public_dir.join("intro.html"),
+        "<main>StartDeck official site</main>",
+    )
+    .unwrap();
     std::fs::write(public_dir.join("favicon.ico"), b"ico-bytes").unwrap();
     std::fs::write(
         public_dir.join("favicon.svg"),
@@ -521,6 +526,8 @@ async fn login_and_read_data_snapshot() {
     assert!(body["widgets"][0].get("enabled").is_none());
     assert_eq!(body["widgets"][0]["isPublic"], true);
     assert!(body["widgets"][0].get("is_public").is_none());
+    assert!(body.get("authMode").is_none());
+    assert!(body["systemConfig"].get("authMode").is_none());
 
     let response = app
         .clone()
@@ -543,7 +550,8 @@ async fn login_and_read_data_snapshot() {
     assert_eq!(body["groups"][0]["items"].as_array().unwrap().len(), 1);
     assert_eq!(body["widgets"][0]["id"], "memo");
     assert_eq!(body["widgets"].as_array().unwrap().len(), 1);
-    assert_eq!(body["authMode"], "single");
+    assert!(body.get("authMode").is_none());
+    assert!(body["systemConfig"].get("authMode").is_none());
     assert_eq!(body["enableDocker"], false);
 
     let response = app
@@ -589,6 +597,111 @@ async fn login_and_read_data_snapshot() {
 }
 
 #[tokio::test]
+async fn blank_username_login_is_rejected() {
+    let app = test_app().await;
+    let (status, body) = json_call(
+        &app,
+        "POST",
+        "/api/login",
+        None,
+        Some(json!({"username": "", "password": "secret"})),
+    )
+    .await;
+    assert_eq!(status, StatusCode::BAD_REQUEST);
+    assert_eq!(body["error"], "username_required");
+}
+
+#[tokio::test]
+async fn users_can_save_same_navigation_and_widget_ids_without_conflict() {
+    let app = test_app().await;
+    let admin_token = login_token(&app).await;
+    let (status, _) = json_call(
+        &app,
+        "POST",
+        "/api/admin/users",
+        Some(&admin_token),
+        Some(json!({"username": "sameid", "password": "secret"})),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK);
+    let user_token = login_token_for(&app, "sameid", "secret").await;
+
+    for (token, title, widget_content) in [
+        (&admin_token, "Admin Shared", "admin widget"),
+        (&user_token, "User Shared", "user widget"),
+    ] {
+        let (status, body) = json_call(
+            &app,
+            "POST",
+            "/api/save",
+            Some(token),
+            Some(json!({
+                "appConfig": {"customTitle": title},
+                "groups": [{
+                    "id": "shared-group",
+                    "title": title,
+                    "items": [{"id": "shared-item", "title": title, "url": "https://example.com", "icon": "", "isPublic": true}]
+                }],
+                "widgets": [{"id": "shared-widget", "type": "memo", "enable": true, "isPublic": true, "data": {"content": widget_content}}]
+            })),
+        )
+        .await;
+        assert_eq!(status, StatusCode::OK);
+        assert_eq!(body["success"], true);
+    }
+
+    let (status, body) = json_call(&app, "GET", "/api/data", Some(&admin_token), None).await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(body["groups"][0]["title"], "Admin Shared");
+    assert_eq!(body["widgets"][0]["data"]["content"], "admin widget");
+
+    let (status, body) = json_call(&app, "GET", "/api/data", Some(&user_token), None).await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(body["groups"][0]["title"], "User Shared");
+    assert_eq!(body["widgets"][0]["data"]["content"], "user widget");
+
+    let (status, _) = json_call(
+        &app,
+        "PUT",
+        "/api/widgets/shared-widget",
+        Some(&admin_token),
+        Some(json!({"type": "memo", "enable": true, "isPublic": true, "data": {"content": "admin single"}})),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK);
+    let (status, _) = json_call(
+        &app,
+        "PUT",
+        "/api/widgets/shared-widget",
+        Some(&user_token),
+        Some(json!({"type": "memo", "enable": true, "isPublic": true, "data": {"content": "user single"}})),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK);
+
+    let (status, body) = json_call(
+        &app,
+        "GET",
+        "/api/widgets/shared-widget",
+        Some(&admin_token),
+        None,
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(body["data"]["content"], "admin single");
+    let (status, body) = json_call(
+        &app,
+        "GET",
+        "/api/widgets/shared-widget",
+        Some(&user_token),
+        None,
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(body["data"]["content"], "user single");
+}
+
+#[tokio::test]
 async fn root_favicon_assets_are_served_as_static_files() {
     let app = test_app().await;
 
@@ -618,6 +731,30 @@ async fn root_favicon_assets_are_served_as_static_files() {
         let body = to_bytes(response.into_body(), usize::MAX).await.unwrap();
         assert_eq!(body.as_ref(), expected_body, "{uri}");
     }
+}
+
+#[tokio::test]
+async fn intro_html_is_served_from_public_assets() {
+    let app = test_app().await;
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/intro.html")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
+    let content_type = response
+        .headers()
+        .get("content-type")
+        .and_then(|value| value.to_str().ok())
+        .unwrap_or_default();
+    assert!(content_type.starts_with("text/html"));
+    let body = to_bytes(response.into_body(), usize::MAX).await.unwrap();
+    assert_eq!(body.as_ref(), b"<main>StartDeck official site</main>");
 }
 
 #[tokio::test]
@@ -718,7 +855,29 @@ async fn route_surface_smoke_covers_auth_and_runtime_semantics() {
 
     let (status, body) = json_call(&app, "GET", "/api/system-config", None, None).await;
     assert_eq!(status, StatusCode::OK);
-    assert_eq!(body["authMode"], "single");
+    assert!(body.get("authMode").is_none());
+    assert_eq!(body["enableDocker"], false);
+
+    let (status, body) = json_call(
+        &app,
+        "POST",
+        "/api/system-config",
+        Some(&token),
+        Some(json!({"authMode": "single"})),
+    )
+    .await;
+    assert_eq!(status, StatusCode::BAD_REQUEST);
+    assert_eq!(body["error"], "auth_mode_removed");
+
+    let (status, _) = json_call(
+        &app,
+        "POST",
+        "/api/register",
+        None,
+        Some(json!({"username": "public-user", "password": "secret"})),
+    )
+    .await;
+    assert_eq!(status, StatusCode::NOT_FOUND);
 
     let (status, body) = json_call(&app, "GET", "/api/admin/users", Some(&token), None).await;
     assert_eq!(status, StatusCode::OK);
@@ -738,6 +897,10 @@ async fn route_surface_smoke_covers_auth_and_runtime_semantics() {
     let (status, body) = json_call(&app, "GET", "/api/admin/users", Some(&token), None).await;
     assert_eq!(status, StatusCode::OK);
     assert_eq!(body["users"], json!(["alice"]));
+    let alice_token = login_token_for(&app, "alice", "secret").await;
+    let (status, body) = json_call(&app, "GET", "/api/admin/users", Some(&alice_token), None).await;
+    assert_eq!(status, StatusCode::FORBIDDEN);
+    assert_eq!(body["error"], "permission_denied");
 
     let (status, body) = json_call(
         &app,
@@ -973,6 +1136,39 @@ async fn route_surface_smoke_covers_auth_and_runtime_semantics() {
 
     let (status, body) = json_call(
         &app,
+        "GET",
+        "/api/config-versions",
+        Some(&alice_token),
+        None,
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(body["versions"], json!([]));
+
+    let (status, body) = json_call(
+        &app,
+        "POST",
+        "/api/config-versions",
+        Some(&alice_token),
+        Some(json!({"label": "alice"})),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK);
+    let alice_version_id = body["id"].as_str().unwrap().to_string();
+
+    let (status, body) = json_call(
+        &app,
+        "POST",
+        "/api/config-versions/restore",
+        Some(&alice_token),
+        Some(json!({"id": version_id})),
+    )
+    .await;
+    assert_eq!(status, StatusCode::NOT_FOUND);
+    assert_eq!(body["error"], "version_not_found");
+
+    let (status, body) = json_call(
+        &app,
         "POST",
         "/api/config-versions/restore",
         Some(&token),
@@ -986,7 +1182,32 @@ async fn route_surface_smoke_covers_auth_and_runtime_semantics() {
         &app,
         "DELETE",
         &format!("/api/config-versions/{version_id}"),
+        Some(&alice_token),
+        None,
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(body["success"], true);
+    let (status, body) = json_call(&app, "GET", "/api/config-versions", Some(&token), None).await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(body["versions"].as_array().unwrap().len(), 1);
+
+    let (status, body) = json_call(
+        &app,
+        "DELETE",
+        &format!("/api/config-versions/{version_id}"),
         Some(&token),
+        None,
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(body["success"], true);
+
+    let (status, body) = json_call(
+        &app,
+        "DELETE",
+        &format!("/api/config-versions/{alice_version_id}"),
+        Some(&alice_token),
         None,
     )
     .await;
@@ -1025,14 +1246,8 @@ async fn route_surface_smoke_covers_auth_and_runtime_semantics() {
     assert_eq!(body["success"], false);
     assert_eq!(body["error"], "weather_source_unavailable");
 
-    let (status, body) = json_call(
-        &app,
-        "GET",
-        "/api/weather/search?keyword=深圳",
-        None,
-        None,
-    )
-    .await;
+    let (status, body) =
+        json_call(&app, "GET", "/api/weather/search?keyword=深圳", None, None).await;
     assert_eq!(status, StatusCode::BAD_GATEWAY);
     assert_eq!(body["success"], false);
     assert_eq!(body["error"], "weather_source_unavailable");

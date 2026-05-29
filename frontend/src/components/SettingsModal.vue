@@ -10,7 +10,6 @@ import PasswordConfirmModal from "./PasswordConfirmModal.vue";
 import AppButton from "@/components/base/AppButton.vue";
 import AppFieldRow from "@/components/base/AppFieldRow.vue";
 import AppInspectorPanel from "@/components/base/AppInspectorPanel.vue";
-import AppModalShell from "@/components/base/AppModalShell.vue";
 import AppRangeField from "@/components/base/AppRangeField.vue";
 import AppSectionCard from "@/components/base/AppSectionCard.vue";
 import AppSegmentedControl from "@/components/base/AppSegmentedControl.vue";
@@ -438,7 +437,7 @@ const settingsTabMeta: Record<SettingsTabId, SettingsTabMeta> = {
   },
   account: {
     title: "账户管理",
-    summary: "认证模式、用户、版本与数据操作",
+    summary: "用户、版本与数据操作",
     glyph: "AC",
     group: "system",
   },
@@ -865,21 +864,17 @@ onUnmounted(() => {
 });
 
 const passwordInput = ref("");
+const loginUsernameInput = ref("");
 const newPasswordInput = ref("");
 const hasAdminAccess = computed(
-  () =>
-    store.isLogged &&
-    (store.systemConfig.authMode === "single" || store.username === "admin"),
+  () => store.isLogged && store.username === "admin",
 );
-const canManageUsers = computed(
-  () => hasAdminAccess.value && store.systemConfig.authMode === "multi",
-);
+const canManageUsers = computed(() => hasAdminAccess.value);
 
 const fileInput = ref<HTMLInputElement | null>(null);
 
 // Password Confirm Logic
 const showPasswordConfirm = ref(false);
-const showMultiUserWarning = ref(false);
 const pendingAction = ref<(() => void | Promise<void>) | null>(null);
 const confirmTitle = ref("");
 
@@ -924,10 +919,18 @@ const dismissSettingsCloseConfirm = () => {
 const showPassword = ref(false);
 
 const handleLogin = async () => {
+  if (!loginUsernameInput.value.trim()) {
+    notify("请输入用户名。", "warning", "无法登录");
+    return;
+  }
   try {
-    const success = await store.login("admin", passwordInput.value);
+    const success = await store.login(
+      loginUsernameInput.value,
+      passwordInput.value,
+    );
     if (success) {
-      notify("管理员身份已验证。", "success", "登录成功");
+      notify("用户身份已验证。", "success", "登录成功");
+      loginUsernameInput.value = "";
       passwordInput.value = "";
     }
   } catch (e: unknown) {
@@ -1029,56 +1032,18 @@ const handleUploadLicense = async () => {
 watch(
   activeTab,
   (val) => {
-    if (val === "account" && canManageUsers.value) {
-      loadUsers();
-    }
+    if (val !== "account") return;
+    if (canManageUsers.value) loadUsers();
+    if (store.isLogged) fetchVersions();
   },
   { immediate: true },
 );
-
-const toggleAuthMode = async () => {
-  const currentMode = store.systemConfig.authMode;
-  const newMode = currentMode === "single" ? "multi" : "single";
-
-  if (newMode === "single") {
-    const confirmed = await requestFeedbackConfirm(
-      "确定要切换到单用户模式吗？\n切换后将隐藏注册入口，默认登录 Admin 账户。",
-      {
-        title: "切换到单用户模式",
-        confirmLabel: "确认切换",
-        cancelLabel: "取消",
-        tone: "danger",
-      },
-    );
-    if (!confirmed) return;
-    requestAuth(
-      () => performAuthModeSwitch(newMode),
-      "请输入管理员密码以确认切换",
-    );
-  } else {
-    // Show custom warning for multi-user mode switch
-    showMultiUserWarning.value = true;
-  }
-};
-
-const performAuthModeSwitch = async (newMode: string) => {
-  const success = await store.updateSystemConfig({ authMode: newMode });
-  if (success) {
-    close();
-    store.logout();
-  } else {
-    void showFeedbackAlert("请检查当前登录权限。", {
-      title: "切换失败",
-      tone: "danger",
-    });
-  }
-};
 
 onMounted(() => {
   store.checkUpdate();
 });
 
-// 单用户模式：配置版本管理
+// 配置版本管理
 const versionLabel = ref("");
 const versions = ref<
   { id: string; label: string; createdAt: number; size: number }[]
@@ -1204,12 +1169,7 @@ const deleteVersion = async (id: string) => {
 };
 
 onMounted(() => {
-  if (hasAdminAccess.value && store.systemConfig.authMode === "single") {
-    fetchVersions();
-  } else if (store.isLogged) {
-    // 非单用户模式下，也允许查看自己的版本
-    fetchVersions();
-  }
+  if (store.isLogged) fetchVersions();
 });
 
 const handleExport = async () => {
@@ -1662,24 +1622,14 @@ watch(
   () => props.show,
   (val) => {
     if (val && activeTab.value === "account" && store.isLogged) {
-      if (canManageUsers.value) {
-        loadUsers();
-      }
-      if (store.systemConfig.authMode === "single" || !canManageUsers.value) {
-        fetchVersions();
-      }
+      if (canManageUsers.value) loadUsers();
+      fetchVersions();
     }
   },
 );
 
 watch(activeTab, (val) => {
-  if (
-    val === "account" &&
-    store.isLogged &&
-    (store.systemConfig.authMode === "single" || !canManageUsers.value)
-  ) {
-    fetchVersions();
-  }
+  if (val === "account" && store.isLogged) fetchVersions();
 });
 </script>
 
@@ -2769,7 +2719,7 @@ watch(activeTab, (val) => {
               <p class="settings-system-kicker">Account Control</p>
               <h4 class="settings-system-title">账户与数据</h4>
               <p class="settings-system-summary">
-                认证模式、配置版本、用户和授权集中管理。
+                配置版本、用户和授权集中管理。
               </p>
             </div>
             <div class="settings-system-metric">
@@ -2781,8 +2731,15 @@ watch(activeTab, (val) => {
           </header>
 
           <div v-if="!store.isLogged" class="settings-system-login-card">
-            <p class="settings-system-kicker">Admin Login</p>
-            <h4>管理员登录</h4>
+            <p class="settings-system-kicker">User Login</p>
+            <h4>用户登录</h4>
+            <input
+              v-model="loginUsernameInput"
+              type="text"
+              placeholder="用户名..."
+              class="sd-input"
+              @keyup.enter="handleLogin"
+            />
             <input
               v-model="passwordInput"
               type="password"
@@ -2827,46 +2784,9 @@ watch(activeTab, (val) => {
             </AppSectionCard>
 
             <AppSectionCard
-              v-if="hasAdminAccess"
-              class="settings-system-card"
-              title="系统模式"
-              :description="
-                store.systemConfig.authMode === 'single'
-                  ? '单用户模式下登录界面简化，仅需输入密码即可登录 Admin 账户。'
-                  : '多用户模式下允许多个用户注册和登录，数据相互隔离。'
-              "
-            >
-              <div class="settings-system-mode-row">
-                <div>
-                  <span>当前模式</span>
-                  <strong>{{
-                    store.systemConfig.authMode === "single"
-                      ? "单用户模式"
-                      : "多用户模式"
-                  }}</strong>
-                  <small
-                    >默认管理员为 admin；Docker 可通过 STARTDECK_ADMIN_PASSWORD
-                    指定启动密码。</small
-                  >
-                </div>
-                <AppButton variant="primary" @click="toggleAuthMode">
-                  切换为{{
-                    store.systemConfig.authMode === "single"
-                      ? "多用户模式"
-                      : "单用户模式"
-                  }}
-                </AppButton>
-              </div>
-            </AppSectionCard>
-
-            <AppSectionCard
               class="settings-system-card settings-system-card-wide"
               title="配置版本"
-              :description="
-                store.systemConfig.authMode === 'single'
-                  ? '保存位置：data/config_versions'
-                  : '保存位置：data/config_versions，仅当前用户可见。'
-              "
+              description="仅当前用户可见。"
             >
               <div class="settings-system-inline-form">
                 <input
@@ -3024,10 +2944,7 @@ watch(activeTab, (val) => {
 
               <div class="settings-system-divider"></div>
 
-              <AppFieldRow
-                label="授权密钥"
-                hint="导入有效密钥可解除 5 个用户的注册限制。"
-              >
+              <AppFieldRow label="授权密钥" hint="导入有效密钥可启用授权能力。">
                 <template #control>
                   <div class="settings-system-inline-form">
                     <input
@@ -3309,41 +3226,6 @@ watch(activeTab, (val) => {
     :z-index="settingsBlockingModalZIndex"
     :on-success="onAuthSuccess"
   />
-
-  <!-- Multi-User Warning Modal -->
-  <AppModalShell
-    :show="showMultiUserWarning"
-    :z-index="settingsBlockingModalZIndex"
-    title="切换模式警告"
-    blocking
-    :show-close="false"
-    overlay-class="sd-overlay-strong"
-    panel-class="w-full max-w-sm"
-    surface-class="max-w-sm sd-compact-window"
-  >
-    <p class="text-sm leading-relaxed text-[var(--sd-color-text-secondary)]">
-      请先导出配置！<br />
-      切换到多用户模式会导致当前单用户配置丢失（数据隔离），是否确认继续？
-    </p>
-
-    <template #footer>
-      <AppButton variant="secondary" @click="showMultiUserWarning = false"
-        >取消</AppButton
-      >
-      <AppButton
-        variant="primary"
-        @click="
-          showMultiUserWarning = false;
-          requestAuth(
-            () => performAuthModeSwitch('multi'),
-            '请输入管理员密码以确认切换',
-          );
-        "
-      >
-        确认切换
-      </AppButton>
-    </template>
-  </AppModalShell>
 
   <ConfirmDialog
     v-model:show="showSettingsCloseConfirm"

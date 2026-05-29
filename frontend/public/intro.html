@@ -11,14 +11,55 @@
       content="StartDeck 是面向 NAS、家庭服务器和个人工作流的自托管浏览器工作台，集成智能导航、组件仪表盘、Docker 运维、图标元数据和本地 SQLite 数据。"
     />
     <meta name="theme-color" content="#05070a" />
+    <link rel="canonical" href="https://appdev.github.io/StartDeck/" />
     <meta property="og:title" content="StartDeck 自托管浏览器工作台" />
     <meta
       property="og:description"
       content="把常用入口、内外网地址、组件、Docker 状态、AI 额度和研发信息放进每天打开的第一屏。"
     />
     <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://appdev.github.io/StartDeck/" />
+    <meta property="og:site_name" content="StartDeck" />
+    <meta property="og:locale" content="zh_CN" />
+    <meta
+      property="og:image"
+      content="https://appdev.github.io/StartDeck/intro-assets/startdeck-home-real.jpg"
+    />
+    <meta property="og:image:width" content="2880" />
+    <meta property="og:image:height" content="1800" />
+    <meta property="og:image:alt" content="StartDeck 首页工作台界面" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="StartDeck 自托管浏览器工作台" />
+    <meta
+      name="twitter:description"
+      content="面向 NAS、家庭服务器和个人工作流的自托管浏览器工作台。"
+    />
+    <meta
+      name="twitter:image"
+      content="https://appdev.github.io/StartDeck/intro-assets/startdeck-home-real.jpg"
+    />
+    <link
+      rel="preload"
+      as="image"
+      href="./intro-assets/startdeck-home-real.jpg"
+      fetchpriority="high"
+    />
     <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
     <title>StartDeck | 自托管浏览器工作台</title>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "StartDeck",
+        "applicationCategory": "ProductivityApplication",
+        "operatingSystem": "Web, Linux, Docker",
+        "description": "StartDeck 是面向 NAS、家庭服务器和个人工作流的自托管浏览器工作台。",
+        "url": "https://appdev.github.io/StartDeck/",
+        "codeRepository": "https://github.com/appdev/StartDeck",
+        "license": "https://www.gnu.org/licenses/agpl-3.0.html",
+        "image": "https://appdev.github.io/StartDeck/intro-assets/startdeck-home-real.jpg"
+      }
+    </script>
     <style>
       :root {
         color-scheme: dark;
@@ -295,11 +336,54 @@
         font-size: 1.14rem;
       }
 
+      .hero-badges {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin: 24px 0 0;
+        padding: 0;
+        list-style: none;
+      }
+
+      .hero-badge {
+        display: inline-flex;
+        min-height: 34px;
+        align-items: center;
+        gap: 8px;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        padding: 0 12px;
+        color: var(--text-muted);
+        background: rgba(255, 255, 255, 0.04);
+        font-size: 0.84rem;
+        font-weight: 760;
+      }
+
+      .hero-badge::before {
+        width: 6px;
+        height: 6px;
+        flex: 0 0 auto;
+        border-radius: 999px;
+        content: "";
+        background: var(--blue);
+        box-shadow: 0 0 18px rgba(143, 199, 255, 0.65);
+      }
+
+      .hero-badge:nth-child(2)::before {
+        background: var(--green);
+        box-shadow: 0 0 18px rgba(136, 216, 176, 0.65);
+      }
+
+      .hero-badge:nth-child(3)::before {
+        background: var(--yellow);
+        box-shadow: 0 0 18px rgba(244, 211, 94, 0.62);
+      }
+
       .hero-actions {
         display: flex;
         flex-wrap: wrap;
         gap: 12px;
-        margin-top: 34px;
+        margin-top: 28px;
       }
 
       .button {
@@ -1272,7 +1356,12 @@
     <header class="site-header" aria-label="StartDeck 产品介绍导航">
       <div class="container nav-shell">
         <a class="brand" href="#top" aria-label="StartDeck">
-          <img class="brand-mark" src="./favicon.svg" alt="" aria-hidden="true" />
+          <img
+            class="brand-mark"
+            src="./favicon.svg"
+            alt=""
+            aria-hidden="true"
+          />
           <span>StartDeck</span>
         </a>
         <nav class="nav-links" aria-label="页面导航">
@@ -1302,6 +1391,11 @@
               把 NAS、内网服务、Docker 状态、AI
               使用量和每天会用到的链接，整理成浏览器打开后的第一屏。稳定运行、自己部署、数据留在本地。
             </p>
+            <ul class="hero-badges" aria-label="发布与授权信息">
+              <li class="hero-badge">Docker 镜像 apkdv/startdeck</li>
+              <li class="hero-badge">GitHub Pages 官网</li>
+              <li class="hero-badge">AGPLv3 开源</li>
+            </ul>
             <div class="hero-actions" aria-label="主要操作">
               <a
                 class="button primary"
@@ -1358,6 +1452,7 @@
                   height="1800"
                   loading="eager"
                   decoding="async"
+                  fetchpriority="high"
                 />
               </div>
             </figure>
@@ -1739,6 +1834,7 @@ ctx.proxy("/api/custom/status").then(updatePanel);</code></pre>
   -e ICON_SERVICE_PORT=9002 \
   -e ICON_SERVICE_DATA_DIR=/app/Data/icon-service \
   -e ICON_SERVER_BASE_URL=http://127.0.0.1:9002 \
+  -e ICON_SERVER_TIMEOUT_MS=5000 \
   apkdv/startdeck:latest</code></pre>
             </article>
 

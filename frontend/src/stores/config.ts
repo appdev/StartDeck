@@ -125,7 +125,6 @@ export const useConfigStore = defineStore("config", () => {
   });
 
   const systemConfig = ref<SystemConfig>({
-    authMode: "single",
     enableDocker: false,
     dockerHost: "",
   });

@@ -5,8 +5,6 @@ use serde_json::Value;
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct SystemConfig {
-    #[serde(default = "default_auth_mode")]
-    pub auth_mode: String,
     #[serde(default)]
     pub enable_docker: bool,
     #[serde(flatten)]
@@ -74,8 +72,4 @@ pub struct IconRecord {
     pub icon: Option<String>,
     pub source: String,
     pub fetched_at: DateTime<Utc>,
-}
-
-fn default_auth_mode() -> String {
-    "single".to_string()
 }

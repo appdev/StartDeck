@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { TAPD_LOGO_URL } from "./tapdDefectTypes";
+import tapdLogoUrl from "@/assets/tapd/logo.svg";
 
 withDefaults(
   defineProps<{
@@ -13,7 +13,7 @@ withDefaults(
 
 <template>
   <span class="tapd-logo" :class="`tapd-logo--${size}`" aria-label="TAPD">
-    <img :src="TAPD_LOGO_URL" alt="TAPD" draggable="false" />
+    <img :src="tapdLogoUrl" alt="TAPD" draggable="false" />
   </span>
 </template>
 

@@ -355,9 +355,7 @@ const dockerMemoryTotal = computed(() =>
   ),
 );
 const canManageDockerSystem = computed(
-  () =>
-    store.isLogged &&
-    (store.systemConfig.authMode === "single" || store.username === "admin"),
+  () => store.isLogged && store.username === "admin",
 );
 const ensureDockerWidgetData = () => {
   const widget = dockerWidgetModel.value;

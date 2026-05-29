@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { mount } from "@vue/test-utils";
+import { flushPromises, mount } from "@vue/test-utils";
 import { createTestingPinia } from "@pinia/testing";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import TapdDefectsOpenedPanel from "./TapdDefectsOpenedPanel.vue";
@@ -394,6 +394,107 @@ describe("TapdDefectsOpenedPanel", () => {
     expect(wrapper.find(".tapd-opened-mask").exists()).toBe(true);
     expect(wrapper.findAll(".tapd-table-row")).toHaveLength(0);
     expect(wrapper.find(".tapd-summary-card strong").text()).toBe("0");
+  });
+
+  it("refreshes defects after saving connected config", async () => {
+    const fetchMock = vi.fn<
+      (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>
+    >(async () =>
+      Response.json({
+        status: "connected",
+        workspaceId: "40685585",
+        projectName: "UGOS_PRO",
+        total: 1,
+        visibleTotal: 1,
+        blockedTotal: 0,
+        verificationTotal: 0,
+        critical: 1,
+        assignedToCurrentUser: 1,
+        visibleScope: "owned-by-current-user",
+        page: 1,
+        limit: 100,
+        lastSyncedAt: "2026-05-29T09:40:00+08:00",
+        items: [
+          {
+            id: "114068585",
+            severity: "高",
+            title: "保存后自动同步的缺陷",
+            status: "new",
+            url: "https://www.tapd.cn/40685585/bugtrace/bugs/view/114068585",
+          },
+        ],
+      }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    const widget = createDefaultTapdDefectWidget();
+    widget.id = "tapd-refresh-after-save";
+    widget.data = normalizeTapdDefectWidgetData({});
+    const savedData = normalizeTapdDefectWidgetData({
+      workspaceId: "40685585",
+      projectName: "UGOS_PRO",
+      hasServerCredential: true,
+      credentialType: "bearer",
+      credentialAccountHint: "****eacc",
+      query: {
+        limit: 100,
+        order: "modified desc",
+        fields: ["id", "title", "status"],
+      },
+    });
+    const updateData = vi.fn();
+    const wrapper = mount(TapdDefectsOpenedPanel, {
+      global: {
+        plugins: [createTestingPinia({ createSpy: vi.fn })],
+        stubs: {
+          TapdDefectsConfigDialog: {
+            props: ["data", "widgetId"],
+            emits: ["save", "close"],
+            template:
+              '<div data-testid="config-stub"><button type="button" data-testid="child-save" @click="$emit(\'save\', savedData)">child save</button></div>',
+            setup() {
+              return { savedData };
+            },
+          },
+        },
+      },
+      props: { widget },
+      attrs: {
+        onUpdateData: updateData,
+      },
+    });
+
+    await wrapper
+      .findAll("button")
+      .find((button) => button.text().includes("配置参数"))!
+      .trigger("click");
+    await wrapper.find('[data-testid="child-save"]').trigger("click");
+    await flushPromises();
+
+    const queryCall = fetchMock.mock.calls.find(([input]) =>
+      String(input).includes("/api/tapd-defects/query"),
+    );
+    expect(queryCall).toBeTruthy();
+    expect(JSON.parse(String(queryCall![1]?.body))).toEqual(
+      expect.objectContaining({
+        workspaceId: "40685585",
+        page: 1,
+        limit: 100,
+      }),
+    );
+    expect(wrapper.find('[data-testid="config-stub"]').exists()).toBe(false);
+    expect(updateData.mock.calls.at(-1)?.[0]).toEqual(
+      expect.objectContaining({
+        workspaceId: "40685585",
+        lastSummary: expect.objectContaining({
+          visibleTotal: 1,
+          items: expect.arrayContaining([
+            expect.objectContaining({
+              title: "保存后自动同步的缺陷",
+            }),
+          ]),
+        }),
+      }),
+    );
   });
 
   it("keeps the config dialog open for non-closing child saves", async () => {

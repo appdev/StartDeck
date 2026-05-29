@@ -6,6 +6,7 @@ import GridPanel from "../GridPanel.vue";
 import ConfirmDialog from "../base/ConfirmDialog.vue";
 import { createTestingPinia } from "@pinia/testing";
 import { useMainStore } from "../../stores/main";
+import { useAuthStore } from "../../stores/auth";
 import { useUiFeedbackStore } from "../../stores/uiFeedback";
 import type { AddComponentPayload } from "../../utils/addComponentTypes";
 import { ITAB_WALLPAPER_WIDGET_TYPE } from "../../features/itab-wallpaper/itabWallpaperTypes";
@@ -51,6 +52,7 @@ const gridStackMock = vi.hoisted(() => {
       return instance;
     }),
     removeWidget: vi.fn(() => instance),
+    removeAll: vi.fn(() => instance),
     batchUpdate: vi.fn(() => instance),
     enableMove: vi.fn(() => instance),
     enableResize: vi.fn(() => instance),
@@ -321,6 +323,61 @@ describe("GridPanel Context Menu", () => {
       initialInitCalls,
     );
     expect(lastInitCall?.[1]).toBe(remountedRoot);
+  });
+
+  it("reinitializes GridStack when auth state swaps the home widget set", async () => {
+    await flushPromises();
+    const auth = useAuthStore();
+    const initialInitCalls = gridStackMock.init.mock.calls.length;
+    const initialRemoveAllCalls =
+      gridStackMock.instance.removeAll.mock.calls.length;
+
+    auth.token = "";
+    await wrapper.vm.$nextTick();
+    await flushPromises();
+    await wrapper.vm.$nextTick();
+    await flushPromises();
+
+    expect(gridStackMock.instance.destroy).toHaveBeenCalled();
+
+    store.widgets.splice(0, store.widgets.length, {
+      id: "guest-custom",
+      type: "custom-css",
+      data: {
+        title: "Guest",
+        html: "<strong>Guest</strong>",
+        css: "strong { color: blue; }",
+        sizeKey: "1x1",
+      },
+      x: 0,
+      y: 0,
+      w: 1,
+      h: 1,
+      enable: true,
+      isPublic: true,
+    });
+
+    await wrapper.vm.$nextTick();
+    await flushPromises();
+    await wrapper.vm.$nextTick();
+    await flushPromises();
+
+    const lastInitCall = gridStackMock.init.mock.calls.at(-1) as
+      | unknown[]
+      | undefined;
+
+    expect(gridStackMock.init.mock.calls.length).toBeGreaterThan(
+      initialInitCalls,
+    );
+    expect(gridStackMock.instance.removeAll.mock.calls.length).toBeGreaterThan(
+      initialRemoveAllCalls,
+    );
+    expect(gridStackMock.instance.removeAll).toHaveBeenLastCalledWith(
+      false,
+      false,
+    );
+    expect(lastInitCall?.[1]).toBeInstanceOf(HTMLElement);
+    expect(store.layoutEditInProgress).toBe(false);
   });
 
   it("gates whole-card dragging behind login state", () => {

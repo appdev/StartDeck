@@ -31,7 +31,13 @@ const normalizeString = (value: unknown) =>
 const normalizeBoolean = (value: unknown) =>
   typeof value === "boolean" ? value : false;
 
-const CHINA_COUNTRY_NAMES = new Set(["中国", "中华人民共和国", "CN", "CHN", "China"]);
+const CHINA_COUNTRY_NAMES = new Set([
+  "中国",
+  "中华人民共和国",
+  "CN",
+  "CHN",
+  "China",
+]);
 
 const isChinaCountry = (value: string) => CHINA_COUNTRY_NAMES.has(value.trim());
 

@@ -14,7 +14,7 @@ use crate::models::{
     AppSnapshot, IconRecord, NavGroup, NavItem, SystemConfig, UserRecord, WidgetRecord,
 };
 
-const CURRENT_SCHEMA_VERSION: i64 = 2;
+const CURRENT_SCHEMA_VERSION: i64 = 3;
 
 pub async fn connect_sqlite(config: &RuntimeConfig) -> Result<SqlitePool> {
     config.ensure_dirs().context("create runtime directories")?;
@@ -37,6 +37,7 @@ pub async fn ensure_schema(pool: &SqlitePool) -> Result<()> {
         tracing::warn!("incompatible sqlite schema detected; dropping runtime tables");
         destructive_reset_schema(pool).await?;
     }
+    migrate_schema(pool).await?;
 
     let statements = [
         r#"CREATE TABLE IF NOT EXISTS schema_migrations (
@@ -45,7 +46,6 @@ pub async fn ensure_schema(pool: &SqlitePool) -> Result<()> {
         )"#,
         r#"CREATE TABLE IF NOT EXISTS system_config (
             id INTEGER PRIMARY KEY CHECK (id = 1),
-            auth_mode TEXT NOT NULL,
             enable_docker INTEGER NOT NULL,
             config_json TEXT NOT NULL,
             updated_at INTEGER NOT NULL
@@ -59,15 +59,16 @@ pub async fn ensure_schema(pool: &SqlitePool) -> Result<()> {
             updated_at INTEGER NOT NULL
         )"#,
         r#"CREATE TABLE IF NOT EXISTS nav_groups (
-            id TEXT PRIMARY KEY,
+            id TEXT NOT NULL,
             username TEXT NOT NULL,
             title TEXT NOT NULL,
             sort_order INTEGER NOT NULL,
             settings_json TEXT NOT NULL,
+            PRIMARY KEY(username, id),
             FOREIGN KEY(username) REFERENCES users(username) ON DELETE CASCADE
         )"#,
         r#"CREATE TABLE IF NOT EXISTS nav_items (
-            id TEXT PRIMARY KEY,
+            id TEXT NOT NULL,
             group_id TEXT NOT NULL,
             username TEXT NOT NULL,
             title TEXT NOT NULL,
@@ -76,12 +77,13 @@ pub async fn ensure_schema(pool: &SqlitePool) -> Result<()> {
             is_public INTEGER NOT NULL,
             sort_order INTEGER NOT NULL,
             metadata_json TEXT NOT NULL,
-            FOREIGN KEY(group_id) REFERENCES nav_groups(id) ON DELETE CASCADE,
+            PRIMARY KEY(username, id),
+            FOREIGN KEY(username, group_id) REFERENCES nav_groups(username, id) ON DELETE CASCADE,
             FOREIGN KEY(username) REFERENCES users(username) ON DELETE CASCADE
         )"#,
-        r#"CREATE INDEX IF NOT EXISTS idx_nav_items_group_order ON nav_items(group_id, sort_order)"#,
+        r#"CREATE INDEX IF NOT EXISTS idx_nav_items_group_order ON nav_items(username, group_id, sort_order)"#,
         r#"CREATE TABLE IF NOT EXISTS widgets (
-            id TEXT PRIMARY KEY,
+            id TEXT NOT NULL,
             username TEXT NOT NULL,
             widget_type TEXT NOT NULL,
             enabled INTEGER NOT NULL,
@@ -89,6 +91,7 @@ pub async fn ensure_schema(pool: &SqlitePool) -> Result<()> {
             data_json TEXT NOT NULL,
             layout_json TEXT NOT NULL,
             sort_order INTEGER NOT NULL,
+            PRIMARY KEY(username, id),
             FOREIGN KEY(username) REFERENCES users(username) ON DELETE CASCADE
         )"#,
         r#"CREATE INDEX IF NOT EXISTS idx_widgets_username_order ON widgets(username, sort_order)"#,
@@ -164,10 +167,14 @@ pub async fn ensure_schema(pool: &SqlitePool) -> Result<()> {
            ON user_ip_locations(username, last_seen_at DESC)"#,
         r#"CREATE TABLE IF NOT EXISTS config_versions (
             id TEXT PRIMARY KEY,
+            username TEXT NOT NULL,
             label TEXT NOT NULL,
             snapshot_json TEXT NOT NULL,
-            created_at INTEGER NOT NULL
+            created_at INTEGER NOT NULL,
+            FOREIGN KEY(username) REFERENCES users(username) ON DELETE CASCADE
         )"#,
+        r#"CREATE INDEX IF NOT EXISTS idx_config_versions_username_created
+           ON config_versions(username, created_at DESC)"#,
         r#"CREATE TABLE IF NOT EXISTS visitor_stats (
             id INTEGER PRIMARY KEY CHECK (id = 1),
             total_visitors INTEGER NOT NULL,
@@ -196,7 +203,7 @@ pub async fn ensure_schema(pool: &SqlitePool) -> Result<()> {
             FOREIGN KEY(host) REFERENCES icon_records(host) ON DELETE CASCADE
         )"#,
         r#"INSERT OR IGNORE INTO schema_migrations(version, applied_at)
-           VALUES (2, CAST(strftime('%s','now') AS INTEGER) * 1000)"#,
+           VALUES (3, CAST(strftime('%s','now') AS INTEGER) * 1000)"#,
     ];
     for statement in statements {
         sqlx::query(statement).execute(pool).await?;
@@ -212,11 +219,224 @@ async fn schema_needs_destructive_reset(pool: &SqlitePool) -> Result<bool> {
     let row = sqlx::query("SELECT COALESCE(MAX(version), 0) AS version FROM schema_migrations")
         .fetch_one(pool)
         .await?;
-    if row.get::<i64, _>("version") < CURRENT_SCHEMA_VERSION {
+    if row.get::<i64, _>("version") < 2 {
         return Ok(true);
     }
 
     runtime_cache_needs_destructive_reset(pool).await
+}
+
+async fn migrate_schema(pool: &SqlitePool) -> Result<()> {
+    if !table_exists(pool, "schema_migrations").await? {
+        return Ok(());
+    }
+    let row = sqlx::query("SELECT COALESCE(MAX(version), 0) AS version FROM schema_migrations")
+        .fetch_one(pool)
+        .await?;
+    if row.get::<i64, _>("version") < CURRENT_SCHEMA_VERSION {
+        migrate_to_schema_3(pool).await?;
+    }
+    Ok(())
+}
+
+async fn migrate_to_schema_3(pool: &SqlitePool) -> Result<()> {
+    rebuild_system_config_table(pool).await?;
+    rebuild_nav_groups_table(pool).await?;
+    rebuild_nav_items_table(pool).await?;
+    if table_exists(pool, "nav_groups_v2").await? {
+        sqlx::query("DROP TABLE nav_groups_v2")
+            .execute(pool)
+            .await?;
+    }
+    rebuild_widgets_table(pool).await?;
+    rebuild_config_versions_table(pool).await?;
+    sqlx::query("INSERT OR IGNORE INTO schema_migrations(version, applied_at) VALUES (3, ?)")
+        .bind(now_ms())
+        .execute(pool)
+        .await?;
+    Ok(())
+}
+
+async fn rebuild_system_config_table(pool: &SqlitePool) -> Result<()> {
+    if !table_exists(pool, "system_config").await?
+        || !table_has_column(pool, "system_config", "auth_mode").await?
+    {
+        return Ok(());
+    }
+    sqlx::query("ALTER TABLE system_config RENAME TO system_config_v2")
+        .execute(pool)
+        .await?;
+    sqlx::query(
+        r#"CREATE TABLE system_config (
+            id INTEGER PRIMARY KEY CHECK (id = 1),
+            enable_docker INTEGER NOT NULL,
+            config_json TEXT NOT NULL,
+            updated_at INTEGER NOT NULL
+        )"#,
+    )
+    .execute(pool)
+    .await?;
+    let rows =
+        sqlx::query("SELECT id, enable_docker, config_json, updated_at FROM system_config_v2")
+            .fetch_all(pool)
+            .await?;
+    for row in rows {
+        sqlx::query(
+            "INSERT OR REPLACE INTO system_config(id, enable_docker, config_json, updated_at) VALUES (?, ?, ?, ?)",
+        )
+        .bind(row.get::<i64, _>("id"))
+        .bind(row.get::<i64, _>("enable_docker"))
+        .bind(sanitize_system_config_json(&row.get::<String, _>("config_json")).to_string())
+        .bind(row.get::<i64, _>("updated_at"))
+        .execute(pool)
+        .await?;
+    }
+    sqlx::query("DROP TABLE system_config_v2")
+        .execute(pool)
+        .await?;
+    Ok(())
+}
+
+async fn rebuild_nav_groups_table(pool: &SqlitePool) -> Result<()> {
+    if !table_exists(pool, "nav_groups").await?
+        || !table_primary_key_is_single_id(pool, "nav_groups").await?
+    {
+        return Ok(());
+    }
+    sqlx::query("ALTER TABLE nav_groups RENAME TO nav_groups_v2")
+        .execute(pool)
+        .await?;
+    sqlx::query(
+        r#"CREATE TABLE nav_groups (
+            id TEXT NOT NULL,
+            username TEXT NOT NULL,
+            title TEXT NOT NULL,
+            sort_order INTEGER NOT NULL,
+            settings_json TEXT NOT NULL,
+            PRIMARY KEY(username, id),
+            FOREIGN KEY(username) REFERENCES users(username) ON DELETE CASCADE
+        )"#,
+    )
+    .execute(pool)
+    .await?;
+    sqlx::query(
+        r#"INSERT OR REPLACE INTO nav_groups(username, id, title, sort_order, settings_json)
+           SELECT username, id, title, sort_order, settings_json FROM nav_groups_v2"#,
+    )
+    .execute(pool)
+    .await?;
+    Ok(())
+}
+
+async fn rebuild_nav_items_table(pool: &SqlitePool) -> Result<()> {
+    if !table_exists(pool, "nav_items").await?
+        || !table_primary_key_is_single_id(pool, "nav_items").await?
+    {
+        return Ok(());
+    }
+    sqlx::query("ALTER TABLE nav_items RENAME TO nav_items_v2")
+        .execute(pool)
+        .await?;
+    sqlx::query(
+        r#"CREATE TABLE nav_items (
+            id TEXT NOT NULL,
+            group_id TEXT NOT NULL,
+            username TEXT NOT NULL,
+            title TEXT NOT NULL,
+            url TEXT NOT NULL,
+            icon TEXT NOT NULL,
+            is_public INTEGER NOT NULL,
+            sort_order INTEGER NOT NULL,
+            metadata_json TEXT NOT NULL,
+            PRIMARY KEY(username, id),
+            FOREIGN KEY(username, group_id) REFERENCES nav_groups(username, id) ON DELETE CASCADE,
+            FOREIGN KEY(username) REFERENCES users(username) ON DELETE CASCADE
+        )"#,
+    )
+    .execute(pool)
+    .await?;
+    sqlx::query(
+        r#"INSERT OR REPLACE INTO nav_items(username, id, group_id, title, url, icon, is_public, sort_order, metadata_json)
+           SELECT item.username, item.id, item.group_id, item.title, item.url, item.icon, item.is_public, item.sort_order, item.metadata_json
+           FROM nav_items_v2 item
+           WHERE EXISTS (
+             SELECT 1 FROM nav_groups grp
+             WHERE grp.username = item.username AND grp.id = item.group_id
+           )"#,
+    )
+    .execute(pool)
+    .await?;
+    sqlx::query("DROP TABLE nav_items_v2").execute(pool).await?;
+    Ok(())
+}
+
+async fn rebuild_widgets_table(pool: &SqlitePool) -> Result<()> {
+    if !table_exists(pool, "widgets").await?
+        || !table_primary_key_is_single_id(pool, "widgets").await?
+    {
+        return Ok(());
+    }
+    sqlx::query("ALTER TABLE widgets RENAME TO widgets_v2")
+        .execute(pool)
+        .await?;
+    sqlx::query(
+        r#"CREATE TABLE widgets (
+            id TEXT NOT NULL,
+            username TEXT NOT NULL,
+            widget_type TEXT NOT NULL,
+            enabled INTEGER NOT NULL,
+            is_public INTEGER NOT NULL,
+            data_json TEXT NOT NULL,
+            layout_json TEXT NOT NULL,
+            sort_order INTEGER NOT NULL,
+            PRIMARY KEY(username, id),
+            FOREIGN KEY(username) REFERENCES users(username) ON DELETE CASCADE
+        )"#,
+    )
+    .execute(pool)
+    .await?;
+    sqlx::query(
+        r#"INSERT OR REPLACE INTO widgets(username, id, widget_type, enabled, is_public, data_json, layout_json, sort_order)
+           SELECT username, id, widget_type, enabled, is_public, data_json, layout_json, sort_order FROM widgets_v2"#,
+    )
+    .execute(pool)
+    .await?;
+    sqlx::query("DROP TABLE widgets_v2").execute(pool).await?;
+    Ok(())
+}
+
+async fn rebuild_config_versions_table(pool: &SqlitePool) -> Result<()> {
+    if !table_exists(pool, "config_versions").await? {
+        return Ok(());
+    }
+    if table_has_column(pool, "config_versions", "username").await? {
+        return Ok(());
+    }
+    sqlx::query("ALTER TABLE config_versions RENAME TO config_versions_v2")
+        .execute(pool)
+        .await?;
+    sqlx::query(
+        r#"CREATE TABLE config_versions (
+            id TEXT PRIMARY KEY,
+            username TEXT NOT NULL,
+            label TEXT NOT NULL,
+            snapshot_json TEXT NOT NULL,
+            created_at INTEGER NOT NULL,
+            FOREIGN KEY(username) REFERENCES users(username) ON DELETE CASCADE
+        )"#,
+    )
+    .execute(pool)
+    .await?;
+    sqlx::query(
+        r#"INSERT OR REPLACE INTO config_versions(id, username, label, snapshot_json, created_at)
+           SELECT id, 'admin', label, snapshot_json, created_at FROM config_versions_v2"#,
+    )
+    .execute(pool)
+    .await?;
+    sqlx::query("DROP TABLE config_versions_v2")
+        .execute(pool)
+        .await?;
+    Ok(())
 }
 
 async fn any_runtime_table_exists(pool: &SqlitePool) -> Result<bool> {
@@ -277,6 +497,46 @@ async fn table_exists(pool: &SqlitePool, table: &str) -> Result<bool> {
     Ok(row.is_some())
 }
 
+async fn table_has_column(pool: &SqlitePool, table: &str, column: &str) -> Result<bool> {
+    let rows = sqlx::query(table_info_sql(table)?).fetch_all(pool).await?;
+    Ok(rows
+        .iter()
+        .any(|row| row.get::<String, _>("name") == column))
+}
+
+async fn table_primary_key_is_single_id(pool: &SqlitePool, table: &str) -> Result<bool> {
+    let rows = sqlx::query(table_info_sql(table)?).fetch_all(pool).await?;
+    let pk_columns = rows
+        .iter()
+        .filter(|row| row.get::<i64, _>("pk") > 0)
+        .map(|row| row.get::<String, _>("name"))
+        .collect::<Vec<_>>();
+    Ok(pk_columns.len() == 1 && pk_columns[0] == "id")
+}
+
+fn table_info_sql(table: &str) -> Result<&'static str> {
+    match table {
+        "system_config" => Ok("PRAGMA table_info(system_config)"),
+        "nav_groups" => Ok("PRAGMA table_info(nav_groups)"),
+        "nav_items" => Ok("PRAGMA table_info(nav_items)"),
+        "widgets" => Ok("PRAGMA table_info(widgets)"),
+        "config_versions" => Ok("PRAGMA table_info(config_versions)"),
+        _ => anyhow::bail!("unsupported table_info target: {table}"),
+    }
+}
+
+fn sanitize_system_config_json(raw: &str) -> Value {
+    let mut value = serde_json::from_str(raw).unwrap_or_else(|_| json!({}));
+    if !value.is_object() {
+        value = json!({});
+    }
+    if let Some(map) = value.as_object_mut() {
+        map.remove("authMode");
+        map.remove("auth_mode");
+    }
+    value
+}
+
 async fn destructive_reset_schema(pool: &SqlitePool) -> Result<()> {
     let statements = [
         "DROP TABLE IF EXISTS integration_accounts",
@@ -318,15 +578,11 @@ pub async fn import_legacy_app_data(pool: &SqlitePool, config: &RuntimeConfig) -
         tracing::info!("sqlite user data already exists; skipping legacy app-data import");
     } else {
         import_system_config(pool, &config.data_dir.join("system.json")).await?;
-        let auth_mode = system_config(pool).await?.auth_mode;
-        let admin_source = if auth_mode == "single" {
-            first_existing_path([
-                config.data_dir.join("data.json"),
-                config.default_template_file.clone(),
-            ])
-        } else {
-            config.users_dir.join("admin.json")
-        };
+        let admin_source = first_existing_path([
+            config.data_dir.join("data.json"),
+            config.users_dir.join("admin.json"),
+            config.default_template_file.clone(),
+        ]);
         import_user_document(pool, "admin", &admin_source, &config.admin_password).await?;
         import_user_dir(pool, &config.users_dir, &config.admin_password).await?;
     }
@@ -353,19 +609,17 @@ async fn user_data_exists(pool: &SqlitePool) -> Result<bool> {
 }
 
 pub async fn system_config(pool: &SqlitePool) -> Result<SystemConfig> {
-    let row =
-        sqlx::query("SELECT auth_mode, enable_docker, config_json FROM system_config WHERE id = 1")
-            .fetch_optional(pool)
-            .await?;
+    let row = sqlx::query("SELECT enable_docker, config_json FROM system_config WHERE id = 1")
+        .fetch_optional(pool)
+        .await?;
     if let Some(row) = row {
         let mut extra: serde_json::Map<String, Value> =
             serde_json::from_str(row.get::<String, _>("config_json").as_str()).unwrap_or_default();
-        let auth_mode = row.get::<String, _>("auth_mode");
         let enable_docker = row.get::<i64, _>("enable_docker") != 0;
         extra.remove("authMode");
+        extra.remove("auth_mode");
         extra.remove("enableDocker");
         Ok(SystemConfig {
-            auth_mode,
             enable_docker,
             extra,
         })
@@ -533,27 +787,22 @@ pub async fn upsert_icon_record(pool: &SqlitePool, record: &IconRecord) -> Resul
 }
 
 async fn import_system_config(pool: &SqlitePool, path: &Path) -> Result<()> {
-    let value = read_json_or(path, json!({"authMode":"single","enableDocker":false}))?;
-    let auth_mode = value
-        .get("authMode")
-        .and_then(Value::as_str)
-        .unwrap_or("single")
-        .to_string();
+    let value = read_json_or(path, json!({"enableDocker":false}))?;
     let enable_docker = value
         .get("enableDocker")
         .and_then(Value::as_bool)
         .unwrap_or(false);
+    let config_json = sanitize_system_config_json(&value.to_string());
     sqlx::query(
-        r#"INSERT INTO system_config(id, auth_mode, enable_docker, config_json, updated_at)
-           VALUES (1, ?, ?, ?, ?)
-           ON CONFLICT(id) DO UPDATE SET auth_mode=excluded.auth_mode,
+        r#"INSERT INTO system_config(id, enable_docker, config_json, updated_at)
+           VALUES (1, ?, ?, ?)
+           ON CONFLICT(id) DO UPDATE SET
              enable_docker=excluded.enable_docker,
              config_json=excluded.config_json,
              updated_at=excluded.updated_at"#,
     )
-    .bind(auth_mode)
     .bind(enable_docker as i64)
-    .bind(value.to_string())
+    .bind(config_json.to_string())
     .bind(now_ms())
     .execute(pool)
     .await?;
@@ -580,6 +829,9 @@ async fn import_user_dir(
             .file_stem()
             .and_then(|value| value.to_str())
             .unwrap_or("user");
+        if username == "admin" {
+            continue;
+        }
         import_user_document(pool, username, entry.path(), default_password).await?;
     }
     Ok(())
@@ -796,7 +1048,7 @@ async fn load_groups(pool: &SqlitePool, username: &str) -> Result<Vec<NavGroup>>
     for row in rows {
         let id: String = row.get("id");
         groups.push(NavGroup {
-            items: load_items(pool, &id).await?,
+            items: load_items(pool, username, &id).await?,
             id,
             title: row.get("title"),
             sort_order: row.get("sort_order"),
@@ -806,10 +1058,11 @@ async fn load_groups(pool: &SqlitePool, username: &str) -> Result<Vec<NavGroup>>
     Ok(groups)
 }
 
-async fn load_items(pool: &SqlitePool, group_id: &str) -> Result<Vec<NavItem>> {
+async fn load_items(pool: &SqlitePool, username: &str, group_id: &str) -> Result<Vec<NavItem>> {
     let rows = sqlx::query(
-        "SELECT id, title, url, icon, is_public, sort_order, metadata_json FROM nav_items WHERE group_id = ? ORDER BY sort_order ASC, title ASC",
+        "SELECT id, title, url, icon, is_public, sort_order, metadata_json FROM nav_items WHERE username = ? AND group_id = ? ORDER BY sort_order ASC, title ASC",
     )
+    .bind(username)
     .bind(group_id)
     .fetch_all(pool)
     .await?;

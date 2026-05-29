@@ -10,7 +10,10 @@ import {
 import type { WidgetConfig } from "@/types";
 import { useMainStore } from "@/stores/main";
 import { useLoginRequiredToast } from "@/composables/useRequireLogin";
-import { patchItabWallpaperData } from "./itabWallpaperModel";
+import {
+  patchItabWallpaperData,
+  patchItabWallpaperSettingsData,
+} from "./itabWallpaperModel";
 import { useItabWallpaperRuntime } from "./useItabWallpaperRuntime";
 import type {
   ItabWallpaperApplyPayload,
@@ -110,6 +113,19 @@ const persistWidgetWallpaperState = (entry: ItabWallpaperEntry) => {
   const updatedData = patchItabWallpaperData(
     targetWidget.value.data,
     entry,
+    runtime.settings,
+  );
+  targetWidget.value.data = updatedData;
+  emit("updateData", updatedData);
+};
+
+const persistWallpaperSettings = () => {
+  if (!store.isLogged) {
+    notifyLoginRequired("请先登录后再修改壁纸设置。");
+    return;
+  }
+  const updatedData = patchItabWallpaperSettingsData(
+    targetWidget.value.data,
     runtime.settings,
   );
   targetWidget.value.data = updatedData;
@@ -217,14 +233,16 @@ watch(
           v-model="runtime.settings.dailyAutoUpdate"
           type="checkbox"
           data-itab-inner-control
+          @change="persistWallpaperSettings"
         />
-        <span>选中壁纸每日自动更新</span>
+        <span>自动更新</span>
       </label>
       <label>
         <input
           v-model="runtime.settings.dimWallpaper"
           type="checkbox"
           data-itab-inner-control
+          @change="persistWallpaperSettings"
         />
         <span>桌面背景增加暗色遮罩</span>
       </label>
@@ -236,6 +254,7 @@ watch(
           min="0"
           max="20"
           data-itab-inner-control
+          @change="persistWallpaperSettings"
         />
         <b>{{ runtime.settings.blurLevel }}</b>
       </label>

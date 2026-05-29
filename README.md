@@ -25,7 +25,13 @@ StartDeck 的目标是成为每天打开浏览器时的第一个生产力界面�
 - **可扩展**：支持自定义 HTML/CSS/JS、iframe、后端代理、全局自定义 CSS 和图标管理。
 - **轻量可靠**：Vue 3 前端、Rust 后端、SQLite 本地存储，部署和备份边界清晰。
 
-产品介绍页：部署后访问 `/intro.html`。
+官网页：GitHub Pages 发布到 <https://appdev.github.io/StartDeck/>；自托管部署后也可访问 `/intro.html`。
+
+## 官网发布
+
+官网源文件是 [`frontend/public/intro.html`](frontend/public/intro.html)，GitHub Pages workflow 是 [`.github/workflows/deploy-pages.yml`](.github/workflows/deploy-pages.yml)。
+
+推送到 `main` 后，workflow 会把官网页发布到 <https://appdev.github.io/StartDeck/>，同时保留 `/intro.html` 入口。首次启用时需要在 GitHub 仓库 `Settings -> Pages` 中选择 `GitHub Actions` 作为发布来源。
 
 ## 功能概览
 

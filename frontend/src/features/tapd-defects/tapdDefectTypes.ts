@@ -5,7 +5,6 @@ export const TAPD_DEFECTS_CATALOG_ID = "tapd-defects";
 export const TAPD_DEFECTS_RUNTIME = "tapd-defects";
 export const TAPD_DEFECTS_DATA_VERSION = 1;
 export const TAPD_DEFECTS_DEFAULT_SIZE: ItabWidgetSizeKey = "2x2";
-export const TAPD_LOGO_URL = "/tapd/logo.svg";
 export const TAPD_ACTIONABLE_DEFECT_STATUS_VALUES = [
   "new",
   "assigned",

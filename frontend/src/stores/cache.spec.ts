@@ -41,7 +41,7 @@ describe("cache store auth scope", () => {
       groups: [],
       widgets: [privateWidget],
       appConfig: {},
-      systemConfig: { authMode: "single" },
+      systemConfig: { enableDocker: false },
       username: "admin",
       version: 1,
     });
@@ -67,7 +67,7 @@ describe("cache store auth scope", () => {
         { ...privateWidget, id: "public-clock", type: "clock", isPublic: true },
       ],
       appConfig: {},
-      systemConfig: { authMode: "single" },
+      systemConfig: { enableDocker: false },
       version: 2,
     });
 

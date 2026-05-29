@@ -80,6 +80,34 @@ export const resolveItabWallpaperSettings = (
   blurLevel: Math.min(20, Math.max(0, asNumber(state.blurLevel, 0))),
 });
 
+export const createItabWallpaperEntryFromState = (
+  state: ItabWallpaperState,
+): ItabWallpaperEntry | null => {
+  if (!state.selectedWallpaperId || !state.wallpaperUrl) return null;
+  return {
+    id: state.selectedWallpaperId,
+    title: state.selectedWallpaperTitle || "必应每日壁纸",
+    location: "",
+    credit: "Bing",
+    thumbnailUrl: state.wallpaperThumbnailUrl || state.wallpaperUrl,
+    downloadUrl: state.wallpaperUrl,
+  };
+};
+
+export const shouldApplyItabWallpaperDailyAutoUpdate = (
+  state: ItabWallpaperState,
+  settings: ItabWallpaperSettings,
+  latestWallpaper: ItabWallpaperEntry | null | undefined,
+) => {
+  if (!settings.dailyAutoUpdate || !latestWallpaper) return false;
+  if (!latestWallpaper.id || !latestWallpaper.downloadUrl) return false;
+  if (!state.selectedWallpaperId && !state.wallpaperUrl) return false;
+  return (
+    state.selectedWallpaperId !== latestWallpaper.id ||
+    state.wallpaperUrl !== latestWallpaper.downloadUrl
+  );
+};
+
 export const patchItabWallpaperData = (
   data: unknown,
   entry: ItabWallpaperEntry,
@@ -100,6 +128,30 @@ export const patchItabWallpaperData = (
         selectedWallpaperTitle: entry.title,
         wallpaperUrl: entry.downloadUrl,
         wallpaperThumbnailUrl: entry.thumbnailUrl,
+        dailyAutoUpdate: settings.dailyAutoUpdate,
+        dimWallpaper: settings.dimWallpaper,
+        blurLevel: settings.blurLevel,
+        updatedAt,
+      },
+    },
+  };
+};
+
+export const patchItabWallpaperSettingsData = (
+  data: unknown,
+  settings: ItabWallpaperSettings,
+  updatedAt = new Date().toISOString(),
+): Record<string, unknown> => {
+  const root = isRecord(data) ? { ...data } : {};
+  const itab = isRecord(root.itab) ? { ...root.itab } : {};
+  const state = isRecord(itab.state) ? { ...itab.state } : {};
+
+  return {
+    ...root,
+    itab: {
+      ...itab,
+      state: {
+        ...state,
         dailyAutoUpdate: settings.dailyAutoUpdate,
         dimWallpaper: settings.dimWallpaper,
         blurLevel: settings.blurLevel,

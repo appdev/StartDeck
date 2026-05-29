@@ -2,6 +2,7 @@
 import { mount } from "@vue/test-utils";
 import { createTestingPinia } from "@pinia/testing";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import tapdLogoUrl from "@/assets/tapd/logo.svg";
 import TapdDefectsWidget from "./TapdDefectsWidget.vue";
 import { createDefaultTapdDefectWidget } from "./tapdDefectModel";
 import { TAPD_ACTIONABLE_DEFECT_STATUS } from "./tapdDefectTypes";
@@ -68,7 +69,7 @@ describe("TapdDefectsWidget", () => {
       expect(wrapper.text()).toContain("23");
       expect(wrapper.text()).not.toContain("我的");
       expect(wrapper.text()).not.toContain("我");
-      expect(wrapper.find("img").attributes("src")).toBe("/tapd/logo.svg");
+      expect(wrapper.find("img").attributes("src")).toBe(tapdLogoUrl);
       wrapper.unmount();
     },
   );

@@ -166,7 +166,7 @@ const EditModal = loadAsync(() => import("./EditModal.vue"));
 const SettingsModal = loadAsync(() => import("./SettingsModal.vue"));
 const GroupSettingsModal = loadAsync(() => import("./GroupSettingsModal.vue"));
 const AddWidgetModal = loadAsync(() => import("./AddWidgetModal.vue"));
-/** 同步导入，避免生产/Docker 下动态 chunk 请求失败导致登录框无法弹出；LoginModal 内已做 store/authMode 防御 */
+/** 同步导入，避免生产/Docker 下动态 chunk 请求失败导致登录框无法弹出。 */
 import LoginModal from "./LoginModal.vue";
 const IconShape = loadAsync(() => import("./IconShape.vue"));
 
@@ -810,6 +810,7 @@ const widgetAreaContainerWidth = computed(() =>
 );
 const lastDeviceKey = ref(deviceKey.value);
 const lastWidgetColNum = ref(widgetColNum.value);
+const lastAuthState = ref(store.isLogged);
 const resizeStepHeight = computed(() => ITAB_GRID_PITCH);
 
 const compactVertical = (layout: GridLayoutItem[]) => {
@@ -878,17 +879,27 @@ watch(
   () => {
     const nextDeviceKey = deviceKey.value;
     const nextColNum = widgetColNum.value;
+    const nextAuthState = store.isLogged;
+    const authStateChanged = nextAuthState !== lastAuthState.value;
     const shouldRemount =
       nextDeviceKey !== lastDeviceKey.value ||
-      nextColNum !== lastWidgetColNum.value;
+      nextColNum !== lastWidgetColNum.value ||
+      authStateChanged;
     lastDeviceKey.value = nextDeviceKey;
     lastWidgetColNum.value = nextColNum;
+    lastAuthState.value = nextAuthState;
 
-    if (isInternalUpdate) return;
+    if (authStateChanged) {
+      isEditMode.value = false;
+      selectedWidgetId.value = null;
+      store.layoutEditInProgress = false;
+    }
+
+    if (isInternalUpdate && !authStateChanged) return;
 
     // 防止编辑时因服务端推送导致的布局回弹 (Rebound)
     // 处于编辑模式(活跃)时，忽略外部更新，以本地拖拽状态为准
-    if (isEditMode.value) return;
+    if (isEditMode.value && !authStateChanged) return;
 
     const visibleWidgets = store.mergedWidgets
       .filter(
@@ -1098,13 +1109,7 @@ const syncGridStackWidgets = async () => {
   syncingGridStack = true;
   try {
     grid.batchUpdate();
-    const liveIds = new Set(layoutData.value.map((item) => item.i));
-    grid.getGridItems().forEach((el) => {
-      const id = getGridStackItemId(el.gridstackNode, el);
-      if (!liveIds.has(id)) {
-        grid.removeWidget(el, false, false);
-      }
-    });
+    grid.removeAll(false, false);
 
     layoutData.value.forEach((item) => {
       const el = Array.from(

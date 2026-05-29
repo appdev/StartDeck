@@ -18,13 +18,6 @@ const mountLoginModal = () => {
       plugins: [
         createTestingPinia({
           createSpy: () => vi.fn(),
-          initialState: {
-            config: {
-              systemConfig: {
-                authMode: "single",
-              },
-            },
-          },
         }),
       ],
       stubs: {
@@ -52,7 +45,13 @@ describe("LoginModal", () => {
     );
 
     expect(surface?.classList.contains("sd-compact-window")).toBe(true);
-    expect(document.body.textContent).toContain("管理员登录");
+    expect(document.body.textContent).toContain("用户登录");
+    expect(
+      document.body.querySelector<HTMLInputElement>(
+        'input[placeholder="用户名"]',
+      ),
+    ).not.toBeNull();
+    expect(document.body.textContent).not.toContain("没有账号？去注册");
     expect(
       document.body.querySelector(".sd-window-control-dot.is-green"),
     ).not.toBeNull();
@@ -75,11 +74,18 @@ describe("LoginModal", () => {
     const passwordInput = document.body.querySelector<HTMLInputElement>(
       'input[type="password"]',
     );
-    const loginButton =
-      document.body.querySelector<HTMLButtonElement>("button.sd-btn-primary");
+    const usernameInput = document.body.querySelector<HTMLInputElement>(
+      'input[placeholder="用户名"]',
+    );
+    const loginButton = document.body.querySelector<HTMLButtonElement>(
+      "button.sd-btn-primary",
+    );
+    expect(usernameInput).not.toBeNull();
     expect(passwordInput).not.toBeNull();
     expect(loginButton).not.toBeNull();
 
+    usernameInput!.value = "admin";
+    usernameInput!.dispatchEvent(new Event("input", { bubbles: true }));
     passwordInput!.value = "bad-password";
     passwordInput!.dispatchEvent(new Event("input", { bubbles: true }));
     loginButton!.dispatchEvent(new MouseEvent("click", { bubbles: true }));

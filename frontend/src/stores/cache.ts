@@ -55,17 +55,10 @@ export const useCacheStore = defineStore("cache", () => {
     if (!auth.isLogged) {
       return { key: GUEST_CACHE_KEY, username: GUEST_CACHE_USER };
     }
-    const authMode =
-      ((data.systemConfig as Record<string, unknown> | undefined)?.authMode ??
-        configStore.systemConfig.authMode) === "single"
-        ? "single"
-        : "multi";
     const username =
-      authMode === "single"
-        ? "admin"
-        : typeof data.username === "string" && data.username.trim()
-          ? data.username.trim()
-          : currentAuthUsername();
+      typeof data.username === "string" && data.username.trim()
+        ? data.username.trim()
+        : currentAuthUsername();
     return { key: authCacheKey(username), username };
   };
 
@@ -167,7 +160,9 @@ export const useCacheStore = defineStore("cache", () => {
           mergedConfig as unknown as Record<string, unknown>,
         ) as unknown as AppConfig;
       }
-      if (cache.systemConfig) configStore.systemConfig = cache.systemConfig;
+      if (cache.systemConfig)
+        configStore.systemConfig =
+          cache.systemConfig as typeof configStore.systemConfig;
       if (typeof cache.version !== "undefined") {
         dataVersionRef.value = normalizeVersion(cache.version);
       }
@@ -238,7 +233,8 @@ export const useCacheStore = defineStore("cache", () => {
             );
           const reloadData = await reloadRes.json();
           if (reloadData.systemConfig)
-            configStore.systemConfig = reloadData.systemConfig;
+            configStore.systemConfig =
+              reloadData.systemConfig as typeof configStore.systemConfig;
           handleDataUpdate(reloadData);
         }
         updateLayout();
@@ -247,7 +243,9 @@ export const useCacheStore = defineStore("cache", () => {
       }
       if (!res.ok) throw new Error(`Init failed with status ${res.status}`);
       const data = await res.json();
-      if (data.systemConfig) configStore.systemConfig = data.systemConfig;
+      if (data.systemConfig)
+        configStore.systemConfig =
+          data.systemConfig as typeof configStore.systemConfig;
       handleDataUpdate(data);
       updateLayout();
       markServerSnapshotReady();

@@ -113,7 +113,6 @@ pub fn app(state: AppState) -> Router {
         .route("/ws", get(ws_handler))
         .route("/proxy", any(proxy_request))
         .route("/api/login", post(login))
-        .route("/api/register", post(register))
         .route("/api/data", get(get_data))
         .route("/api/data/import", post(import_data))
         .route("/api/save", post(save_data))
@@ -219,6 +218,10 @@ pub fn app(state: AppState) -> Router {
             "/favicon.svg",
             get_service(ServeFile::new(public_dir.join("favicon.svg"))),
         )
+        .route(
+            "/intro.html",
+            get_service(ServeFile::new(public_dir.join("intro.html"))),
+        )
         .nest_service(
             "/assets",
             get_service(ServeDir::new(public_dir.join("assets"))),
@@ -283,10 +286,11 @@ async fn login(
     State(state): State<AppState>,
     Json(req): Json<LoginRequest>,
 ) -> Result<Json<Value>, ApiError> {
-    let mut username = req.username.unwrap_or_default();
+    let username = req.username.unwrap_or_default();
     if username.trim().is_empty() {
-        username = "admin".to_string();
+        return Err(ApiError::bad_request("username_required"));
     }
+    let username = sanitize_username(&username)?;
     let Some(hash) = user_password_hash(&state.pool, &username).await? else {
         return Err(ApiError::unauthorized("user_not_found"));
     };
@@ -306,14 +310,6 @@ async fn login(
     Ok(Json(
         json!({"success": true, "token": token, "username": username}),
     ))
-}
-
-async fn register(
-    State(state): State<AppState>,
-    Json(req): Json<UserMutationRequest>,
-) -> Result<Json<Value>, ApiError> {
-    create_user(&state, &req.username, &req.password).await?;
-    Ok(Json(json!({"success": true})))
 }
 
 async fn list_users(
@@ -410,7 +406,7 @@ async fn save_default(
     State(state): State<AppState>,
     headers: HeaderMap,
 ) -> Result<Json<Value>, ApiError> {
-    let username = require_username(&headers, &state)?;
+    let username = require_admin(&headers, &state)?;
     let snapshot = app_snapshot(&state.pool, &username).await?;
     let template = snapshot_to_template_value(snapshot);
     sqlx::query(
@@ -455,30 +451,35 @@ async fn update_system_config(
     headers: HeaderMap,
     Json(body): Json<Value>,
 ) -> Result<Json<Value>, ApiError> {
-    require_username(&headers, &state)?;
-    let auth_mode = body
-        .get("authMode")
-        .and_then(Value::as_str)
-        .unwrap_or("single");
+    require_admin(&headers, &state)?;
+    if body.get("authMode").is_some() || body.get("auth_mode").is_some() {
+        return Err(ApiError::bad_request("auth_mode_removed"));
+    }
     let enable_docker = body
         .get("enableDocker")
         .and_then(Value::as_bool)
         .unwrap_or(false);
+    let mut config_json = body;
+    if let Some(map) = config_json.as_object_mut() {
+        map.remove("authMode");
+        map.remove("auth_mode");
+    }
     sqlx::query(
-        r#"INSERT INTO system_config(id, auth_mode, enable_docker, config_json, updated_at)
-           VALUES (1, ?, ?, ?, ?)
-           ON CONFLICT(id) DO UPDATE SET auth_mode=excluded.auth_mode,
+        r#"INSERT INTO system_config(id, enable_docker, config_json, updated_at)
+           VALUES (1, ?, ?, ?)
+           ON CONFLICT(id) DO UPDATE SET
              enable_docker=excluded.enable_docker,
              config_json=excluded.config_json,
              updated_at=excluded.updated_at"#,
     )
-    .bind(auth_mode)
     .bind(enable_docker as i64)
-    .bind(body.to_string())
+    .bind(config_json.to_string())
     .bind(Utc::now().timestamp_millis())
     .execute(&state.pool)
     .await?;
-    Ok(Json(json!({"success": true})))
+    Ok(Json(serde_json::to_value(
+        system_config(&state.pool).await?,
+    )?))
 }
 
 async fn get_widget(
@@ -522,12 +523,13 @@ async fn save_widget(
     sqlx::query(
         r#"INSERT INTO widgets(id, username, widget_type, enabled, is_public, data_json, layout_json, sort_order)
            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-           ON CONFLICT(id) DO UPDATE SET
+           ON CONFLICT(username, id) DO UPDATE SET
              widget_type=excluded.widget_type,
              enabled=excluded.enabled,
              is_public=excluded.is_public,
              data_json=excluded.data_json,
-             layout_json=excluded.layout_json"#,
+             layout_json=excluded.layout_json,
+             sort_order=excluded.sort_order"#,
     )
     .bind(&id)
     .bind(username)
@@ -892,11 +894,13 @@ async fn list_config_versions(
     State(state): State<AppState>,
     headers: HeaderMap,
 ) -> Result<Json<Value>, ApiError> {
-    require_username(&headers, &state)?;
-    let rows =
-        sqlx::query("SELECT id, label, created_at FROM config_versions ORDER BY created_at DESC")
-            .fetch_all(&state.pool)
-            .await?;
+    let username = require_username(&headers, &state)?;
+    let rows = sqlx::query(
+        "SELECT id, label, created_at FROM config_versions WHERE username = ? ORDER BY created_at DESC",
+    )
+    .bind(username)
+    .fetch_all(&state.pool)
+    .await?;
     Ok(Json(
         json!({"success": true, "versions": rows.into_iter().map(|row| json!({
         "id": row.get::<String, _>("id"),
@@ -915,9 +919,10 @@ async fn save_config_version(
     let snapshot = app_snapshot(&state.pool, &username).await?;
     let id = Uuid::new_v4().to_string();
     sqlx::query(
-        "INSERT INTO config_versions(id, label, snapshot_json, created_at) VALUES (?, ?, ?, ?)",
+        "INSERT INTO config_versions(id, username, label, snapshot_json, created_at) VALUES (?, ?, ?, ?, ?)",
     )
     .bind(&id)
+    .bind(&username)
     .bind(
         body.get("label")
             .and_then(Value::as_str)
@@ -935,19 +940,23 @@ async fn restore_config_version(
     headers: HeaderMap,
     Json(body): Json<Value>,
 ) -> Result<Json<Value>, ApiError> {
-    require_username(&headers, &state)?;
+    let username = require_username(&headers, &state)?;
     let id = body
         .get("id")
         .and_then(Value::as_str)
         .ok_or_else(|| ApiError::bad_request("missing_id"))?;
-    let row = sqlx::query("SELECT snapshot_json FROM config_versions WHERE id = ?")
-        .bind(id)
-        .fetch_optional(&state.pool)
-        .await?;
+    let row =
+        sqlx::query("SELECT snapshot_json FROM config_versions WHERE id = ? AND username = ?")
+            .bind(id)
+            .bind(&username)
+            .fetch_optional(&state.pool)
+            .await?;
     let Some(row) = row else {
         return Err(ApiError::not_found("version_not_found"));
     };
-    let snapshot: AppSnapshot = serde_json::from_str(&row.get::<String, _>("snapshot_json"))?;
+    let mut snapshot: AppSnapshot = serde_json::from_str(&row.get::<String, _>("snapshot_json"))?;
+    snapshot.username = username.clone();
+    snapshot.user.username = username;
     save_snapshot(&state.pool, &snapshot).await?;
     Ok(Json(json!({"success": true})))
 }
@@ -957,9 +966,10 @@ async fn delete_config_version(
     headers: HeaderMap,
     AxumPath(id): AxumPath<String>,
 ) -> Result<Json<Value>, ApiError> {
-    require_username(&headers, &state)?;
-    sqlx::query("DELETE FROM config_versions WHERE id = ?")
+    let username = require_username(&headers, &state)?;
+    sqlx::query("DELETE FROM config_versions WHERE id = ? AND username = ?")
         .bind(id)
+        .bind(username)
         .execute(&state.pool)
         .await?;
     Ok(Json(json!({"success": true})))
@@ -1103,7 +1113,6 @@ fn snapshot_to_api_value(snapshot: AppSnapshot) -> Value {
         "username": snapshot.username,
         "user": snapshot.user,
         "systemConfig": snapshot.system_config,
-        "authMode": snapshot.system_config.auth_mode,
         "enableDocker": snapshot.system_config.enable_docker,
         "appConfig": snapshot.user.app_config,
         "groups": snapshot.groups.iter().map(nav_group_to_api_value).collect::<Vec<_>>(),
@@ -1125,7 +1134,6 @@ async fn default_template_to_api_value(state: &AppState) -> Result<Value, ApiErr
     out.insert("username".to_string(), json!("__guest__"));
     out.insert("isGuest".to_string(), json!(true));
     out.insert("systemConfig".to_string(), serde_json::to_value(&system)?);
-    out.insert("authMode".to_string(), json!(&system.auth_mode));
     out.insert("enableDocker".to_string(), json!(system.enable_docker));
     out.insert("version".to_string(), json!(0));
     Ok(Value::Object(out))

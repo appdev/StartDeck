@@ -2,17 +2,60 @@
 import { computed } from "vue";
 import type { WidgetConfig } from "@/types";
 import type { ItabWidgetSizeKey } from "@/features/itab-widgets/itabSizePresets";
-import { isItabWallpaperCopyrightVisible } from "./itabWallpaperModel";
+import { useMainStore } from "@/stores/main";
+import {
+  isItabWallpaperCopyrightVisible,
+  patchItabWallpaperData,
+  readItabWallpaperState,
+  shouldApplyItabWallpaperDailyAutoUpdate,
+} from "./itabWallpaperModel";
 import { useItabWallpaperRuntime } from "./useItabWallpaperRuntime";
+import type {
+  ItabWallpaperEntry,
+  ItabWallpaperSettings,
+} from "./itabWallpaperTypes";
 
 const props = defineProps<{
   widget?: WidgetConfig;
   sizeKey: ItabWidgetSizeKey;
 }>();
 
+const emit = defineEmits<{
+  updateData: [data: Record<string, unknown>];
+}>();
+
+const store = useMainStore();
 const widgetRef = computed(() => props.widget || null);
-const runtime = useItabWallpaperRuntime(widgetRef);
-const activeWallpaper = computed(() => runtime.featuredWallpaper.value);
+
+const applyDailyWallpaperUpdate = (
+  entry: ItabWallpaperEntry,
+  settings: ItabWallpaperSettings,
+) => {
+  if (!props.widget || !store.isLogged) return;
+  const state = readItabWallpaperState(props.widget.data);
+  if (!shouldApplyItabWallpaperDailyAutoUpdate(state, settings, entry)) return;
+
+  const updatedData = patchItabWallpaperData(
+    props.widget.data,
+    entry,
+    settings,
+  );
+  store.appConfig.background = entry.downloadUrl;
+  store.appConfig.solidBackgroundColor = "";
+  store.appConfig.pcRotation = false;
+  store.appConfig.wallpaperConfig = {
+    type: "api",
+    url: entry.downloadUrl,
+    enabled: false,
+    lastUpdated: Date.now(),
+  };
+  emit("updateData", updatedData);
+};
+
+const runtime = useItabWallpaperRuntime(widgetRef, {
+  onDailyAutoUpdate: applyDailyWallpaperUpdate,
+});
+const activeWallpaper = computed(() => runtime.activeWallpaper.value);
 const wallpaperDescription = computed(() =>
   activeWallpaper.value
     ? [

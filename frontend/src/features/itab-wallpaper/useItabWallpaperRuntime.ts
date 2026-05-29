@@ -2,17 +2,35 @@ import { computed, reactive, ref, watch, type Ref } from "vue";
 import type { WidgetConfig } from "@/types";
 import { fetchItabBingWallpapers } from "./itabWallpaperApi";
 import {
+  createItabWallpaperEntryFromState,
   DEFAULT_ITAB_WALLPAPER_PAGE_SIZE,
   DEFAULT_ITAB_WALLPAPER_VISIBLE_COUNT,
   readItabWallpaperState,
   resolveItabWallpaperSettings,
+  shouldApplyItabWallpaperDailyAutoUpdate,
 } from "./itabWallpaperModel";
-import type { ItabWallpaperEntry } from "./itabWallpaperTypes";
+import type {
+  ItabWallpaperEntry,
+  ItabWallpaperSettings,
+} from "./itabWallpaperTypes";
 
 type WidgetLike = Pick<WidgetConfig, "data"> | null | undefined;
 
-export const useItabWallpaperRuntime = (widget: Ref<WidgetLike>) => {
+interface ItabWallpaperRuntimeOptions {
+  onDailyAutoUpdate?: (
+    entry: ItabWallpaperEntry,
+    settings: ItabWallpaperSettings,
+  ) => void | Promise<void>;
+}
+
+export const useItabWallpaperRuntime = (
+  widget: Ref<WidgetLike>,
+  options: ItabWallpaperRuntimeOptions = {},
+) => {
   const initialState = readItabWallpaperState(widget.value?.data);
+  const widgetState = computed(() =>
+    readItabWallpaperState(widget.value?.data),
+  );
   const activeWallpaperId = ref(initialState.selectedWallpaperId || "");
   const bingWallpapers = ref<ItabWallpaperEntry[]>([]);
   const visibleCount = ref(DEFAULT_ITAB_WALLPAPER_VISIBLE_COUNT);
@@ -25,10 +43,15 @@ export const useItabWallpaperRuntime = (widget: Ref<WidgetLike>) => {
   const error = ref("");
 
   watch(
-    () => readItabWallpaperState(widget.value?.data).selectedWallpaperId,
-    (selectedWallpaperId) => {
-      if (!selectedWallpaperId) return;
-      activeWallpaperId.value = selectedWallpaperId;
+    widgetState,
+    (state) => {
+      if (state.selectedWallpaperId) {
+        activeWallpaperId.value = state.selectedWallpaperId;
+      }
+      const nextSettings = resolveItabWallpaperSettings(state);
+      settings.dailyAutoUpdate = nextSettings.dailyAutoUpdate;
+      settings.dimWallpaper = nextSettings.dimWallpaper;
+      settings.blurLevel = nextSettings.blurLevel;
     },
     { immediate: true },
   );
@@ -41,6 +64,7 @@ export const useItabWallpaperRuntime = (widget: Ref<WidgetLike>) => {
       bingWallpapers.value.find(
         (entry) => entry.id === activeWallpaperId.value,
       ) ||
+      createItabWallpaperEntryFromState(widgetState.value) ||
       featuredWallpaper.value ||
       null,
   );
@@ -60,6 +84,25 @@ export const useItabWallpaperRuntime = (widget: Ref<WidgetLike>) => {
 
   const selectWallpaper = (wallpaper: ItabWallpaperEntry) => {
     activeWallpaperId.value = wallpaper.id;
+  };
+
+  const maybeApplyDailyAutoUpdate = async (
+    latestWallpaper: ItabWallpaperEntry | null | undefined,
+  ) => {
+    if (!options.onDailyAutoUpdate) return;
+    const state = widgetState.value;
+    const currentSettings = { ...settings };
+    if (
+      !shouldApplyItabWallpaperDailyAutoUpdate(
+        state,
+        currentSettings,
+        latestWallpaper,
+      )
+    ) {
+      return;
+    }
+    activeWallpaperId.value = latestWallpaper!.id;
+    await options.onDailyAutoUpdate(latestWallpaper!, currentSettings);
   };
 
   const mergeWallpapers = (
@@ -102,6 +145,9 @@ export const useItabWallpaperRuntime = (widget: Ref<WidgetLike>) => {
       currentPage.value = result.currentPage;
       totalPages.value = result.totalPages;
       sourceStatus.value = result.sourceStatus || "ok";
+      if (page <= 1) {
+        await maybeApplyDailyAutoUpdate(bingWallpapers.value[0]);
+      }
     } catch (loadError) {
       error.value =
         loadError instanceof Error && loadError.message

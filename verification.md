@@ -3,6 +3,40 @@
 日期：2026-05-13
 执行者：Codex
 
+## 2026-05-29 多用户-only 认证与数据隔离
+
+执行者：Codex
+
+验收结果：通过。
+
+实现结论：
+
+- 登录必须显式输入用户名和密码；空用户名返回 `username_required`。
+- 自助注册入口与 `/api/register` 已移除，普通用户只能由 `admin` 通过用户管理创建。
+- `/api/system-config` 不再暴露 `authMode`，提交该字段返回 `auth_mode_removed`。
+- SQLite schema 与迁移已移除 `system_config.auth_mode`，并按 `username` 分区 `nav_groups`、`nav_items`、`widgets`、`config_versions`。
+- 前端登录框和设置页不再显示注册入口、系统模式切换、单用户/多用户文案；用户管理、Docker 系统管理、默认模板写入仅 `admin` 可见。
+
+命令记录：
+
+- `cargo test --workspace`：通过。
+- `npm test -- --run`：通过，116 test files，605 tests。
+- `npm test -- --run src/components/__tests__/MultiUserOnly.spec.ts src/components/LoginModal.spec.ts src/stores/cache.spec.ts`：通过。
+- 最终补充后再次执行 `cargo test --workspace`：通过。
+
+真实运行测试：
+
+- 隔离后端：`http://127.0.0.1:19111`，`BASE_DIR=/tmp/startdeck-multiuser-only-qa`。
+- 隔离前端：`http://127.0.0.1:19113`。
+- 验证路径：admin 登录，创建 `qa-user-20260529`，admin 退出，新用户登录，保存 `QA Multi User Sync` 数据，刷新、退出并再次登录后确认标题、分组和链接仍同步。
+- UI 文案验证：登录框和设置页均不包含 `注册`、`系统模式`、`单用户`、`多用户`、`认证模式`。
+- 截图：`/tmp/startdeck-multiuser-only-settings.png`、`/tmp/startdeck-multiuser-only-sync.png`。
+
+风险：
+
+- 本次浏览器 QA 使用本地隔离数据目录，未连接生产环境。
+- 工作树中存在与官网、壁纸、TAPD 等相关的既有未提交改动，本次未回滚这些改动。
+
 ## 验收结果
 
 通过。
@@ -1725,3 +1759,24 @@ Verified:
 Limitations:
 - `cargo clippy -p startdeck-server -p startdeck-core --all-targets -- -D warnings` failed on pre-existing dirty files `rust/crates/startdeck-server/src/ip_lookup.rs` and `rust/crates/startdeck-server/src/itab.rs`, not on the cleanup files.
 - Generated `frontend/dist` output was not hand-edited.
+
+## 2026-05-29 - Production Database JSON Export
+
+Status: pass.
+
+Exported:
+- Opened `https://start.zsl.one/` in Chrome and confirmed the StartDeck app loaded.
+- Created a read-only SQLite backup snapshot from production `Data/data/startdeck.sqlite3`.
+- Exported all 16 SQLite user tables to `exports/startdeck-production-db/startdeck-production-db-20260529T132143Z.json`.
+- Kept the local SQLite snapshot at `exports/startdeck-production-db/startdeck-db-snapshot-20260529T132143Z.sqlite3` for verification.
+- Removed the temporary remote snapshot from `/tmp`.
+
+Verified:
+- `PRAGMA integrity_check` returned `ok`.
+- `jq` parsed the JSON export successfully.
+- Snapshot sha256: `36321e3687898d591242d8bbc97c667ff615438c890d719a9dc7cb88ce268241`.
+- JSON sha256: `02474d3b7d6a79f74399308a93e2ed8fb6a9d3af70acf57be40029e8766aa175`.
+
+Limitations:
+- This is a point-in-time export from `2026-05-29T13:21:43Z`; later production writes are not included.
+- The JSON contains sensitive production database data and should not be committed.

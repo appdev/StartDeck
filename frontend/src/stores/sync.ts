@@ -171,20 +171,8 @@ export const useSyncStore = defineStore("sync", () => {
     responseRole: "auth" | "guest",
   ) => {
     if (!auth.isLogged || responseRole !== "auth") return;
-    const incomingSystemConfig = data.systemConfig as
-      | Record<string, unknown>
-      | undefined;
-    const authMode =
-      incomingSystemConfig?.authMode === "single" ||
-      configStore.systemConfig.authMode === "single"
-        ? "single"
-        : "multi";
     const nextUsername =
-      authMode === "single"
-        ? "admin"
-        : typeof data.username === "string"
-          ? data.username.trim()
-          : "";
+      typeof data.username === "string" ? data.username.trim() : "";
     if (!nextUsername || nextUsername === auth.username) return;
     auth.username = nextUsername;
     localStorage.setItem("start-deck-username", nextUsername);
@@ -508,17 +496,7 @@ export const useSyncStore = defineStore("sync", () => {
       } catch (e) {
         console.warn("[WS reconnect] Failed to check server version:", e);
       }
-      const oldMode = configStore.systemConfig.authMode;
       await networkStore.fetchSystemConfig();
-      if (configStore.systemConfig.authMode !== oldMode) {
-        setTimeout(async () => {
-          await networkStore.fetchSystemConfig();
-          if (configStore.systemConfig.authMode !== oldMode) {
-            if (auth.isLogged) logout();
-            else init();
-          }
-        }, 500);
-      }
     } else if (newStatus === "CLOSED") {
       if (newStatus === "CLOSED") {
         wsContinuousFailures++;
@@ -551,12 +529,7 @@ export const useSyncStore = defineStore("sync", () => {
       case "todo_updated": {
         const p = msg.payload || {};
         const username = typeof p.username === "string" ? p.username : "";
-        if (
-          username &&
-          username !== auth.username &&
-          !(auth.username === "admin" && username === "admin")
-        )
-          return;
+        if (username && username !== auth.username) return;
         if (p.widgetId) {
           const w = widgetsStore.widgets.find((x) => x.id === p.widgetId);
           if (w) {
@@ -584,11 +557,7 @@ export const useSyncStore = defineStore("sync", () => {
       }
       case "data_updated": {
         const p = msg.payload || {};
-        if (
-          p.username !== auth.username &&
-          !(auth.username === "admin" && p.username === "admin")
-        )
-          return;
+        if (p.username !== auth.username) return;
         const sv =
           typeof p.version !== "undefined" ? normalizeVersion(p.version) : 0;
         if (

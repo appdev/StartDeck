@@ -109,10 +109,15 @@ async fn imports_legacy_navigation_widgets_and_icon_seed_into_relational_tables(
     assert!(verify("secret", &password_hash).unwrap());
 
     let snapshot = app_snapshot(&pool, "admin").await.unwrap();
-    assert_eq!(snapshot.system_config.auth_mode, "single");
     assert!(snapshot.system_config.enable_docker);
     assert_eq!(snapshot.groups[0].items[0].title, "Example");
     assert_eq!(snapshot.widgets[0].widget_type, "memo");
+    let config_json: String =
+        sqlx::query_scalar("SELECT config_json FROM system_config WHERE id = 1")
+            .fetch_one(&pool)
+            .await
+            .unwrap();
+    assert!(!config_json.contains("authMode"));
 
     let icon = icon_record(&pool, "example.com").await.unwrap().unwrap();
     assert_eq!(icon.title, "Example");
@@ -152,6 +157,62 @@ async fn imports_admin_from_default_template_when_legacy_data_json_is_missing() 
     assert_eq!(snapshot.groups[0].title, "Template Group");
     assert_eq!(snapshot.widgets[0].id, "calendar");
     assert_eq!(snapshot.widgets[0].widget_type, "itab-calendar-01");
+}
+
+#[tokio::test]
+async fn imports_legacy_data_json_as_admin_and_users_dir_as_user_data() {
+    let temp = tempfile::tempdir().unwrap();
+    let base = temp.path();
+    let data_dir = base.join("Data/data");
+    let users_dir = data_dir.join("users");
+    std::fs::create_dir_all(&users_dir).unwrap();
+    std::fs::write(
+        data_dir.join("system.json"),
+        r#"{"authMode":"single","enableDocker":false}"#,
+    )
+    .unwrap();
+    for (path, username, title, content) in [
+        (
+            data_dir.join("data.json"),
+            "admin",
+            "Admin Group",
+            "admin content",
+        ),
+        (
+            users_dir.join("bob.json"),
+            "bob",
+            "Bob Group",
+            "bob content",
+        ),
+    ] {
+        std::fs::write(
+            path,
+            serde_json::to_vec(&json!({
+                "username": username,
+                "password": "secret",
+                "appConfig": {"customTitle": title},
+                "groups": [{"id": "shared-group", "title": title, "items": [{"id": "shared-item", "title": title, "url": "https://example.com", "icon": "", "isPublic": true}]}],
+                "widgets": [{"id": "shared-widget", "type": "memo", "enable": true, "isPublic": true, "data": {"content": content}}]
+            }))
+            .unwrap(),
+        )
+        .unwrap();
+    }
+
+    let config = RuntimeConfig::from_base_dir(base.to_path_buf());
+    let pool = connect_sqlite(&config).await.unwrap();
+    import_legacy_data(&pool, &config).await.unwrap();
+
+    let admin = app_snapshot(&pool, "admin").await.unwrap();
+    let bob = app_snapshot(&pool, "bob").await.unwrap();
+    assert_eq!(admin.groups[0].title, "Admin Group");
+    assert_eq!(bob.groups[0].title, "Bob Group");
+    assert_eq!(admin.groups[0].items[0].id, "shared-item");
+    assert_eq!(bob.groups[0].items[0].id, "shared-item");
+    assert_eq!(admin.widgets[0].id, "shared-widget");
+    assert_eq!(bob.widgets[0].id, "shared-widget");
+    assert_eq!(admin.widgets[0].data["content"], "admin content");
+    assert_eq!(bob.widgets[0].data["content"], "bob content");
 }
 
 #[tokio::test]
@@ -242,7 +303,7 @@ async fn incompatible_legacy_schema_is_rebuilt_destructively() {
         .fetch_one(&pool)
         .await
         .unwrap();
-    assert_eq!(schema_version, 2);
+    assert_eq!(schema_version, 3);
 
     let snapshot = app_snapshot(&pool, "admin").await.unwrap();
     assert!(snapshot.system_config.enable_docker);
