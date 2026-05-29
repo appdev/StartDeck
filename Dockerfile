@@ -42,7 +42,8 @@ ENV HTTP_PROXY=$HTTP_PROXY \
     HTTPS_PROXY=$HTTPS_PROXY \
     CARGO_REGISTRIES_CRATES_IO_PROTOCOL=sparse \
     CARGO_BUILD_JOBS=1 \
-    RUSTUP_TOOLCHAIN=1.94.0-x86_64-unknown-linux-gnu
+    RUSTUP_TOOLCHAIN=1.94.1-x86_64-unknown-linux-gnu
+ENV PATH=/usr/local/rustup/toolchains/1.94.1-x86_64-unknown-linux-gnu/bin:$PATH
 
 WORKDIR /app
 
