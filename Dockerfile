@@ -95,11 +95,11 @@ ENV TZ=Asia/Shanghai \
     GIN_MODE=release \
     BASE_DIR=/app \
     STARTDECK_SERVER_RESOURCE_DIR=/app/startdeck-server-defaults \
-    STARTDECK_PUBLIC_DIR=/app/Data/public \
+    STARTDECK_PUBLIC_DIR=/app/startdeck-public \
     DATA_DIR=/app/Data/data \
     PC_DIR=/app/Data/PC \
     APP_DIR=/app/Data/APP \
-    ICON_SERVICE_DATA_DIR=/app/icon-service/data \
+    ICON_SERVICE_DATA_DIR=/app/Data/icon-service \
     ICON_SERVICE_RESOURCE_DIR=/app/icon-service-defaults/data \
     PORT=9001 \
     ICON_SERVICE_PORT=9002 \
@@ -121,12 +121,13 @@ COPY --from=server-resource-filter /server-resources/. ./startdeck-server-defaul
 COPY --from=icon-resource-filter /icon-resources/. ./icon-service-defaults/data
 COPY scripts/docker-entrypoint.sh ./scripts/docker-entrypoint.sh
 
-# Copy frontend dist to public directory
+# Copy frontend dist to an image-owned public directory so mounting /app/Data
+# only covers runtime data and does not hide the shipped web assets.
 # This includes the built assets and static files copied from frontend/public during build.
-COPY --from=frontend-builder /app/frontend/dist ./Data/public
+COPY --from=frontend-builder /app/frontend/dist ./startdeck-public
 
 # Create necessary directories for volumes
-RUN mkdir -p Data/data Data/public Data/PC Data/APP Data/doc icon-service/data/cache \
+RUN mkdir -p Data/data Data/PC Data/APP Data/doc Data/icon-service/cache \
     && chmod +x ./scripts/docker-entrypoint.sh
 
 # Expose port

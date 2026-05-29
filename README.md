@@ -67,7 +67,7 @@ Rust startdeck-iconserver
 - **Frontend**：Vue 3、TypeScript、Pinia、GridStack，负责首页、设置、组件运行态和交互。
 - **Backend**：Rust + Axum，提供认证、配置持久化、站点元数据、代理、Docker、系统状态、天气/IP 等接口。
 - **Icon Service**：独立 Rust 服务，负责图标库、站点图标和图标缓存数据。
-- **Storage**：SQLite 保存配置和运行数据，`Data/` 保存上传资源、背景图和构建后的静态文件。
+- **Storage**：SQLite 保存配置和运行数据，`Data/` 保存上传资源、背景图和图标缓存；Docker 镜像内置前端静态文件。
 
 ## 快速开始
 
@@ -80,14 +80,11 @@ docker run -d \
   --name startdeck \
   --restart unless-stopped \
   -p 9001:9001 \
-  -v $(pwd)/Data/data:/app/Data/data \
-  -v $(pwd)/Data/PC:/app/Data/PC \
-  -v $(pwd)/Data/APP:/app/Data/APP \
-  -v $(pwd)/icon-service-data:/app/icon-service/data \
+  -v $(pwd)/Data:/app/Data \
   -e PORT=9001 \
   -e STARTDECK_ADMIN_PASSWORD=change-me \
   -e ICON_SERVICE_PORT=9002 \
-  -e ICON_SERVICE_DATA_DIR=/app/icon-service/data \
+  -e ICON_SERVICE_DATA_DIR=/app/Data/icon-service \
   -e ICON_SERVER_BASE_URL=http://127.0.0.1:9002 \
   -e ICON_SERVER_TIMEOUT_MS=5000 \
   -v /var/run/docker.sock:/var/run/docker.sock \
@@ -118,15 +115,12 @@ services:
       - PORT=9001
       - STARTDECK_ADMIN_PASSWORD=change-me
       - ICON_SERVICE_PORT=9002
-      - ICON_SERVICE_DATA_DIR=/app/icon-service/data
+      - ICON_SERVICE_DATA_DIR=/app/Data/icon-service
       - ICON_SERVICE_RESOURCE_DIR=/app/icon-service-defaults/data
       - ICON_SERVER_BASE_URL=http://127.0.0.1:9002
       - ICON_SERVER_TIMEOUT_MS=5000
     volumes:
-      - ./Data/data:/app/Data/data
-      - ./Data/PC:/app/Data/PC
-      - ./Data/APP:/app/Data/APP
-      - ./icon-service-data:/app/icon-service/data
+      - ./Data:/app/Data
       - /var/run/docker.sock:/var/run/docker.sock
 ```
 
@@ -170,8 +164,9 @@ PORT=9001 ICON_SERVER_BASE_URL=http://127.0.0.1:9002 ./startdeck-server
 | `DATA_DIR`                  | `/app/Data/data`         | SQLite 与运行数据目录                                   |
 | `PC_DIR`                    | `/app/Data/PC`           | 桌面端背景图目录                                        |
 | `APP_DIR`                   | `/app/Data/APP`          | 移动端背景图目录                                        |
+| `STARTDECK_PUBLIC_DIR`      | `/app/startdeck-public`  | 镜像内置前端静态资源目录                                |
 | `ICON_SERVICE_PORT`         | `9002`                   | 图标服务端口                                            |
-| `ICON_SERVICE_DATA_DIR`     | `/app/icon-service/data` | 图标服务运行期数据目录                                  |
+| `ICON_SERVICE_DATA_DIR`     | `/app/Data/icon-service` | 图标服务运行期数据目录                                  |
 | `ICON_SERVER_BASE_URL`      | `http://127.0.0.1:9002`  | 主服务访问图标服务的地址                                |
 | `ICON_SERVER_TIMEOUT_MS`    | `5000`                   | 图标服务请求超时时间                                    |
 | `PROXY_URL`                 | 空                       | 后端代理地址，支持 `http`、`https`、`socks5`、`socks5h` |
@@ -193,13 +188,13 @@ StartDeck 的运行数据默认集中在以下目录：
 Data/data/startdeck.sqlite3        # 布局、书签、组件配置、系统配置
 Data/PC/                           # 桌面端背景图
 Data/APP/                          # 移动端背景图
-icon-service-data/                 # 图标服务运行期缓存和数据
+Data/icon-service/                 # 图标服务运行期缓存和数据
 ```
 
 备份建议：
 
 1. 停止容器或服务，避免 SQLite 正在写入。
-2. 备份 `Data/data`、`Data/PC`、`Data/APP`、`icon-service-data`。
+2. 备份整个 `Data` 目录。
 3. 迁移到新服务器后使用相同 volume 路径启动。
 
 ## 网络与反向代理

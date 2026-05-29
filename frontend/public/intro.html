@@ -1765,15 +1765,12 @@ ctx.proxy("/api/custom/status").then(updatePanel);</code></pre>
   --name startdeck \
   --restart unless-stopped \
   -p 9001:9001 \
-  -v $(pwd)/Data/data:/app/Data/data \
-  -v $(pwd)/Data/PC:/app/Data/PC \
-  -v $(pwd)/Data/APP:/app/Data/APP \
-  -v $(pwd)/icon-service-data:/app/icon-service/data \
+  -v $(pwd)/Data:/app/Data \
   -v /var/run/docker.sock:/var/run/docker.sock \
   -e PORT=9001 \
   -e STARTDECK_ADMIN_PASSWORD=change-me \
   -e ICON_SERVICE_PORT=9002 \
-  -e ICON_SERVICE_DATA_DIR=/app/icon-service/data \
+  -e ICON_SERVICE_DATA_DIR=/app/Data/icon-service \
   -e ICON_SERVER_BASE_URL=http://127.0.0.1:9002 \
   apkdv/startdeck:latest</code></pre>
             </article>
