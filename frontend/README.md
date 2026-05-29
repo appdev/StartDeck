@@ -1,11 +1,13 @@
+<p align="center">
+  <img src="../favicon.svg" alt="StartDeck 图标" width="96" height="96" />
+</p>
+
 # StartDeck
 
-[![GitHub](https://img.shields.io/badge/GitHub-StartDeck-181717?style=flat&logo=github&logoColor=white)](https://github.com/Garry-QD/StartDeck)
-[![Gitee](https://img.shields.io/badge/Gitee-StartDeck-C71D23?style=flat&logo=gitee&logoColor=white)](https://gitee.com/gjx0808/StartDeck)
+[![GitHub](https://img.shields.io/badge/GitHub-StartDeck-181717?style=flat&logo=github&logoColor=white)](https://github.com/appdev/StartDeck)
 [![Docker Image](https://img.shields.io/badge/Docker-apkdv%2Fstartdeck-2496ED?style=flat&logo=docker&logoColor=white)](https://hub.docker.com/r/apkdv/startdeck)
 
 StartDeck 是一个轻量级、高度可定制的个人导航页与仪表盘系统。它基于 Vue 3、Rust 与 SQLite 构建，旨在为 NAS 用户、极客和开发者提供一个优雅的浏览器起始页。
-交流QQ群:613835409
 
 ## ✨ 主要功能
 
@@ -191,13 +193,13 @@ StartDeck 后端集成了智能网络环境识别功能，能够根据用户的�
 无需手动下载代码，直接运行以下命令即可：
 
 ```bash
-wget -O deploy.sh https://raw.githubusercontent.com/Garry-QD/StartDeck/main/deploy.sh && sudo bash deploy.sh install
+wget -O deploy.sh https://raw.githubusercontent.com/appdev/StartDeck/main/deploy.sh && sudo bash deploy.sh install
 ```
 
 ### 手动安装
 
 ```bash
-git clone https://github.com/Garry-QD/StartDeck.git
+git clone https://github.com/appdev/StartDeck.git
 cd StartDeck
 chmod +x deploy.sh
 sudo ./deploy.sh install

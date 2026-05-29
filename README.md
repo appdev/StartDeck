@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="favicon.svg" alt="StartDeck 图标" width="96" height="96" />
+</p>
+
 # StartDeck
 
 [![GitHub](https://img.shields.io/badge/GitHub-StartDeck-181717?style=flat&logo=github&logoColor=white)](https://github.com/appdev/StartDeck)
