@@ -267,6 +267,7 @@ describe("TapdDefectsConfigDialog", () => {
           .element as HTMLInputElement
       ).value,
     ).toBe("");
+    expect(wrapper.text()).toContain("刷新间隔（分钟）");
   });
 
   it("shows a credential-specific workspace lookup hint when the project id is already filled", async () => {

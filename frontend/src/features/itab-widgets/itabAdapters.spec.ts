@@ -7,13 +7,16 @@ import { ITAB_WIDGET_REGISTRY } from "./itabWidgetRegistry";
 
 describe("itabAdapters", () => {
   it("builds persisted identity under data.itab", () => {
-    const data = buildItabPersistedData(ITAB_WIDGET_REGISTRY[23]!);
+    const wallpaperEntry = ITAB_WIDGET_REGISTRY.find(
+      (entry) => entry.id === "itab-wallpaper-16",
+    )!;
+    const data = buildItabPersistedData(wallpaperEntry);
     expect(data.itab).toMatchObject({
       namespace: "itab",
-      captureIndex: 23,
-      catalogId: "itab-hotsearch-23",
-      localStateKey: "itab.hotsearch.23",
-      adapterKind: "hotsearch",
+      captureIndex: 16,
+      catalogId: "itab-wallpaper-16",
+      localStateKey: "itab.wallpaper.16",
+      adapterKind: "wallpaper",
     });
   });
 

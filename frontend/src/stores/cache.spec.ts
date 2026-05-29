@@ -109,7 +109,6 @@ describe("cache store auth scope", () => {
       cache.loadServerSnapshot(
         () => undefined,
         () => undefined,
-        () => undefined,
       ),
     ).rejects.toThrow("Init unauthorized with stored token");
 

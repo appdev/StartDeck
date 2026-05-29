@@ -77,37 +77,36 @@ pub(crate) struct CredentialStatusResponse {
     updated_at: Option<i64>,
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, Serialize)]
 #[serde(rename_all = "kebab-case")]
 pub(crate) enum TapdVisibilityScope {
-    OwnedByCurrentUser,
-    CreatedByCurrentUser,
-    ParticipatedByCurrentUser,
-    CcToCurrentUser,
-}
-
-impl Default for TapdVisibilityScope {
-    fn default() -> Self {
-        Self::OwnedByCurrentUser
-    }
+    #[default]
+    #[serde(rename = "owned-by-current-user")]
+    Owned,
+    #[serde(rename = "created-by-current-user")]
+    Created,
+    #[serde(rename = "participated-by-current-user")]
+    Participated,
+    #[serde(rename = "cc-to-current-user")]
+    Cc,
 }
 
 impl TapdVisibilityScope {
     fn as_str(&self) -> &'static str {
         match self {
-            Self::OwnedByCurrentUser => "owned-by-current-user",
-            Self::CreatedByCurrentUser => "created-by-current-user",
-            Self::ParticipatedByCurrentUser => "participated-by-current-user",
-            Self::CcToCurrentUser => "cc-to-current-user",
+            Self::Owned => "owned-by-current-user",
+            Self::Created => "created-by-current-user",
+            Self::Participated => "participated-by-current-user",
+            Self::Cc => "cc-to-current-user",
         }
     }
 
     fn current_user_param(&self) -> &'static str {
         match self {
-            Self::OwnedByCurrentUser => "current_owner",
-            Self::CreatedByCurrentUser => "reporter",
-            Self::ParticipatedByCurrentUser => "participator",
-            Self::CcToCurrentUser => "cc",
+            Self::Owned => "current_owner",
+            Self::Created => "reporter",
+            Self::Participated => "participator",
+            Self::Cc => "cc",
         }
     }
 }
@@ -381,7 +380,7 @@ fn normalize_query_request(
     workspace_id: String,
     current_user: Option<String>,
 ) -> Result<NormalizedQuery, ApiError> {
-    let visibility_scope = TapdVisibilityScope::OwnedByCurrentUser;
+    let visibility_scope = TapdVisibilityScope::Owned;
     if current_user.is_none() {
         return Err(ApiError::bad_request("current_user_required"));
     }
@@ -1130,7 +1129,7 @@ mod tests {
                 .iter()
                 .map(|value| value.to_string())
                 .collect(),
-            visibility_scope: TapdVisibilityScope::OwnedByCurrentUser,
+            visibility_scope: TapdVisibilityScope::Owned,
             current_user: Some("tapd_user".to_string()),
             filters: TapdDefectFilters {
                 label: Some("重点关注".to_string()),
@@ -1257,7 +1256,7 @@ mod tests {
                     .iter()
                     .map(|value| value.to_string())
                     .collect(),
-                visibility_scope: TapdVisibilityScope::OwnedByCurrentUser,
+                visibility_scope: TapdVisibilityScope::Owned,
                 current_user: Some("tapd_user".to_string()),
                 filters: TapdDefectFilters::default(),
                 blocked_bug_ids: HashSet::from(["101".to_string()]),

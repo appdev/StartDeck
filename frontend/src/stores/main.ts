@@ -5,7 +5,6 @@ import { useSyncStore } from "./sync";
 import { useWidgetsStore } from "./widgets";
 import { useGroupsStore } from "./groups";
 import { useConfigStore } from "./config";
-import { useNetworkStore } from "./network";
 
 export const useMainStore = defineStore("main", () => {
   const auth = useAuthStore();
@@ -13,7 +12,6 @@ export const useMainStore = defineStore("main", () => {
   const widgetsStore = useWidgetsStore();
   const groupsStore = useGroupsStore();
   const configStore = useConfigStore();
-  const networkStore = useNetworkStore();
 
   // ---- Auth ----
   const token = computed(() => auth.token);

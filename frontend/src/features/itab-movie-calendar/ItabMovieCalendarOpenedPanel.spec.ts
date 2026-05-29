@@ -14,8 +14,8 @@ vi.mock("./itabMovieCalendarApi", () => ({
     movieTitle: "雌雄莫辨",
     rating: "7.4",
     quote: "你不需要成为任何人，只需做你自己。",
-    posterUrl: "/api/itab/movie-calendar/image/poster",
-    coverUrl: "/api/itab/movie-calendar/image/cover",
+    posterUrl: "/api/movie-calendar/image/poster",
+    coverUrl: "/api/movie-calendar/image/cover",
     sourceUrl: "https://movie.douban.com/subject/4712730/",
     year: "2011",
     area: "英国 美国 爱尔兰",
@@ -55,7 +55,7 @@ describe("ItabMovieCalendarOpenedPanel", () => {
     expect(wrapper.find(".movie-calendar-panel-rating-star").text()).toBe("");
     expect(
       wrapper.find(".movie-calendar-panel-poster img").attributes("src"),
-    ).toBe("/api/itab/movie-calendar/image/poster");
+    ).toBe("/api/movie-calendar/image/poster");
     expect(wrapper.text()).toContain("你不需要成为任何人，只需做你自己。");
     expect(wrapper.text()).toContain("剧情/同性 2011 英国 美国 爱尔兰");
     expect(wrapper.text()).not.toContain("红气球之旅");

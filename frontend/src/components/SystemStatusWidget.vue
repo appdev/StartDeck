@@ -278,12 +278,6 @@ const openedNetworkRows = computed(
   () => activeSystemStats.value?.network?.slice(0, 4) || [],
 );
 
-const ensureSystemWidgetData = () => {
-  const widget = systemWidgetModel.value;
-  if (!widget) return undefined;
-  if (!widget.data) widget.data = {};
-  return widget.data as Record<string, unknown>;
-};
 const setSystemWidgetEnabled = (enabled: boolean) => {
   if (!requireSystemWidgetMutation()) return;
   const widget = systemWidgetModel.value;

@@ -993,22 +993,22 @@ async fn route_surface_smoke_covers_auth_and_runtime_semantics() {
     assert_eq!(status, StatusCode::OK);
     assert_eq!(body["success"], true);
 
-    let (status, body) = json_call(&app, "GET", "/api/itab/poem", None, None).await;
+    let (status, body) = json_call(&app, "GET", "/api/poem", None, None).await;
     assert_eq!(status, StatusCode::OK);
     assert_eq!(body["sourceStatus"], "fixture");
     assert_eq!(body["data"]["content"], "cached poem");
 
-    let (status, body) = json_call(&app, "GET", "/api/itab/today-english", None, None).await;
+    let (status, body) = json_call(&app, "GET", "/api/today-english", None, None).await;
     assert_eq!(status, StatusCode::OK);
     assert_eq!(body["data"]["sourceStatus"], "fallback");
     assert!(body["data"]["sentence"].as_str().unwrap().len() > 10);
 
-    let (status, body) = json_call(&app, "GET", "/api/itab/movie-calendar", None, None).await;
+    let (status, body) = json_call(&app, "GET", "/api/movie-calendar", None, None).await;
     assert_eq!(status, StatusCode::OK);
     assert_eq!(body["data"]["sourceStatus"], "fallback");
     assert_eq!(body["data"]["movieTitle"], "雌雄莫辨");
 
-    let (status, body) = json_call(&app, "GET", "/api/itab/weather/location", None, None).await;
+    let (status, body) = json_call(&app, "GET", "/api/weather/location", None, None).await;
     assert_eq!(status, StatusCode::BAD_GATEWAY);
     assert_eq!(body["success"], false);
     assert_eq!(body["error"], "weather_source_unavailable");
@@ -1016,7 +1016,7 @@ async fn route_surface_smoke_covers_auth_and_runtime_semantics() {
     let (status, body) = json_call(
         &app,
         "GET",
-        "/api/itab/weather/current?location=101280608&type=city&refresh=false",
+        "/api/weather/current?location=101280608&type=city&refresh=false",
         None,
         None,
     )
@@ -1028,7 +1028,7 @@ async fn route_surface_smoke_covers_auth_and_runtime_semantics() {
     let (status, body) = json_call(
         &app,
         "GET",
-        "/api/itab/weather/search?keyword=深圳",
+        "/api/weather/search?keyword=深圳",
         None,
         None,
     )
@@ -1037,7 +1037,7 @@ async fn route_surface_smoke_covers_auth_and_runtime_semantics() {
     assert_eq!(body["success"], false);
     assert_eq!(body["error"], "weather_source_unavailable");
 
-    let (status, body) = json_call(&app, "GET", "/api/itab/bing-wallpapers", None, None).await;
+    let (status, body) = json_call(&app, "GET", "/api/bing-wallpapers", None, None).await;
     assert_eq!(status, StatusCode::OK);
     assert_eq!(body["data"]["sourceStatus"], "fixture");
     assert_eq!(body["data"]["entries"][0]["id"], "fixture-wallpaper");
@@ -1045,7 +1045,7 @@ async fn route_surface_smoke_covers_auth_and_runtime_semantics() {
     let (status, body) = json_call(
         &app,
         "GET",
-        "/api/itab/bing-wallpapers?page=2&pageSize=2",
+        "/api/bing-wallpapers?page=2&pageSize=2",
         None,
         None,
     )
@@ -1093,6 +1093,7 @@ async fn route_surface_smoke_covers_auth_and_runtime_semantics() {
             "/api/wallpaper/fetch",
             Some(json!({"url": "https://example.com/wall.jpg"})),
         ),
+        ("GET", concat!("/api/", "itab/poem"), None),
         ("GET", "/api/itab-resources/legacy-resource", None),
     ] {
         let (status, _) = json_call(&app, method, uri, Some(&token), body).await;
@@ -1109,7 +1110,7 @@ async fn route_surface_smoke_covers_auth_and_runtime_semantics() {
 async fn widget_fallbacks_cover_empty_runtime_cache() {
     let app = test_app_with_widget_cache(false).await;
 
-    let (status, body) = json_call(&app, "GET", "/api/itab/poem", None, None).await;
+    let (status, body) = json_call(&app, "GET", "/api/poem", None, None).await;
     assert_eq!(status, StatusCode::OK);
     assert_eq!(body["data"]["sourceStatus"], "fallback");
     assert_eq!(body["data"]["poemTitle"], "浪淘沙");
@@ -1122,7 +1123,7 @@ async fn weather_current_uses_five_minute_cache_even_when_refresh_requested() {
     let (status, body) = json_call(
         &app,
         "GET",
-        "/api/itab/weather/current?location=101280608&type=city&refresh=true",
+        "/api/weather/current?location=101280608&type=city&refresh=true",
         None,
         None,
     )

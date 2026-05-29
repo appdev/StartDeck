@@ -57,8 +57,6 @@ const isSpecialUrl = (value: string) =>
 
 const trimTrailingSlash = (value: string) => value.replace(/\/+$/, "");
 
-const trimLeadingSlash = (value: string) => value.replace(/^\/+/, "");
-
 const matchesPrefix = (value: string, prefix: string) =>
   value === prefix ||
   value.startsWith(`${prefix}/`) ||

@@ -66,9 +66,6 @@ const dateDiffEnd = ref(today.value.key);
 const workdayStart = ref(today.value.key);
 const workdayAmount = ref(5);
 const workdayDirection = ref<"forward" | "backward">("forward");
-const viewMonthTitle = computed(
-  () => `${viewYear.value}年${viewMonth.value}月`,
-);
 const weekdayLabels = computed(() =>
   weekStart.value === "sunday"
     ? ["日", "一", "二", "三", "四", "五", "六"]

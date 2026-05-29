@@ -63,7 +63,7 @@ export const fetchItabBingWallpapers = async (
 
   const request = (async () => {
     const url = new URL(
-      toApiUrl("/api/itab/bing-wallpapers"),
+      toApiUrl("/api/bing-wallpapers"),
       window.location.origin,
     );
     url.searchParams.set("page", String(requestPage));

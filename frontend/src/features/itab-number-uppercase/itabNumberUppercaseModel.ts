@@ -12,7 +12,6 @@ import {
   ITAB_NUMBER_UPPERCASE_DEFAULT_SIZE,
   ITAB_NUMBER_UPPERCASE_RUNTIME,
   ITAB_NUMBER_UPPERCASE_WIDGET_TYPE,
-  type ItabNumberUppercaseFormatMode,
   type ItabNumberUppercaseWidgetData,
 } from "./itabNumberUppercaseTypes";
 
@@ -144,10 +143,8 @@ export const formatItabNumberUppercaseAmount = (value: unknown) => {
   return `${formatIntegerAmount(integerPart)}元${decimalOutput || "整"}`;
 };
 
-export const resolveItabNumberUppercaseResult = (
-  inputNumber: unknown,
-  _formatMode: ItabNumberUppercaseFormatMode = "currency",
-) => formatItabNumberUppercaseAmount(inputNumber);
+export const resolveItabNumberUppercaseResult = (inputNumber: unknown) =>
+  formatItabNumberUppercaseAmount(inputNumber);
 
 export const normalizeItabNumberUppercaseWidgetData = (
   raw: unknown,
@@ -157,11 +154,7 @@ export const normalizeItabNumberUppercaseWidgetData = (
     ? input.sizeKey
     : ITAB_NUMBER_UPPERCASE_DEFAULT_SIZE;
   const inputNumber = normalizeItabNumberInput(input.inputNumber);
-  const formatMode: ItabNumberUppercaseFormatMode = "currency";
-  const uppercaseResult = resolveItabNumberUppercaseResult(
-    inputNumber,
-    formatMode,
-  );
+  const uppercaseResult = resolveItabNumberUppercaseResult(inputNumber);
 
   return {
     runtime: ITAB_NUMBER_UPPERCASE_RUNTIME,
@@ -170,7 +163,7 @@ export const normalizeItabNumberUppercaseWidgetData = (
     sizeKey,
     inputNumber,
     uppercaseResult,
-    formatMode,
+    formatMode: "currency",
   };
 };
 

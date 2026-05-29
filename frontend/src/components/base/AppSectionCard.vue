@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useSlots } from "vue";
 
-const props = withDefaults(
+withDefaults(
   defineProps<{
     title?: string;
     description?: string;

@@ -47,7 +47,7 @@ describe("useItabIpRuntime", () => {
     const runtime = useItabIpRuntime();
 
     const bootLookup = prefetchItabIpLocation();
-    const widgetRefresh = runtime.load(true);
+    const widgetRefresh = runtime.load();
 
     await expect(Promise.all([bootLookup, widgetRefresh])).resolves.toEqual([
       true,

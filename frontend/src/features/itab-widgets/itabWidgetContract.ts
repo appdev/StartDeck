@@ -3,30 +3,16 @@ export type ItabReplicaWidgetSize = "1x1" | "1x2" | "2x1" | "2x2" | "2x4";
 export type ItabReplicaWidgetKind =
   | "weather"
   | "calendar"
-  | "hotsearch"
-  | "anniversary"
   | "memo"
   | "movie"
-  | "countdown"
-  | "next-holiday"
-  | "anniversary-day"
-  | "daily-quote"
   | "poem"
-  | "wooden-fish"
   | "clock"
-  | "speed-test"
   | "today-english"
   | "eat-today"
   | "wallpaper"
   | "todo"
-  | "stock"
-  | "exchange-rate"
-  | "gradient"
-  | "habit"
   | "tomato"
-  | "world-clock"
-  | "converter"
-  | "tool-icon";
+  | "number-uppercase";
 
 export type ItabReplicaSizeAdaptation =
   | "source-sized-ui"
@@ -76,7 +62,6 @@ export const ITAB_REPLICA_WIDGET_SIZE_OPTIONS = [
 ] as const satisfies readonly ItabReplicaWidgetSize[];
 
 const allSizes = ITAB_REPLICA_WIDGET_SIZE_OPTIONS;
-const iconOnlySizes = ITAB_REPLICA_WIDGET_SIZE_OPTIONS;
 const smallIconSizes = [
   "1x1",
   "1x2",
@@ -90,13 +75,6 @@ export const ITAB_REPLICA_OPENED_SHELL_DEFAULTS = {
   maxHeightInset: 64,
   trafficVisible: true,
 } as const satisfies ItabReplicaOpenedShellMetadata;
-
-const sourceWideOpenedShell = {
-  width: 1000,
-  height: 602,
-  maxWidthInset: 42,
-  maxHeightInset: 64,
-} as const satisfies ItabReplicaOpenedShellOverride;
 
 const sourceCompactOpenedShell = {
   width: 860,
@@ -145,23 +123,6 @@ export const ITAB_REPLICA_WIDGET_DEFINITIONS = {
     requiresSizeSpecificUi: true,
     openedShell: sourcePanelOpenedShell,
   }),
-  hotsearch: defineWidget({
-    kind: "hotsearch",
-    defaultSize: "2x2",
-    supportedSizes: allSizes,
-    sizeAdaptation: "source-sized-ui",
-    openSurface: "dialog",
-    requiresSizeSpecificUi: true,
-  }),
-  anniversary: defineWidget({
-    kind: "anniversary",
-    defaultSize: "2x2",
-    supportedSizes: allSizes,
-    sizeAdaptation: "source-sized-ui",
-    openSurface: "dialog",
-    requiresSizeSpecificUi: true,
-    openedShell: sourceWideOpenedShell,
-  }),
   memo: defineWidget({
     kind: "memo",
     defaultSize: "2x2",
@@ -180,41 +141,6 @@ export const ITAB_REPLICA_WIDGET_DEFINITIONS = {
     requiresSizeSpecificUi: true,
     openedShell: sourceCompactOpenedShell,
   }),
-  countdown: defineWidget({
-    kind: "countdown",
-    defaultSize: "2x2",
-    supportedSizes: allSizes,
-    sizeAdaptation: "source-sized-ui",
-    openSurface: "dialog",
-    requiresSizeSpecificUi: true,
-    openedShell: sourcePanelOpenedShell,
-  }),
-  "next-holiday": defineWidget({
-    kind: "next-holiday",
-    defaultSize: "2x2",
-    supportedSizes: allSizes,
-    sizeAdaptation: "shared-layout",
-    openSurface: "dialog",
-    requiresSizeSpecificUi: false,
-  }),
-  "anniversary-day": defineWidget({
-    kind: "anniversary-day",
-    defaultSize: "2x2",
-    supportedSizes: allSizes,
-    sizeAdaptation: "source-sized-ui",
-    openSurface: "dialog",
-    requiresSizeSpecificUi: true,
-    openedShell: sourceWideOpenedShell,
-  }),
-  "daily-quote": defineWidget({
-    kind: "daily-quote",
-    defaultSize: "2x2",
-    supportedSizes: allSizes,
-    sizeAdaptation: "source-sized-ui",
-    openSurface: "dialog",
-    requiresSizeSpecificUi: true,
-    openedShell: sourceCompactOpenedShell,
-  }),
   poem: defineWidget({
     kind: "poem",
     defaultSize: "2x2",
@@ -223,14 +149,6 @@ export const ITAB_REPLICA_WIDGET_DEFINITIONS = {
     openSurface: "dialog",
     requiresSizeSpecificUi: true,
     openedShell: sourceCompactOpenedShell,
-  }),
-  "wooden-fish": defineWidget({
-    kind: "wooden-fish",
-    defaultSize: "2x2",
-    supportedSizes: allSizes,
-    sizeAdaptation: "shared-layout",
-    openSurface: "dialog",
-    requiresSizeSpecificUi: false,
   }),
   clock: defineWidget({
     kind: "clock",
@@ -243,14 +161,6 @@ export const ITAB_REPLICA_WIDGET_DEFINITIONS = {
       ...sourcePanelOpenedShell,
       trafficVisible: false,
     },
-  }),
-  "speed-test": defineWidget({
-    kind: "speed-test",
-    defaultSize: "2x2",
-    supportedSizes: allSizes,
-    sizeAdaptation: "shared-layout",
-    openSurface: "dialog",
-    requiresSizeSpecificUi: false,
   }),
   "today-english": defineWidget({
     kind: "today-english",
@@ -289,40 +199,6 @@ export const ITAB_REPLICA_WIDGET_DEFINITIONS = {
     iconOnlySizes: smallIconSizes,
     openedShell: sourcePanelOpenedShell,
   }),
-  stock: defineWidget({
-    kind: "stock",
-    defaultSize: "2x2",
-    supportedSizes: allSizes,
-    sizeAdaptation: "source-sized-ui",
-    openSurface: "dialog",
-    requiresSizeSpecificUi: true,
-    openedShell: sourceWideOpenedShell,
-  }),
-  "exchange-rate": defineWidget({
-    kind: "exchange-rate",
-    defaultSize: "2x2",
-    supportedSizes: allSizes,
-    sizeAdaptation: "source-sized-ui",
-    openSurface: "dialog",
-    requiresSizeSpecificUi: true,
-    openedShell: sourceWideOpenedShell,
-  }),
-  gradient: defineWidget({
-    kind: "gradient",
-    defaultSize: "2x2",
-    supportedSizes: allSizes,
-    sizeAdaptation: "shared-layout",
-    openSurface: "dialog",
-    requiresSizeSpecificUi: false,
-  }),
-  habit: defineWidget({
-    kind: "habit",
-    defaultSize: "2x2",
-    supportedSizes: allSizes,
-    sizeAdaptation: "shared-layout",
-    openSurface: "dialog",
-    requiresSizeSpecificUi: false,
-  }),
   tomato: defineWidget({
     kind: "tomato",
     defaultSize: "2x2",
@@ -330,33 +206,16 @@ export const ITAB_REPLICA_WIDGET_DEFINITIONS = {
     sizeAdaptation: "source-sized-ui",
     openSurface: "dialog",
     requiresSizeSpecificUi: true,
-    openedShell: sourceWideOpenedShell,
+    openedShell: sourcePanelOpenedShell,
   }),
-  "world-clock": defineWidget({
-    kind: "world-clock",
-    defaultSize: "2x2",
-    supportedSizes: allSizes,
-    sizeAdaptation: "shared-layout",
-    openSurface: "dialog",
-    requiresSizeSpecificUi: false,
-  }),
-  converter: defineWidget({
-    kind: "converter",
+  "number-uppercase": defineWidget({
+    kind: "number-uppercase",
     defaultSize: "2x2",
     supportedSizes: allSizes,
     sizeAdaptation: "source-sized-ui",
     openSurface: "dialog",
     requiresSizeSpecificUi: true,
     openedShell: sourceConverterOpenedShell,
-  }),
-  "tool-icon": defineWidget({
-    kind: "tool-icon",
-    defaultSize: "1x1",
-    supportedSizes: allSizes,
-    sizeAdaptation: "icon-only",
-    openSurface: "optional",
-    requiresSizeSpecificUi: false,
-    iconOnlySizes,
   }),
 } as const satisfies Record<ItabReplicaWidgetKind, ItabReplicaWidgetDefinition>;
 

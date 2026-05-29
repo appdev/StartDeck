@@ -53,7 +53,7 @@ describe("vueCropperZoom", () => {
       trueWidth: 1000,
       trueHeight: 500,
       scale: 0.4,
-      changeScale: vi.fn((_step: number): false => false),
+      changeScale: vi.fn((): false => false),
     };
 
     const result = applyCropperZoom(cropper, 1, 0.1, 0.4);

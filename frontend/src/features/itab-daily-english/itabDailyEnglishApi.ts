@@ -15,7 +15,7 @@ export const fetchItabDailyEnglish = async (
   refresh = false,
   signal?: AbortSignal,
 ) => {
-  const url = new URL("/api/itab/today-english", window.location.origin);
+  const url = new URL("/api/today-english", window.location.origin);
   if (refresh) {
     url.searchParams.set("refresh", "true");
   }

@@ -16,30 +16,16 @@ import {
 const expectedKinds = [
   "weather",
   "calendar",
-  "hotsearch",
-  "anniversary",
   "memo",
   "movie",
-  "countdown",
-  "next-holiday",
-  "anniversary-day",
-  "daily-quote",
   "poem",
-  "wooden-fish",
   "clock",
-  "speed-test",
   "today-english",
   "eat-today",
   "wallpaper",
   "todo",
-  "stock",
-  "exchange-rate",
-  "gradient",
-  "habit",
   "tomato",
-  "world-clock",
-  "converter",
-  "tool-icon",
+  "number-uppercase",
 ] as const satisfies readonly ItabReplicaWidgetKind[];
 
 describe("itab widget contract", () => {
@@ -76,14 +62,9 @@ describe("itab widget contract", () => {
     ).toBe(true);
   });
 
-  it("allows icon-only widgets without forcing size-specific UI", () => {
+  it("keeps todo icon-only sizing limited to compact variants", () => {
     expect(shouldRenderItabReplicaIconOnly("todo", "1x1")).toBe(true);
     expect(shouldRenderItabReplicaIconOnly("todo", "2x2")).toBe(false);
-    expect(shouldRenderItabReplicaIconOnly("tool-icon", "2x4")).toBe(true);
-    expect(getItabReplicaWidgetDefinition("tool-icon")).toMatchObject({
-      sizeAdaptation: "icon-only",
-      requiresSizeSpecificUi: false,
-    });
   });
 
   it("keeps wallpaper as a source-sized Bing panel with the shared source dialog shell", () => {
@@ -103,18 +84,7 @@ describe("itab widget contract", () => {
   });
 
   it("resolves opened shell metadata with base, kind, instance, and caller precedence", () => {
-    expect(resolveItabReplicaOpenedShell("hotsearch")).toEqual(
-      ITAB_REPLICA_OPENED_SHELL_DEFAULTS,
-    );
-
     expect(resolveItabReplicaOpenedShell("today-english")).toMatchObject({
-      width: 860,
-      height: 552,
-      maxWidthInset: 42,
-      maxHeightInset: 64,
-      trafficVisible: true,
-    });
-    expect(resolveItabReplicaOpenedShell("daily-quote")).toMatchObject({
       width: 860,
       height: 552,
       maxWidthInset: 42,
@@ -142,6 +112,13 @@ describe("itab widget contract", () => {
       trafficVisible: true,
     });
 
+    expect(resolveItabReplicaOpenedShell("weather")).toMatchObject({
+      ...ITAB_REPLICA_OPENED_SHELL_DEFAULTS,
+      width: 1000,
+      height: 602,
+      maxWidthInset: 42,
+      maxHeightInset: 18,
+    });
     expect(resolveItabReplicaOpenedShell("clock")).toMatchObject({
       trafficVisible: false,
     });
@@ -155,7 +132,7 @@ describe("itab widget contract", () => {
 
     expect(
       resolveItabReplicaOpenedShellStyle(
-        "hotsearch",
+        "number-uppercase",
         {
           width: 700,
           height: 420,

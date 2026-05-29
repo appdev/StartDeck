@@ -20,7 +20,7 @@ const showOuterInfo = computed(
 
 const loadForCurrentSize = async (refresh = false) => {
   if (refresh) {
-    await runtime.load(true);
+    await runtime.load();
   } else {
     await runtime.ensureLoaded();
   }

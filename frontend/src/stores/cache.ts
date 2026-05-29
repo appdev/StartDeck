@@ -16,8 +16,6 @@ const CACHE_KEY_PREFIX = "start-deck-data-cache";
 const GUEST_CACHE_KEY = `${CACHE_KEY_PREFIX}:guest`;
 const GUEST_CACHE_USER = "__guest__";
 const CACHE_WRITE_GUARD_MS = 15000;
-const SERVER_SNAPSHOT_RETRY_COUNT = 3;
-const SERVER_SNAPSHOT_RETRY_DELAY_MS = 1000;
 const SERVER_SNAPSHOT_TIMEOUT_MS = 60000;
 
 export const useCacheStore = defineStore("cache", () => {
@@ -213,7 +211,6 @@ export const useCacheStore = defineStore("cache", () => {
   const loadServerSnapshot = async (
     handleDataUpdate: (data: Record<string, unknown>) => void,
     updateLayout: () => void,
-    markDirty: () => void,
   ) => {
     if (isLoadingSnapshot) return;
     isLoadingSnapshot = true;

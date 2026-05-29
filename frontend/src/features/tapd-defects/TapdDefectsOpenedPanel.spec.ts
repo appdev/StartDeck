@@ -246,6 +246,106 @@ describe("TapdDefectsOpenedPanel", () => {
     expect(wrapper.text()).not.toContain("new");
   });
 
+  it("disables next page when visible results do not exceed the current page", async () => {
+    vi.stubGlobal("fetch", vi.fn());
+    const widget = createDefaultTapdDefectWidget();
+    widget.id = "tapd-no-next-page";
+    widget.data = normalizeTapdDefectWidgetData({
+      workspaceId: "40685585",
+      projectName: "UGOS_PRO",
+      hasServerCredential: true,
+      query: {
+        limit: 100,
+        order: "modified desc",
+        fields: ["id", "title", "status"],
+      },
+      lastSummary: {
+        status: "connected",
+        workspaceId: "40685585",
+        total: 4,
+        visibleTotal: 4,
+        blockedTotal: 0,
+        verificationTotal: 0,
+        critical: 0,
+        assignedToCurrentUser: 0,
+        visibleScope: "owned-by-current-user",
+        page: 1,
+        limit: 100,
+        items: [
+          {
+            id: "1",
+            severity: "高",
+            title: "待处理缺陷",
+            status: "new",
+            url: "",
+          },
+        ],
+      },
+    });
+    const wrapper = mount(TapdDefectsOpenedPanel, {
+      global: {
+        plugins: [createTestingPinia({ createSpy: vi.fn })],
+      },
+      props: { widget },
+    });
+    await new Promise((resolve) => window.setTimeout(resolve, 0));
+    await wrapper.vm.$nextTick();
+
+    const paginationButtons = wrapper.findAll(".tapd-pagination button");
+    expect(paginationButtons[0].attributes("disabled")).toBeDefined();
+    expect(paginationButtons[1].attributes("disabled")).toBeDefined();
+  });
+
+  it("keeps next page enabled when more visible results exist", async () => {
+    vi.stubGlobal("fetch", vi.fn());
+    const widget = createDefaultTapdDefectWidget();
+    widget.id = "tapd-has-next-page";
+    widget.data = normalizeTapdDefectWidgetData({
+      workspaceId: "40685585",
+      projectName: "UGOS_PRO",
+      hasServerCredential: true,
+      query: {
+        limit: 100,
+        order: "modified desc",
+        fields: ["id", "title", "status"],
+      },
+      lastSummary: {
+        status: "connected",
+        workspaceId: "40685585",
+        total: 101,
+        visibleTotal: 101,
+        blockedTotal: 0,
+        verificationTotal: 0,
+        critical: 0,
+        assignedToCurrentUser: 0,
+        visibleScope: "owned-by-current-user",
+        page: 1,
+        limit: 100,
+        items: [
+          {
+            id: "1",
+            severity: "高",
+            title: "待处理缺陷",
+            status: "new",
+            url: "",
+          },
+        ],
+      },
+    });
+    const wrapper = mount(TapdDefectsOpenedPanel, {
+      global: {
+        plugins: [createTestingPinia({ createSpy: vi.fn })],
+      },
+      props: { widget },
+    });
+    await new Promise((resolve) => window.setTimeout(resolve, 0));
+    await wrapper.vm.$nextTick();
+
+    const paginationButtons = wrapper.findAll(".tapd-pagination button");
+    expect(paginationButtons[0].attributes("disabled")).toBeDefined();
+    expect(paginationButtons[1].attributes("disabled")).toBeUndefined();
+  });
+
   it("masks stale opened-panel data when the credential is removed", async () => {
     vi.stubGlobal("fetch", vi.fn());
     const widget = createDefaultTapdDefectWidget();

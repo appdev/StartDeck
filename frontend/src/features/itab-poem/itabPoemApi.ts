@@ -40,4 +40,4 @@ const requestItabPoem = async <T>(
 };
 
 export const fetchItabPoem = (refresh = false, signal?: AbortSignal) =>
-  requestItabPoem<ItabPoemApiData>("/api/itab/poem", { refresh }, signal);
+  requestItabPoem<ItabPoemApiData>("/api/poem", { refresh }, signal);

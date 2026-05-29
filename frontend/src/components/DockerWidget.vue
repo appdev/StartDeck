@@ -191,9 +191,6 @@ const isTinyDockerLayout = computed(() => dockerSizeKey.value === "1x1");
 const isShortDockerLayout = computed(() => dockerSizeKey.value === "1x2");
 const isVerticalDockerLayout = computed(() => dockerSizeKey.value === "2x1");
 const isTwoByTwoLayout = computed(() => displaySize.value.sizeKey === "2x2");
-const showDockerDetailPanel = computed(
-  () => displaySize.value.isBoard && containers.value.length > 0,
-);
 const showDockerContainerList = computed(
   () => displaySize.value.isBoard && containers.value.length > 0,
 );
@@ -266,18 +263,6 @@ const formatDockerError = (msg: string) => {
 };
 
 const errorDisplay = computed(() => formatDockerError(error.value));
-const compactErrorTitle = computed(() => {
-  const message = errorDisplay.value || error.value;
-  const lower = message.toLowerCase();
-  if (dockerState.value === "disabled") return "已关闭";
-  if (lower.includes("socket") || lower.includes("docker.sock")) {
-    return "未连接";
-  }
-  if (lower.includes("engine") || lower.includes("desktop")) {
-    return "未检测到引擎";
-  }
-  return "连接失败";
-});
 const compactErrorHint = computed(() => {
   const message = (errorDisplay.value || error.value).toLowerCase();
   if (dockerState.value === "disabled") return "服务未启用";
@@ -823,17 +808,6 @@ const getPublishedPorts = (c: DockerContainer): number[] =>
       (x): x is number =>
         typeof x === "number" && Number.isFinite(x) && x > 0 && x <= 65535,
     );
-
-const getDetectedPorts = (c: DockerContainer): number[] => {
-  const published = getPublishedPorts(c);
-  if (published.length > 0) return published;
-  const cached = inspectCache.value[c.Id]?.data;
-  if (!cached) return [];
-  if (cached.networkMode !== "host") return [];
-  return (cached.ports || []).filter(
-    (p) => typeof p === "number" && Number.isFinite(p) && p > 0 && p <= 65535,
-  );
-};
 
 // 常见 Web 端口优先级列表
 const PREFERRED_PRIVATE_PORTS = [

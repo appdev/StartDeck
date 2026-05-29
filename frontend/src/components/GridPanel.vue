@@ -26,7 +26,6 @@ import { canReadResource } from "@/utils/permissions";
 import { useWallpaperRotation } from "../composables/useWallpaperRotation";
 import { useDevice } from "../composables/useDevice";
 import { useLoginRequiredToast } from "@/composables/useRequireLogin";
-import { resolveWidgetSizeState } from "../composables/useWidgetResize";
 import { resolveWidgetDisplaySize } from "@/composables/useWidgetDisplaySize";
 import {
   generateLayout,
@@ -38,7 +37,6 @@ import ConfirmDialog from "@/components/base/ConfirmDialog.vue";
 import ContextMenuSurface from "@/components/base/ContextMenuSurface.vue";
 import HomeActionBar from "@/components/home/HomeActionBar.vue";
 import HomeTopActions from "@/components/home/HomeTopActions.vue";
-import MainWidgetShell from "@/components/home/MainWidgetShell.vue";
 import WidgetEditFrame from "@/components/home/WidgetEditFrame.vue";
 import { toCatalogWidgetSizeKey } from "@/utils/widgetSizePresets";
 import WidgetRuntimeFrame from "@/features/widget-runtime/WidgetRuntimeFrame.vue";
@@ -179,7 +177,7 @@ const requireStoreLogin = (message?: string) => {
 };
 useWallpaperRotation();
 const { deviceKey, isMobile } = useDevice(toRef(store.appConfig, "deviceMode"));
-const { width, height } = useWindowSize();
+const { width } = useWindowSize();
 const isHeaderRowLayout = computed(() => width.value >= 1280);
 const gridWidgetTypes = new Set([
   ITAB_CLOCK_WIDGET_TYPE,
@@ -505,12 +503,6 @@ const resolveEffectiveNetworkMode = (measuredLatencyMs = latency.value) => {
 const effectiveIsLan = computed(() => {
   if (!store.isLanModeInited) return false;
   return resolveEffectiveNetworkMode().isLan;
-});
-const forceModeLabel = computed(() => {
-  if (forceMode.value === "lan") return "内网";
-  if (forceMode.value === "wan") return "外网";
-  if (forceMode.value === "latency") return "延迟";
-  return "自动";
 });
 const homeStatusLabel = computed(() => {
   if (isEditMode.value) return "编辑模式";
@@ -1023,66 +1015,6 @@ onUnmounted(() => {
   destroyGridStack();
 });
 
-const handleSizeSelect = (
-  widget: GridLayoutItem,
-  size: { colSpan: number; rowSpan: number },
-) => {
-  const nextState = resolveWidgetSizeState({
-    widgetType: widget.type,
-    deviceKey: deviceKey.value,
-    runtimeCols: widgetColNum.value,
-    currentSize: {
-      colSpan: widget.w || widget.colSpan || 1,
-      rowSpan: widget.h || widget.rowSpan || 1,
-    },
-    requestedSize: size,
-  });
-  const nextW = nextState.clampedSize.colSpan;
-  const nextH = nextState.clampedSize.rowSpan;
-
-  widget.w = nextW;
-  widget.h = nextH;
-  widget.colSpan = nextW;
-  widget.rowSpan = nextH;
-
-  if (isRuntimeWidget(widget)) {
-    const runtimeSizeKey = toRuntimeWidgetSizeKey(widget.type, {
-      colSpan: nextW,
-      rowSpan: nextH,
-    });
-    const storeWidget = store.widgets.find((item) => item.id === widget.id);
-    if (runtimeSizeKey && storeWidget) {
-      applyRuntimeWidgetSize(storeWidget, runtimeSizeKey);
-      widget.w = storeWidget.w;
-      widget.h = storeWidget.h;
-      widget.colSpan = storeWidget.colSpan;
-      widget.rowSpan = storeWidget.rowSpan;
-      widget.data = storeWidget.data;
-    }
-  } else {
-    const nextSizeKey = toItabWidgetSizeKey({
-      colSpan: nextW,
-      rowSpan: nextH,
-    });
-    const normalizedWidget = withItabGridData(
-      { ...widget } as GridLayoutItem,
-      nextSizeKey,
-    );
-    Object.assign(widget, normalizedWidget);
-  }
-
-  const newLayout = resolveResizeLayout(
-    layoutData.value,
-    widget.i || widget.id,
-    { colSpan: nextW, rowSpan: nextH },
-    widgetColNum.value,
-  );
-  layoutData.value = newLayout;
-
-  // Sync back to store (all widgets, not just the resized one)
-  handleLayoutUpdated(newLayout);
-};
-
 const gridLayoutRootRef = ref<HTMLElement | null>(null);
 const openedRuntimeWidgetId = ref("");
 const isHomeWidgetDragEnabled = computed(
@@ -1265,14 +1197,6 @@ const selectWidgetForEdit = (widgetId: string) => {
   selectedWidgetId.value = widgetId;
 };
 
-const selectedGridWidget = computed(() => {
-  if (!selectedWidgetId.value) return null;
-  return (
-    layoutData.value.find((widget) => widget.id === selectedWidgetId.value) ||
-    null
-  );
-});
-
 watch(isEditMode, (val) => {
   if (val) return;
   selectedWidgetId.value = null;
@@ -1280,51 +1204,6 @@ watch(isEditMode, (val) => {
 
 const isEmpireCloudWidget = (type: string) => {
   return [ITAB_TODO_WIDGET_TYPE].includes(type);
-};
-
-const devtoolsClickCount = ref(0);
-const devtoolsClickTimer = ref<number | null>(null);
-
-const toggleDevTools = () => {
-  const style = document.getElementById("devtools-hider");
-  if (style) {
-    style.remove();
-  } else {
-    const newStyle = document.createElement("style");
-    newStyle.id = "devtools-hider";
-    newStyle.innerHTML = `
-      #vue-devtools-anchor,
-      .vue-devtools__anchor,
-      .vue-devtools__trigger,
-      [data-v-inspector-toggle] {
-        display: none !important;
-      }
-    `;
-    document.head.appendChild(newStyle);
-  }
-};
-
-const handleNetworkClick = async () => {
-  checkLatency();
-
-  const now = Date.now();
-  if (!devtoolsClickTimer.value) {
-    devtoolsClickTimer.value = now;
-    devtoolsClickCount.value = 1;
-  } else {
-    if (now - devtoolsClickTimer.value > 5000) {
-      devtoolsClickTimer.value = now;
-      devtoolsClickCount.value = 1;
-    } else {
-      devtoolsClickCount.value++;
-    }
-  }
-
-  if (devtoolsClickCount.value >= 10) {
-    toggleDevTools();
-    devtoolsClickCount.value = 0;
-    devtoolsClickTimer.value = null;
-  }
 };
 
 const fetchWithTimeout = (
@@ -2278,11 +2157,6 @@ const openSettings = () => {
 const logoutFromHome = () => {
   void store.logout();
 };
-const openEditOrLogin = () => {
-  if (!requireStoreLogin("请先登录后再编辑首页。")) return;
-  toggleEditMode();
-};
-
 // const updateGroupName = (id: string, e: Event) => {
 //   const val = (e.target as HTMLElement).innerText
 //   store.updateGroupTitle(id, val)

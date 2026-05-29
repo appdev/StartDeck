@@ -246,4 +246,22 @@ describe("EditModal", () => {
     expect(editModalSource).toContain(":global(.edit-card-panel:focus)");
     expect(editModalSource).toContain("outline: none;");
   });
+
+  it("uses the standard compact modal footprint from the widget picker", () => {
+    expect(editModalSource).toContain(
+      "width: min(1000px, calc(100vw - 32px));",
+    );
+    expect(editModalSource).toContain(
+      "height: min(480px, calc(100dvh - 120px));",
+    );
+    expect(editModalSource).toContain(
+      "grid-template-columns: 340px minmax(0, 1fr);",
+    );
+    expect(editModalSource).not.toContain(
+      "width: min(1248px, calc(100vw - 48px));",
+    );
+    expect(editModalSource).not.toContain(
+      "height: min(750px, calc(100dvh - 138px));",
+    );
+  });
 });

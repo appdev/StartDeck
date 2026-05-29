@@ -159,7 +159,7 @@ pub(crate) async fn cached_widget_data(
     Query(query): Query<HashMap<String, String>>,
 ) -> Result<Json<Value>, ApiError> {
     let path = uri.path();
-    if path.starts_with("/api/itab/weather/") {
+    if path.starts_with("/api/weather/") {
         return weather_widget_response(&state, &headers, path, &query)
             .await
             .map(Json);
@@ -545,12 +545,12 @@ async fn fetch_daily_english(client: &Client) -> Result<Value, String> {
     let image_url = if image_source_url.is_empty() {
         String::new()
     } else {
-        format!("/api/itab/today-english/media/image?date={date}&v={version}")
+        format!("/api/today-english/media/image?date={date}&v={version}")
     };
     let audio_url = if audio_source_url.is_empty() {
         String::new()
     } else {
-        format!("/api/itab/today-english/media/audio?date={date}&v={version}")
+        format!("/api/today-english/media/audio?date={date}&v={version}")
     };
 
     Ok(json!({
@@ -610,12 +610,12 @@ async fn fetch_movie_calendar(client: &Client) -> Result<Value, String> {
     let poster_url = if poster_source_url.is_empty() {
         String::new()
     } else {
-        format!("/api/itab/movie-calendar/image/poster?date={date}&v={version}")
+        format!("/api/movie-calendar/image/poster?date={date}&v={version}")
     };
     let cover_url = if cover_source_url.is_empty() {
         String::new()
     } else {
-        format!("/api/itab/movie-calendar/image/cover?date={date}&v={version}")
+        format!("/api/movie-calendar/image/cover?date={date}&v={version}")
     };
     let genres = data
         .mov_type
@@ -894,7 +894,7 @@ async fn weather_widget_response(
         return Err(ApiError::bad_gateway("weather_source_unavailable"));
     }
 
-    if path == "/api/itab/weather/current" {
+    if path == "/api/weather/current" {
         return weather_current_response(state, headers, query).await;
     }
 
@@ -926,7 +926,7 @@ async fn weather_current_response(
         return Ok(cached_widget_response(row.data.clone(), &row.source_status));
     }
 
-    match fetch_live_weather_widget_data(state, headers, "/api/itab/weather/current", query).await {
+    match fetch_live_weather_widget_data(state, headers, "/api/weather/current", query).await {
         Ok(data) => {
             if let Err(error) = cache_widget_payload(
                 state,
@@ -988,7 +988,7 @@ async fn fetch_live_weather_widget_data(
     query: &HashMap<String, String>,
 ) -> Result<Value, String> {
     match path {
-        "/api/itab/weather/location" => {
+        "/api/weather/location" => {
             let location = if has_query_value(query, "coords") {
                 let location = fetch_location(
                     &state.http,
@@ -1009,7 +1009,7 @@ async fn fetch_live_weather_widget_data(
             };
             Ok(location)
         }
-        "/api/itab/weather/search" => {
+        "/api/weather/search" => {
             let keyword = query
                 .get("keyword")
                 .or_else(|| query.get("location"))
@@ -1027,7 +1027,7 @@ async fn fetch_live_weather_widget_data(
                     .collect(),
             ))
         }
-        "/api/itab/weather/current" => {
+        "/api/weather/current" => {
             let kind = query
                 .get("type")
                 .map(String::as_str)
@@ -1356,13 +1356,13 @@ async fn proxy_remote_media(
 
 fn widget_kind_from_path(path: &str) -> &'static str {
     match path {
-        "/api/itab/today-english" => ITAB_DAILY_ENGLISH_KIND,
-        "/api/itab/movie-calendar" => ITAB_MOVIE_CALENDAR_KIND,
-        "/api/itab/bing-wallpapers" => ITAB_BING_WALLPAPER_KIND,
-        "/api/itab/weather/location" | "/api/itab/weather/search" | "/api/itab/weather/current" => {
+        "/api/today-english" => ITAB_DAILY_ENGLISH_KIND,
+        "/api/movie-calendar" => ITAB_MOVIE_CALENDAR_KIND,
+        "/api/bing-wallpapers" => ITAB_BING_WALLPAPER_KIND,
+        "/api/weather/location" | "/api/weather/search" | "/api/weather/current" => {
             ITAB_WEATHER_KIND
         }
-        "/api/itab/poem" => ITAB_POEM_KIND,
+        "/api/poem" => ITAB_POEM_KIND,
         _ => "unknown",
     }
 }

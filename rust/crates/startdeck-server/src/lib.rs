@@ -196,19 +196,19 @@ pub fn app(state: AppState) -> Router {
         )
         .route("/api/config-versions/restore", post(restore_config_version))
         .route("/api/config-versions/{id}", delete(delete_config_version))
-        .route("/api/itab/today-english", get(itab::cached_widget_data))
-        .route("/api/itab/movie-calendar", get(itab::cached_widget_data))
-        .route("/api/itab/bing-wallpapers", get(itab::cached_widget_data))
-        .route("/api/itab/weather/location", get(itab::cached_widget_data))
-        .route("/api/itab/weather/search", get(itab::cached_widget_data))
-        .route("/api/itab/weather/current", get(itab::cached_widget_data))
-        .route("/api/itab/poem", get(itab::cached_widget_data))
+        .route("/api/today-english", get(itab::cached_widget_data))
+        .route("/api/movie-calendar", get(itab::cached_widget_data))
+        .route("/api/bing-wallpapers", get(itab::cached_widget_data))
+        .route("/api/weather/location", get(itab::cached_widget_data))
+        .route("/api/weather/search", get(itab::cached_widget_data))
+        .route("/api/weather/current", get(itab::cached_widget_data))
+        .route("/api/poem", get(itab::cached_widget_data))
         .route(
-            "/api/itab/today-english/media/{kind}",
+            "/api/today-english/media/{kind}",
             get(itab::cached_today_english_media),
         )
         .route(
-            "/api/itab/movie-calendar/image/{kind}",
+            "/api/movie-calendar/image/{kind}",
             get(itab::cached_movie_calendar_image),
         )
         .route(

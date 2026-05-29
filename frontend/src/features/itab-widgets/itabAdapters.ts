@@ -32,9 +32,7 @@ export interface ItabWidgetViewModel {
 }
 
 const stateByKind: Partial<Record<ItabFixture["kind"], ItabAdapterState>> = {
-  speedTest: "idle",
   pomodoro: "idle",
-  woodenFish: "ready",
   foodPicker: "idle",
 };
 
@@ -81,10 +79,7 @@ export const buildItabPersistedData = (entry: ItabWidgetRegistryEntry) => ({
 
 export const getItabPanelActions = (vm: ItabWidgetViewModel) => {
   const common = ["刷新", "复制", "设置"];
-  if (vm.fixture.kind === "woodenFish") return ["敲一下", "重置", "音效"];
   if (vm.fixture.kind === "pomodoro") return ["开始", "暂停", "重置"];
-  if (vm.fixture.kind === "game2048") return ["新局", "继续", "撤销"];
   if (vm.fixture.kind === "foodPicker") return ["开始抽取", "编辑菜单", "重置"];
-  if (vm.fixture.kind === "speedTest") return ["开始测速", "历史", "设置"];
   return vm.chips.length ? vm.chips : common;
 };

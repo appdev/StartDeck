@@ -454,7 +454,7 @@ onMounted(() => {
               <input v-model="editor.fields" />
             </label>
             <label>
-              <span>刷新间隔</span>
+              <span>刷新间隔（分钟）</span>
               <input
                 v-model.number="editor.refreshIntervalMinutes"
                 type="number"

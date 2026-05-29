@@ -136,7 +136,7 @@ export const prefetchItabIpLocation = async () => {
 };
 
 export const useItabIpRuntime = () => {
-  const load = async (_refresh = false) => {
+  const load = async () => {
     return prefetchItabIpLocation();
   };
 
@@ -144,7 +144,7 @@ export const useItabIpRuntime = () => {
     if (status.value === "success" && ipLatencyKey(result.value)) {
       return result.value;
     }
-    const ok = await load(false);
+    const ok = await load();
     return ok ? result.value : null;
   };
 

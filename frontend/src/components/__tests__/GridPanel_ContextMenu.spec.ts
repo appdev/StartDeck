@@ -254,7 +254,6 @@ describe("GridPanel Context Menu", () => {
             template: '<div v-if="show" data-testid="itab-add-modal"></div>',
           },
           LoginModal: true,
-          SizeSelector: true,
           transition: false,
         },
       },
@@ -743,10 +742,7 @@ describe("GridPanel Context Menu", () => {
   it("keeps Todo 4x4 when the mobile size strip applies 4x4 spans", async () => {
     const vm = wrapper.vm as unknown as {
       addComponent: (payload: AddComponentPayload) => Promise<unknown>;
-      handleSizeSelect: (
-        widget: WidgetConfig,
-        size: { colSpan: number; rowSpan: number },
-      ) => void;
+      selectRuntimeWidgetSize: (widget: WidgetConfig, sizeKey: "4x4") => void;
       layoutData: Array<WidgetConfig & { i: string }>;
     };
     vi.mocked(store.saveData).mockResolvedValue("saved");
@@ -767,7 +763,7 @@ describe("GridPanel Context Menu", () => {
     const layoutTodo = vm.layoutData.find((item) => item.i === todo.id);
     if (!layoutTodo) throw new Error("Todo layout item not found");
 
-    vm.handleSizeSelect(layoutTodo, { colSpan: 4, rowSpan: 4 });
+    vm.selectRuntimeWidgetSize(todo, "4x4");
     await wrapper.vm.$nextTick();
 
     expect(todo).toMatchObject({

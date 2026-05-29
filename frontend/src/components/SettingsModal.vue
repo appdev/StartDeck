@@ -32,7 +32,6 @@ import { useUiFeedbackStore } from "@/stores/uiFeedback";
 import type {
   NetworkLocationAddress,
   SearchEngine,
-  WidgetConfig,
   NavGroup,
   NavItem,
 } from "@/types";

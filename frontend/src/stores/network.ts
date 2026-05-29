@@ -1,4 +1,4 @@
-import { ref, computed } from "vue";
+import { ref } from "vue";
 import { defineStore } from "pinia";
 import { useAuthStore } from "./auth";
 import { useConfigStore } from "./config";
@@ -283,13 +283,6 @@ export const useNetworkStore = defineStore("network", () => {
     scope: "",
   });
   let globalDragBound = false;
-
-  const resetGlobalDrag = () => {
-    globalDrag.value.active = false;
-    globalDrag.value.isFiles = false;
-    globalDrag.value.depth = 0;
-    globalDrag.value.scope = "";
-  };
 
   const isFilesDragEvent = (e: DragEvent) => {
     const types = Array.from(e.dataTransfer?.types || []);

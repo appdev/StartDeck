@@ -10,7 +10,7 @@ type ApiEnvelope<T> =
       error: string;
     };
 
-export const ITAB_MOVIE_CALENDAR_PROXY_PATH = "/api/itab/movie-calendar";
+export const ITAB_MOVIE_CALENDAR_PROXY_PATH = "/api/movie-calendar";
 
 export const fetchItabMovieCalendar = async (
   refresh = false,

@@ -28,7 +28,7 @@ describe("ItabWeatherWidget", () => {
   it("loads current weather through the backend proxy and renders iTab size UI", async () => {
     const fetchMock = vi.fn((rawUrl: string | URL | Request) => {
       const url = String(rawUrl);
-      expect(url).toContain("/api/itab/weather/current");
+      expect(url).toContain("/api/weather/current");
       expect(url).toContain("location=101280601");
       return response({
         sourceStatus: "ok",
@@ -125,7 +125,7 @@ describe("ItabWeatherWidget", () => {
           }),
         );
       }
-      expect(url).toContain("/api/itab/weather/current");
+      expect(url).toContain("/api/weather/current");
       expect(url).toContain("location=101280608");
       return response({
         sourceStatus: "ok",
@@ -178,13 +178,13 @@ describe("ItabWeatherWidget", () => {
     await flushPromises();
 
     const urls = fetchMock.mock.calls.map(([url]) => String(url));
-    expect(urls.some((url) => url.includes("/api/itab/weather/location"))).toBe(
+    expect(urls.some((url) => url.includes("/api/weather/location"))).toBe(
       false,
     );
     expect(urls).toEqual(
       expect.arrayContaining([
         expect.stringContaining("/api/ip?"),
-        expect.stringContaining("/api/itab/weather/current"),
+        expect.stringContaining("/api/weather/current"),
       ]),
     );
     expect(urls.find((url) => url.includes("/api/ip"))).not.toContain(
@@ -209,7 +209,7 @@ describe("ItabWeatherWidget", () => {
           }),
         );
       }
-      if (url.includes("/api/itab/weather/location")) {
+      if (url.includes("/api/weather/location")) {
         return response({
           id: "101280601",
           name: "深圳",
@@ -219,7 +219,7 @@ describe("ItabWeatherWidget", () => {
           location: "114.05,22.55",
         });
       }
-      expect(url).toContain("/api/itab/weather/current");
+      expect(url).toContain("/api/weather/current");
       expect(url).toContain("location=101280601");
       return response({
         sourceStatus: "ok",
@@ -275,8 +275,8 @@ describe("ItabWeatherWidget", () => {
     expect(urls).toEqual(
       expect.arrayContaining([
         expect.stringContaining("/api/ip?"),
-        expect.stringContaining("/api/itab/weather/location"),
-        expect.stringContaining("/api/itab/weather/current"),
+        expect.stringContaining("/api/weather/location"),
+        expect.stringContaining("/api/weather/current"),
       ]),
     );
     expect(wrapper.text()).toContain("深圳");

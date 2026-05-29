@@ -57,7 +57,11 @@
       body {
         margin: 0;
         background:
-          radial-gradient(circle at 50% -12%, rgba(143, 199, 255, 0.16), transparent 34rem),
+          radial-gradient(
+            circle at 50% -12%,
+            rgba(143, 199, 255, 0.16),
+            transparent 34rem
+          ),
           linear-gradient(180deg, #05070a 0%, #080c12 48%, #05070a 100%);
         color: var(--text);
         font-family:
@@ -82,9 +86,19 @@
         content: "";
         background-image:
           linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
-          linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+          linear-gradient(
+            90deg,
+            rgba(255, 255, 255, 0.025) 1px,
+            transparent 1px
+          );
         background-size: 72px 72px;
-        mask-image: linear-gradient(to bottom, transparent 0%, #000 18%, #000 68%, transparent 100%);
+        mask-image: linear-gradient(
+          to bottom,
+          transparent 0%,
+          #000 18%,
+          #000 68%,
+          transparent 100%
+        );
       }
 
       body::after {
@@ -95,9 +109,24 @@
         pointer-events: none;
         content: "";
         background:
-          linear-gradient(90deg, transparent, rgba(143, 199, 255, 0.11), transparent),
-          linear-gradient(110deg, transparent 20%, rgba(136, 216, 176, 0.1), transparent 64%),
-          linear-gradient(70deg, transparent 32%, rgba(244, 211, 94, 0.08), transparent 72%);
+          linear-gradient(
+            90deg,
+            transparent,
+            rgba(143, 199, 255, 0.11),
+            transparent
+          ),
+          linear-gradient(
+            110deg,
+            transparent 20%,
+            rgba(136, 216, 176, 0.1),
+            transparent 64%
+          ),
+          linear-gradient(
+            70deg,
+            transparent 32%,
+            rgba(244, 211, 94, 0.08),
+            transparent 72%
+          );
         filter: blur(22px);
         opacity: 0.76;
         transform: translate3d(0, 0, 0);
@@ -166,7 +195,11 @@
         height: 34px;
         border: 1px solid rgba(255, 255, 255, 0.18);
         border-radius: 10px;
-        background: linear-gradient(145deg, rgba(255, 255, 255, 0.13), rgba(255, 255, 255, 0.03));
+        background: linear-gradient(
+          145deg,
+          rgba(255, 255, 255, 0.13),
+          rgba(255, 255, 255, 0.03)
+        );
         box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18);
       }
 
@@ -232,8 +265,18 @@
         height: 52%;
         content: "";
         background:
-          linear-gradient(90deg, transparent, rgba(143, 199, 255, 0.18), transparent),
-          linear-gradient(100deg, transparent 10%, rgba(136, 216, 176, 0.1), transparent 72%);
+          linear-gradient(
+            90deg,
+            transparent,
+            rgba(143, 199, 255, 0.18),
+            transparent
+          ),
+          linear-gradient(
+            100deg,
+            transparent 10%,
+            rgba(136, 216, 176, 0.1),
+            transparent 72%
+          );
         filter: blur(20px);
         transform: rotate(-8deg);
         animation: beam-slide 12s ease-in-out infinite alternate;
@@ -263,7 +306,13 @@
       .gradient-text {
         display: inline-block;
         color: transparent;
-        background: linear-gradient(96deg, #ffffff 0%, #dcecff 40%, #a8e9ca 76%, #fff0af 100%);
+        background: linear-gradient(
+          96deg,
+          #ffffff 0%,
+          #dcecff 40%,
+          #a8e9ca 76%,
+          #fff0af 100%
+        );
         -webkit-background-clip: text;
         background-clip: text;
       }
@@ -313,7 +362,13 @@
 
       .button.primary {
         color: #06110d;
-        background: linear-gradient(100deg, #ffffff, #d9ecff 40%, #c7f1d7 74%, #f8df83);
+        background: linear-gradient(
+          100deg,
+          #ffffff,
+          #d9ecff 40%,
+          #c7f1d7 74%,
+          #f8df83
+        );
         box-shadow:
           0 18px 54px rgba(143, 199, 255, 0.19),
           0 12px 38px rgba(136, 216, 176, 0.14);
@@ -323,7 +378,12 @@
         position: absolute;
         inset: 0;
         content: "";
-        background: linear-gradient(110deg, transparent 0%, rgba(255, 255, 255, 0.65) 42%, transparent 68%);
+        background: linear-gradient(
+          110deg,
+          transparent 0%,
+          rgba(255, 255, 255, 0.65) 42%,
+          transparent 68%
+        );
         transform: translateX(-120%);
         animation: button-sheen 4.8s ease-in-out infinite;
       }
@@ -374,7 +434,11 @@
         border-radius: 26px;
         padding: 11px;
         background:
-          linear-gradient(145deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.04)),
+          linear-gradient(
+            145deg,
+            rgba(255, 255, 255, 0.16),
+            rgba(255, 255, 255, 0.04)
+          ),
           rgba(7, 11, 17, 0.68);
         box-shadow: var(--shadow);
         animation: stage-float 7s ease-in-out infinite;
@@ -387,7 +451,14 @@
         padding: 1px;
         pointer-events: none;
         content: "";
-        background: linear-gradient(120deg, rgba(143, 199, 255, 0.68), transparent 32%, rgba(136, 216, 176, 0.38), transparent 72%, rgba(244, 211, 94, 0.5));
+        background: linear-gradient(
+          120deg,
+          rgba(143, 199, 255, 0.68),
+          transparent 32%,
+          rgba(136, 216, 176, 0.38),
+          transparent 72%,
+          rgba(244, 211, 94, 0.5)
+        );
         mask:
           linear-gradient(#000 0 0) content-box,
           linear-gradient(#000 0 0);
@@ -396,6 +467,7 @@
 
       .stage-screen {
         position: relative;
+        aspect-ratio: 16 / 10;
         overflow: hidden;
         border-radius: 18px;
         background: #0a0f15;
@@ -403,7 +475,8 @@
 
       .stage-screen img {
         width: 100%;
-        height: auto;
+        height: 100%;
+        object-fit: contain;
       }
 
       .stage-note {
@@ -533,7 +606,12 @@
         left: -12%;
         height: 1px;
         content: "";
-        background: linear-gradient(90deg, transparent, currentColor, transparent);
+        background: linear-gradient(
+          90deg,
+          transparent,
+          currentColor,
+          transparent
+        );
         opacity: 0.42;
       }
 
@@ -601,13 +679,19 @@
         border: 1px solid rgba(255, 255, 255, 0.16);
         border-radius: 26px;
         padding: 10px;
-        background: linear-gradient(145deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.04));
+        background: linear-gradient(
+          145deg,
+          rgba(255, 255, 255, 0.14),
+          rgba(255, 255, 255, 0.04)
+        );
         box-shadow: var(--shadow);
       }
 
       .shot-frame img {
         width: 100%;
+        height: auto;
         border-radius: 18px;
+        object-fit: contain;
       }
 
       .shot-caption {
@@ -655,9 +739,12 @@
 
       .widget-gallery {
         display: grid;
-        grid-template-columns: 1.1fr 0.9fr 0.55fr 0.55fr;
+        grid-template-columns:
+          minmax(0, 390px) minmax(0, 330px) minmax(0, 150px)
+          minmax(0, 150px);
         gap: 16px;
-        align-items: stretch;
+        align-items: start;
+        justify-content: center;
       }
 
       .widget-shot {
@@ -668,8 +755,23 @@
       }
 
       .widget-shot img {
-        width: 100%;
+        width: auto;
+        max-width: 100%;
         height: auto;
+        margin: 0 auto;
+        object-fit: contain;
+      }
+
+      .widget-shot.weather img {
+        width: min(100%, 390px);
+      }
+
+      .widget-shot.todo img {
+        width: min(100%, 330px);
+      }
+
+      .widget-shot.compact img {
+        width: min(100%, 150px);
       }
 
       .widget-shot figcaption {
@@ -794,7 +896,12 @@
         height: 2px;
         border-radius: 999px;
         content: "";
-        background: linear-gradient(90deg, var(--blue), var(--green), var(--yellow));
+        background: linear-gradient(
+          90deg,
+          var(--blue),
+          var(--green),
+          var(--yellow)
+        );
         transform: scaleX(0.2);
         transform-origin: left;
         animation: rail-grow 4s ease-in-out infinite alternate;
@@ -850,11 +957,7 @@
         overflow-x: auto;
         padding: 22px;
         color: #d7e5f4;
-        font-family:
-          "SFMono-Regular",
-          Consolas,
-          "Liberation Mono",
-          monospace;
+        font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
         font-size: 0.84rem;
         line-height: 1.75;
       }
@@ -1065,6 +1168,11 @@
         .widget-gallery {
           grid-template-columns: repeat(2, minmax(0, 1fr));
         }
+
+        .widget-shot.weather,
+        .widget-shot.todo {
+          grid-column: 1 / -1;
+        }
       }
 
       @media (max-width: 760px) {
@@ -1137,9 +1245,12 @@
         .problem-solution,
         .strip-grid,
         .catalog-grid,
-        .pipeline,
-        .widget-gallery {
+        .pipeline {
           grid-template-columns: 1fr;
+        }
+
+        .widget-gallery {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
         }
 
         .strip-item {
@@ -1156,9 +1267,16 @@
           padding: 24px;
         }
 
-        .widget-shot img,
+        .widget-shot.weather img {
+          width: min(100%, 330px);
+        }
+
+        .widget-shot.todo img {
+          width: min(100%, 318px);
+        }
+
         .widget-shot.compact img {
-          height: auto;
+          width: min(100%, 150px);
         }
 
         .metric-row {
@@ -1210,9 +1328,12 @@
       <section class="hero" aria-label="StartDeck 自托管浏览器工作台">
         <div class="container hero-layout">
           <div class="hero-copy-block reveal">
-            <h1><span class="gradient-text">StartDeck</span> 自托管浏览器工作台</h1>
+            <h1>
+              <span class="gradient-text">StartDeck</span> 自托管浏览器工作台
+            </h1>
             <p class="hero-copy">
-              把 NAS、内网服务、Docker 状态、AI 使用量和每天会用到的链接，整理成浏览器打开后的第一屏。真实运行、自己部署、数据留在本地。
+              把 NAS、内网服务、Docker 状态、AI
+              使用量和每天会用到的链接，整理成浏览器打开后的第一屏。稳定运行、自己部署、数据留在本地。
             </p>
             <div class="hero-actions" aria-label="主要操作">
               <a
@@ -1239,25 +1360,33 @@
             <div class="hero-points" aria-label="StartDeck 关键能力">
               <div class="hero-point">
                 <span class="point-dot" aria-hidden="true"></span>
-                <span>真实首页截图展示，不用虚构产品界面。</span>
+                <span
+                  >入口、状态和桌面组件集中在第一屏，打开浏览器即可开始工作。</span
+                >
               </div>
               <div class="hero-point">
                 <span class="point-dot" aria-hidden="true"></span>
-                <span>前端、Rust 主服务、独立 Icon Server 和 SQLite 组成完整自托管链路。</span>
+                <span
+                  >前端、Rust 主服务、独立 Icon Server 和 SQLite
+                  组成完整自托管链路。</span
+                >
               </div>
               <div class="hero-point">
                 <span class="point-dot" aria-hidden="true"></span>
-                <span>Docker 或 Debian/Ubuntu 脚本部署，默认 Web 入口为 9001。</span>
+                <span
+                  >Docker 或 Debian/Ubuntu 脚本部署，默认 Web 入口为
+                  9001。</span
+                >
               </div>
             </div>
           </div>
 
-          <div class="hero-stage reveal" aria-label="StartDeck 当前首页实际渲染图">
+          <div class="hero-stage reveal" aria-label="StartDeck 首页工作台预览">
             <figure class="stage-shell">
               <div class="stage-screen">
                 <img
                   src="./intro-assets/startdeck-home-real.jpg"
-                  alt="StartDeck 当前 PC 端首页真实渲染图"
+                  alt="StartDeck PC 端首页工作台"
                   width="2880"
                   height="1800"
                   loading="eager"
@@ -1266,8 +1395,10 @@
               </div>
             </figure>
             <div class="stage-note">
-              <strong>当前版本真实渲染</strong>
-              <span>搜索、站点入口、桌面组件、网络状态和登录入口都来自项目当前页面截图。</span>
+              <strong>首页工作台</strong>
+              <span
+                >搜索、站点入口、桌面组件、网络状态和登录入口集中在同一屏。</span
+              >
             </div>
           </div>
         </div>
@@ -1299,7 +1430,9 @@
           <div class="section-head reveal">
             <h2>它不是更漂亮的书签页，而是自托管入口层。</h2>
             <p>
-              家庭服务器和 NAS 的日常问题通常不是没有服务，而是入口、地址、状态和工具被拆散在很多地方。StartDeck 把它们收进一个可维护的页面。
+              家庭服务器和 NAS
+              的日常问题通常不是没有服务，而是入口、地址、状态和工具被拆散在很多地方。StartDeck
+              把它们收进一个可维护的页面。
             </p>
           </div>
           <div class="problem-solution">
@@ -1330,21 +1463,21 @@
           <div class="section-head reveal">
             <h2>第一屏负责操作，不只负责展示。</h2>
             <p>
-              搜索、打开服务、查看状态、切换网络入口和进入组件工作流都发生在首页。下面仍然使用当前项目真实截图。
+              搜索、打开服务、查看状态、切换网络入口和进入组件工作流都发生在首页，让常用动作少一次跳转。
             </p>
           </div>
           <div class="workbench">
             <figure class="shot-frame reveal">
               <img
                 src="./intro-assets/startdeck-home-real.jpg"
-                alt="StartDeck 当前 PC 端首页真实渲染图"
+                alt="StartDeck PC 端首页工作台"
                 width="2880"
                 height="1800"
                 loading="eager"
                 decoding="async"
               />
               <figcaption class="shot-caption">
-                当前版本 PC 端真实渲染图，包含搜索、站点入口、状态组件和桌面组件布局。
+                PC 端首页视图，包含搜索、站点入口、状态组件和桌面组件布局。
               </figcaption>
             </figure>
             <div class="proof-list">
@@ -1366,14 +1499,18 @@
                 <span class="proof-index">03</span>
                 <div>
                   <h3>切换网络</h3>
-                  <p>同一个服务维护公网和内网访问方式，适配家庭、公司和公网访问。</p>
+                  <p>
+                    同一个服务维护公网和内网访问方式，适配家庭、公司和公网访问。
+                  </p>
                 </div>
               </article>
               <article class="proof-item reveal">
                 <span class="proof-index">04</span>
                 <div>
                   <h3>补齐资产</h3>
-                  <p>站点标题、描述、图标、上传图标和背景色由图标服务统一补齐。</p>
+                  <p>
+                    站点标题、描述、图标、上传图标和背景色由图标服务统一补齐。
+                  </p>
                 </div>
               </article>
             </div>
@@ -1386,15 +1523,15 @@
           <div class="section-head reveal">
             <h2>组件负责承载信息，而不是填满页面。</h2>
             <p>
-              组件以真实尺寸进入首页：小组件负责关键状态，打开态负责详细操作。这里展示当前版本的真实渲染片段。
+              组件按首页和打开态分别处理：小组件负责关键状态，打开态负责详细操作。
             </p>
           </div>
           <div class="widget-showcase">
-            <div class="widget-gallery" aria-label="当前组件实际渲染图">
-              <figure class="widget-shot wide reveal">
+            <div class="widget-gallery" aria-label="StartDeck 组件展示">
+              <figure class="widget-shot weather reveal">
                 <img
                   src="./intro-assets/widget-weather-real.jpg"
-                  alt="天气组件实际渲染图"
+                  alt="天气组件界面"
                   width="990"
                   height="453"
                   loading="eager"
@@ -1402,10 +1539,10 @@
                 />
                 <figcaption>天气：实时天气、预报和打开态详情</figcaption>
               </figure>
-              <figure class="widget-shot wide reveal">
+              <figure class="widget-shot todo reveal">
                 <img
                   src="./intro-assets/widget-todo-real.jpg"
-                  alt="待办组件实际渲染图"
+                  alt="待办组件界面"
                   width="990"
                   height="993"
                   loading="eager"
@@ -1416,7 +1553,7 @@
               <figure class="widget-shot compact reveal">
                 <img
                   src="./intro-assets/widget-ai-usage-real.jpg"
-                  alt="AI 使用量组件实际渲染图"
+                  alt="AI 使用量组件界面"
                   width="450"
                   height="453"
                   loading="eager"
@@ -1427,7 +1564,7 @@
               <figure class="widget-shot compact reveal">
                 <img
                   src="./intro-assets/widget-tapd-real.jpg"
-                  alt="TAPD 缺陷组件实际渲染图"
+                  alt="TAPD 缺陷组件界面"
                   width="450"
                   height="453"
                   loading="eager"
@@ -1439,27 +1576,40 @@
             <div class="catalog-grid">
               <article class="catalog-card reveal">
                 <strong>时间与内容</strong>
-                <span>时钟、天气、日历、纪念日、今日诗词、今日英语、电影日历和壁纸。</span>
+                <span
+                  >时钟、天气、日历、纪念日、今日诗词、今日英语、电影日历和壁纸。</span
+                >
               </article>
               <article class="catalog-card reveal">
                 <strong>任务与工具</strong>
-                <span>待办、备忘录、番茄时钟、金额换算、今天吃什么和本机 IP。</span>
+                <span
+                  >待办、备忘录、番茄时钟、金额换算、今天吃什么和本机 IP。</span
+                >
               </article>
               <article class="catalog-card reveal">
                 <strong>研发工作流</strong>
-                <span>AI 使用量和 TAPD 缺陷组件适合把研发状态、额度和待处理事项放进首页。</span>
+                <span
+                  >AI 使用量和 TAPD
+                  缺陷组件适合把研发状态、额度和待处理事项放进首页。</span
+                >
               </article>
               <article class="catalog-card reveal">
                 <strong>系统组件</strong>
-                <span>Docker、系统状态、访客统计、版本检测和镜像更新检查服务服务器场景。</span>
+                <span
+                  >Docker、系统状态、访客统计、版本检测和镜像更新检查服务服务器场景。</span
+                >
               </article>
               <article class="catalog-card reveal">
                 <strong>自定义组件</strong>
-                <span>HTML、CSS、JS、iframe、代理请求和脚本生命周期让用户继续扩展。</span>
+                <span
+                  >HTML、CSS、JS、iframe、代理请求和脚本生命周期让用户继续扩展。</span
+                >
               </article>
               <article class="catalog-card reveal">
                 <strong>多尺寸适配</strong>
-                <span>组件支持不同网格尺寸和打开态面板，首页展示与深度操作分开处理。</span>
+                <span
+                  >组件支持不同网格尺寸和打开态面板，首页展示与深度操作分开处理。</span
+                >
               </article>
             </div>
           </div>
@@ -1471,14 +1621,16 @@
           <div class="section-head reveal">
             <h2>NAS 和家庭服务器需要的是入口，也是运行面板。</h2>
             <p>
-              StartDeck 的服务器能力不是“另一个后台页面”，而是把常看的运行状态收进首页：容器、CPU、内存、磁盘、IP、图标缓存和代理链路。
+              StartDeck
+              的服务器能力不是“另一个后台页面”，而是把常看的运行状态收进首页：容器、CPU、内存、磁盘、IP、图标缓存和代理链路。
             </p>
           </div>
           <div class="ops-grid">
             <article class="ops-panel reveal">
               <h3>系统状态一眼可见</h3>
               <p>
-                系统状态组件用于查看 CPU、内存、磁盘等基础资源；Docker 组件用于查看容器状态，并执行启动、停止、重启和镜像更新等动作。
+                系统状态组件用于查看 CPU、内存、磁盘等基础资源；Docker
+                组件用于查看容器状态，并执行启动、停止、重启和镜像更新等动作。
               </p>
               <div class="metric-rows" aria-label="系统状态示意">
                 <div class="metric-row">
@@ -1488,12 +1640,16 @@
                 </div>
                 <div class="metric-row">
                   <span>Memory</span>
-                  <span class="meter sky"><span style="width: 61%"></span></span>
+                  <span class="meter sky"
+                    ><span style="width: 61%"></span
+                  ></span>
                   <span>61%</span>
                 </div>
                 <div class="metric-row">
                   <span>Disk</span>
-                  <span class="meter amber"><span style="width: 72%"></span></span>
+                  <span class="meter amber"
+                    ><span style="width: 72%"></span
+                  ></span>
                   <span>72%</span>
                 </div>
               </div>
@@ -1529,7 +1685,8 @@
           <div class="section-head reveal">
             <h2>高级用户可以继续把自己的工具接进来。</h2>
             <p>
-              StartDeck 保留自托管项目该有的扩展入口：全局自定义 CSS、全局自定义 JS、自定义组件、iframe、后端代理和上传资源管理。
+              StartDeck 保留自托管项目该有的扩展入口：全局自定义 CSS、全局自定义
+              JS、自定义组件、iframe、后端代理和上传资源管理。
             </p>
           </div>
           <div class="extend-layout">
@@ -1560,15 +1717,23 @@ ctx.proxy("/api/custom/status").then(updatePanel);</code></pre>
               </article>
               <article class="extend-card reveal">
                 <strong>iframe 与代理请求</strong>
-                <span>嵌入内部服务，或通过后端代理解决跨域和网络访问问题。</span>
+                <span
+                  >嵌入内部服务，或通过后端代理解决跨域和网络访问问题。</span
+                >
               </article>
               <article class="extend-card reveal">
                 <strong>外观与资源管理</strong>
-                <span>壁纸、移动端壁纸、卡片背景、图标上传、图标底色和全局 CSS。</span>
+                <span
+                  >壁纸、移动端壁纸、卡片背景、图标上传、图标底色和全局
+                  CSS。</span
+                >
               </article>
               <article class="extend-card reveal">
                 <strong>凭据边界清晰</strong>
-                <span>天气、AI、TAPD 等外部服务凭据按服务端配置和本地存储边界管理。</span>
+                <span
+                  >天气、AI、TAPD
+                  等外部服务凭据按服务端配置和本地存储边界管理。</span
+                >
               </article>
             </div>
           </div>
@@ -1580,14 +1745,19 @@ ctx.proxy("/api/custom/status").then(updatePanel);</code></pre>
           <div class="section-head reveal">
             <h2>用 Docker 或 Debian/Ubuntu 脚本部署到自己的服务器。</h2>
             <p>
-              默认 Web 入口为 9001，图标服务为 9002。Docker 镜像内同时启动主服务与图标服务；Debian/Ubuntu 脚本适合非容器部署。
+              默认 Web 入口为 9001，图标服务为 9002。Docker
+              镜像内同时启动主服务与图标服务；Debian/Ubuntu 脚本适合非容器部署。
             </p>
           </div>
           <div class="deploy-grid">
             <article class="command-panel reveal">
               <div class="command-head">
                 <h3>Docker CLI</h3>
-                <button class="copy-button" type="button" data-copy="docker-command">
+                <button
+                  class="copy-button"
+                  type="button"
+                  data-copy="docker-command"
+                >
                   复制
                 </button>
               </div>
@@ -1611,7 +1781,11 @@ ctx.proxy("/api/custom/status").then(updatePanel);</code></pre>
             <article class="command-panel reveal">
               <div class="command-head">
                 <h3>Debian / Ubuntu</h3>
-                <button class="copy-button" type="button" data-copy="debian-command">
+                <button
+                  class="copy-button"
+                  type="button"
+                  data-copy="debian-command"
+                >
                   复制
                 </button>
               </div>
@@ -1629,7 +1803,8 @@ sudo ./deploy_debian.sh</code></pre>
           <div>
             <h2>把自托管服务的入口层，交给一个真正可维护的首页。</h2>
             <p>
-              StartDeck 适合 NAS、家庭服务器、开发环境和长期维护个人入口的用户。开源、自托管、数据在本地，部署后访问浏览器第一屏即可开始使用。
+              StartDeck 适合
+              NAS、家庭服务器、开发环境和长期维护个人入口的用户。开源、自托管、数据在本地，部署后访问浏览器第一屏即可开始使用。
             </p>
           </div>
           <a
@@ -1650,11 +1825,20 @@ sudo ./deploy_debian.sh</code></pre>
 
     <footer>
       <div class="container footer-inner">
-        <span>StartDeck · AGPLv3 · 交流群 QQ 613835409</span>
+        <span>StartDeck · AGPLv3</span>
         <div class="footer-links">
-          <a href="https://github.com/appdev/StartDeck" target="_blank" rel="noreferrer">GitHub</a>
-          <a href="https://gitee.com/gjx0808/StartDeck" target="_blank" rel="noreferrer">Gitee</a>
-          <a href="https://hub.docker.com/r/apkdv/startdeck" target="_blank" rel="noreferrer">Docker</a>
+          <a
+            href="https://github.com/appdev/StartDeck"
+            target="_blank"
+            rel="noreferrer"
+            >GitHub</a
+          >
+          <a
+            href="https://hub.docker.com/r/apkdv/startdeck"
+            target="_blank"
+            rel="noreferrer"
+            >Docker</a
+          >
         </div>
       </div>
     </footer>

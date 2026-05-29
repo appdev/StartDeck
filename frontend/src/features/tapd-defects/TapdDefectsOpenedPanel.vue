@@ -78,6 +78,13 @@ const reopenedTotal = computed(
     currentItems.value.filter((item) => isTapdReopenedStatus(item.status))
       .length,
 );
+const canGoPreviousPage = computed(() => !needsConfig.value && page.value > 1);
+const canGoNextPage = computed(() => {
+  if (needsConfig.value) return false;
+  const visibleTotal = summary.value?.visibleTotal ?? 0;
+  const limit = data.value.query.limit;
+  return visibleTotal > page.value * limit;
+});
 
 const subtitle = computed(() => {
   if (needsConfig.value) return "请配置相关参数";
@@ -328,7 +335,7 @@ onMounted(() => {
           <span>第 {{ page }} 页 · 每页 {{ data.query.limit }}</span>
           <button
             type="button"
-            :disabled="page <= 1 || busy"
+            :disabled="!canGoPreviousPage || busy"
             @click.stop="refreshDefects(page - 1)"
           >
             <ChevronLeft :size="16" />
@@ -336,7 +343,7 @@ onMounted(() => {
           </button>
           <button
             type="button"
-            :disabled="busy"
+            :disabled="!canGoNextPage || busy"
             @click.stop="refreshDefects(page + 1)"
           >
             下一页

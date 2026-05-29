@@ -1,17 +1,16 @@
 # StartDeck
 
 [![GitHub](https://img.shields.io/badge/GitHub-StartDeck-181717?style=flat&logo=github&logoColor=white)](https://github.com/appdev/StartDeck)
-[![Gitee](https://img.shields.io/badge/Gitee-StartDeck-C71D23?style=flat&logo=gitee&logoColor=white)](https://gitee.com/gjx0808/StartDeck)
 [![Docker Image](https://img.shields.io/badge/Docker-apkdv%2Fstartdeck-2496ED?style=flat&logo=docker&logoColor=white)](https://hub.docker.com/r/apkdv/startdeck)
 [![License](https://img.shields.io/badge/License-AGPL--3.0-blue.svg)](LICENSE)
 
 StartDeck 是一个面向 NAS、家庭服务器和个人工作流的自托管浏览器起始页。它把常用站点、内网服务、系统状态、Docker 管理、天气日历、任务备忘和可扩展组件整合到一个可控、可迁移、可长期运行的个人仪表盘中。
 
-![StartDeck 当前首页实际渲染图](frontend/public/intro-assets/startdeck-home-real.jpg)
+![StartDeck 首页工作台](frontend/public/intro-assets/startdeck-home-real.jpg)
 
 ## 为什么选择 StartDeck
 
-传统浏览器首页通常只解决“入口收藏”。StartDeck 更关注自托管环境里的真实使用场景：服务很多、地址分内外网、图标和元数据需要自动补齐、系统状态需要一眼可见、个人工具和研发信息也希望留在同一个工作台里。
+传统浏览器首页通常只解决“入口收藏”。StartDeck 更关注自托管环境里的日常使用场景：服务很多、地址分内外网、图标和元数据需要自动补齐、系统状态需要一眼可见、个人工具和研发信息也希望留在同一个工作台里。
 
 StartDeck 的目标是成为每天打开浏览器时的第一个生产力界面：
 
@@ -39,11 +38,11 @@ StartDeck 的目标是成为每天打开浏览器时的第一个生产力界面�
 
 ## 当前界面
 
-以下图片来自当前版本的真实页面与组件渲染。
+首页和组件围绕入口、状态与日常操作展开。
 
-| 天气组件                                                                    | 待办组件                                                                 | AI 使用量                                                                         | TAPD 缺陷                                                                     |
-| --------------------------------------------------------------------------- | ------------------------------------------------------------------------ | --------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
-| ![天气组件实际渲染图](frontend/public/intro-assets/widget-weather-real.jpg) | ![待办组件实际渲染图](frontend/public/intro-assets/widget-todo-real.jpg) | ![AI 使用量组件实际渲染图](frontend/public/intro-assets/widget-ai-usage-real.jpg) | ![TAPD 缺陷组件实际渲染图](frontend/public/intro-assets/widget-tapd-real.jpg) |
+| 天气组件                                                              | 待办组件                                                           | AI 使用量                                                                   | TAPD 缺陷                                                               |
+| --------------------------------------------------------------------- | ------------------------------------------------------------------ | --------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| ![天气组件界面](frontend/public/intro-assets/widget-weather-real.jpg) | ![待办组件界面](frontend/public/intro-assets/widget-todo-real.jpg) | ![AI 使用量组件界面](frontend/public/intro-assets/widget-ai-usage-real.jpg) | ![TAPD 缺陷组件界面](frontend/public/intro-assets/widget-tapd-real.jpg) |
 
 ## 架构
 
@@ -360,11 +359,9 @@ docker compose up --build
 
 对于涉及页面、组件、拖拽、移动端布局或浏览器交互的改动，建议额外执行 Playwright 或浏览器手工验收。
 
-## 社区与支持
+## 项目地址
 
 - GitHub: <https://github.com/appdev/StartDeck>
-- Gitee: <https://gitee.com/gjx0808/StartDeck>
-- QQ 群：613835409
 
 ## License
 

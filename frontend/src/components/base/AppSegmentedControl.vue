@@ -5,7 +5,7 @@ export interface AppSegmentedOption {
   disabled?: boolean;
 }
 
-const props = defineProps<{
+defineProps<{
   modelValue: string | number;
   options: ReadonlyArray<AppSegmentedOption>;
 }>();

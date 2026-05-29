@@ -643,7 +643,6 @@ export const useSyncStore = defineStore("sync", () => {
         cacheStore.loadServerSnapshot(
           handleDataUpdate,
           widgetsStore.updateLastSavedLayout,
-          saveStore.markDirty,
         );
       for (let attempt = 0; attempt < 3; attempt++) {
         try {
@@ -689,11 +688,7 @@ export const useSyncStore = defineStore("sync", () => {
           visibilityVersionCheckBound = true;
           document.addEventListener("visibilitychange", () => {
             if (document.visibilityState === "visible") {
-              saveStore.checkVersionAfterActivation(
-                auth.isLogged,
-                dataVersion.value,
-                fetchVersionOnly,
-              );
+              saveStore.checkVersionAfterActivation(auth.isLogged);
               void replayOfflineQueueIfNeeded();
             }
           });

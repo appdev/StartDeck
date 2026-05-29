@@ -33,10 +33,7 @@ import {
   ITAB_POMODORO_CATALOG_ID,
   ITAB_POMODORO_WIDGET_TYPE,
 } from "@/features/itab-pomodoro/itabPomodoroTypes";
-import {
-  ITAB_ANNIVERSARY_CATALOG_ID,
-  ITAB_ANNIVERSARY_WIDGET_TYPE,
-} from "@/features/itab-anniversary/itabAnniversaryTypes";
+import { ITAB_ANNIVERSARY_WIDGET_TYPE } from "@/features/itab-anniversary/itabAnniversaryTypes";
 import {
   ITAB_MOVIE_CALENDAR_CATALOG_ID,
   ITAB_MOVIE_CALENDAR_WIDGET_TYPE,

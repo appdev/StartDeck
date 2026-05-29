@@ -1,4 +1,4 @@
-import { ref, watch } from "vue";
+import { ref } from "vue";
 import { defineStore } from "pinia";
 import pako from "pako";
 import * as offlineQueue from "@/utils/offlineQueue";
@@ -301,11 +301,7 @@ export const useSaveStore = defineStore("save", () => {
     }
   };
 
-  const checkVersionAfterActivation = async (
-    isLogged: boolean,
-    _dataVersion: number,
-    _fetchVersionOnly: () => Promise<number>,
-  ) => {
+  const checkVersionAfterActivation = async (isLogged: boolean) => {
     if (!isLogged || !heartbeatLostSinceLastVisible) return;
     heartbeatLostSinceLastVisible = false;
     syncConfirmModal.value = { show: false, serverVersion: 0 };

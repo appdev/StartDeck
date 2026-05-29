@@ -36,7 +36,6 @@ const applyAiUsagePreviewState = (widget: WidgetConfig) => {
     !Array.isArray(widget.data)
       ? widget.data
       : {};
-  const query = (data as { query?: unknown }).query;
   widget.data = {
     ...data,
     providerId: "openai",
@@ -68,6 +67,7 @@ const applyTapdDefectsPreviewState = (widget: WidgetConfig) => {
     !Array.isArray(widget.data)
       ? widget.data
       : {};
+  const queryData = (data as { query?: unknown }).query;
   widget.data = {
     ...data,
     catalogPreview: true,
@@ -96,8 +96,10 @@ const applyTapdDefectsPreviewState = (widget: WidgetConfig) => {
       },
     ],
     query: {
-      ...(query && typeof query === "object" && !Array.isArray(query)
-        ? query
+      ...(queryData &&
+      typeof queryData === "object" &&
+      !Array.isArray(queryData)
+        ? queryData
         : {}),
       currentUser: "tapd_user",
       limit: 100,

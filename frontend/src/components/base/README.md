@@ -28,7 +28,6 @@ This directory owns the non-home shared UI primitives and shells for the macOS r
 | `BlockingProgressOverlay.vue` | Shared blocking progress surface                                                                                  | For import/restore/backfill flows                    |
 | `ToastHost.vue`               | Shared transient feedback host                                                                                    | For app-shell and modal success/error feedback       |
 | `StatusBanner.vue`            | Shared non-blocking inline banner                                                                                 | For warnings and persistent notices                  |
-| `PopoverSurface.vue`          | Shared popover shell                                                                                              | For anchored lightweight flows                       |
 | `ContextMenuSurface.vue`      | Shared context-menu shell                                                                                         | For right-click / long-press command lists           |
 | `useDirtyStateGuard.ts`       | Shared ordinary-dialog dirty-close escalation                                                                     | Current first consumer is `EditModal.vue`            |
 

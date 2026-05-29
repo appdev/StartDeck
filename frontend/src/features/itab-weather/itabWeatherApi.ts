@@ -44,7 +44,7 @@ const requestItabWeather = async <T>(
 
 export const fetchItabWeatherLocation = (signal?: AbortSignal) =>
   requestItabWeather<ItabWeatherLocationResponse>(
-    "/api/itab/weather/location",
+    "/api/weather/location",
     {},
     signal,
   );
@@ -54,7 +54,7 @@ export const searchItabWeatherCities = (
   signal?: AbortSignal,
 ) =>
   requestItabWeather<ItabWeatherCitySearchItem[]>(
-    "/api/itab/weather/search",
+    "/api/weather/search",
     { keyword },
     signal,
   );
@@ -66,7 +66,7 @@ export const fetchItabWeatherCurrent = (
   signal?: AbortSignal,
 ) =>
   requestItabWeather<ItabWeatherCurrentBundle>(
-    "/api/itab/weather/current",
+    "/api/weather/current",
     { location, type, refresh },
     signal,
   );

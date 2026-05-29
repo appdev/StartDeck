@@ -166,7 +166,6 @@ const effectiveIconShape = computed(
   () => activeGroup.value?.iconShape || store.appConfig.iconShape || "circle",
 );
 const isIconHidden = computed(() => effectiveIconShape.value === "hidden");
-const isIconShapeNone = computed(() => effectiveIconShape.value === "none");
 const iconBackgroundResolution = computed(() =>
   resolveIconBackground(form.value, {
     fallback: "bg-gray-100",
@@ -474,23 +473,12 @@ const processIconError = () => {
   form.value.icon = "";
 };
 
-const handleIconError = () => {
-  isImgError.value = true;
-  // 如果正在输入，不要打断用户
-  if (iconInputFocused.value) return;
-  processIconError();
-};
-
 const onIconInputBlur = () => {
   iconInputFocused.value = false;
   // 失去焦点时，如果有错误，尝试修正
   if (isImgError.value) {
     processIconError();
   }
-};
-
-const onImgLoad = () => {
-  isImgError.value = false;
 };
 
 const saveIconToLocal = ref(true);
@@ -695,7 +683,7 @@ const submit = async () => {
               <IconShape
                 v-if="previewIcon && !isIconHidden"
                 :shape="effectiveIconShape"
-                :size="72"
+                :size="60"
                 :imgScale="form.iconSize"
                 :bgClass="iconBackgroundResolution.color"
                 :icon="previewIcon"
@@ -1398,7 +1386,7 @@ const submit = async () => {
 }
 
 :global(.edit-card-panel) {
-  width: min(1248px, calc(100vw - 48px));
+  width: min(1000px, calc(100vw - 32px));
 }
 
 :global(.edit-card-panel:focus),
@@ -1417,16 +1405,16 @@ const submit = async () => {
 }
 
 :global(.edit-card-surface > .sd-window-bar) {
-  min-height: 66px;
+  min-height: 56px;
   border-bottom-color: var(--sd-shell-border);
   background: var(--sd-shell-surface-muted);
-  padding: 0.9rem 1.35rem;
+  padding: 0.68rem 1rem;
 }
 
 :global(.edit-card-surface .sd-window-title-layer) {
   align-items: center;
   justify-content: flex-start;
-  padding: 0 96px 0 1.35rem;
+  padding: 0 82px 0 1rem;
 }
 
 :global(.edit-card-surface .sd-window-title-stack) {
@@ -1437,7 +1425,7 @@ const submit = async () => {
 
 :global(.edit-card-surface .sd-window-title) {
   color: var(--sd-shell-text-primary);
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 800;
   letter-spacing: 0;
 }
@@ -1452,8 +1440,8 @@ const submit = async () => {
 }
 
 :global(.edit-card-body) {
-  height: min(750px, calc(100dvh - 138px));
-  max-height: min(750px, calc(100dvh - 138px));
+  height: min(480px, calc(100dvh - 120px));
+  max-height: min(480px, calc(100dvh - 120px));
   overflow: hidden;
   padding: 0;
   color: var(--sd-theme-edit-modal-text-01);
@@ -1464,37 +1452,37 @@ const submit = async () => {
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 14px;
+  gap: 10px;
   border-top-color: var(--sd-theme-edit-modal-border-01);
   background: var(--sd-theme-edit-modal-surface-03);
-  padding: 14px 24px;
+  padding: 10px 18px;
 }
 
 .edit-card-header-actions {
   display: inline-flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
 }
 
 .edit-card-icon-editor {
   display: grid;
-  grid-template-columns: 80px minmax(0, 1fr);
+  grid-template-columns: 68px minmax(0, 1fr);
   align-items: start;
-  gap: 16px;
-  margin-bottom: 16px;
+  gap: 12px;
+  margin-bottom: 12px;
 }
 
 .edit-card-icon-preview {
   display: flex;
-  width: 80px;
-  height: 80px;
+  width: 68px;
+  height: 68px;
   align-items: center;
   justify-content: center;
   overflow: hidden;
   border: 1px solid var(--sd-theme-edit-modal-border-02);
-  border-radius: 16px;
+  border-radius: 14px;
   background: var(--sd-theme-edit-modal-surface-04);
-  box-shadow: 0 8px 18px var(--sd-theme-edit-modal-shadow-01);
+  box-shadow: 0 6px 14px var(--sd-theme-edit-modal-shadow-01);
   cursor: pointer;
   transition:
     border-color 0.16s ease,
@@ -1513,19 +1501,19 @@ const submit = async () => {
 .edit-card-icon-controls {
   display: grid;
   min-width: 0;
-  gap: 12px;
+  gap: 8px;
 }
 
 .edit-card-link-match-row {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
 }
 
 .edit-card-smart-match-button {
-  min-height: 42px;
-  padding: 0 14px;
+  min-height: 36px;
+  padding: 0 12px;
   white-space: nowrap;
 }
 
@@ -1533,14 +1521,14 @@ const submit = async () => {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
 }
 
 .edit-card-icon-url-row {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
 }
 
 .edit-card-icon-url-input {
@@ -1548,7 +1536,7 @@ const submit = async () => {
 }
 
 .edit-card-icon-candidate-button {
-  min-width: 118px;
+  min-width: 104px;
   white-space: nowrap;
 }
 
@@ -1578,7 +1566,7 @@ const submit = async () => {
 
 :global(.edit-card-surface .sd-label) {
   display: block;
-  margin-bottom: 7px;
+  margin-bottom: 5px;
   color: var(--sd-theme-edit-modal-text-04);
   font-size: 12px;
   font-weight: 800;
@@ -1688,16 +1676,18 @@ const submit = async () => {
   display: grid;
   height: 100%;
   min-height: 0;
-  grid-template-columns: 438px minmax(0, 1fr);
+  grid-template-columns: 340px minmax(0, 1fr);
 }
 
 .edit-card-preview-pane {
   display: flex;
   min-width: 0;
+  min-height: 0;
   flex-direction: column;
-  gap: 20px;
+  gap: 12px;
+  overflow-y: auto;
   border-right: 1px solid var(--sd-theme-edit-modal-border-01);
-  padding: 28px 24px 24px;
+  padding: 18px 18px 16px;
   background: color-mix(
     in srgb,
     var(--sd-shell-surface-muted) 42%,
@@ -1708,17 +1698,17 @@ const submit = async () => {
 .edit-card-preview-title,
 .edit-card-metadata-header {
   color: var(--sd-theme-edit-modal-text-01);
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 800;
-  line-height: 22px;
+  line-height: 20px;
 }
 
 .edit-card-preview-card {
   position: relative;
-  min-height: 214px;
+  min-height: 158px;
   overflow: hidden;
   border: 1px solid var(--sd-theme-edit-modal-border-03);
-  border-radius: 12px;
+  border-radius: 10px;
   background:
     radial-gradient(
       circle at 70% 30%,
@@ -1730,7 +1720,7 @@ const submit = async () => {
       var(--sd-theme-edit-modal-surface-08),
       var(--sd-theme-edit-modal-surface-04)
     );
-  box-shadow: 0 16px 36px color-mix(in srgb, black 10%, transparent);
+  box-shadow: 0 10px 24px color-mix(in srgb, black 9%, transparent);
 }
 
 .edit-card-preview-card::before,
@@ -1754,20 +1744,20 @@ const submit = async () => {
 
 .edit-card-preview-open {
   position: absolute;
-  top: 24px;
-  right: 24px;
+  top: 16px;
+  right: 16px;
   z-index: 2;
   display: inline-flex;
-  width: 26px;
-  height: 26px;
+  width: 22px;
+  height: 22px;
   align-items: center;
   justify-content: center;
   color: var(--sd-theme-edit-modal-text-03);
 }
 
 .edit-card-preview-open svg {
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
 }
 
 .edit-card-preview-main {
@@ -1775,25 +1765,25 @@ const submit = async () => {
   z-index: 1;
   display: flex;
   align-items: center;
-  gap: 26px;
-  padding: 42px 26px;
+  gap: 18px;
+  padding: 32px 22px;
 }
 
 .edit-card-preview-icon {
   display: flex;
-  width: 104px;
-  height: 104px;
+  width: 78px;
+  height: 78px;
   flex: 0 0 auto;
   align-items: center;
   justify-content: center;
   overflow: hidden;
   border: 1px solid color-mix(in srgb, var(--sd-shell-border) 70%, transparent);
-  border-radius: 18px;
+  border-radius: 14px;
   background: var(--sd-theme-edit-modal-surface-08);
   color: var(--sd-theme-edit-modal-text-02);
-  font-size: 40px;
+  font-size: 30px;
   font-weight: 800;
-  box-shadow: 0 16px 34px color-mix(in srgb, black 12%, transparent);
+  box-shadow: 0 10px 24px color-mix(in srgb, black 10%, transparent);
 }
 
 .edit-card-preview-copy {
@@ -1803,9 +1793,9 @@ const submit = async () => {
 .edit-card-preview-name {
   overflow: hidden;
   color: var(--sd-theme-edit-modal-text-01);
-  font-size: 25px;
+  font-size: 21px;
   font-weight: 800;
-  line-height: 32px;
+  line-height: 27px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -1815,11 +1805,11 @@ const submit = async () => {
   display: flex;
   min-width: 0;
   align-items: center;
-  gap: 8px;
-  margin-top: 10px;
+  gap: 6px;
+  margin-top: 6px;
   color: var(--sd-theme-edit-modal-text-03);
-  font-size: 14px;
-  line-height: 20px;
+  font-size: 12px;
+  line-height: 17px;
 }
 
 .edit-card-preview-public {
@@ -1828,8 +1818,8 @@ const submit = async () => {
 }
 
 .edit-card-preview-public svg {
-  width: 17px;
-  height: 17px;
+  width: 14px;
+  height: 14px;
 }
 
 .edit-card-preview-url {
@@ -1842,19 +1832,19 @@ const submit = async () => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: 8px;
 }
 
 .edit-card-metadata-badge {
-  max-width: 205px;
+  max-width: 160px;
   overflow: hidden;
-  border-radius: 8px;
+  border-radius: 7px;
   background: color-mix(in srgb, var(--sd-state-success) 14%, transparent);
   color: var(--sd-state-success);
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 800;
-  line-height: 22px;
-  padding: 0 10px;
+  line-height: 20px;
+  padding: 0 8px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -1867,18 +1857,18 @@ const submit = async () => {
 .edit-card-metadata-list {
   overflow: hidden;
   border: 1px solid var(--sd-theme-edit-modal-border-03);
-  border-radius: 12px;
+  border-radius: 10px;
   background: var(--sd-theme-edit-modal-surface-08);
 }
 
 .edit-card-metadata-row {
   display: grid;
-  grid-template-columns: 24px 58px minmax(0, 1fr);
+  grid-template-columns: 20px 44px minmax(0, 1fr);
   align-items: center;
-  gap: 12px;
-  min-height: 54px;
+  gap: 9px;
+  min-height: 42px;
   border-bottom: 1px solid var(--sd-theme-edit-modal-border-03);
-  padding: 9px 14px;
+  padding: 7px 12px;
 }
 
 .edit-card-metadata-row:last-child {
@@ -1887,21 +1877,21 @@ const submit = async () => {
 
 .edit-card-metadata-icon {
   display: inline-flex;
-  width: 22px;
-  height: 22px;
+  width: 18px;
+  height: 18px;
   align-items: center;
   justify-content: center;
   color: var(--sd-theme-edit-modal-text-03);
 }
 
 .edit-card-metadata-icon svg {
-  width: 18px;
-  height: 18px;
+  width: 15px;
+  height: 15px;
 }
 
 .edit-card-metadata-label {
   color: var(--sd-theme-edit-modal-text-03);
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 800;
 }
 
@@ -1909,17 +1899,17 @@ const submit = async () => {
   min-width: 0;
   overflow: hidden;
   color: var(--sd-theme-edit-modal-text-02);
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
-  line-height: 18px;
+  line-height: 17px;
   text-overflow: ellipsis;
 }
 
 .edit-card-metadata-note {
   margin-top: auto;
   color: var(--sd-theme-edit-modal-text-03);
-  font-size: 12px;
-  line-height: 20px;
+  font-size: 11px;
+  line-height: 18px;
 }
 
 .edit-card-form-pane {
@@ -1928,7 +1918,7 @@ const submit = async () => {
   flex-direction: column;
   gap: 0;
   overflow-y: auto;
-  padding: 20px 18px 24px;
+  padding: 14px 14px 18px;
   scrollbar-gutter: stable;
   scrollbar-color: var(--sd-scrollbar-thumb) var(--sd-scrollbar-track);
   scrollbar-width: thin;
@@ -1950,11 +1940,11 @@ const submit = async () => {
 
 .edit-card-section {
   border-bottom: 1px solid var(--sd-theme-edit-modal-border-01);
-  padding: 20px 12px;
+  padding: 14px 8px;
 }
 
 .edit-card-section:first-child {
-  padding-top: 4px;
+  padding-top: 2px;
 }
 
 .edit-card-section:last-child {
@@ -1964,44 +1954,44 @@ const submit = async () => {
 .edit-card-section-heading {
   display: flex;
   align-items: center;
-  gap: 12px;
-  margin-bottom: 16px;
+  gap: 8px;
+  margin-bottom: 10px;
   color: var(--sd-theme-edit-modal-text-01);
-  font-size: 17px;
+  font-size: 15px;
   font-weight: 800;
-  line-height: 24px;
+  line-height: 21px;
 }
 
 .edit-card-section-heading small {
   color: var(--sd-theme-edit-modal-text-03);
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
 }
 
 .edit-card-section-icon {
   display: inline-flex;
-  width: 22px;
-  height: 22px;
+  width: 18px;
+  height: 18px;
   align-items: center;
   justify-content: center;
   color: var(--sd-state-info);
 }
 
 .edit-card-section-icon svg {
-  width: 20px;
-  height: 20px;
+  width: 17px;
+  height: 17px;
 }
 
 .edit-card-field-grid {
   display: grid;
-  grid-template-columns: 118px minmax(0, 1fr);
+  grid-template-columns: 92px minmax(0, 1fr);
   align-items: center;
-  gap: 14px;
+  gap: 10px;
 }
 
 .edit-card-field-grid + .edit-card-field-grid,
 .edit-card-fetch-state + .edit-card-field-grid {
-  margin-top: 16px;
+  margin-top: 10px;
 }
 
 .edit-card-field-grid.is-link-row {
@@ -2011,12 +2001,12 @@ const submit = async () => {
 .edit-card-fetch-state {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin: 10px 0 0 118px;
+  gap: 6px;
+  margin: 7px 0 0 92px;
   color: var(--sd-state-success);
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 800;
-  line-height: 18px;
+  line-height: 17px;
 }
 
 .edit-card-fetch-state.is-muted {
@@ -2026,31 +2016,31 @@ const submit = async () => {
 
 .edit-card-fetch-dot {
   display: inline-flex;
-  width: 16px;
-  height: 16px;
+  width: 14px;
+  height: 14px;
   align-items: center;
   justify-content: center;
   border: 1px solid currentColor;
   border-radius: 999px;
-  font-size: 11px;
+  font-size: 10px;
   line-height: 1;
 }
 
 .edit-card-add-links-button {
-  width: calc(100% - 118px);
-  margin: 18px 0 0 118px;
+  width: calc(100% - 92px);
+  margin: 12px 0 0 92px;
   border-style: dashed;
   background: transparent;
 }
 
 .edit-card-extra-links {
   display: grid;
-  gap: 12px;
-  margin: 16px 0 0 118px;
+  gap: 10px;
+  margin: 12px 0 0 92px;
   border: 1px solid var(--sd-theme-edit-modal-border-03);
-  border-radius: 12px;
+  border-radius: 10px;
   background: var(--sd-theme-edit-modal-surface-08);
-  padding: 12px;
+  padding: 10px;
 }
 
 .edit-card-extra-links-head {
@@ -2098,24 +2088,24 @@ const submit = async () => {
 
 .edit-card-backup-list {
   display: grid;
-  gap: 8px;
+  gap: 7px;
 }
 
 .edit-card-backup-row {
   display: grid;
-  grid-template-columns: minmax(120px, 0.52fr) minmax(0, 1fr) 34px;
-  gap: 10px;
+  grid-template-columns: minmax(110px, 0.45fr) minmax(0, 1fr) 30px;
+  gap: 8px;
   align-items: center;
 }
 
 .edit-card-remove-link {
   display: inline-flex;
-  width: 34px;
-  height: 34px;
+  width: 30px;
+  height: 30px;
   align-items: center;
   justify-content: center;
   color: var(--sd-theme-edit-modal-text-06);
-  font-size: 24px;
+  font-size: 22px;
   line-height: 1;
 }
 
@@ -2125,13 +2115,13 @@ const submit = async () => {
 
 .edit-card-basic-row {
   display: grid;
-  grid-template-columns: minmax(0, 430px) minmax(140px, 1fr);
+  grid-template-columns: minmax(0, 390px) minmax(116px, 1fr);
   align-items: end;
-  gap: 18px;
+  gap: 12px;
 }
 
 .edit-card-basic-row .edit-card-field-grid {
-  grid-template-columns: 64px minmax(0, 1fr);
+  grid-template-columns: 48px minmax(0, 1fr);
 }
 
 .edit-card-group-field {
@@ -2141,18 +2131,18 @@ const submit = async () => {
 
 .edit-card-public-control {
   display: flex;
-  min-height: 44px;
+  min-height: 36px;
   align-items: center;
   justify-content: flex-end;
-  gap: 14px;
+  gap: 10px;
   color: var(--sd-theme-edit-modal-text-01);
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 800;
 }
 
 .edit-card-description-details,
 .edit-card-icon-url-details {
-  margin-top: 14px;
+  margin-top: 10px;
   color: var(--sd-theme-edit-modal-text-03);
   font-size: 12px;
 }
@@ -2165,13 +2155,13 @@ const submit = async () => {
 
 .edit-card-description-details .sd-textarea,
 .edit-card-icon-url-row {
-  margin-top: 10px;
+  margin-top: 8px;
 }
 
 .edit-card-icon-appearance-grid {
   display: grid;
-  grid-template-columns: 140px 190px minmax(0, 1fr);
-  gap: 18px;
+  grid-template-columns: 116px 158px minmax(0, 1fr);
+  gap: 12px;
   align-items: start;
 }
 
@@ -2179,13 +2169,13 @@ const submit = async () => {
 .edit-card-icon-scale,
 .edit-card-icon-bg-control {
   display: grid;
-  gap: 10px;
+  gap: 8px;
   min-width: 0;
 }
 
 .edit-card-control-label {
   color: var(--sd-theme-edit-modal-text-01);
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 800;
 }
 
@@ -2195,33 +2185,33 @@ const submit = async () => {
 
 .edit-card-percent {
   width: fit-content;
-  min-width: 58px;
+  min-width: 52px;
   border: 1px solid var(--sd-theme-edit-modal-border-03);
-  border-radius: 8px;
+  border-radius: 7px;
   background: var(--sd-theme-edit-modal-surface-08);
   color: var(--sd-theme-edit-modal-text-01);
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 800;
-  line-height: 32px;
-  padding: 0 10px;
+  line-height: 28px;
+  padding: 0 8px;
   text-align: center;
 }
 
 .edit-card-background-mode {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  width: 190px;
+  width: 158px;
   border: 1px solid var(--sd-theme-edit-modal-border-03);
-  border-radius: 8px;
+  border-radius: 7px;
   background: var(--sd-theme-edit-modal-surface-04);
   padding: 2px;
 }
 
 .edit-card-background-mode button {
-  min-height: 32px;
+  min-height: 28px;
   border-radius: 6px;
   color: var(--sd-theme-edit-modal-text-03);
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 800;
 }
 
@@ -2235,15 +2225,15 @@ const submit = async () => {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
 }
 
 .edit-card-color-swatch,
 .edit-card-color-input {
-  width: 28px;
-  height: 28px;
+  width: 24px;
+  height: 24px;
   border: 1px solid var(--sd-theme-edit-modal-border-03);
-  border-radius: 7px;
+  border-radius: 6px;
 }
 
 .edit-card-color-swatch.is-active {
@@ -2260,8 +2250,8 @@ const submit = async () => {
 .edit-card-icon-url-row {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
-  gap: 10px;
-  margin-top: 10px;
+  gap: 8px;
+  margin-top: 8px;
 }
 
 .edit-card-icon-url-input {
@@ -2274,33 +2264,33 @@ const submit = async () => {
 
 .edit-card-background-uploader {
   border: 1px dashed var(--sd-theme-edit-modal-border-03);
-  border-radius: 12px;
+  border-radius: 10px;
   background: var(--sd-theme-edit-modal-surface-08);
-  padding: 8px 10px;
+  padding: 6px 8px;
   text-align: center;
 }
 
 .edit-card-background-uploader :deep(.h-32) {
-  height: 44px;
+  height: 36px;
   border-width: 1px;
-  border-radius: 10px;
+  border-radius: 8px;
 }
 
 .edit-card-background-uploader :deep(.text-2xl) {
   margin-bottom: 0;
-  font-size: 20px;
-  line-height: 20px;
+  font-size: 18px;
+  line-height: 18px;
 }
 
 .edit-card-background-uploader :deep(.text-xs) {
-  font-size: 12px;
-  line-height: 16px;
+  font-size: 11px;
+  line-height: 15px;
 }
 
 .edit-card-background-uploader p {
-  margin: 4px 0 0;
+  margin: 3px 0 0;
   color: var(--sd-theme-edit-modal-text-03);
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 700;
 }
 
@@ -2308,17 +2298,17 @@ const submit = async () => {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr)) auto;
   align-items: end;
-  gap: 14px;
-  margin-top: 14px;
+  gap: 10px;
+  margin-top: 10px;
   border: 1px solid var(--sd-theme-edit-modal-border-03);
-  border-radius: 12px;
+  border-radius: 10px;
   background: var(--sd-theme-edit-modal-surface-08);
-  padding: 12px;
+  padding: 10px;
 }
 
 .edit-card-background-controls label {
   display: grid;
-  gap: 8px;
+  gap: 6px;
   color: var(--sd-theme-edit-modal-text-03);
   font-size: 12px;
   font-weight: 800;
@@ -2326,7 +2316,7 @@ const submit = async () => {
 
 .edit-card-background-controls label strong {
   color: var(--sd-theme-edit-modal-text-01);
-  font-size: 13px;
+  font-size: 12px;
 }
 
 .edit-card-background-controls button {
@@ -2336,14 +2326,14 @@ const submit = async () => {
 
 :global(.edit-card-surface .edit-card-form-pane .sd-label) {
   margin-bottom: 0;
-  font-size: 13px;
-  line-height: 44px;
+  font-size: 12px;
+  line-height: 36px;
 }
 
 :global(.edit-card-surface .sd-input),
 :global(.edit-card-surface .sd-textarea),
 :global(.edit-card-surface .sd-select) {
-  min-height: 44px;
+  min-height: 36px;
 }
 
 @media (max-width: 767px) {
@@ -2357,14 +2347,14 @@ const submit = async () => {
 
   :global(.edit-card-surface > .sd-window-bar) {
     align-items: flex-start;
-    min-height: 68px;
-    padding: 13px 14px 10px;
+    min-height: 60px;
+    padding: 10px 12px 8px;
   }
 
   :global(.edit-card-surface .sd-window-title-layer) {
     align-items: flex-start;
     justify-content: flex-start;
-    padding: 10px 78px 0 14px;
+    padding: 8px 72px 0 12px;
   }
 
   :global(.edit-card-surface .sd-window-title-stack) {
@@ -2382,15 +2372,15 @@ const submit = async () => {
   }
 
   .edit-card-icon-editor {
-    grid-template-columns: 72px minmax(0, 1fr);
-    gap: 12px;
-    margin-bottom: 14px;
+    grid-template-columns: 64px minmax(0, 1fr);
+    gap: 10px;
+    margin-bottom: 12px;
   }
 
   .edit-card-icon-preview {
-    width: 72px;
-    height: 72px;
-    border-radius: 15px;
+    width: 64px;
+    height: 64px;
+    border-radius: 13px;
   }
 
   .edit-card-icon-toolbar {
@@ -2417,8 +2407,8 @@ const submit = async () => {
 
   .edit-card-window-controls {
     position: absolute;
-    top: 16px;
-    right: 14px;
+    top: 14px;
+    right: 12px;
   }
 
   .edit-card-window-controls :deep(.sd-window-control-dot) {
@@ -2427,8 +2417,8 @@ const submit = async () => {
   }
 
   :global(.edit-card-body) {
-    height: min(760px, calc(100dvh - 132px));
-    max-height: min(760px, calc(100dvh - 132px));
+    height: min(560px, calc(100dvh - 164px));
+    max-height: min(560px, calc(100dvh - 164px));
   }
 
   .edit-card-layout {
@@ -2440,37 +2430,37 @@ const submit = async () => {
     order: 2;
     border-right: 0;
     border-bottom: 1px solid var(--sd-theme-edit-modal-border-01);
-    padding: 18px 14px;
+    padding: 14px 12px;
   }
 
   .edit-card-preview-card {
-    min-height: 176px;
+    min-height: 148px;
   }
 
   .edit-card-preview-main {
-    gap: 16px;
-    padding: 32px 18px;
+    gap: 14px;
+    padding: 24px 16px;
   }
 
   .edit-card-preview-icon {
-    width: 82px;
-    height: 82px;
-    border-radius: 16px;
+    width: 68px;
+    height: 68px;
+    border-radius: 14px;
   }
 
   .edit-card-preview-name {
-    font-size: 21px;
-    line-height: 28px;
+    font-size: 19px;
+    line-height: 25px;
   }
 
   .edit-card-form-pane {
     order: 1;
     overflow: visible;
-    padding: 12px 10px 18px;
+    padding: 10px 10px 14px;
   }
 
   .edit-card-section {
-    padding: 16px 4px;
+    padding: 12px 4px;
   }
 
   .edit-card-field-grid,

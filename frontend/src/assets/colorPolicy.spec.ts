@@ -299,7 +299,6 @@ describe("component color policy", () => {
       "frontend/src/components/EditModal.vue",
       "frontend/src/components/GroupSettingsModal.vue",
       "frontend/src/components/base/AppModalShell.vue",
-      "frontend/src/components/base/PopoverSurface.vue",
       "frontend/src/components/base/ContextMenuSurface.vue",
       "frontend/src/components/base/ConfirmDialog.vue",
       "frontend/src/components/WallpaperLibrary.vue",
@@ -341,10 +340,14 @@ describe("component color policy", () => {
 
     for (const token of darkOpenedPanelCriticalTokens) {
       const values = darkThemeValues.get(token) ?? [];
-      expect(values, `${token} should be declared in the dark token block`)
-        .not.toHaveLength(0);
-      expect(new Set(values).size, `${token} dark blocks should stay in sync`)
-        .toBe(1);
+      expect(
+        values,
+        `${token} should be declared in the dark token block`,
+      ).not.toHaveLength(0);
+      expect(
+        new Set(values).size,
+        `${token} dark blocks should stay in sync`,
+      ).toBe(1);
 
       for (const value of values) {
         expect(
@@ -371,8 +374,10 @@ describe("component color policy", () => {
 
     for (const token of lightOuterWidgetCriticalTokens) {
       const values = lightThemeValues.get(token) ?? [];
-      expect(values, `${token} should be declared in the light token block`)
-        .not.toHaveLength(0);
+      expect(
+        values,
+        `${token} should be declared in the light token block`,
+      ).not.toHaveLength(0);
 
       for (const value of values) {
         expect(
@@ -399,8 +404,10 @@ describe("component color policy", () => {
 
     for (const token of darkOuterWidgetCriticalTokens) {
       const values = darkThemeValues.get(token) ?? [];
-      expect(values, `${token} should be declared in the dark token block`)
-        .not.toHaveLength(0);
+      expect(
+        values,
+        `${token} should be declared in the dark token block`,
+      ).not.toHaveLength(0);
 
       for (const value of values) {
         expect(
@@ -427,8 +434,10 @@ describe("component color policy", () => {
 
     for (const token of lightSettingsModalContentTokens) {
       const values = lightThemeValues.get(token) ?? [];
-      expect(values, `${token} should be declared in the light token block`)
-        .not.toHaveLength(0);
+      expect(
+        values,
+        `${token} should be declared in the light token block`,
+      ).not.toHaveLength(0);
 
       for (const value of values) {
         expect(
@@ -438,7 +447,9 @@ describe("component color policy", () => {
         expect(
           value,
           `${token} still uses the old low-contrast Settings light text source`,
-        ).not.toMatch(/223\s*,\s*221\s*,\s*221|255\s*,\s*255\s*,\s*255\s*,\s*0\.0/);
+        ).not.toMatch(
+          /223\s*,\s*221\s*,\s*221|255\s*,\s*255\s*,\s*255\s*,\s*0\.0/,
+        );
       }
     }
   });
@@ -455,12 +466,16 @@ describe("component color policy", () => {
 
     for (const token of darkSettingsPreviewSearchTokens) {
       const values = darkThemeValues.get(token) ?? [];
-      expect(values, `${token} should be declared in the dark token block`)
-        .not.toHaveLength(0);
+      expect(
+        values,
+        `${token} should be declared in the dark token block`,
+      ).not.toHaveLength(0);
 
       for (const value of values) {
-        expect(value, `${token} should resolve through semantic text tokens`)
-          .toMatch(/var\(\s*--sd-component-text-/);
+        expect(
+          value,
+          `${token} should resolve through semantic text tokens`,
+        ).toMatch(/var\(\s*--sd-component-text-/);
         expect(
           value,
           `${token} should not use transparent accent text in dark preview search`,
@@ -481,8 +496,10 @@ describe("component color policy", () => {
 
     for (const token of sharedLightModalContentTokens) {
       const values = lightThemeValues.get(token) ?? [];
-      expect(values, `${token} should be declared in the light token block`)
-        .not.toHaveLength(0);
+      expect(
+        values,
+        `${token} should be declared in the light token block`,
+      ).not.toHaveLength(0);
 
       for (const value of values) {
         expect(
@@ -492,7 +509,9 @@ describe("component color policy", () => {
         expect(
           value,
           `${token} still uses the old source-dark modal literals in light theme`,
-        ).not.toMatch(/223\s*,\s*221\s*,\s*221|255\s*,\s*255\s*,\s*255\s*,\s*0\.0[4-8]|#e5e7eb|#ffffff/i);
+        ).not.toMatch(
+          /223\s*,\s*221\s*,\s*221|255\s*,\s*255\s*,\s*255\s*,\s*0\.0[4-8]|#e5e7eb|#ffffff/i,
+        );
       }
     }
   });
