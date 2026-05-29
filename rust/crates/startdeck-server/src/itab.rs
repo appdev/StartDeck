@@ -174,7 +174,7 @@ pub(crate) async fn cached_widget_data(
     let now = Utc::now().timestamp_millis();
     let cached = latest_cached_widget(&state, kind).await?;
     if let Some(row) = cached.as_ref() {
-        let cache_is_current = row.expires_at.map(|value| value > now).unwrap_or(true);
+        let cache_is_current = cache_is_current(row.expires_at, now);
         if !refresh
             && cache_is_current
             && (row.source_status == "ok" || !state.remote_itab_fetch_enabled)
@@ -381,7 +381,7 @@ async fn bing_wallpaper_data(
 
     if let Some(row) = cached.as_ref() {
         let expires_at = row.get::<Option<i64>, _>("expires_at");
-        if !refresh && expires_at.map(|value| value > now).unwrap_or(true) {
+        if !refresh && (cache_is_current(expires_at, now) || !state.remote_itab_fetch_enabled) {
             let data = parse_json(row.get::<String, _>("value_json"));
             let status = row.get::<String, _>("source_status");
             return Ok(Json(bing_wallpaper_response(data, &status)));
@@ -878,10 +878,47 @@ fn bing_wallpaper_response(mut data: Value, status: &str) -> Value {
 }
 
 fn cached_widget_response(mut data: Value, status: &str) -> Value {
+    normalize_legacy_widget_api_paths(&mut data);
     if let Value::Object(ref mut object) = data {
         object.insert("sourceStatus".to_string(), json!(status));
     }
     json!({"success": true, "data": data, "sourceStatus": status})
+}
+
+fn cache_is_current(expires_at: Option<i64>, now: i64) -> bool {
+    expires_at.is_some_and(|value| value > now)
+}
+
+fn normalize_legacy_widget_api_paths(data: &mut Value) {
+    let Value::Object(object) = data else {
+        return;
+    };
+    for key in ["imageUrl", "audioUrl", "posterUrl", "coverUrl"] {
+        if let Some(value) = object.get(key).and_then(Value::as_str) {
+            let normalized = normalize_legacy_widget_api_path(value);
+            if normalized != value {
+                object.insert(key.to_string(), Value::String(normalized));
+            }
+        }
+    }
+}
+
+fn normalize_legacy_widget_api_path(value: &str) -> String {
+    for (legacy, current) in [
+        (
+            "/api/itab/today-english/media/",
+            "/api/today-english/media/",
+        ),
+        (
+            "/api/itab/movie-calendar/image/",
+            "/api/movie-calendar/image/",
+        ),
+    ] {
+        if let Some(rest) = value.strip_prefix(legacy) {
+            return format!("{current}{rest}");
+        }
+    }
+    value.to_string()
 }
 
 async fn weather_widget_response(
@@ -921,7 +958,7 @@ async fn weather_current_response(
         }
     };
     if let Some(row) = cached.as_ref()
-        && row.expires_at.map(|value| value > now).unwrap_or(true)
+        && cache_is_current(row.expires_at, now)
     {
         return Ok(cached_widget_response(row.data.clone(), &row.source_status));
     }
@@ -1394,6 +1431,43 @@ mod tests {
         assert_eq!(
             weather_current_cache_key(&headers, &HashMap::new()),
             "current:city:ip:8.8.8.8"
+        );
+    }
+
+    #[test]
+    fn missing_cache_expiry_is_not_current_for_dynamic_widgets() {
+        assert!(!cache_is_current(None, 1000));
+        assert!(!cache_is_current(Some(999), 1000));
+        assert!(cache_is_current(Some(1001), 1000));
+    }
+
+    #[test]
+    fn normalizes_legacy_itab_media_paths_in_cached_widget_response() {
+        let payload = cached_widget_response(
+            json!({
+                "imageUrl": "/api/itab/today-english/media/image?date=2026-05-30&v=abc",
+                "audioUrl": "/api/itab/today-english/media/audio?date=2026-05-30&v=abc",
+                "posterUrl": "/api/itab/movie-calendar/image/poster?date=2026-05-30&v=def",
+                "coverUrl": "/api/itab/movie-calendar/image/cover?date=2026-05-30&v=def"
+            }),
+            "ok",
+        );
+
+        assert_eq!(
+            payload["data"]["imageUrl"],
+            "/api/today-english/media/image?date=2026-05-30&v=abc"
+        );
+        assert_eq!(
+            payload["data"]["audioUrl"],
+            "/api/today-english/media/audio?date=2026-05-30&v=abc"
+        );
+        assert_eq!(
+            payload["data"]["posterUrl"],
+            "/api/movie-calendar/image/poster?date=2026-05-30&v=def"
+        );
+        assert_eq!(
+            payload["data"]["coverUrl"],
+            "/api/movie-calendar/image/cover?date=2026-05-30&v=def"
         );
     }
 }
