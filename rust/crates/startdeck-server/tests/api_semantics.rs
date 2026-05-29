@@ -702,6 +702,56 @@ async fn users_can_save_same_navigation_and_widget_ids_without_conflict() {
 }
 
 #[tokio::test]
+async fn stale_full_save_is_ignored_instead_of_overwriting_navigation() {
+    let app = test_app().await;
+    let token = login_token(&app).await;
+
+    let (status, body) = json_call(
+        &app,
+        "POST",
+        "/api/save",
+        Some(&token),
+        Some(json!({
+            "groups": [{
+                "id": "bookmarks",
+                "title": "Bookmarks",
+                "items": [{
+                    "id": "github",
+                    "title": "GitHub",
+                    "url": "https://github.com/",
+                    "icon": "/icon-cache/github.svg",
+                    "isPublic": true
+                }]
+            }],
+            "widgets": []
+        })),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(body["success"], true);
+
+    let (status, body) = json_call(
+        &app,
+        "POST",
+        "/api/save",
+        Some(&token),
+        Some(json!({
+            "version": 0,
+            "groups": [{"id": "bookmarks", "title": "Bookmarks", "items": []}],
+            "widgets": []
+        })),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(body["success"], true);
+    assert_eq!(body["ignored"], true);
+
+    let (status, body) = json_call(&app, "GET", "/api/data", Some(&token), None).await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(body["groups"][0]["items"][0]["title"], "GitHub");
+}
+
+#[tokio::test]
 async fn root_favicon_assets_are_served_as_static_files() {
     let app = test_app().await;
 

@@ -382,6 +382,13 @@ async fn save_data(
 ) -> Result<Json<Value>, ApiError> {
     let username = require_username(&headers, &state)?;
     let body = parse_json_body(&headers, &body)?;
+    if let Some(version) = ignored_stale_save_version(&state.pool, &username, &body).await? {
+        return Ok(Json(json!({
+            "success": true,
+            "ignored": true,
+            "version": version,
+        })));
+    }
     let snapshot = normalize_snapshot(&state.pool, username, body).await?;
     save_snapshot(&state.pool, &snapshot).await?;
     Ok(Json(
@@ -1327,6 +1334,21 @@ async fn normalize_snapshot(
         widgets,
         version: Utc::now().timestamp_millis(),
     })
+}
+
+async fn ignored_stale_save_version(
+    pool: &SqlitePool,
+    username: &str,
+    body: &Value,
+) -> Result<Option<i64>, ApiError> {
+    let Some(client_version) = body.get("version").and_then(Value::as_i64) else {
+        return Ok(None);
+    };
+    let server_version = app_snapshot(pool, username).await?.version;
+    if client_version < server_version {
+        return Ok(Some(server_version));
+    }
+    Ok(None)
 }
 
 fn snapshot_to_template_value(snapshot: AppSnapshot) -> Value {
