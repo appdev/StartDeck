@@ -362,6 +362,28 @@ cargo clippy --workspace --all-targets -- -D warnings
 docker compose up --build
 ```
 
+### Docker 构建镜像源
+
+Docker 构建默认启用国内可访问性更好的 Node 与 Rust 镜像源：
+
+| 构建参数 | 默认值 | 作用 |
+| --- | --- | --- |
+| `NPM_CONFIG_REGISTRY` | `https://registry.npmmirror.com` | `npm ci` 包下载 |
+| `NPM_CONFIG_DISTURL` | `https://npmmirror.com/mirrors/node` | Node 二进制、headers 等下载 |
+| `CARGO_REGISTRY_INDEX` | `sparse+https://mirrors.ustc.edu.cn/crates.io-index/` | Cargo crates.io sparse registry |
+| `RUSTUP_DIST_SERVER` | `https://mirrors.ustc.edu.cn/rust-static` | Rust toolchain 下载 |
+| `RUSTUP_UPDATE_ROOT` | `https://mirrors.ustc.edu.cn/rust-static/rustup` | rustup 元数据下载 |
+
+如需切回官方源或使用企业内网源，可通过环境变量覆盖：
+
+```bash
+NPM_CONFIG_REGISTRY=https://registry.npmjs.org \
+CARGO_REGISTRY_INDEX=sparse+https://index.crates.io/ \
+docker compose build
+```
+
+这些参数只影响容器构建过程中的 Node/Rust 依赖下载；基础镜像 `node:*`、`rust:*`、`debian:*`、`busybox:*` 的拉取仍由 Docker daemon 的 registry mirror 配置控制。
+
 对于涉及页面、组件、拖拽、移动端布局或浏览器交互的改动，建议额外执行 Playwright 或浏览器手工验收。
 
 ## 项目地址

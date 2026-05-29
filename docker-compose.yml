@@ -12,6 +12,11 @@ services:
         QWEATHER_PRIVATE_KEY_FILE: ${QWEATHER_PRIVATE_KEY_FILE:-}
         TENCENT_MAP_API_HOST: ${TENCENT_MAP_API_HOST:-}
         TENCENT_MAP_KEY: ${TENCENT_MAP_KEY:-}
+        NPM_CONFIG_REGISTRY: ${NPM_CONFIG_REGISTRY:-https://registry.npmmirror.com}
+        NPM_CONFIG_DISTURL: ${NPM_CONFIG_DISTURL:-https://npmmirror.com/mirrors/node}
+        CARGO_REGISTRY_INDEX: ${CARGO_REGISTRY_INDEX:-sparse+https://mirrors.ustc.edu.cn/crates.io-index/}
+        RUSTUP_DIST_SERVER: ${RUSTUP_DIST_SERVER:-https://mirrors.ustc.edu.cn/rust-static}
+        RUSTUP_UPDATE_ROOT: ${RUSTUP_UPDATE_ROOT:-https://mirrors.ustc.edu.cn/rust-static/rustup}
     image: startdeck:local
     container_name: startdeck
     restart: unless-stopped

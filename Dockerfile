@@ -8,11 +8,14 @@ FROM node:20.19-bookworm-slim AS frontend-builder
 # 1. 接收构建参数（代理地址）
 ARG HTTP_PROXY
 ARG HTTPS_PROXY
+ARG NPM_CONFIG_REGISTRY=https://registry.npmmirror.com
+ARG NPM_CONFIG_DISTURL=https://npmmirror.com/mirrors/node
 
 # 2. 设置环境变量
 ENV HTTP_PROXY=$HTTP_PROXY \
     HTTPS_PROXY=$HTTPS_PROXY \
-    NPM_CONFIG_REGISTRY=https://registry.npmmirror.com
+    NPM_CONFIG_REGISTRY=$NPM_CONFIG_REGISTRY \
+    NPM_CONFIG_DISTURL=$NPM_CONFIG_DISTURL
 
 WORKDIR /app
 
@@ -37,12 +40,17 @@ FROM --platform=$BUILDPLATFORM rust:1.94-bookworm AS rust-builder
 
 ARG HTTP_PROXY
 ARG HTTPS_PROXY
+ARG CARGO_REGISTRY_INDEX=sparse+https://mirrors.ustc.edu.cn/crates.io-index/
+ARG RUSTUP_DIST_SERVER=https://mirrors.ustc.edu.cn/rust-static
+ARG RUSTUP_UPDATE_ROOT=https://mirrors.ustc.edu.cn/rust-static/rustup
 
 ENV HTTP_PROXY=$HTTP_PROXY \
     HTTPS_PROXY=$HTTPS_PROXY \
     CARGO_REGISTRIES_CRATES_IO_PROTOCOL=sparse \
     CARGO_BUILD_JOBS=1 \
-    RUSTUP_TOOLCHAIN=1.94.1-x86_64-unknown-linux-gnu
+    RUSTUP_TOOLCHAIN=1.94.1-x86_64-unknown-linux-gnu \
+    RUSTUP_DIST_SERVER=$RUSTUP_DIST_SERVER \
+    RUSTUP_UPDATE_ROOT=$RUSTUP_UPDATE_ROOT
 ENV PATH=/usr/local/rustup/toolchains/1.94.1-x86_64-unknown-linux-gnu/bin:$PATH
 
 WORKDIR /app
@@ -50,6 +58,10 @@ WORKDIR /app
 COPY Cargo.toml Cargo.lock rust-toolchain.toml ./
 COPY rust ./rust
 
+RUN if [ -n "$CARGO_REGISTRY_INDEX" ]; then \
+      mkdir -p "${CARGO_HOME:-/usr/local/cargo}" \
+      && printf '[source.crates-io]\nreplace-with = "startdeck-mirror"\n\n[source.startdeck-mirror]\nregistry = "%s"\n\n[registries.startdeck-mirror]\nindex = "%s"\n' "$CARGO_REGISTRY_INDEX" "$CARGO_REGISTRY_INDEX" > "${CARGO_HOME:-/usr/local/cargo}/config.toml"; \
+    fi
 RUN cargo build --release --locked --workspace --bins
 RUN strip target/release/startdeck-server target/release/startdeck-iconserver
 
