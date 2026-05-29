@@ -60,7 +60,7 @@ COPY rust ./rust
 
 RUN if [ -n "$CARGO_REGISTRY_INDEX" ]; then \
       mkdir -p "${CARGO_HOME:-/usr/local/cargo}" \
-      && printf '[source.crates-io]\nreplace-with = "startdeck-mirror"\n\n[source.startdeck-mirror]\nregistry = "%s"\n\n[registries.startdeck-mirror]\nindex = "%s"\n' "$CARGO_REGISTRY_INDEX" "$CARGO_REGISTRY_INDEX" > "${CARGO_HOME:-/usr/local/cargo}/config.toml"; \
+      && printf '[source.crates-io]\nreplace-with = "startdeck-mirror"\n\n[source.startdeck-mirror]\nregistry = "%s"\n' "$CARGO_REGISTRY_INDEX" > "${CARGO_HOME:-/usr/local/cargo}/config.toml"; \
     fi
 RUN cargo build --release --locked --workspace --bins
 RUN strip target/release/startdeck-server target/release/startdeck-iconserver
