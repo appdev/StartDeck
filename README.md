@@ -370,7 +370,7 @@ Docker 构建默认启用国内可访问性更好的 Node 与 Rust 镜像源：
 | --- | --- | --- |
 | `NPM_CONFIG_REGISTRY` | `https://registry.npmmirror.com` | `npm ci` 包下载 |
 | `NPM_CONFIG_DISTURL` | `https://npmmirror.com/mirrors/node` | Node 二进制、headers 等下载 |
-| `CARGO_REGISTRY_INDEX` | `sparse+https://mirrors.ustc.edu.cn/crates.io-index/` | Cargo crates.io sparse registry |
+| `STARTDECK_CRATES_IO_INDEX` | `sparse+https://mirrors.ustc.edu.cn/crates.io-index/` | Cargo crates.io sparse registry |
 | `RUSTUP_DIST_SERVER` | `https://mirrors.ustc.edu.cn/rust-static` | Rust toolchain 下载 |
 | `RUSTUP_UPDATE_ROOT` | `https://mirrors.ustc.edu.cn/rust-static/rustup` | rustup 元数据下载 |
 
@@ -378,7 +378,7 @@ Docker 构建默认启用国内可访问性更好的 Node 与 Rust 镜像源：
 
 ```bash
 NPM_CONFIG_REGISTRY=https://registry.npmjs.org \
-CARGO_REGISTRY_INDEX=sparse+https://index.crates.io/ \
+STARTDECK_CRATES_IO_INDEX=sparse+https://index.crates.io/ \
 docker compose build
 ```
 

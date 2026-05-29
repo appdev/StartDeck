@@ -40,7 +40,7 @@ FROM --platform=$BUILDPLATFORM rust:1.94-bookworm AS rust-builder
 
 ARG HTTP_PROXY
 ARG HTTPS_PROXY
-ARG CARGO_REGISTRY_INDEX=sparse+https://mirrors.ustc.edu.cn/crates.io-index/
+ARG STARTDECK_CRATES_IO_INDEX=sparse+https://mirrors.ustc.edu.cn/crates.io-index/
 ARG RUSTUP_DIST_SERVER=https://mirrors.ustc.edu.cn/rust-static
 ARG RUSTUP_UPDATE_ROOT=https://mirrors.ustc.edu.cn/rust-static/rustup
 
@@ -58,9 +58,9 @@ WORKDIR /app
 COPY Cargo.toml Cargo.lock rust-toolchain.toml ./
 COPY rust ./rust
 
-RUN if [ -n "$CARGO_REGISTRY_INDEX" ]; then \
+RUN if [ -n "$STARTDECK_CRATES_IO_INDEX" ]; then \
       mkdir -p "${CARGO_HOME:-/usr/local/cargo}" \
-      && printf '[source.crates-io]\nreplace-with = "startdeck-mirror"\n\n[source.startdeck-mirror]\nregistry = "%s"\n' "$CARGO_REGISTRY_INDEX" > "${CARGO_HOME:-/usr/local/cargo}/config.toml"; \
+      && printf '[source.crates-io]\nreplace-with = "startdeck-mirror"\n\n[source.startdeck-mirror]\nregistry = "%s"\n' "$STARTDECK_CRATES_IO_INDEX" > "${CARGO_HOME:-/usr/local/cargo}/config.toml"; \
     fi
 RUN cargo build --release --locked --workspace --bins
 RUN strip target/release/startdeck-server target/release/startdeck-iconserver
