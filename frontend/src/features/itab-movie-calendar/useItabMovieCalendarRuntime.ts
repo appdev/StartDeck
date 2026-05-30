@@ -12,12 +12,12 @@ const normalizeColor = (value: string, fallback: string) => {
 
 const createLoadingEntry = (): ItabMovieCalendarEntry => ({
   date: "",
-  day: "--",
+  day: "",
   monthLabel: "",
   weekday: "",
-  movieTitle: "电影日历",
-  rating: "--",
-  quote: "正在加载今日电影",
+  movieTitle: "",
+  rating: "",
+  quote: "",
   posterUrl: "",
   coverUrl: "",
   sourceUrl: "",
@@ -33,8 +33,6 @@ const createLoadingEntry = (): ItabMovieCalendarEntry => ({
 
 const createErrorEntry = (): ItabMovieCalendarEntry => ({
   ...createLoadingEntry(),
-  movieTitle: "电影日历加载失败",
-  quote: "请检查电影日历接口连接",
   sourceStatus: "error",
 });
 
@@ -42,8 +40,8 @@ const normalizeEntry = (
   entry: ItabMovieCalendarEntry,
 ): ItabMovieCalendarEntry => ({
   ...entry,
-  movieTitle: entry.movieTitle || "电影日历",
-  rating: entry.rating || "--",
+  movieTitle: entry.movieTitle || "",
+  rating: entry.rating || "",
   quote: entry.quote || entry.intro || "",
   posterUrl: entry.posterUrl || "",
   coverUrl: entry.coverUrl || "",
@@ -117,9 +115,9 @@ export const useItabMovieCalendarRuntime = () => {
   }));
 
   const ratingText = computed(() =>
-    entry.value.rating && entry.value.rating !== "--"
+    entry.value.rating
       ? `豆瓣 ${entry.value.rating}`
-      : "电影日历",
+      : "",
   );
 
   const metaText = computed(() =>
@@ -133,6 +131,15 @@ export const useItabMovieCalendarRuntime = () => {
   );
 
   const introText = computed(() => entry.value.intro || entry.value.quote);
+  const hasContent = computed(() =>
+    Boolean(
+      entry.value.movieTitle ||
+        entry.value.quote ||
+        entry.value.intro ||
+        entry.value.posterUrl ||
+        entry.value.coverUrl,
+    ),
+  );
   const sourceStatus = computed(
     () => entry.value.sourceStatus || (error.value ? "error" : "ok"),
   );
@@ -147,6 +154,7 @@ export const useItabMovieCalendarRuntime = () => {
     metaText,
     directorText,
     introText,
+    hasContent,
     load,
   };
 };

@@ -45,6 +45,14 @@ const page = ref(1);
 const busy = ref(false);
 const message = ref("");
 const showConfig = ref(false);
+const tableBodyRef = ref<HTMLElement | null>(null);
+const titlePopover = ref<{
+  id: string;
+  title: string;
+  top: number;
+  left: number;
+  width: number;
+} | null>(null);
 const auth = useAuthStore();
 const { requireLogin } = useRequireLogin();
 const requireTapdMutation = () => requireLogin("请先登录后再配置 TAPD 组件。");
@@ -99,6 +107,41 @@ const persistData = (next: TapdDefectWidgetData) => {
   return true;
 };
 
+const hideTitlePopover = () => {
+  titlePopover.value = null;
+};
+
+const toggleTitlePopover = (
+  item: TapdDefectListItem,
+  event: MouseEvent | KeyboardEvent,
+) => {
+  const target = event.currentTarget;
+  if (!(target instanceof HTMLElement)) {
+    hideTitlePopover();
+    return;
+  }
+  if (target.scrollWidth <= target.clientWidth + 1) {
+    hideTitlePopover();
+    return;
+  }
+  const body = tableBodyRef.value;
+  const row = target.closest<HTMLElement>(".tapd-table-row");
+  if (!body || !row) return;
+  titlePopover.value =
+    titlePopover.value?.id === item.id
+      ? null
+      : {
+          id: item.id,
+          title: item.title,
+          top: row.offsetTop + row.offsetHeight + 6,
+          left: row.offsetLeft + target.offsetLeft,
+          width: Math.min(
+            720,
+            Math.max(320, body.clientWidth - target.offsetLeft - 120),
+          ),
+        };
+};
+
 const applySummary = (
   next: TapdDefectSummary,
   base: TapdDefectWidgetData = data.value,
@@ -129,6 +172,7 @@ const refreshDefects = async (
     if (requestNeedsConfig) message.value = "请先配置 TAPD 连接参数";
     return;
   }
+  hideTitlePopover();
   busy.value = true;
   message.value = "正在同步";
   try {
@@ -221,6 +265,7 @@ const severityTone = (item: TapdDefectListItem) => {
 
 const blockDefect = (item: TapdDefectListItem) => {
   if (!requireTapdMutation()) return;
+  hideTitlePopover();
   const ids = new Set(data.value.blockedBugIds);
   ids.add(item.id);
   const snapshots = [
@@ -248,6 +293,7 @@ const blockDefect = (item: TapdDefectListItem) => {
 };
 
 const openDefect = (item: TapdDefectListItem) => {
+  hideTitlePopover();
   if (!item.url) return;
   window.open(item.url, "_blank", "noopener,noreferrer");
 };
@@ -317,8 +363,30 @@ onMounted(() => {
     <main class="tapd-opened-body">
       <section class="tapd-defect-table">
         <div class="tapd-table-title">
-          <h3>{{ tableTitle }}</h3>
-          <span>{{ message }}</span>
+          <div class="tapd-table-title-line">
+            <h3>{{ tableTitle }}</h3>
+            <span v-if="message">{{ message }}</span>
+          </div>
+          <dl class="tapd-compact-summary">
+            <div>
+              <dt>待处理</dt>
+              <dd data-testid="tapd-summary-visible">
+                {{ needsConfig ? 0 : summary?.visibleTotal || 0 }}
+              </dd>
+            </div>
+            <div>
+              <dt>已屏蔽</dt>
+              <dd>{{ needsConfig ? 0 : data.blockedBugIds.length }}</dd>
+            </div>
+            <div>
+              <dt>重新打开</dt>
+              <dd>{{ reopenedTotal }}</dd>
+            </div>
+            <div v-for="[status, count] in visibleStatusRows" :key="status">
+              <dt>{{ status }}</dt>
+              <dd>{{ count }}</dd>
+            </div>
+          </dl>
         </div>
         <div class="tapd-table-head">
           <span>级别</span>
@@ -326,26 +394,59 @@ onMounted(() => {
           <span>状态</span>
           <span>操作</span>
         </div>
-        <div class="tapd-table-body">
-          <button
+        <div
+          ref="tableBodyRef"
+          class="tapd-table-body"
+          @scroll="hideTitlePopover"
+        >
+          <div
             v-for="item in currentItems"
             :key="item.id"
-            type="button"
             class="tapd-table-row"
+            :class="{ 'has-title-popover': titlePopover?.id === item.id }"
+            role="button"
+            tabindex="0"
             @click.stop="openDefect(item)"
+            @keydown.enter.stop="openDefect(item)"
+            @keydown.space.prevent.stop="openDefect(item)"
           >
             <b class="tapd-severity" :class="`is-${severityTone(item)}`">
               {{ severityLabel(item) }}
             </b>
-            <span>{{ item.title }}</span>
+            <span
+              class="tapd-title-preview"
+              role="button"
+              tabindex="0"
+              @click.stop="toggleTitlePopover(item, $event)"
+              @keydown.enter.stop="toggleTitlePopover(item, $event)"
+              @keydown.space.prevent.stop="toggleTitlePopover(item, $event)"
+            >
+              {{ item.title }}
+            </span>
             <em>{{ tapdDefectStatusLabel(item.status) }}</em>
-            <i @click.stop="blockDefect(item)">
+            <button
+              type="button"
+              class="tapd-block-action"
+              :aria-label="`屏蔽缺陷 ${item.title}`"
+              title="屏蔽缺陷"
+              @click.stop="blockDefect(item)"
+            >
               <EyeOff :size="15" />
-              屏蔽
-            </i>
-          </button>
+            </button>
+          </div>
           <div v-if="currentItems.length === 0" class="tapd-table-empty">
             {{ needsConfig ? "请打开配置参数完成连接" : "当前页暂无缺陷" }}
+          </div>
+          <div
+            v-if="titlePopover"
+            class="tapd-title-popover"
+            :style="{
+              top: `${titlePopover.top}px`,
+              left: `${titlePopover.left}px`,
+              width: `${titlePopover.width}px`,
+            }"
+          >
+            {{ titlePopover.title }}
           </div>
         </div>
         <footer class="tapd-pagination">
@@ -368,29 +469,6 @@ onMounted(() => {
           </button>
         </footer>
       </section>
-
-      <aside class="tapd-summary-panel">
-        <h3>风险摘要</h3>
-        <div class="tapd-summary-card">
-          <span>待处理结果</span>
-          <strong>{{ needsConfig ? 0 : summary?.visibleTotal || 0 }}</strong>
-        </div>
-        <div class="tapd-summary-card">
-          <span>已屏蔽</span>
-          <strong>{{ needsConfig ? 0 : data.blockedBugIds.length }}</strong>
-        </div>
-        <div class="tapd-summary-card danger">
-          <span>重新打开</span>
-          <strong>{{ reopenedTotal }}</strong>
-        </div>
-        <div class="tapd-status-list">
-          <h4>状态分布</h4>
-          <p v-for="[status, count] in visibleStatusRows" :key="status">
-            <span>{{ status }}</span>
-            <strong>{{ count }}</strong>
-          </p>
-        </div>
-      </aside>
       <div v-if="needsConfig" class="tapd-opened-mask">请配置相关参数</div>
     </main>
 
@@ -489,9 +567,8 @@ onMounted(() => {
 .tapd-opened-body {
   position: relative;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 204px;
+  grid-template-columns: minmax(0, 1fr);
   min-height: 0;
-  gap: 14px;
   padding: 16px 20px 20px;
 }
 
@@ -514,7 +591,6 @@ onMounted(() => {
   pointer-events: none;
 }
 
-.tapd-summary-panel,
 .tapd-defect-table {
   min-width: 0;
   min-height: 0;
@@ -527,21 +603,6 @@ onMounted(() => {
   );
 }
 
-.tapd-summary-panel {
-  display: grid;
-  align-content: start;
-  gap: 10px;
-  padding: 14px;
-}
-
-.tapd-summary-panel h3,
-.tapd-table-title h3 {
-  margin: 0;
-  color: var(--sd-component-text-secondary);
-  font-size: 14px;
-  font-weight: 900;
-}
-
 .tapd-defect-table {
   display: grid;
   grid-template-rows: auto auto minmax(0, 1fr) auto;
@@ -550,26 +611,54 @@ onMounted(() => {
 }
 
 .tapd-table-title {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 12px;
+  gap: 16px;
+  margin-bottom: 10px;
 }
 
-.tapd-table-title span {
+.tapd-table-title-line {
+  display: flex;
+  align-items: center;
+  min-width: 0;
   overflow: hidden;
+  gap: 8px;
+}
+
+.tapd-table-title-line h3,
+.tapd-table-title-line span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tapd-table-title-line h3 {
+  flex: 0 0 auto;
+  margin: 0;
+  color: var(--sd-component-text-secondary);
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.tapd-table-title-line span {
+  flex: 0 1 auto;
+  min-width: 0;
   color: var(--sd-component-text-secondary);
   font-size: 12px;
   font-weight: 800;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+}
+
+.tapd-table-title-line span::before {
+  margin-right: 8px;
+  color: var(--sd-component-text-tertiary);
+  content: "·";
 }
 
 .tapd-table-head,
 .tapd-table-row {
   display: grid;
-  grid-template-columns: 48px minmax(0, 1fr) 92px 72px;
+  grid-template-columns: 44px minmax(0, 1fr) 84px 28px;
   align-items: center;
   gap: 10px;
   min-width: 0;
@@ -582,37 +671,59 @@ onMounted(() => {
   padding: 0 12px 8px;
 }
 
+.tapd-table-head span:last-child {
+  color: transparent;
+}
+
 .tapd-table-body {
+  position: relative;
   display: grid;
   align-content: start;
   min-height: 0;
-  gap: 8px;
+  gap: 6px;
   overflow: auto;
 }
 
 .tapd-table-row {
   width: 100%;
-  min-height: 56px;
+  height: 40px;
   border: 0;
-  border-radius: 13px;
+  border-radius: 11px;
   background: var(--sd-component-surface);
   color: var(--sd-component-text-primary);
-  padding: 11px 12px;
+  padding: 7px 10px;
   text-align: left;
+  cursor: pointer;
+}
+
+.tapd-table-row.has-title-popover {
+  box-shadow:
+    inset 0 0 0 1px var(--sd-color-border-accent),
+    0 8px 22px
+      color-mix(in srgb, var(--sd-component-text-primary) 5%, transparent);
 }
 
 .tapd-severity,
-.tapd-table-row span,
-.tapd-table-row em,
-.tapd-table-row i {
+.tapd-title-preview,
+.tapd-table-row em {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.tapd-table-row span {
+.tapd-title-preview {
+  min-width: 0;
   font-size: 13px;
   font-weight: 900;
+}
+
+.tapd-title-preview:hover,
+.tapd-title-preview:focus-visible,
+.tapd-table-row.has-title-popover .tapd-title-preview {
+  color: var(--sd-component-text-primary);
+  text-decoration: underline dotted var(--sd-color-border-accent);
+  text-underline-offset: 3px;
+  outline: none;
 }
 
 .tapd-table-row b {
@@ -620,8 +731,8 @@ onMounted(() => {
   align-items: center;
   justify-content: center;
   width: fit-content;
-  min-width: 28px;
-  height: 24px;
+  min-width: 26px;
+  height: 23px;
   border-radius: 8px;
   padding: 0 7px;
   font-size: 13px;
@@ -648,21 +759,13 @@ onMounted(() => {
   color: var(--sd-component-text-secondary);
 }
 
-.tapd-table-row span {
-  display: -webkit-box;
-  line-height: 1.35;
-  white-space: normal;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-}
-
 .tapd-table-row em {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   width: fit-content;
   min-width: 50px;
-  height: 24px;
+  height: 23px;
   border-radius: 8px;
   background: var(--sd-component-surface-muted);
   color: var(--sd-component-text-secondary);
@@ -672,14 +775,55 @@ onMounted(() => {
   font-weight: 800;
 }
 
-.tapd-table-row i {
+.tapd-block-action {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--sd-component-text-secondary);
+  opacity: 0.58;
+  padding: 0;
+}
+
+.tapd-block-action:hover,
+.tapd-block-action:focus-visible {
+  background: var(--sd-state-danger-surface);
   color: var(--sd-state-danger);
-  font-size: 12px;
-  font-style: normal;
-  font-weight: 900;
+  opacity: 1;
+  outline: none;
+}
+
+.tapd-title-popover {
+  position: absolute;
+  z-index: 4;
+  border: 1px solid var(--sd-component-border);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--sd-component-surface) 98%, transparent);
+  box-shadow: 0 18px 46px
+    color-mix(in srgb, var(--sd-component-text-primary) 16%, transparent);
+  color: var(--sd-component-text-primary);
+  padding: 11px 13px;
+  font-size: 13px;
+  font-weight: 850;
+  line-height: 1.55;
+  pointer-events: none;
+}
+
+.tapd-title-popover::before {
+  position: absolute;
+  top: -6px;
+  left: 26px;
+  width: 10px;
+  height: 10px;
+  border-top: 1px solid var(--sd-component-border);
+  border-left: 1px solid var(--sd-component-border);
+  background: color-mix(in srgb, var(--sd-component-surface) 98%, transparent);
+  content: "";
+  transform: rotate(45deg);
 }
 
 .tapd-table-empty {
@@ -706,49 +850,37 @@ onMounted(() => {
   font-weight: 900;
 }
 
-.tapd-summary-card {
-  display: grid;
-  gap: 8px;
-  border-radius: 14px;
-  background: var(--sd-component-surface);
-  padding: 14px;
+.tapd-compact-summary {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px;
+  max-width: 560px;
+  margin: 0;
 }
 
-.tapd-summary-card span,
-.tapd-status-list h4,
-.tapd-status-list p span {
+.tapd-compact-summary div {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--sd-component-surface) 86%, transparent);
+  padding: 0 9px;
+}
+
+.tapd-compact-summary dt {
   color: var(--sd-component-text-secondary);
   font-size: 12px;
   font-weight: 900;
 }
 
-.tapd-summary-card strong {
-  font-size: 30px;
+.tapd-compact-summary dd {
+  margin: 0;
+  color: var(--sd-component-text-primary);
+  font-size: 13px;
   font-weight: 900;
   line-height: 1;
-}
-
-.tapd-summary-card.danger strong {
-  color: var(--sd-state-danger);
-}
-
-.tapd-status-list {
-  display: grid;
-  gap: 8px;
-  border-radius: 14px;
-  background: var(--sd-component-surface);
-  padding: 14px;
-}
-
-.tapd-status-list h4,
-.tapd-status-list p {
-  margin: 0;
-}
-
-.tapd-status-list p {
-  display: flex;
-  justify-content: space-between;
-  gap: 8px;
 }
 
 @media (max-width: 980px) {
@@ -756,17 +888,21 @@ onMounted(() => {
     grid-template-columns: minmax(0, 1fr);
   }
 
-  .tapd-summary-panel {
-    display: none;
-  }
-
   .tapd-table-head,
   .tapd-table-row {
     grid-template-columns: 42px minmax(0, 1fr) 82px;
   }
 
+  .tapd-table-title {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .tapd-compact-summary {
+    justify-content: flex-start;
+  }
+
   .tapd-table-head span:last-child,
-  .tapd-table-row i {
+  .tapd-block-action {
     display: none;
   }
 }

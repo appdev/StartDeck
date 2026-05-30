@@ -72,4 +72,24 @@ describe("ItabDailyEnglishWidget", () => {
       expect.any(AbortSignal),
     );
   });
+
+  it("keeps the content area empty when the backend has no entry", async () => {
+    vi.mocked(fetchItabDailyEnglish).mockRejectedValueOnce(
+      new Error("cache_miss"),
+    );
+    const wrapper = mount(ItabDailyEnglishWidget, {
+      props: {
+        widget: createDefaultItabDailyEnglishWidget(),
+        sizeKey: "2x2",
+      },
+    });
+
+    await nextTickCycle();
+
+    expect(wrapper.attributes("data-daily-english-source-status")).toBe(
+      "error",
+    );
+    expect(wrapper.find(".daily-english-copy").exists()).toBe(false);
+    expect(wrapper.find(".daily-english-audio").exists()).toBe(false);
+  });
 });

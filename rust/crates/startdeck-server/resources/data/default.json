@@ -1,6 +1,662 @@
 {
+  "widgets": [
+    {
+      "x": 4,
+      "y": 2,
+      "w": 4,
+      "h": 2,
+      "colSpan": 4,
+      "rowSpan": 2,
+      "id": "wallpaper-1779726776021-ush28b",
+      "type": "itab-wallpaper-16",
+      "enable": true,
+      "isPublic": true,
+      "data": {
+        "runtime": "itab-wallpaper",
+        "layoutSystem": "itab-grid/2026-05-22",
+        "version": 1,
+        "sizeKey": "2x4",
+        "itab": {
+          "namespace": "itab",
+          "captureIndex": 16,
+          "catalogId": "itab-wallpaper-16",
+          "localStateKey": "itab.wallpaper.16",
+          "adapterKind": "wallpaper",
+          "state": {
+            "progress": 0.8,
+            "updatedAt": "2026-05-30T04:17:29.604Z",
+            "selectedWallpaperId": "bing-6a19b800f934430af9271334",
+            "selectedWallpaperTitle": "读懂黑白之间",
+            "wallpaperUrl": "https://cn.bing.com/th?id=OHR.EquusQuagga_ZH-CN9323988132_UHD.jpg",
+            "wallpaperThumbnailUrl": "https://cn.bing.com/th?id=OHR.EquusQuagga_ZH-CN9323988132_UHD.jpg&w=360&h=202",
+            "dailyAutoUpdate": true,
+            "dimWallpaper": false,
+            "blurLevel": 0
+          }
+        }
+      }
+    },
+    {
+      "x": 8,
+      "y": 8,
+      "w": 2,
+      "h": 2,
+      "colSpan": 2,
+      "rowSpan": 2,
+      "id": "itab-number-uppercase-35-1779726789070-6x6arb",
+      "type": "itab-number-uppercase-35",
+      "enable": true,
+      "isPublic": true,
+      "data": {
+        "runtime": "itab-number-uppercase",
+        "layoutSystem": "itab-grid/2026-05-22",
+        "version": 1,
+        "sizeKey": "2x2",
+        "inputNumber": "",
+        "uppercaseResult": "",
+        "formatMode": "currency"
+      }
+    },
+    {
+      "x": 6,
+      "y": 8,
+      "w": 2,
+      "h": 2,
+      "colSpan": 2,
+      "rowSpan": 2,
+      "id": "food-picker-1779726790657-n8iejy",
+      "type": "itab-food-picker-15",
+      "enable": true,
+      "isPublic": true,
+      "data": {
+        "runtime": "itab-food-picker",
+        "layoutSystem": "itab-grid/2026-05-22",
+        "version": 1,
+        "sizeKey": "2x2",
+        "menuItems": [
+          "牛肉粉",
+          "砂锅粥",
+          "肠粉",
+          "咖喱饭",
+          "云吞面",
+          "麻辣烫",
+          "寿司",
+          "沙拉"
+        ],
+        "currentItem": "咖喱饭",
+        "pickedAt": 1779934419699
+      }
+    },
+    {
+      "w": 2,
+      "h": 2,
+      "colSpan": 2,
+      "rowSpan": 2,
+      "id": "anniversary-1779875717902-986789",
+      "type": "itab-anniversary-03",
+      "enable": false,
+      "isPublic": true,
+      "data": {
+        "runtime": "itab-anniversary",
+        "layoutSystem": "itab-grid/2026-05-22",
+        "version": 1,
+        "sizeKey": "2x2",
+        "title": "纪念日",
+        "label": "你在世界已经",
+        "eventName": "你在世界已经",
+        "date": "1997-10-1",
+        "mode": "elapsed",
+        "repeat": "不重复",
+        "textColor": "#ffffff",
+        "backgroundColor": "#8e726f",
+        "backgroundImage": "/itab-live-assets/anniversary/yiyan-12.webp",
+        "backgroundMode": "image",
+        "mask": 0
+      }
+    },
+    {
+      "w": 4,
+      "h": 2,
+      "colSpan": 4,
+      "rowSpan": 2,
+      "id": "anniversary-1779876005956-osxyhe",
+      "type": "itab-anniversary-03",
+      "enable": false,
+      "isPublic": true,
+      "data": {
+        "runtime": "itab-anniversary",
+        "layoutSystem": "itab-grid/2026-05-22",
+        "version": 1,
+        "sizeKey": "2x4",
+        "title": "倒数日",
+        "label": "发工资还有",
+        "eventName": "发工资还有",
+        "date": "2023-12-01",
+        "mode": "remaining",
+        "repeat": "每月",
+        "textColor": "#1890ff",
+        "backgroundColor": "#ffffff",
+        "backgroundImage": "/itab-live-assets/anniversary/yiyan-8.webp",
+        "backgroundMode": "image",
+        "mask": 0
+      }
+    },
+    {
+      "w": 2,
+      "h": 2,
+      "colSpan": 2,
+      "rowSpan": 2,
+      "id": "anniversary-1779879109167-4cnlx5",
+      "type": "itab-anniversary-03",
+      "enable": false,
+      "isPublic": true,
+      "data": {
+        "runtime": "itab-anniversary",
+        "layoutSystem": "itab-grid/2026-05-22",
+        "version": 1,
+        "sizeKey": "2x2",
+        "title": "纪念日",
+        "label": "你在世界已经",
+        "eventName": "你在世界已经",
+        "date": "1997-10-1",
+        "mode": "elapsed",
+        "repeat": "不重复",
+        "textColor": "#ffffff",
+        "backgroundColor": "#8e726f",
+        "backgroundImage": "/itab-live-assets/anniversary/yiyan-12.webp",
+        "backgroundMode": "image",
+        "mask": 0
+      }
+    },
+    {
+      "x": 8,
+      "y": 0,
+      "w": 2,
+      "h": 2,
+      "colSpan": 2,
+      "rowSpan": 2,
+      "id": "wallpaper-1779934603582-snnhww",
+      "type": "itab-wallpaper-16",
+      "enable": false,
+      "isPublic": true,
+      "data": {
+        "runtime": "itab-wallpaper",
+        "layoutSystem": "itab-grid/2026-05-22",
+        "version": 1,
+        "sizeKey": "2x2",
+        "itab": {
+          "namespace": "itab",
+          "captureIndex": 16,
+          "catalogId": "itab-wallpaper-16",
+          "localStateKey": "itab.wallpaper.16",
+          "adapterKind": "wallpaper",
+          "state": {
+            "progress": 0.8,
+            "updatedAt": "2026-05-20T23:40:00+08:00"
+          }
+        }
+      }
+    },
+    {
+      "x": 8,
+      "y": 2,
+      "w": 2,
+      "h": 2,
+      "colSpan": 2,
+      "rowSpan": 2,
+      "id": "anniversary-1779934696112-e6m8rv",
+      "type": "itab-anniversary-03",
+      "enable": true,
+      "isPublic": true,
+      "data": {
+        "runtime": "itab-anniversary",
+        "layoutSystem": "itab-grid/2026-05-22",
+        "version": 1,
+        "sizeKey": "2x2",
+        "title": "倒数日",
+        "label": "发工资还有",
+        "eventName": "发工资还有",
+        "date": "2026-6-10",
+        "mode": "remaining",
+        "repeat": "每月",
+        "textColor": "#1890ff",
+        "backgroundColor": "#ffffff",
+        "backgroundImage": "/itab-live-assets/anniversary/yiyan-12.webp",
+        "backgroundMode": "color",
+        "mask": 0
+      }
+    },
+    {
+      "x": 8,
+      "y": 0,
+      "w": 2,
+      "h": 2,
+      "colSpan": 2,
+      "rowSpan": 2,
+      "id": "anniversary-1779934767440-nuj4vj",
+      "type": "itab-anniversary-03",
+      "enable": true,
+      "isPublic": true,
+      "data": {
+        "runtime": "itab-anniversary",
+        "layoutSystem": "itab-grid/2026-05-22",
+        "version": 1,
+        "sizeKey": "2x2",
+        "title": "纪念日",
+        "label": "宝宝👶出生已经",
+        "eventName": "宝宝👶出生已经",
+        "date": "2022-4-29",
+        "mode": "elapsed",
+        "repeat": "不重复",
+        "textColor": "#ffffff",
+        "backgroundColor": "#8e726f",
+        "backgroundImage": "/itab-live-assets/anniversary/yiyan-2.webp",
+        "backgroundMode": "image",
+        "mask": 0
+      }
+    },
+    {
+      "w": 2,
+      "h": 2,
+      "colSpan": 2,
+      "rowSpan": 2,
+      "id": "ai-usage-1779967141505-8f72v9",
+      "type": "ai-usage",
+      "enable": true,
+      "isPublic": true,
+      "data": {
+        "runtime": "ai-usage",
+        "layoutSystem": "itab-grid/2026-05-22",
+        "version": 1,
+        "sizeKey": "2x2",
+        "providerId": "openai",
+        "displayName": "OpenAI 使用量",
+        "iconKey": "openai",
+        "defaultWindow": "primary",
+        "refreshIntervalMinutes": 5,
+        "credentialStorage": "browser",
+        "credentialType": "access_token",
+        "hasServerCredential": false,
+        "lastSummary": {
+          "providerId": "openai",
+          "status": "needs-config",
+          "primaryRemainingPercent": null,
+          "weeklyRemainingPercent": null
+        }
+      },
+      "x": 12,
+      "y": 6
+    },
+    {
+      "w": 2,
+      "h": 2,
+      "colSpan": 2,
+      "rowSpan": 2,
+      "id": "tapd-defects-1779972974928-u1mjd8",
+      "type": "tapd-defects",
+      "enable": true,
+      "isPublic": true,
+      "data": {
+        "runtime": "tapd-defects",
+        "layoutSystem": "itab-grid/2026-05-22",
+        "version": 1,
+        "sizeKey": "2x2",
+        "workspaceId": "",
+        "projectName": "",
+        "visibilityScope": "owned-by-current-user",
+        "query": {
+          "limit": 100,
+          "order": "modified desc",
+          "fields": [
+            "id",
+            "title",
+            "severity",
+            "priority_label",
+            "status",
+            "current_owner",
+            "modified",
+            "workspace_id",
+            "label"
+          ],
+          "status": "new|assigned|in_progress|reopened"
+        },
+        "blockedBugIds": [],
+        "blockedBugSnapshots": [],
+        "refreshIntervalMinutes": 10,
+        "hasServerCredential": false,
+        "tapdBaseUrl": "https://www.tapd.cn",
+        "catalogPreview": false,
+        "lastSummary": {
+          "status": "needs-config",
+          "workspaceId": "",
+          "total": 0,
+          "visibleTotal": 0,
+          "blockedTotal": 0,
+          "verificationTotal": 0,
+          "critical": 0,
+          "assignedToCurrentUser": 0,
+          "visibleScope": "owned-by-current-user",
+          "page": 1,
+          "limit": 100,
+          "items": []
+        }
+      },
+      "x": 0,
+      "y": 8
+    },
+    {
+      "x": 10,
+      "y": 0,
+      "w": 4,
+      "h": 2,
+      "colSpan": 4,
+      "rowSpan": 2,
+      "id": "weather",
+      "type": "itab-weather-00",
+      "enable": true,
+      "isPublic": true,
+      "data": {
+        "runtime": "itab-weather",
+        "layoutSystem": "itab-grid/2026-05-22",
+        "version": 1,
+        "sizeKey": "2x4",
+        "location": {
+          "id": "101280608",
+          "city": "龙华",
+          "province": "广东省",
+          "adm2": "深圳",
+          "type": "city"
+        }
+      }
+    },
+    {
+      "x": 10,
+      "y": 2,
+      "w": 4,
+      "h": 4,
+      "colSpan": 4,
+      "rowSpan": 4,
+      "id": "todo",
+      "type": "itab-todo-17",
+      "enable": true,
+      "isPublic": true,
+      "data": {
+        "runtime": "itab-todo",
+        "layoutSystem": "itab-grid/2026-05-22",
+        "version": 1,
+        "sizeKey": "4x4",
+        "tasks": [
+          {
+            "id": "promo-shot-home",
+            "text": "拍摄首页全景截图",
+            "done": false
+          },
+          {
+            "id": "promo-shot-video",
+            "text": "录制 30 秒演示视频",
+            "done": false
+          },
+          {
+            "id": "promo-shot-points",
+            "text": "精修三条产品卖点",
+            "done": false
+          },
+          {
+            "id": "promo-shot-links",
+            "text": "校对下载与部署链接",
+            "done": false
+          },
+          {
+            "id": "promo-shot-cover",
+            "text": "准备发布公告封面",
+            "done": false
+          }
+        ]
+      }
+    },
+    {
+      "x": 4,
+      "y": 6,
+      "w": 4,
+      "h": 2,
+      "colSpan": 4,
+      "rowSpan": 2,
+      "id": "memo",
+      "type": "itab-memo-04",
+      "enable": true,
+      "isPublic": true,
+      "data": {
+        "runtime": "itab-memo",
+        "layoutSystem": "itab-grid/2026-05-22",
+        "version": 1,
+        "sizeKey": "2x4",
+        "notes": [
+          {
+            "id": "promo-shot-today",
+            "title": "今日发布-Demo",
+            "body": "搜索、导航、组件、状态看板\n都在一个清爽首页里。\nStartDeck 让开屏更安静，效率更集中。\n该站为测试站点，请不要保存重要信息，数据定时清理。",
+            "pinned": true,
+            "createdAt": "2026-05-28T03:42:20.961Z",
+            "updatedAt": "2026-05-28T13:30:26.929Z",
+            "listTime": "2026/5/28 11:42"
+          },
+          {
+            "id": "promo-shot-design",
+            "title": "设计灵感",
+            "body": "一张首页承载常用入口、实时信息与轻量工具。少一点切换，多一点专注。",
+            "pinned": false,
+            "createdAt": "2026-05-28T03:42:20.961Z",
+            "updatedAt": "2026-05-28T03:42:20.961Z",
+            "listTime": "2026/5/28 11:42"
+          },
+          {
+            "id": "promo-shot-rhythm",
+            "title": "发布节奏",
+            "body": "截图、短视频、发布说明一次准备好，把产品亮点讲得更清楚。",
+            "pinned": false,
+            "createdAt": "2026-05-28T03:42:20.961Z",
+            "updatedAt": "2026-05-28T03:42:20.961Z",
+            "listTime": "2026/5/28 11:42"
+          }
+        ],
+        "activeNoteId": "promo-shot-today"
+      }
+    },
+    {
+      "x": 0,
+      "y": 0,
+      "w": 4,
+      "h": 2,
+      "colSpan": 4,
+      "rowSpan": 2,
+      "id": "clock",
+      "type": "itab-clock-12",
+      "enable": true,
+      "isPublic": true,
+      "data": {
+        "runtime": "itab-clock",
+        "layoutSystem": "itab-grid/2026-05-22",
+        "version": 1,
+        "sizeKey": "2x4",
+        "showSeconds": true
+      }
+    },
+    {
+      "x": 0,
+      "y": 2,
+      "w": 4,
+      "h": 2,
+      "colSpan": 4,
+      "rowSpan": 2,
+      "id": "daily-english",
+      "type": "itab-daily-english-14",
+      "enable": true,
+      "isPublic": true,
+      "data": {
+        "runtime": "itab-daily-english",
+        "layoutSystem": "itab-grid/2026-05-22",
+        "version": 1,
+        "sizeKey": "2x4"
+      }
+    },
+    {
+      "x": 0,
+      "y": 6,
+      "w": 4,
+      "h": 2,
+      "colSpan": 4,
+      "rowSpan": 2,
+      "id": "poem",
+      "type": "itab-poem-10",
+      "enable": true,
+      "isPublic": true,
+      "data": {
+        "runtime": "itab-poem",
+        "layoutSystem": "itab-grid/2026-05-22",
+        "version": 1,
+        "sizeKey": "2x4",
+        "currentPoem": {
+          "id": "5b8b9572e116fb3714e6fbd3",
+          "sentence": "竹外桃花三两枝，春江水暖鸭先知。",
+          "poemTitle": "惠崇春江晚景二首 / 惠崇春江晓景二首",
+          "author": "苏轼",
+          "dynasty": "宋代",
+          "fullText": [
+            "竹外桃花三两枝，春江水暖鸭先知。",
+            "蒌蒿满地芦芽短，正是河豚欲上时。",
+            "两两归鸿欲破群，依依还似北归人。",
+            "遥知朔漠多风雪，更待江南半月春。"
+          ],
+          "translation": [],
+          "annotations": [],
+          "preface": [],
+          "popularity": 1880000,
+          "cacheAt": "2026-05-30T12:53:30.802513568",
+          "sourceStatus": "ok"
+        },
+        "paletteIndex": 3,
+        "paletteDate": "2026-05-30"
+      }
+    },
+    {
+      "x": 0,
+      "y": 4,
+      "w": 4,
+      "h": 2,
+      "colSpan": 4,
+      "rowSpan": 2,
+      "id": "pomodoro",
+      "type": "itab-pomodoro-29",
+      "enable": true,
+      "isPublic": true,
+      "data": {
+        "runtime": "itab-pomodoro",
+        "layoutSystem": "itab-grid/2026-05-22",
+        "version": 1,
+        "sizeKey": "2x4",
+        "duration": 1500,
+        "remainingSeconds": 1500,
+        "phase": "idle",
+        "isRunning": false,
+        "sessions": 0,
+        "themeIndex": 0,
+        "audioEnabled": true
+      }
+    },
+    {
+      "x": 8,
+      "y": 6,
+      "w": 4,
+      "h": 2,
+      "colSpan": 4,
+      "rowSpan": 2,
+      "id": "movie-calendar",
+      "type": "itab-movie-calendar-05",
+      "enable": true,
+      "isPublic": true,
+      "data": {
+        "runtime": "itab-movie-calendar",
+        "layoutSystem": "itab-grid/2026-05-22",
+        "version": 1,
+        "sizeKey": "2x4"
+      }
+    },
+    {
+      "x": 8,
+      "y": 4,
+      "w": 2,
+      "h": 2,
+      "colSpan": 2,
+      "rowSpan": 2,
+      "id": "ip",
+      "type": "itab-ip-30",
+      "enable": true,
+      "isPublic": true,
+      "data": {
+        "runtime": "itab-ip",
+        "layoutSystem": "itab-grid/2026-05-22",
+        "version": 1,
+        "sizeKey": "2x2"
+      }
+    },
+    {
+      "x": 4,
+      "y": 0,
+      "w": 4,
+      "h": 2,
+      "colSpan": 4,
+      "rowSpan": 2,
+      "id": "calendar",
+      "type": "itab-calendar-01",
+      "enable": true,
+      "isPublic": true,
+      "data": {
+        "runtime": "itab-calendar",
+        "layoutSystem": "itab-grid/2026-05-22",
+        "version": 1,
+        "sizeKey": "2x4"
+      }
+    },
+    {
+      "x": 4,
+      "y": 4,
+      "w": 4,
+      "h": 2,
+      "colSpan": 4,
+      "rowSpan": 2,
+      "hideOnMobile": false,
+      "id": "docker",
+      "type": "docker",
+      "enable": true,
+      "isPublic": true,
+      "data": {
+        "runtime": "docker",
+        "version": 1,
+        "sizeKey": "2x4",
+        "layoutSystem": "itab-grid/2026-05-22"
+      }
+    },
+    {
+      "x": 2,
+      "y": 8,
+      "w": 4,
+      "h": 2,
+      "colSpan": 4,
+      "rowSpan": 2,
+      "id": "system-status",
+      "type": "system-status",
+      "enable": true,
+      "isPublic": true,
+      "data": {
+        "layoutSystem": "itab-grid/2026-05-22",
+        "sizeKey": "2x4",
+        "runtime": "system-status",
+        "version": 1
+      }
+    }
+  ],
   "appConfig": {
-    "background": "https://cn.bing.com/th?id=OHR.GreenJasper_ZH-CN3030401138_UHD.jpg",
+    "background": "https://cn.bing.com/th?id=OHR.EquusQuagga_ZH-CN9323988132_UHD.jpg",
     "mobileBackground": "/mobile_backgrounds/155548-17409885482e02.jpg",
     "solidBackgroundColor": "",
     "enableMobileWallpaper": true,
@@ -135,9 +791,9 @@
     "sidebarViewMode": "bookmarks",
     "wallpaperConfig": {
       "type": "api",
-      "url": "https://cn.bing.com/th?id=OHR.GreenJasper_ZH-CN3030401138_UHD.jpg",
+      "url": "https://cn.bing.com/th?id=OHR.EquusQuagga_ZH-CN9323988132_UHD.jpg",
       "enabled": false,
-      "lastUpdated": 1779875449934
+      "lastUpdated": 1780114649605
     },
     "weatherEffectEnabled": true,
     "weatherSource": "uapi",
@@ -156,7 +812,7 @@
           "backgroundBlur": 6,
           "backgroundMask": 0.3,
           "color": "bg-blue-50 text-blue-600",
-          "icon": "/cache/8b85f65e501f331fc32e5e24a5420b2c44a8ed3cf26c610f6a0fa992a61ed4e5.png",
+          "icon": "/icon-cache/21218f344603956098b556a4d3469185744cdf9b755b9f87ad2979aa1b712e6f.png",
           "id": "1764571934101",
           "isPublic": true,
           "lanUrl": "",
@@ -170,7 +826,7 @@
           "description3": "",
           "iconBackgroundMode": "custom",
           "iconAutoBackgroundColor": "",
-          "iconCustomBackgroundColor": "#f3f4f6",
+          "iconCustomBackgroundColor": "#cbe4ff",
           "backgroundImage": "",
           "iconSize": 100
         },
@@ -599,610 +1255,6 @@
           "iconSize": 100
         }
       ]
-    }
-  ],
-  "widgets": [
-    {
-      "x": 4,
-      "y": 2,
-      "w": 4,
-      "h": 2,
-      "colSpan": 4,
-      "rowSpan": 2,
-      "id": "wallpaper-1779726776021-ush28b",
-      "type": "itab-wallpaper-16",
-      "enable": true,
-      "isPublic": true,
-      "data": {
-        "runtime": "itab-wallpaper",
-        "layoutSystem": "itab-grid/2026-05-22",
-        "version": 1,
-        "sizeKey": "2x4",
-        "itab": {
-          "namespace": "itab",
-          "captureIndex": 16,
-          "catalogId": "itab-wallpaper-16",
-          "localStateKey": "itab.wallpaper.16",
-          "adapterKind": "wallpaper",
-          "state": {
-            "progress": 0.8,
-            "updatedAt": "2026-05-27T09:50:49.924Z",
-            "selectedWallpaperId": "bing-69f4ce003e81d710e3e1afe1",
-            "selectedWallpaperTitle": "贾斯珀的自然魅力",
-            "wallpaperUrl": "https://cn.bing.com/th?id=OHR.GreenJasper_ZH-CN3030401138_UHD.jpg",
-            "wallpaperThumbnailUrl": "https://cn.bing.com/th?id=OHR.GreenJasper_ZH-CN3030401138_UHD.jpg&w=360&h=202",
-            "dailyAutoUpdate": true,
-            "dimWallpaper": false,
-            "blurLevel": 0
-          }
-        }
-      }
-    },
-    {
-      "x": 8,
-      "y": 4,
-      "w": 2,
-      "h": 2,
-      "colSpan": 2,
-      "rowSpan": 2,
-      "id": "itab-number-uppercase-35-1779726789070-6x6arb",
-      "type": "itab-number-uppercase-35",
-      "enable": true,
-      "isPublic": true,
-      "data": {
-        "runtime": "itab-number-uppercase",
-        "layoutSystem": "itab-grid/2026-05-22",
-        "version": 1,
-        "sizeKey": "2x2",
-        "inputNumber": "",
-        "uppercaseResult": "",
-        "formatMode": "currency"
-      }
-    },
-    {
-      "x": 6,
-      "y": 4,
-      "w": 2,
-      "h": 2,
-      "colSpan": 2,
-      "rowSpan": 2,
-      "id": "food-picker-1779726790657-n8iejy",
-      "type": "itab-food-picker-15",
-      "enable": true,
-      "isPublic": true,
-      "data": {
-        "runtime": "itab-food-picker",
-        "layoutSystem": "itab-grid/2026-05-22",
-        "version": 1,
-        "sizeKey": "2x2",
-        "menuItems": [
-          "牛肉粉",
-          "砂锅粥",
-          "肠粉",
-          "咖喱饭",
-          "云吞面",
-          "麻辣烫",
-          "寿司",
-          "沙拉"
-        ],
-        "currentItem": "咖喱饭",
-        "pickedAt": 1779934419699
-      }
-    },
-    {
-      "w": 2,
-      "h": 2,
-      "colSpan": 2,
-      "rowSpan": 2,
-      "id": "anniversary-1779875717902-986789",
-      "type": "itab-anniversary-03",
-      "enable": false,
-      "isPublic": true,
-      "data": {
-        "runtime": "itab-anniversary",
-        "layoutSystem": "itab-grid/2026-05-22",
-        "version": 1,
-        "sizeKey": "2x2",
-        "title": "纪念日",
-        "label": "你在世界已经",
-        "eventName": "你在世界已经",
-        "date": "1997-10-1",
-        "mode": "elapsed",
-        "repeat": "不重复",
-        "textColor": "#ffffff",
-        "backgroundColor": "#8e726f",
-        "backgroundImage": "/itab-live-assets/anniversary/yiyan-12.webp",
-        "backgroundMode": "image",
-        "mask": 0
-      }
-    },
-    {
-      "w": 4,
-      "h": 2,
-      "colSpan": 4,
-      "rowSpan": 2,
-      "id": "anniversary-1779876005956-osxyhe",
-      "type": "itab-anniversary-03",
-      "enable": false,
-      "isPublic": true,
-      "data": {
-        "runtime": "itab-anniversary",
-        "layoutSystem": "itab-grid/2026-05-22",
-        "version": 1,
-        "sizeKey": "2x4",
-        "title": "倒数日",
-        "label": "发工资还有",
-        "eventName": "发工资还有",
-        "date": "2023-12-01",
-        "mode": "remaining",
-        "repeat": "每月",
-        "textColor": "#1890ff",
-        "backgroundColor": "#ffffff",
-        "backgroundImage": "/itab-live-assets/anniversary/yiyan-8.webp",
-        "backgroundMode": "image",
-        "mask": 0
-      }
-    },
-    {
-      "w": 2,
-      "h": 2,
-      "colSpan": 2,
-      "rowSpan": 2,
-      "id": "anniversary-1779879109167-4cnlx5",
-      "type": "itab-anniversary-03",
-      "enable": false,
-      "isPublic": true,
-      "data": {
-        "runtime": "itab-anniversary",
-        "layoutSystem": "itab-grid/2026-05-22",
-        "version": 1,
-        "sizeKey": "2x2",
-        "title": "纪念日",
-        "label": "你在世界已经",
-        "eventName": "你在世界已经",
-        "date": "1997-10-1",
-        "mode": "elapsed",
-        "repeat": "不重复",
-        "textColor": "#ffffff",
-        "backgroundColor": "#8e726f",
-        "backgroundImage": "/itab-live-assets/anniversary/yiyan-12.webp",
-        "backgroundMode": "image",
-        "mask": 0
-      }
-    },
-    {
-      "x": 8,
-      "y": 0,
-      "w": 2,
-      "h": 2,
-      "colSpan": 2,
-      "rowSpan": 2,
-      "id": "wallpaper-1779934603582-snnhww",
-      "type": "itab-wallpaper-16",
-      "enable": false,
-      "isPublic": true,
-      "data": {
-        "runtime": "itab-wallpaper",
-        "layoutSystem": "itab-grid/2026-05-22",
-        "version": 1,
-        "sizeKey": "2x2",
-        "itab": {
-          "namespace": "itab",
-          "captureIndex": 16,
-          "catalogId": "itab-wallpaper-16",
-          "localStateKey": "itab.wallpaper.16",
-          "adapterKind": "wallpaper",
-          "state": {
-            "progress": 0.8,
-            "updatedAt": "2026-05-20T23:40:00+08:00"
-          }
-        }
-      }
-    },
-    {
-      "x": 8,
-      "y": 2,
-      "w": 2,
-      "h": 2,
-      "colSpan": 2,
-      "rowSpan": 2,
-      "id": "anniversary-1779934696112-e6m8rv",
-      "type": "itab-anniversary-03",
-      "enable": true,
-      "isPublic": true,
-      "data": {
-        "runtime": "itab-anniversary",
-        "layoutSystem": "itab-grid/2026-05-22",
-        "version": 1,
-        "sizeKey": "2x2",
-        "title": "倒数日",
-        "label": "发工资还有",
-        "eventName": "发工资还有",
-        "date": "2026-6-10",
-        "mode": "remaining",
-        "repeat": "每月",
-        "textColor": "#1890ff",
-        "backgroundColor": "#ffffff",
-        "backgroundImage": "/itab-live-assets/anniversary/yiyan-12.webp",
-        "backgroundMode": "color",
-        "mask": 0
-      }
-    },
-    {
-      "x": 8,
-      "y": 0,
-      "w": 2,
-      "h": 2,
-      "colSpan": 2,
-      "rowSpan": 2,
-      "id": "anniversary-1779934767440-nuj4vj",
-      "type": "itab-anniversary-03",
-      "enable": true,
-      "isPublic": true,
-      "data": {
-        "runtime": "itab-anniversary",
-        "layoutSystem": "itab-grid/2026-05-22",
-        "version": 1,
-        "sizeKey": "2x2",
-        "title": "纪念日",
-        "label": "宝宝👶出生已经",
-        "eventName": "宝宝👶出生已经",
-        "date": "2022-4-29",
-        "mode": "elapsed",
-        "repeat": "不重复",
-        "textColor": "#ffffff",
-        "backgroundColor": "#8e726f",
-        "backgroundImage": "/itab-live-assets/anniversary/yiyan-2.webp",
-        "backgroundMode": "image",
-        "mask": 0
-      }
-    },
-    {
-      "w": 2,
-      "h": 2,
-      "colSpan": 2,
-      "rowSpan": 2,
-      "id": "ai-usage-1779967141505-8f72v9",
-      "type": "ai-usage",
-      "enable": true,
-      "isPublic": true,
-      "data": {
-        "runtime": "ai-usage",
-        "layoutSystem": "itab-grid/2026-05-22",
-        "version": 1,
-        "sizeKey": "2x2",
-        "displayName": "OpenAI 使用量",
-        "defaultWindow": "primary",
-        "refreshIntervalMinutes": 5
-      }
-    },
-    {
-      "w": 2,
-      "h": 2,
-      "colSpan": 2,
-      "rowSpan": 2,
-      "id": "tapd-defects-1779972974928-u1mjd8",
-      "type": "tapd-defects",
-      "enable": true,
-      "isPublic": true,
-      "data": {
-        "runtime": "tapd-defects",
-        "layoutSystem": "itab-grid/2026-05-22",
-        "version": 1,
-        "sizeKey": "2x2",
-        "visibilityScope": "all",
-        "refreshIntervalMinutes": 10
-      }
-    },
-    {
-      "x": 10,
-      "y": 0,
-      "w": 4,
-      "h": 2,
-      "colSpan": 4,
-      "rowSpan": 2,
-      "id": "weather",
-      "type": "itab-weather-00",
-      "enable": true,
-      "isPublic": true,
-      "data": {
-        "runtime": "itab-weather",
-        "layoutSystem": "itab-grid/2026-05-22",
-        "version": 1,
-        "sizeKey": "2x4",
-        "location": {
-          "id": "101280608",
-          "city": "龙华",
-          "province": "广东省",
-          "adm2": "深圳",
-          "type": "city"
-        }
-      }
-    },
-    {
-      "x": 10,
-      "y": 2,
-      "w": 4,
-      "h": 4,
-      "colSpan": 4,
-      "rowSpan": 4,
-      "id": "todo",
-      "type": "itab-todo-17",
-      "enable": true,
-      "isPublic": true,
-      "data": {
-        "runtime": "itab-todo",
-        "layoutSystem": "itab-grid/2026-05-22",
-        "version": 1,
-        "sizeKey": "4x4",
-        "tasks": [
-          {
-            "id": "promo-shot-home",
-            "text": "拍摄首页全景截图",
-            "done": false
-          },
-          {
-            "id": "promo-shot-video",
-            "text": "录制 30 秒演示视频",
-            "done": false
-          },
-          {
-            "id": "promo-shot-points",
-            "text": "精修三条产品卖点",
-            "done": false
-          },
-          {
-            "id": "promo-shot-links",
-            "text": "校对下载与部署链接",
-            "done": false
-          },
-          {
-            "id": "promo-shot-cover",
-            "text": "准备发布公告封面",
-            "done": false
-          }
-        ]
-      }
-    },
-    {
-      "x": 8,
-      "y": 6,
-      "w": 4,
-      "h": 2,
-      "colSpan": 4,
-      "rowSpan": 2,
-      "id": "memo",
-      "type": "itab-memo-04",
-      "enable": true,
-      "isPublic": true,
-      "data": {
-        "runtime": "itab-memo",
-        "layoutSystem": "itab-grid/2026-05-22",
-        "version": 1,
-        "sizeKey": "2x4",
-        "notes": [
-          {
-            "id": "promo-shot-today",
-            "title": "今日发布-Demo",
-            "body": "搜索、导航、组件、状态看板\n都在一个清爽首页里。\nStartDeck 让开屏更安静，效率更集中。\n该站为测试站点，请不要保存重要信息，数据定时清理。",
-            "pinned": true,
-            "createdAt": "2026-05-28T03:42:20.961Z",
-            "updatedAt": "2026-05-28T13:30:26.929Z",
-            "listTime": "2026/5/28 11:42"
-          },
-          {
-            "id": "promo-shot-design",
-            "title": "设计灵感",
-            "body": "一张首页承载常用入口、实时信息与轻量工具。少一点切换，多一点专注。",
-            "pinned": false,
-            "createdAt": "2026-05-28T03:42:20.961Z",
-            "updatedAt": "2026-05-28T03:42:20.961Z",
-            "listTime": "2026/5/28 11:42"
-          },
-          {
-            "id": "promo-shot-rhythm",
-            "title": "发布节奏",
-            "body": "截图、短视频、发布说明一次准备好，把产品亮点讲得更清楚。",
-            "pinned": false,
-            "createdAt": "2026-05-28T03:42:20.961Z",
-            "updatedAt": "2026-05-28T03:42:20.961Z",
-            "listTime": "2026/5/28 11:42"
-          }
-        ],
-        "activeNoteId": "promo-shot-today"
-      }
-    },
-    {
-      "x": 0,
-      "y": 0,
-      "w": 4,
-      "h": 2,
-      "colSpan": 4,
-      "rowSpan": 2,
-      "id": "clock",
-      "type": "itab-clock-12",
-      "enable": true,
-      "isPublic": true,
-      "data": {
-        "runtime": "itab-clock",
-        "layoutSystem": "itab-grid/2026-05-22",
-        "version": 1,
-        "sizeKey": "2x4",
-        "showSeconds": true
-      }
-    },
-    {
-      "x": 0,
-      "y": 2,
-      "w": 4,
-      "h": 2,
-      "colSpan": 4,
-      "rowSpan": 2,
-      "id": "daily-english",
-      "type": "itab-daily-english-14",
-      "enable": true,
-      "isPublic": true,
-      "data": {
-        "runtime": "itab-daily-english",
-        "layoutSystem": "itab-grid/2026-05-22",
-        "version": 1,
-        "sizeKey": "2x4"
-      }
-    },
-    {
-      "x": 0,
-      "y": 6,
-      "w": 4,
-      "h": 2,
-      "colSpan": 4,
-      "rowSpan": 2,
-      "id": "poem",
-      "type": "itab-poem-10",
-      "enable": true,
-      "isPublic": true,
-      "data": {
-        "runtime": "itab-poem",
-        "layoutSystem": "itab-grid/2026-05-22",
-        "version": 1,
-        "sizeKey": "2x4",
-        "currentPoem": {
-          "id": "5b8b9572e116fb3714e6fbd3",
-          "sentence": "竹外桃花三两枝，春江水暖鸭先知。",
-          "poemTitle": "惠崇春江晚景二首 / 惠崇春江晓景二首",
-          "author": "苏轼",
-          "dynasty": "宋代",
-          "fullText": [
-            "竹外桃花三两枝，春江水暖鸭先知。",
-            "蒌蒿满地芦芽短，正是河豚欲上时。",
-            "两两归鸿欲破群，依依还似北归人。",
-            "遥知朔漠多风雪，更待江南半月春。"
-          ],
-          "translation": [],
-          "annotations": [],
-          "preface": [],
-          "popularity": 1880000,
-          "cacheAt": "2026-05-28T21:19:07.393822036",
-          "sourceStatus": "ok"
-        },
-        "paletteIndex": 1,
-        "paletteDate": "2026-05-28"
-      }
-    },
-    {
-      "x": 0,
-      "y": 4,
-      "w": 4,
-      "h": 2,
-      "colSpan": 4,
-      "rowSpan": 2,
-      "id": "pomodoro",
-      "type": "itab-pomodoro-29",
-      "enable": true,
-      "isPublic": true,
-      "data": {
-        "runtime": "itab-pomodoro",
-        "layoutSystem": "itab-grid/2026-05-22",
-        "version": 1,
-        "sizeKey": "2x4",
-        "duration": 1500,
-        "remainingSeconds": 1500,
-        "phase": "idle",
-        "isRunning": false,
-        "sessions": 0,
-        "themeIndex": 0,
-        "audioEnabled": true
-      }
-    },
-    {
-      "x": 4,
-      "y": 6,
-      "w": 4,
-      "h": 2,
-      "colSpan": 4,
-      "rowSpan": 2,
-      "id": "movie-calendar",
-      "type": "itab-movie-calendar-05",
-      "enable": true,
-      "isPublic": true,
-      "data": {
-        "runtime": "itab-movie-calendar",
-        "layoutSystem": "itab-grid/2026-05-22",
-        "version": 1,
-        "sizeKey": "2x4"
-      }
-    },
-    {
-      "x": 4,
-      "y": 4,
-      "w": 2,
-      "h": 2,
-      "colSpan": 2,
-      "rowSpan": 2,
-      "id": "ip",
-      "type": "itab-ip-30",
-      "enable": true,
-      "isPublic": true,
-      "data": {
-        "runtime": "itab-ip",
-        "layoutSystem": "itab-grid/2026-05-22",
-        "version": 1,
-        "sizeKey": "2x2"
-      }
-    },
-    {
-      "x": 4,
-      "y": 0,
-      "w": 4,
-      "h": 2,
-      "colSpan": 4,
-      "rowSpan": 2,
-      "id": "calendar",
-      "type": "itab-calendar-01",
-      "enable": true,
-      "isPublic": true,
-      "data": {
-        "runtime": "itab-calendar",
-        "layoutSystem": "itab-grid/2026-05-22",
-        "version": 1,
-        "sizeKey": "2x4"
-      }
-    },
-    {
-      "x": 13,
-      "y": 6,
-      "w": 1,
-      "h": 2,
-      "colSpan": 1,
-      "rowSpan": 2,
-      "hideOnMobile": false,
-      "id": "docker",
-      "type": "docker",
-      "enable": true,
-      "isPublic": true,
-      "data": {
-        "runtime": "docker",
-        "version": 1,
-        "sizeKey": "2x1",
-        "layoutSystem": "itab-grid/2026-05-22"
-      }
-    },
-    {
-      "x": 12,
-      "y": 6,
-      "w": 1,
-      "h": 2,
-      "colSpan": 1,
-      "rowSpan": 2,
-      "id": "system-status",
-      "type": "system-status",
-      "enable": true,
-      "isPublic": true,
-      "data": {
-        "layoutSystem": "itab-grid/2026-05-22",
-        "sizeKey": "2x1",
-        "runtime": "system-status",
-        "version": 1
-      }
     }
   ]
 }

@@ -5,6 +5,24 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import ItabFoodPickerWidget from "./ItabFoodPickerWidget.vue";
 import { createDefaultItabFoodPickerWidget } from "./itabFoodPickerModel";
 
+const createWidgetWithMenu = () => {
+  const widget = createDefaultItabFoodPickerWidget();
+  widget.data = {
+    ...widget.data,
+    menuItems: [
+      "牛肉粉",
+      "砂锅粥",
+      "肠粉",
+      "咖喱饭",
+      "云吞面",
+      "麻辣烫",
+      "汉堡",
+      "寿司",
+    ],
+  };
+  return widget;
+};
+
 describe("ItabFoodPickerWidget", () => {
   afterEach(() => {
     vi.restoreAllMocks();
@@ -32,7 +50,7 @@ describe("ItabFoodPickerWidget", () => {
     vi.spyOn(Date, "now").mockReturnValue(1770000000000);
     const wrapper = mount(ItabFoodPickerWidget, {
       props: {
-        widget: createDefaultItabFoodPickerWidget(),
+        widget: createWidgetWithMenu(),
         sizeKey: "2x2",
       },
     });
@@ -54,7 +72,7 @@ describe("ItabFoodPickerWidget", () => {
     vi.spyOn(Date, "now").mockReturnValue(1770000000001);
     const wrapper = mount(ItabFoodPickerWidget, {
       props: {
-        widget: createDefaultItabFoodPickerWidget(),
+        widget: createWidgetWithMenu(),
         sizeKey: "2x2",
         refreshToken: 0,
       },

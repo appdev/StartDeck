@@ -8,11 +8,21 @@ use startdeck_server::{AppState, app};
 use std::io::Write;
 use tower::ServiceExt;
 
+struct TestContext {
+    app: axum::Router,
+    pool: sqlx::SqlitePool,
+    config: RuntimeConfig,
+}
+
 async fn test_app() -> axum::Router {
-    test_app_with_widget_cache(true).await
+    test_context_with_widget_cache(true).await.app
 }
 
 async fn test_app_with_widget_cache(include_poem_cache: bool) -> axum::Router {
+    test_context_with_widget_cache(include_poem_cache).await.app
+}
+
+async fn test_context_with_widget_cache(include_poem_cache: bool) -> TestContext {
     let temp = tempfile::tempdir().unwrap();
     let base = temp.keep();
     let data_dir = base.join("Data/data");
@@ -132,7 +142,12 @@ async fn test_app_with_widget_cache(include_poem_cache: bool) -> axum::Router {
     let config = RuntimeConfig::from_base_dir(base);
     let pool = connect_sqlite(&config).await.unwrap();
     import_legacy_app_data(&pool, &config).await.unwrap();
-    app(AppState::new_with_remote_itab_fetch(config, pool, false))
+    let app = app(AppState::new_with_remote_itab_fetch(
+        config.clone(),
+        pool.clone(),
+        false,
+    ));
+    TestContext { app, pool, config }
 }
 
 async fn test_app_with_seeded_weather_cache() -> axum::Router {
@@ -253,6 +268,31 @@ async fn login_token_for(app: &axum::Router, username: &str, password: &str) -> 
     let body: Value =
         serde_json::from_slice(&to_bytes(response.into_body(), usize::MAX).await.unwrap()).unwrap();
     body["token"].as_str().unwrap().to_string()
+}
+
+async fn seed_stale_default_runtime_cache(pool: &sqlx::SqlitePool, value: Value) {
+    sqlx::query(
+        r#"INSERT OR REPLACE INTO runtime_cache(kind, cache_key, value_json, expires_at, source_status, updated_at)
+           VALUES ('default_template', 'global', ?, NULL, 'stale-fixture', ?)"#,
+    )
+    .bind(value.to_string())
+    .bind(chrono::Utc::now().timestamp_millis())
+    .execute(pool)
+    .await
+    .unwrap();
+}
+
+async fn default_runtime_cache_value(pool: &sqlx::SqlitePool) -> Option<String> {
+    sqlx::query_scalar::<_, String>(
+        "SELECT value_json FROM runtime_cache WHERE kind = 'default_template' AND cache_key = 'global'",
+    )
+    .fetch_optional(pool)
+    .await
+    .unwrap()
+}
+
+fn read_default_template_json(config: &RuntimeConfig) -> Value {
+    serde_json::from_slice(&std::fs::read(&config.default_template_file).unwrap()).unwrap()
 }
 
 #[tokio::test]
@@ -598,6 +638,273 @@ async fn login_and_read_data_snapshot() {
         .await
         .unwrap();
     assert_eq!(response.status(), StatusCode::NOT_FOUND);
+}
+
+#[tokio::test]
+async fn stale_default_runtime_cache_does_not_affect_guest_reads_or_reset() {
+    let context = test_context_with_widget_cache(true).await;
+    seed_stale_default_runtime_cache(
+        &context.pool,
+        json!({
+            "appConfig": {"customTitle": "Stale Runtime Cache"},
+            "groups": [{
+                "id": "stale-group",
+                "title": "Stale Group",
+                "items": [{"id": "stale-link", "title": "Stale Link", "url": "https://stale.example.com", "icon": "", "isPublic": true}]
+            }],
+            "widgets": [
+                {"id": "memo", "type": "memo", "enable": true, "isPublic": true, "data": {"content": "stale memo"}},
+                {"id": "runtime-cache-only", "type": "memo", "enable": true, "isPublic": true, "data": {"content": "cache only"}}
+            ]
+        }),
+    )
+    .await;
+
+    let (status, body) = json_call(&context.app, "GET", "/api/data", None, None).await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(body["isGuest"], true);
+    assert_eq!(body["appConfig"]["customTitle"], "Guest Default");
+    assert_eq!(body["groups"][0]["id"], "guest-group");
+    assert_eq!(body["widgets"][0]["data"]["content"], "guest memo");
+    assert!(!body.to_string().contains("Stale Runtime Cache"));
+
+    let (status, body) = json_call(&context.app, "GET", "/api/widgets/memo", None, None).await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(body["data"]["content"], "guest memo");
+
+    let (status, body) = json_call(
+        &context.app,
+        "GET",
+        "/api/widgets/runtime-cache-only",
+        None,
+        None,
+    )
+    .await;
+    assert_eq!(status, StatusCode::NOT_FOUND);
+    assert_eq!(body["error"], "widget_not_found");
+
+    let token = login_token(&context.app).await;
+    let (status, body) = json_call(
+        &context.app,
+        "POST",
+        "/api/save",
+        Some(&token),
+        Some(json!({
+            "appConfig": {"customTitle": "Before Reset"},
+            "groups": [],
+            "widgets": []
+        })),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(body["success"], true);
+
+    let (status, body) = json_call(&context.app, "POST", "/api/reset", Some(&token), None).await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(body["success"], true);
+
+    let (status, body) = json_call(&context.app, "GET", "/api/data", Some(&token), None).await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(body["appConfig"]["customTitle"], "Guest Default");
+    assert_eq!(body["groups"][0]["id"], "guest-group");
+    assert_eq!(body["widgets"][0]["data"]["content"], "guest memo");
+    assert!(!body.to_string().contains("Stale Runtime Cache"));
+}
+
+#[tokio::test]
+async fn system_config_get_uses_public_default_without_auth_and_db_for_valid_token() {
+    let context = test_context_with_widget_cache(true).await;
+    let token = login_token(&context.app).await;
+    sqlx::query(
+        r#"INSERT INTO system_config(id, enable_docker, config_json, updated_at)
+           VALUES (1, 1, ?, ?)
+           ON CONFLICT(id) DO UPDATE SET
+             enable_docker=excluded.enable_docker,
+             config_json=excluded.config_json,
+             updated_at=excluded.updated_at"#,
+    )
+    .bind(json!({"enableDocker": true, "dbOnly": "visible-to-auth"}).to_string())
+    .bind(chrono::Utc::now().timestamp_millis())
+    .execute(&context.pool)
+    .await
+    .unwrap();
+
+    let (status, body) = json_call(&context.app, "GET", "/api/system-config", None, None).await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(body["enableDocker"], false);
+    assert!(body.get("dbOnly").is_none());
+
+    let (status, body) = json_call(
+        &context.app,
+        "GET",
+        "/api/system-config",
+        Some("invalid-token"),
+        None,
+    )
+    .await;
+    assert_eq!(status, StatusCode::UNAUTHORIZED);
+    assert_eq!(body["error"], "invalid_token");
+
+    let (status, body) = json_call(
+        &context.app,
+        "GET",
+        "/api/system-config",
+        Some(&token),
+        None,
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(body["enableDocker"], true);
+    assert_eq!(body["dbOnly"], "visible-to-auth");
+}
+
+#[tokio::test]
+async fn default_save_requires_admin_and_non_admin_failures_leave_file_unchanged() {
+    let context = test_context_with_widget_cache(true).await;
+    let before = std::fs::read(&context.config.default_template_file).unwrap();
+
+    let (status, body) = json_call(&context.app, "POST", "/api/default/save", None, None).await;
+    assert_eq!(status, StatusCode::UNAUTHORIZED);
+    assert_eq!(body["error"], "invalid_token");
+    assert_eq!(
+        std::fs::read(&context.config.default_template_file).unwrap(),
+        before
+    );
+
+    let admin_token = login_token(&context.app).await;
+    let (status, body) = json_call(
+        &context.app,
+        "POST",
+        "/api/admin/users",
+        Some(&admin_token),
+        Some(json!({"username": "editor", "password": "secret"})),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(body["success"], true);
+    let user_token = login_token_for(&context.app, "editor", "secret").await;
+
+    let (status, body) = json_call(
+        &context.app,
+        "POST",
+        "/api/default/save",
+        Some(&user_token),
+        None,
+    )
+    .await;
+    assert_eq!(status, StatusCode::FORBIDDEN);
+    assert_eq!(body["error"], "permission_denied");
+    assert_eq!(
+        std::fs::read(&context.config.default_template_file).unwrap(),
+        before
+    );
+}
+
+#[tokio::test]
+async fn admin_default_save_writes_default_file_without_mutating_runtime_cache() {
+    let context = test_context_with_widget_cache(true).await;
+    seed_stale_default_runtime_cache(
+        &context.pool,
+        json!({
+            "appConfig": {"customTitle": "Do Not Mutate Runtime Cache"},
+            "groups": [],
+            "widgets": []
+        }),
+    )
+    .await;
+    let stale_cache = default_runtime_cache_value(&context.pool).await;
+    let token = login_token(&context.app).await;
+
+    let (status, body) = json_call(
+        &context.app,
+        "POST",
+        "/api/save",
+        Some(&token),
+        Some(json!({
+            "appConfig": {"customTitle": "Saved Admin Default"},
+            "groups": [{
+                "id": "saved-group",
+                "title": "Saved Group",
+                "items": [{"id": "saved-link", "title": "Saved Link", "url": "https://saved.example.com", "icon": "", "isPublic": true}]
+            }],
+            "widgets": [{"id": "saved-widget", "type": "memo", "enable": true, "isPublic": true, "data": {"content": "saved widget"}}]
+        })),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(body["success"], true);
+
+    let (status, body) = json_call(
+        &context.app,
+        "POST",
+        "/api/default/save",
+        Some(&token),
+        None,
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(body["success"], true);
+
+    let default_json = read_default_template_json(&context.config);
+    assert_eq!(
+        default_json["appConfig"]["customTitle"],
+        "Saved Admin Default"
+    );
+    assert_eq!(default_json["groups"][0]["id"], "saved-group");
+    assert_eq!(default_json["groups"][0]["items"][0]["id"], "saved-link");
+    assert_eq!(default_json["widgets"][0]["id"], "saved-widget");
+    assert_eq!(
+        default_json["widgets"][0]["data"]["content"],
+        "saved widget"
+    );
+    assert!(default_json["appConfig"].is_object());
+    assert!(default_json["groups"].is_array());
+    assert!(default_json["widgets"].is_array());
+    assert!(default_json.get("username").is_none());
+    assert!(default_json.get("password").is_none());
+    assert!(default_json.get("systemConfig").is_none());
+    assert!(default_json.get("enableDocker").is_none());
+    assert_eq!(
+        default_runtime_cache_value(&context.pool).await,
+        stale_cache
+    );
+}
+
+#[cfg(unix)]
+#[tokio::test]
+async fn admin_default_save_write_failure_preserves_existing_default_file() {
+    use std::os::unix::fs::PermissionsExt;
+
+    let context = test_context_with_widget_cache(true).await;
+    let token = login_token(&context.app).await;
+    let before = std::fs::read(&context.config.default_template_file).unwrap();
+    let parent = context.config.default_template_file.parent().unwrap();
+    let original_permissions = std::fs::metadata(parent).unwrap().permissions();
+    let mut read_only_permissions = original_permissions.clone();
+    read_only_permissions.set_mode(0o555);
+    std::fs::set_permissions(parent, read_only_permissions).unwrap();
+
+    let (status, body) = json_call(
+        &context.app,
+        "POST",
+        "/api/default/save",
+        Some(&token),
+        None,
+    )
+    .await;
+    std::fs::set_permissions(parent, original_permissions).unwrap();
+
+    assert_eq!(status, StatusCode::INTERNAL_SERVER_ERROR);
+    assert!(
+        body["error"]
+            .as_str()
+            .unwrap()
+            .contains("default_template_write_failed")
+    );
+    assert_eq!(
+        std::fs::read(&context.config.default_template_file).unwrap(),
+        before
+    );
 }
 
 #[tokio::test]
@@ -1274,14 +1581,14 @@ async fn route_surface_smoke_covers_auth_and_runtime_semantics() {
     assert_eq!(body["data"]["content"], "cached poem");
 
     let (status, body) = json_call(&app, "GET", "/api/today-english", None, None).await;
-    assert_eq!(status, StatusCode::OK);
-    assert_eq!(body["data"]["sourceStatus"], "fallback");
-    assert!(body["data"]["sentence"].as_str().unwrap().len() > 10);
+    assert_eq!(status, StatusCode::BAD_GATEWAY);
+    assert_eq!(body["success"], false);
+    assert_eq!(body["error"], "cache_miss");
 
     let (status, body) = json_call(&app, "GET", "/api/movie-calendar", None, None).await;
-    assert_eq!(status, StatusCode::OK);
-    assert_eq!(body["data"]["sourceStatus"], "fallback");
-    assert_eq!(body["data"]["movieTitle"], "雌雄莫辨");
+    assert_eq!(status, StatusCode::BAD_GATEWAY);
+    assert_eq!(body["success"], false);
+    assert_eq!(body["error"], "cache_miss");
 
     let (status, body) = json_call(&app, "GET", "/api/weather/location", None, None).await;
     assert_eq!(status, StatusCode::BAD_GATEWAY);
@@ -1376,13 +1683,15 @@ async fn route_surface_smoke_covers_auth_and_runtime_semantics() {
 }
 
 #[tokio::test]
-async fn widget_fallbacks_cover_empty_runtime_cache() {
+async fn dynamic_widgets_without_cache_return_empty_error() {
     let app = test_app_with_widget_cache(false).await;
 
-    let (status, body) = json_call(&app, "GET", "/api/poem", None, None).await;
-    assert_eq!(status, StatusCode::OK);
-    assert_eq!(body["data"]["sourceStatus"], "fallback");
-    assert_eq!(body["data"]["poemTitle"], "浪淘沙");
+    for uri in ["/api/poem", "/api/today-english", "/api/movie-calendar"] {
+        let (status, body) = json_call(&app, "GET", uri, None, None).await;
+        assert_eq!(status, StatusCode::BAD_GATEWAY, "{uri}");
+        assert_eq!(body["success"], false, "{uri}");
+        assert_eq!(body["error"], "cache_miss", "{uri}");
+    }
 }
 
 #[tokio::test]

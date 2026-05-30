@@ -101,10 +101,144 @@ describe("TapdDefectsOpenedPanel", () => {
     await wrapper.vm.$nextTick();
 
     expect(wrapper.text()).toContain("支付回调失败");
-    await wrapper.find(".tapd-table-row i").trigger("click");
+    await wrapper.find(".tapd-block-action").trigger("click");
 
     expect(updateData).toHaveBeenCalled();
     expect(JSON.stringify(updateData.mock.calls.at(-1)?.[0])).toContain("1824");
+  });
+
+  it("shows the full title popover only when the single-line title overflows", async () => {
+    const longTitle =
+      "支付回调失败导致订单挂起并且通知中心没有同步更新消息状态";
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () =>
+        Response.json({
+          status: "connected",
+          workspaceId: "20358627",
+          total: 2,
+          visibleTotal: 2,
+          blockedTotal: 0,
+          verificationTotal: 0,
+          critical: 1,
+          visibleScope: "owned-by-current-user",
+          page: 1,
+          limit: 100,
+          items: [],
+        }),
+      ),
+    );
+    const widget = createDefaultTapdDefectWidget();
+    widget.id = "tapd-title-popover";
+    widget.data = {
+      ...(widget.data as Record<string, unknown>),
+      workspaceId: "20358627",
+      projectName: "支付平台",
+      hasServerCredential: true,
+      lastSummary: {
+        status: "connected",
+        workspaceId: "20358627",
+        total: 2,
+        visibleTotal: 2,
+        blockedTotal: 0,
+        verificationTotal: 0,
+        critical: 1,
+        visibleScope: "owned-by-current-user",
+        page: 1,
+        limit: 100,
+        items: [
+          {
+            id: "1824",
+            severity: "P0",
+            priorityLabel: "P0",
+            title: longTitle,
+            status: "new",
+            url: "https://www.tapd.cn/20358627/bugtrace/bugs/view/1824",
+          },
+          {
+            id: "1825",
+            severity: "P2",
+            priorityLabel: "P2",
+            title: "短标题",
+            status: "new",
+            url: "https://www.tapd.cn/20358627/bugtrace/bugs/view/1825",
+          },
+        ],
+      },
+    };
+    const wrapper = mount(TapdDefectsOpenedPanel, {
+      global: {
+        plugins: [createTestingPinia({ createSpy: vi.fn })],
+      },
+      props: { widget },
+    });
+    await wrapper.vm.$nextTick();
+
+    const titles = wrapper.findAll(".tapd-title-preview");
+    Object.defineProperty(titles[0].element, "clientWidth", {
+      configurable: true,
+      value: 120,
+    });
+    Object.defineProperty(titles[0].element, "scrollWidth", {
+      configurable: true,
+      value: 280,
+    });
+    Object.defineProperty(titles[1].element, "clientWidth", {
+      configurable: true,
+      value: 200,
+    });
+    Object.defineProperty(titles[1].element, "scrollWidth", {
+      configurable: true,
+      value: 200,
+    });
+
+    await titles[0].trigger("click");
+    expect(wrapper.find(".tapd-title-popover").text()).toBe(longTitle);
+
+    await titles[1].trigger("click");
+    expect(wrapper.find(".tapd-title-popover").exists()).toBe(false);
+  });
+
+  it("renders the table title and sync status on the same title line", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () =>
+        Response.json({
+          status: "connected",
+          workspaceId: "40685585",
+          total: 3,
+          visibleTotal: 3,
+          blockedTotal: 0,
+          verificationTotal: 0,
+          critical: 0,
+          assignedToCurrentUser: 0,
+          visibleScope: "owned-by-current-user",
+          page: 1,
+          limit: 100,
+          items: [],
+        }),
+      ),
+    );
+    const widget = createDefaultTapdDefectWidget();
+    widget.id = "tapd-table-title-line";
+    widget.data = normalizeTapdDefectWidgetData({
+      workspaceId: "40685585",
+      projectName: "UGOS_PRO",
+      hasServerCredential: true,
+    });
+    const wrapper = mount(TapdDefectsOpenedPanel, {
+      global: {
+        plugins: [createTestingPinia({ createSpy: vi.fn })],
+      },
+      props: { widget },
+    });
+
+    await flushPromises();
+    await wrapper.vm.$nextTick();
+
+    const titleLine = wrapper.find(".tapd-table-title-line");
+    expect(titleLine.find("h3").text()).toBe("当前账号待处理缺陷");
+    expect(titleLine.find("span").text()).toBe("已同步 3 条待处理结果");
   });
 
   it("only exposes the current-owner processing filter", async () => {
@@ -393,7 +527,9 @@ describe("TapdDefectsOpenedPanel", () => {
     expect(wrapper.text()).not.toContain("旧缺陷不应展示");
     expect(wrapper.find(".tapd-opened-mask").exists()).toBe(true);
     expect(wrapper.findAll(".tapd-table-row")).toHaveLength(0);
-    expect(wrapper.find(".tapd-summary-card strong").text()).toBe("0");
+    expect(wrapper.find('[data-testid="tapd-summary-visible"]').text()).toBe(
+      "0",
+    );
   });
 
   it("refreshes defects after saving connected config", async () => {

@@ -61,7 +61,7 @@ watch(
           </g>
         </svg>
       </span>
-      <template v-else>
+      <template v-else-if="runtime.hasContent.value">
         <span class="daily-english-follow">
           {{ runtime.entry.value.mode }}
           <svg viewBox="0 0 12 12" aria-hidden="true">
@@ -77,6 +77,7 @@ watch(
         </span>
       </template>
       <audio
+        v-if="runtime.entry.value.audioUrl"
         class="daily-english-audio"
         :src="runtime.entry.value.audioUrl"
         preload="none"

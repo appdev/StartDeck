@@ -14,12 +14,12 @@ export interface ItabDailyEnglishWidgetData {
 }
 
 export interface ItabDailyEnglishEntry {
-  mode: "跟读";
+  mode: string;
   sentence: string;
   translation: string;
   progressLabel: string;
   imageUrl: string;
   audioUrl: string;
   dateline: string;
-  sourceStatus?: "ok" | "stale" | "error" | "fallback" | string;
+  sourceStatus?: "ok" | "stale" | "error" | "loading" | string;
 }

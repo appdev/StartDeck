@@ -81,4 +81,25 @@ describe("ItabMovieCalendarWidget", () => {
       expect.any(AbortSignal),
     );
   });
+
+  it("renders no movie text when the backend has no cached entry", async () => {
+    vi.mocked(fetchItabMovieCalendar).mockRejectedValueOnce(
+      new Error("cache_miss"),
+    );
+    const wrapper = mount(ItabMovieCalendarWidget, {
+      props: {
+        widget: createDefaultItabMovieCalendarWidget(),
+        sizeKey: "2x2",
+      },
+    });
+
+    await nextTickCycle();
+
+    expect(wrapper.attributes("data-itab-movie-calendar-source-status")).toBe(
+      "error",
+    );
+    expect(wrapper.attributes("data-itab-movie-calendar-title")).toBe("");
+    expect(wrapper.find(".movie-wide").exists()).toBe(false);
+    expect(wrapper.text()).toBe("");
+  });
 });

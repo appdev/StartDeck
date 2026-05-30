@@ -11,53 +11,17 @@ import type {
 
 export const ITAB_POEM_ICON_URL = "/itab-live-assets/today-shici.svg";
 
-export const ITAB_POEM_FALLBACK_ENTRIES: ItabPoemEntry[] = [
-  {
-    sentence: "垂杨紫陌洛城东，总是当时携手处，游遍芳丛。",
-    poemTitle: "浪淘沙",
-    author: "欧阳修",
-    dynasty: "宋",
-    fullText: [
-      "把酒祝东风，且共从容。",
-      "垂杨紫陌洛城东，总是当时携手处，游遍芳丛。",
-      "聚散苦匆匆，此恨无穷。",
-      "今年花胜去年红，可惜明年花更好，知与谁同？",
-    ],
-    translation: [
-      "端起酒杯向东方祈祷，请你再留些时日不要一去匆匆。",
-      "洛阳城东垂柳婆娑的郊野小道，就是我们去年携手同游的地方。",
-      "欢聚和离散都是这样匆促，心中的遗恨却无尽无穷。",
-    ],
-    annotations: [
-      "把酒：端着酒杯。",
-      "从容：留恋，不舍。",
-      "紫陌：指洛阳的道路。",
-      "匆匆：形容时间匆促。",
-    ],
-    preface: [
-      "此词为春日与友人在洛阳城东旧地同游，有感而作。",
-      "上片叙事，回忆昔日洛城游春赏花之欢聚；下片写聚散无常之感。",
-    ],
-  },
-  {
-    sentence: "此生飘荡何时歇？家在西南，常作东南别。",
-    poemTitle: "醉落魄 · 离京口作",
-    author: "苏轼",
-    dynasty: "宋",
-    fullText: [
-      "轻云微月，二更酒醒船初发。",
-      "孤城回望苍烟合，记得歌时，不记归时节。",
-      "巾偏扇坠藤床滑，觉来幽梦无人说。",
-      "此生飘荡何时歇？家在西南，常作东南别。",
-    ],
-    translation: [
-      "轻云浮动，月色微茫，夜深酒醒时船刚刚启程。",
-      "回望孤城，暮霭苍苍，只记得歌声，却不记得归来的时节。",
-    ],
-    annotations: ["京口：今江苏镇江。", "藤床：藤编的卧榻。"],
-    preface: ["此词写离别途中酒醒后的怅惘，结句直抒漂泊之感。"],
-  },
-];
+const EMPTY_POEM: ItabPoemApiData = {
+  sentence: "",
+  poemTitle: "",
+  author: "",
+  dynasty: "",
+  fullText: [],
+  translation: [],
+  annotations: [],
+  preface: [],
+  sourceStatus: "empty",
+};
 
 export const ITAB_POEM_PALETTES: ItabPoemPalette[] = [
   {
@@ -162,9 +126,8 @@ export const useItabPoemRuntime = (
   const didInitialLoad = ref(false);
   const loading = ref(false);
   const error = ref("");
-  const sourceStatus = ref("fallback");
+  const sourceStatus = ref("loading");
   const remotePoem = ref<ItabPoemApiData | null>(null);
-  const fallbackIndex = ref(0);
   const normalizedData = computed(() =>
     normalizeItabPoemWidgetData(widget.value.data),
   );
@@ -175,12 +138,16 @@ export const useItabPoemRuntime = (
 
   const syncedPoem = computed(() => normalizedData.value.currentPoem);
   const activePoem = computed(
-    () =>
-      remotePoem.value ||
-      syncedPoem.value ||
-      ITAB_POEM_FALLBACK_ENTRIES[
-        fallbackIndex.value % ITAB_POEM_FALLBACK_ENTRIES.length
-      ]!,
+    () => remotePoem.value || syncedPoem.value || EMPTY_POEM,
+  );
+  const hasContent = computed(() =>
+    Boolean(
+      activePoem.value.sentence ||
+        activePoem.value.poemTitle ||
+        activePoem.value.author ||
+        activePoem.value.dynasty ||
+        activePoem.value.fullText.length,
+    ),
   );
   const activePalette = computed(
     () => ITAB_POEM_PALETTES[paletteIndex.value % ITAB_POEM_PALETTES.length]!,
@@ -290,16 +257,6 @@ export const useItabPoemRuntime = (
     return true;
   };
 
-  const cycleFallbackPoem = (shouldRandomizePalette = true) => {
-    remotePoem.value = null;
-    fallbackIndex.value =
-      (fallbackIndex.value + 1) % ITAB_POEM_FALLBACK_ENTRIES.length;
-    sourceStatus.value = "fallback";
-    if (shouldRandomizePalette) {
-      randomizePalette();
-    }
-  };
-
   const loadPoem = async (refresh = false) => {
     const sequence = ++requestSequence;
     abortController?.abort();
@@ -326,10 +283,6 @@ export const useItabPoemRuntime = (
       }
       error.value = err instanceof Error ? err.message : "诗词加载失败";
       sourceStatus.value = "error";
-      if (refresh || !remotePoem.value) {
-        cycleFallbackPoem(refresh);
-        emitNormalizedData(activePoem.value);
-      }
       return false;
     } finally {
       if (sequence === requestSequence) {
@@ -360,6 +313,7 @@ export const useItabPoemRuntime = (
   return {
     normalizedData,
     activePoem,
+    hasContent,
     paletteStyle,
     loading,
     error,
@@ -367,7 +321,6 @@ export const useItabPoemRuntime = (
     ensureLoaded,
     loadPoem,
     refreshPoem,
-    cycleFallbackPoem,
     randomizePalette,
     dispose,
   };

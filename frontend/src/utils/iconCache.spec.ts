@@ -7,6 +7,17 @@ describe("iconCache", () => {
     vi.unstubAllGlobals();
   });
 
+  it("keeps existing app-local cache paths without another cache request", async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(cacheIconToLocal("/icon-cache/remote.svg")).resolves.toEqual({
+      path: "/icon-cache/remote.svg",
+      error: null,
+    });
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   it("sends remote http icon addresses through the backend cache URL contract", async () => {
     const fetchMock = vi.fn(
       async (input: RequestInfo | URL, init?: RequestInit) => {
@@ -71,6 +82,51 @@ describe("iconCache", () => {
     expect(fetchMock).toHaveBeenCalledTimes(2);
     expect(String(fetchMock.mock.calls[0]?.[0])).toBe(
       "http://localhost:3000/icons/resource.svg",
+    );
+  });
+
+  it("inlines Icon Server cache paths before writing them into the app-local cache", async () => {
+    class TestFileReader {
+      result: string | null = null;
+      onload: (() => void) | null = null;
+      onerror: (() => void) | null = null;
+
+      readAsDataURL(blob: Blob) {
+        this.result = `data:${blob.type || "image/png"};base64,iVBORw0KGgo=`;
+        this.onload?.();
+      }
+    }
+    vi.stubGlobal("FileReader", TestFileReader);
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response("png-bytes", {
+          status: 200,
+          headers: { "Content-Type": "image/png" },
+        }),
+      )
+      .mockImplementationOnce(
+        async (input: RequestInfo | URL, init?: RequestInit) => {
+          expect(input).toBe("/api/icon-cache");
+          const body = JSON.parse(String(init?.body));
+          expect(body.dataUrl).toMatch(/^data:image\/png/);
+          return new Response(
+            JSON.stringify({ success: true, path: "/icon-cache/doubao.png" }),
+            { status: 200, headers: { "Content-Type": "application/json" } },
+          );
+        },
+      );
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(
+      cacheIconToLocal("/cache/saved-doubao.png?t=123456"),
+    ).resolves.toEqual({
+      path: "/icon-cache/doubao.png",
+      error: null,
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(String(fetchMock.mock.calls[0]?.[0])).toBe(
+      "http://localhost:3000/cache/saved-doubao.png?t=123456",
     );
   });
 

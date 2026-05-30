@@ -159,9 +159,10 @@ export const parseAnniversaryDateParts = (
   value: string,
   today = new Date(),
 ) => {
-  const [rawYear, rawMonth, rawDay] = value
-    .split("-")
-    .map((item) => Number(item));
+  const [rawYear, rawMonth, rawDay] = value.split("-").map((item) => {
+    const trimmed = item.trim();
+    return trimmed ? Number(trimmed) : Number.NaN;
+  });
   const year = Number.isFinite(rawYear)
     ? Math.min(Math.max(rawYear, 1820), 2101)
     : today.getFullYear();

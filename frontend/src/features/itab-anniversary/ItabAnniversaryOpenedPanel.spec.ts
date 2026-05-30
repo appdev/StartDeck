@@ -17,6 +17,18 @@ const cardSource = readFileSync(
 );
 
 describe("ItabAnniversaryOpenedPanel", () => {
+  const createWidgetWithEventData = () => {
+    const widget = createDefaultItabAnniversaryWidget();
+    widget.data = {
+      ...(widget.data as Record<string, unknown>),
+      title: "纪念日",
+      label: "你在世界已经",
+      eventName: "你在世界已经",
+      date: "1997-10-1",
+    };
+    return widget;
+  };
+
   it("keeps the source-measured light template list and 2x2 card metrics", () => {
     const wrapper = mount(ItabAnniversaryOpenedPanel, {
       props: { widget: createDefaultItabAnniversaryWidget() },
@@ -66,7 +78,7 @@ describe("ItabAnniversaryOpenedPanel", () => {
 
   it("keeps source-like common event behavior: only the event text changes", async () => {
     const wrapper = mount(ItabAnniversaryOpenedPanel, {
-      props: { widget: createDefaultItabAnniversaryWidget() },
+      props: { widget: createWidgetWithEventData() },
     });
 
     await wrapper.find(".anniversary-common-trigger").trigger("click");
@@ -116,7 +128,7 @@ describe("ItabAnniversaryOpenedPanel", () => {
 
   it("opens the wheel date picker, updates day selection, and closes when repeat opens", async () => {
     const wrapper = mount(ItabAnniversaryOpenedPanel, {
-      props: { widget: createDefaultItabAnniversaryWidget() },
+      props: { widget: createWidgetWithEventData() },
     });
 
     await wrapper.find('button[aria-label="日期"]').trigger("click");

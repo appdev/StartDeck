@@ -74,7 +74,10 @@ watch(
         </i>
       </span>
 
-      <span v-else-if="sizeKey === '1x2'" class="movie-inline">
+      <span
+        v-else-if="sizeKey === '1x2' && runtime.hasContent.value"
+        class="movie-inline"
+      >
         <span class="movie-inline-stack">
           <span class="movie-title" :title="runtime.entry.value.movieTitle">
             《{{ runtime.entry.value.movieTitle }}》
@@ -85,7 +88,10 @@ watch(
         </span>
       </span>
 
-      <span v-else-if="sizeKey === '2x1'" class="movie-vertical">
+      <span
+        v-else-if="sizeKey === '2x1' && runtime.hasContent.value"
+        class="movie-vertical"
+      >
         <span class="movie-vertical-stack">
           <span
             class="movie-title movie-title-vertical"
@@ -99,7 +105,7 @@ watch(
         </span>
       </span>
 
-      <span v-else class="movie-wide">
+      <span v-else-if="runtime.hasContent.value" class="movie-wide">
         <span class="movie-date">
           <strong>{{ runtime.entry.value.day }}</strong>
           <em>

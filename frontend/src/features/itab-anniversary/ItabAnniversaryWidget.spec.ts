@@ -7,7 +7,7 @@ import { anniversaryTemplates } from "./useItabAnniversaryRuntime";
 
 describe("ItabAnniversaryWidget", () => {
   it.each(["1x1", "1x2", "2x1", "2x2", "2x4"] as const)(
-    "renders source-sized anniversary content for %s",
+    "renders empty anniversary content for %s when no event data exists",
     (sizeKey) => {
       const wrapper = mount(ItabAnniversaryWidget, {
         props: {
@@ -17,7 +17,8 @@ describe("ItabAnniversaryWidget", () => {
       });
 
       expect(wrapper.attributes("data-itab-anniversary-size")).toBe(sizeKey);
-      expect(wrapper.text()).toContain("你在世界已经");
+      expect(wrapper.text()).toBe("");
+      expect(wrapper.find(".anniversary-card-copy").exists()).toBe(false);
       expect(
         wrapper.find("[data-itab-anniversary-card-size]").attributes(),
       ).toEqual(

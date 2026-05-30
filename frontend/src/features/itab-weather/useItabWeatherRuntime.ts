@@ -182,47 +182,7 @@ const emptyHours = (): WeatherHour[] => [];
 
 const emptyDays = (): WeatherDay[] => [];
 
-export const weatherLifeIndexes: WeatherLifeIndex[] = [
-  {
-    name: "空气污染扩散条件",
-    value: "良",
-    detail: "气象条件有利于污染物扩散。",
-    iconPath:
-      "M12 3a7 7 0 0 1 6.4 9.8A4.6 4.6 0 0 1 14 19H7a4 4 0 0 1-.7-7.9A6 6 0 0 1 12 3z",
-  },
-  {
-    name: "舒适度",
-    value: "较舒适",
-    detail: "白天体感偏暖，晚间较舒适。",
-    iconPath: "M12 4a4 4 0 0 1 4 4v5.2a5 5 0 1 1-8 0V8a4 4 0 0 1 4-4z",
-  },
-  {
-    name: "穿衣",
-    value: "短袖",
-    detail: "建议穿短裙、短裤、薄 T 恤。",
-    iconPath: "M8 5l4 2 4-2 3 4-2 1.5V20H7V10.5L5 9l3-4z",
-  },
-  {
-    name: "感冒",
-    value: "少发",
-    detail: "天气温暖，感冒概率较低。",
-    iconPath: "M7 6h10v4h4v8H3v-8h4V6zm2 2v2h6V8H9z",
-  },
-  {
-    name: "运动",
-    value: "适宜",
-    detail: "空气较好，适合户外活动。",
-    iconPath:
-      "M13 4a2 2 0 1 1-2 2 2 2 0 0 1 2-2zm-1 5l4 2-1 3 3 4-2 2-4-5-2 5H7l2-7-3-1 1-2 3 1 2-2z",
-  },
-  {
-    name: "紫外线",
-    value: "弱",
-    detail: "辐射较弱，外出可适当防护。",
-    iconPath:
-      "M12 5l1.5 4.5H18l-3.6 2.7 1.4 4.8L12 14.2 8.2 17l1.4-4.8L6 9.5h4.5L12 5z",
-  },
-];
+export const weatherLifeIndexes: WeatherLifeIndex[] = [];
 
 interface RuntimeState {
   initialized: boolean;

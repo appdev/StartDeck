@@ -13,7 +13,7 @@ describe("itabAnniversaryModel", () => {
     expect(ITAB_ANNIVERSARY_IMAGE_COUNT).toBe(25);
   });
 
-  it("creates the canonical iTab anniversary widget with source defaults", () => {
+  it("creates the canonical iTab anniversary widget without fallback event data", () => {
     expect(createDefaultItabAnniversaryWidget()).toMatchObject({
       id: "anniversary",
       type: ITAB_ANNIVERSARY_WIDGET_TYPE,
@@ -26,10 +26,10 @@ describe("itabAnniversaryModel", () => {
         layoutSystem: ITAB_GRID_SCHEMA_VERSION,
         version: 1,
         sizeKey: "2x2",
-        title: "纪念日",
-        label: "你在世界已经",
-        eventName: "你在世界已经",
-        date: "1997-10-1",
+        title: "",
+        label: "",
+        eventName: "",
+        date: "",
         mode: "elapsed",
         repeat: "不重复",
         textColor: "#ffffff",
@@ -56,7 +56,7 @@ describe("itabAnniversaryModel", () => {
         layoutSystem: ITAB_GRID_SCHEMA_VERSION,
         version: 1,
         sizeKey: "2x2",
-        title: "纪念日",
+        title: "",
         label: "发工资还有",
         eventName: "发工资还有",
         mode: "elapsed",

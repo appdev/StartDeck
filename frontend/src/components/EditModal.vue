@@ -286,19 +286,25 @@ const metadataFetchSummary = computed(() => {
 
 const hasFetchedMetadata = computed(() => metadataFetchParts.value.length > 0);
 
-const previewTitle = computed(
-  () => lastSiteMetadata.value?.title || form.value.title || "未命名卡片",
+const cardPreviewTitle = computed(() => form.value.title || "未命名卡片");
+
+const cardPreviewUrl = computed(() => form.value.url || "https://example.com");
+
+const cardPreviewIcon = computed(() => form.value.icon || "");
+
+const metadataTitle = computed(
+  () => lastSiteMetadata.value?.title || cardPreviewTitle.value,
 );
 
-const previewUrl = computed(
-  () => lastSiteMetadata.value?.url || form.value.url || "https://example.com",
+const metadataUrl = computed(
+  () => lastSiteMetadata.value?.url || cardPreviewUrl.value,
 );
 
 const previewDescription = computed(
   () => lastSiteMetadata.value?.description || "",
 );
 
-const previewIcon = computed(
+const metadataIcon = computed(
   () => lastSiteMetadata.value?.icon || form.value.icon || "",
 );
 
@@ -591,7 +597,7 @@ const submit = async () => {
 
     if (saveIconToLocal.value) {
       const icon = (form.value.icon || "").trim();
-      if (icon && !icon.startsWith("/icon-cache/")) {
+      if (icon) {
         const cached = await cacheIconToLocal(icon);
         if (cached.path) {
           form.value.icon = cached.path;
@@ -679,19 +685,22 @@ const submit = async () => {
             </svg>
           </button>
           <div class="edit-card-preview-main">
-            <div class="edit-card-preview-icon">
+            <div
+              class="edit-card-preview-icon"
+              :class="{ 'is-empty': !cardPreviewIcon || isIconHidden }"
+            >
               <IconShape
-                v-if="previewIcon && !isIconHidden"
+                v-if="cardPreviewIcon && !isIconHidden"
                 :shape="effectiveIconShape"
-                :size="60"
+                :size="78"
                 :imgScale="form.iconSize"
                 :bgClass="iconBackgroundResolution.color"
-                :icon="previewIcon"
+                :icon="cardPreviewIcon"
               />
-              <span v-else>{{ previewTitle.slice(0, 1) }}</span>
+              <span v-else>{{ cardPreviewTitle.slice(0, 1) }}</span>
             </div>
             <div class="edit-card-preview-copy">
-              <div class="edit-card-preview-name">{{ previewTitle }}</div>
+              <div class="edit-card-preview-name">{{ cardPreviewTitle }}</div>
               <div class="edit-card-preview-public">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
                   <circle cx="12" cy="12" r="9" stroke-width="2" />
@@ -704,7 +713,7 @@ const submit = async () => {
                 </svg>
                 {{ form.isPublic ? "公开" : "私有" }}
               </div>
-              <div class="edit-card-preview-url">{{ previewUrl }}</div>
+              <div class="edit-card-preview-url">{{ cardPreviewUrl }}</div>
             </div>
           </div>
         </div>
@@ -732,7 +741,7 @@ const submit = async () => {
               </svg>
             </span>
             <span class="edit-card-metadata-label">标题</span>
-            <span class="edit-card-metadata-value">{{ previewTitle }}</span>
+            <span class="edit-card-metadata-value">{{ metadataTitle }}</span>
           </div>
           <div v-if="previewDescription" class="edit-card-metadata-row">
             <span class="edit-card-metadata-icon">
@@ -764,12 +773,12 @@ const submit = async () => {
             <span class="edit-card-metadata-label">图标</span>
             <span class="edit-card-metadata-value">
               <IconShape
-                v-if="previewIcon && !isIconHidden"
+                v-if="metadataIcon && !isIconHidden"
                 :shape="effectiveIconShape"
                 :size="28"
                 :imgScale="form.iconSize"
                 :bgClass="iconBackgroundResolution.color"
-                :icon="previewIcon"
+                :icon="metadataIcon"
               />
               <span v-else>未设置</span>
             </span>
@@ -786,7 +795,7 @@ const submit = async () => {
               </svg>
             </span>
             <span class="edit-card-metadata-label">链接</span>
-            <span class="edit-card-metadata-value">{{ previewUrl }}</span>
+            <span class="edit-card-metadata-value">{{ metadataUrl }}</span>
           </div>
         </div>
 
@@ -1777,12 +1786,15 @@ const submit = async () => {
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  border: 1px solid color-mix(in srgb, var(--sd-shell-border) 70%, transparent);
-  border-radius: 14px;
-  background: var(--sd-theme-edit-modal-surface-08);
   color: var(--sd-theme-edit-modal-text-02);
   font-size: 30px;
   font-weight: 800;
+}
+
+.edit-card-preview-icon.is-empty {
+  border: 1px solid color-mix(in srgb, var(--sd-shell-border) 70%, transparent);
+  border-radius: 14px;
+  background: var(--sd-theme-edit-modal-surface-08);
   box-shadow: 0 10px 24px color-mix(in srgb, black 10%, transparent);
 }
 

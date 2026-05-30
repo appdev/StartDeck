@@ -48,13 +48,15 @@ onBeforeUnmount(() => {
     <div class="opened-poem-wrap">
       <section class="opened-poem-hero">
         <div class="opened-poem-quotes">
-          <h2>{{ runtime.activePoem.value.sentence }}</h2>
-          <p>
-            出自 {{ runtime.activePoem.value.dynasty }}⋅
-            {{ runtime.activePoem.value.author }} 的《{{
-              runtime.activePoem.value.poemTitle
-            }}》
-          </p>
+          <template v-if="runtime.hasContent.value">
+            <h2>{{ runtime.activePoem.value.sentence }}</h2>
+            <p>
+              出自 {{ runtime.activePoem.value.dynasty }}⋅
+              {{ runtime.activePoem.value.author }} 的《{{
+                runtime.activePoem.value.poemTitle
+              }}》
+            </p>
+          </template>
           <button
             type="button"
             :disabled="runtime.loading.value"
@@ -101,7 +103,11 @@ onBeforeUnmount(() => {
         </button>
       </section>
 
-      <section ref="detailRef" class="opened-poem-detail">
+      <section
+        v-if="runtime.hasContent.value"
+        ref="detailRef"
+        class="opened-poem-detail"
+      >
         <article class="opened-poem-card">
           <h3>全文</h3>
           <h4>{{ runtime.activePoem.value.poemTitle }}</h4>

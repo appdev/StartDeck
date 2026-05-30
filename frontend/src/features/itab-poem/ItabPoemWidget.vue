@@ -72,10 +72,14 @@ watch(
             fill-opacity="0.3"
           />
         </svg>
-        <span class="poem-body">
+        <span v-if="runtime.hasContent.value" class="poem-body">
           <p class="poem-text">{{ runtime.activePoem.value.sentence }}</p>
           <small
-            v-if="sizeKey === '2x2' || sizeKey === '2x4'"
+            v-if="
+              (sizeKey === '2x2' || sizeKey === '2x4') &&
+              runtime.activePoem.value.poemTitle &&
+              runtime.activePoem.value.author
+            "
             class="poem-source"
           >
             {{ runtime.activePoem.value.poemTitle }} ·

@@ -31,7 +31,7 @@ export const isItabAnniversarySizeKey = (
   typeof value === "string" &&
   ITAB_WIDGET_SIZE_BY_KEY.has(value as ItabWidgetSizeKey);
 
-const normalizeText = (value: unknown, fallback: string) => {
+const normalizeText = (value: unknown, fallback = "") => {
   if (typeof value !== "string") return fallback;
   const next = value.trim();
   return next || fallback;
@@ -69,17 +69,17 @@ export const normalizeItabAnniversaryWidgetData = (
   const sizeKey = isItabAnniversarySizeKey(input.sizeKey)
     ? input.sizeKey
     : ITAB_ANNIVERSARY_DEFAULT_SIZE;
-  const eventName = normalizeText(input.eventName, "你在世界已经");
+  const eventName = normalizeText(input.eventName);
 
   return {
     runtime: ITAB_ANNIVERSARY_RUNTIME,
     layoutSystem: ITAB_GRID_SCHEMA_VERSION,
     version: ITAB_ANNIVERSARY_DATA_VERSION,
     sizeKey,
-    title: normalizeText(input.title, "纪念日"),
+    title: normalizeText(input.title),
     label: normalizeText(input.label, eventName),
     eventName,
-    date: normalizeText(input.date, "1997-10-1"),
+    date: normalizeText(input.date),
     mode: normalizeMode(input.mode),
     repeat: normalizeRepeat(input.repeat),
     textColor: normalizeText(input.textColor, "#ffffff"),

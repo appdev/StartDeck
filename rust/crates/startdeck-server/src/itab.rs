@@ -198,10 +198,6 @@ pub(crate) async fn cached_widget_data(
                     };
                     return Ok(Json(cached_widget_response(row.data, status)));
                 }
-                if let Some((cache_key, data, status)) = fallback_widget_cache(kind) {
-                    cache_widget_payload(&state, kind, cache_key, &data, None, status, now).await?;
-                    return Ok(Json(cached_widget_response(data, status)));
-                }
                 return Err(ApiError::bad_gateway(format!(
                     "widget_source_unavailable: {source_error}"
                 )));
@@ -211,10 +207,6 @@ pub(crate) async fn cached_widget_data(
 
     if let Some(row) = cached {
         return Ok(Json(cached_widget_response(row.data, &row.source_status)));
-    }
-    if let Some((cache_key, data, status)) = fallback_widget_cache(kind) {
-        cache_widget_payload(&state, kind, cache_key, &data, None, status, now).await?;
-        return Ok(Json(cached_widget_response(data, status)));
     }
     Err(ApiError::bad_gateway("cache_miss"))
 }
@@ -878,7 +870,6 @@ fn bing_wallpaper_response(mut data: Value, status: &str) -> Value {
 }
 
 fn cached_widget_response(mut data: Value, status: &str) -> Value {
-    normalize_legacy_widget_api_paths(&mut data);
     if let Value::Object(ref mut object) = data {
         object.insert("sourceStatus".to_string(), json!(status));
     }
@@ -887,38 +878,6 @@ fn cached_widget_response(mut data: Value, status: &str) -> Value {
 
 fn cache_is_current(expires_at: Option<i64>, now: i64) -> bool {
     expires_at.is_some_and(|value| value > now)
-}
-
-fn normalize_legacy_widget_api_paths(data: &mut Value) {
-    let Value::Object(object) = data else {
-        return;
-    };
-    for key in ["imageUrl", "audioUrl", "posterUrl", "coverUrl"] {
-        if let Some(value) = object.get(key).and_then(Value::as_str) {
-            let normalized = normalize_legacy_widget_api_path(value);
-            if normalized != value {
-                object.insert(key.to_string(), Value::String(normalized));
-            }
-        }
-    }
-}
-
-fn normalize_legacy_widget_api_path(value: &str) -> String {
-    for (legacy, current) in [
-        (
-            "/api/itab/today-english/media/",
-            "/api/today-english/media/",
-        ),
-        (
-            "/api/itab/movie-calendar/image/",
-            "/api/movie-calendar/image/",
-        ),
-    ] {
-        if let Some(rest) = value.strip_prefix(legacy) {
-            return format!("{current}{rest}");
-        }
-    }
-    value.to_string()
 }
 
 async fn weather_widget_response(
@@ -1149,86 +1108,6 @@ async fn fetch_codelife_weather_current_bundle(
     }))
 }
 
-fn fallback_widget_cache(kind: &str) -> Option<(&'static str, Value, &'static str)> {
-    match kind {
-        "itab_daily_english" => Some((
-            "fallback",
-            json!({
-                "mode": "跟读",
-                "sentence": "Light stretches longer, painting walls gold.",
-                "translation": "日光拉得更长，把墙壁染成金色。",
-                "progressLabel": "00:00",
-                "imageUrl": "",
-                "audioUrl": "",
-                "dateline": local_date_parts().0,
-                "sourceStatus": "fallback"
-            }),
-            "fallback",
-        )),
-        "itab_movie_calendar" => {
-            let (date, day, month_label, weekday) = local_date_parts();
-            Some((
-                "today:v2",
-                json!({
-                    "date": date,
-                    "day": day,
-                    "monthLabel": month_label,
-                    "weekday": weekday,
-                    "movieTitle": "雌雄莫辨",
-                    "rating": "7.4",
-                    "quote": "你不需要成为任何人，只需做你自己。",
-                    "posterUrl": "",
-                    "coverUrl": "",
-                    "sourceUrl": "https://movie.douban.com/subject/4712730/",
-                    "year": "2011",
-                    "area": "英国 爱尔兰",
-                    "director": "罗德里戈·加西亚",
-                    "intro": "阿尔伯特穿上男侍制服，靠谨慎与坚韧在陌生城市里寻找属于自己的生活。",
-                    "genres": ["剧情"],
-                    "bgColor": "3a444c",
-                    "textColor": "f4f7f9",
-                    "sourceStatus": "fallback"
-                }),
-                "fallback",
-            ))
-        }
-        "itab_poem" => Some((
-            "fallback:v1",
-            json!({
-                "id": "fallback-ouyangxiu-langtaosha",
-                "sentence": "垂杨紫陌洛城东，总是当时携手处，游遍芳丛。",
-                "poemTitle": "浪淘沙",
-                "author": "欧阳修",
-                "dynasty": "宋",
-                "fullText": [
-                    "把酒祝东风，且共从容。",
-                    "垂杨紫陌洛城东，总是当时携手处，游遍芳丛。",
-                    "聚散苦匆匆，此恨无穷。",
-                    "今年花胜去年红，可惜明年花更好，知与谁同？"
-                ],
-                "translation": [
-                    "端起酒杯向东方祈祷，请你再留些时日不要一去匆匆。",
-                    "洛阳城东垂柳婆娑的郊野小道，就是我们去年携手同游的地方。",
-                    "欢聚和离散都是这样匆促，心中的遗恨却无尽无穷。"
-                ],
-                "annotations": [
-                    "把酒：端着酒杯。",
-                    "从容：留恋，不舍。",
-                    "紫陌：指洛阳的道路。",
-                    "匆匆：形容时间匆促。"
-                ],
-                "preface": [
-                    "此词为春日与友人在洛阳城东旧地同游，有感而作。",
-                    "上片叙事，回忆昔日洛城游春赏花之欢聚；下片写聚散无常之感。"
-                ],
-                "sourceStatus": "fallback"
-            }),
-            "fallback",
-        )),
-        _ => None,
-    }
-}
-
 fn local_date_parts() -> (String, String, String, String) {
     let local = Utc::now() + ChronoDuration::hours(8);
     let weekdays = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"];
@@ -1439,35 +1318,5 @@ mod tests {
         assert!(!cache_is_current(None, 1000));
         assert!(!cache_is_current(Some(999), 1000));
         assert!(cache_is_current(Some(1001), 1000));
-    }
-
-    #[test]
-    fn normalizes_legacy_itab_media_paths_in_cached_widget_response() {
-        let payload = cached_widget_response(
-            json!({
-                "imageUrl": "/api/itab/today-english/media/image?date=2026-05-30&v=abc",
-                "audioUrl": "/api/itab/today-english/media/audio?date=2026-05-30&v=abc",
-                "posterUrl": "/api/itab/movie-calendar/image/poster?date=2026-05-30&v=def",
-                "coverUrl": "/api/itab/movie-calendar/image/cover?date=2026-05-30&v=def"
-            }),
-            "ok",
-        );
-
-        assert_eq!(
-            payload["data"]["imageUrl"],
-            "/api/today-english/media/image?date=2026-05-30&v=abc"
-        );
-        assert_eq!(
-            payload["data"]["audioUrl"],
-            "/api/today-english/media/audio?date=2026-05-30&v=abc"
-        );
-        assert_eq!(
-            payload["data"]["posterUrl"],
-            "/api/movie-calendar/image/poster?date=2026-05-30&v=def"
-        );
-        assert_eq!(
-            payload["data"]["coverUrl"],
-            "/api/movie-calendar/image/cover?date=2026-05-30&v=def"
-        );
     }
 }

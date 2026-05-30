@@ -65,11 +65,12 @@ onUnmounted(stopAudio);
   >
     <span class="opened-english-bg" aria-hidden="true"></span>
     <span class="opened-english-shade" aria-hidden="true"></span>
-    <section class="opened-english-copy">
+    <section v-if="runtime.hasContent.value" class="opened-english-copy">
       <p>{{ runtime.entry.value.sentence }}</p>
       <em>{{ runtime.entry.value.translation }}</em>
     </section>
     <button
+      v-if="runtime.entry.value.audioUrl"
       class="opened-english-play"
       type="button"
       data-itab-inner-control
@@ -88,10 +89,15 @@ onUnmounted(stopAudio);
         />
       </svg>
     </button>
-    <span class="opened-english-progress" aria-hidden="true">
+    <span
+      v-if="runtime.entry.value.audioUrl"
+      class="opened-english-progress"
+      aria-hidden="true"
+    >
       {{ runtime.entry.value.progressLabel }}
     </span>
     <audio
+      v-if="runtime.entry.value.audioUrl"
       ref="audioElement"
       class="opened-english-audio"
       :src="runtime.entry.value.audioUrl"

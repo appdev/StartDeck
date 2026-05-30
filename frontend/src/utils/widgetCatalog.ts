@@ -526,11 +526,7 @@ export const createWidgetFromCatalog = (
     case "custom-css":
       return withItabGridData({
         ...base,
-        data: normalizeCustomCssWidgetData({
-          title: "自定义组件",
-          html: '<div class="my-custom-component">\n  <h3>自定义组件</h3>\n  <p>点击打开后编辑内容</p>\n</div>',
-          css: ".my-custom-component {\n  padding: 10px;\n  background: linear-gradient(to right, #e0eafc, #cfdef3);\n  border-radius: 8px;\n  text-align: center;\n  height: 100%;\n  display: flex;\n  flex-direction: column;\n  justify-content: center;\n}\n.my-custom-component h3 {\n  margin: 0 0 5px 0;\n  color: #333;\n}",
-        }),
+        data: normalizeCustomCssWidgetData({}),
       });
     case "docker":
       return withItabGridData(base);

@@ -27,7 +27,7 @@ onMounted(() => {
     :data-itab-movie-calendar-source-status="runtime.sourceStatus.value"
   >
     <span class="movie-calendar-panel-bg" aria-hidden="true"></span>
-    <div class="movie-calendar-panel-copy">
+    <div v-if="runtime.hasContent.value" class="movie-calendar-panel-copy">
       <h3>{{ runtime.entry.value.movieTitle }}</h3>
       <span class="movie-calendar-panel-rating-row">
         <span
@@ -47,7 +47,11 @@ onMounted(() => {
       </p>
       <p class="movie-calendar-panel-intro">{{ runtime.introText.value }}</p>
     </div>
-    <aside class="movie-calendar-panel-poster" aria-hidden="true">
+    <aside
+      v-if="runtime.entry.value.posterUrl || runtime.entry.value.movieTitle"
+      class="movie-calendar-panel-poster"
+      aria-hidden="true"
+    >
       <img
         v-if="runtime.entry.value.posterUrl"
         :src="runtime.entry.value.posterUrl"

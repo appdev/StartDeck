@@ -1,8 +1,18 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
-  <rect x="54" y="78" width="300" height="88" fill="#EFFF2F" rx="32" />
-  <rect x="382" y="78" width="76" height="88" fill="#39FF14" rx="28" />
-  <rect x="54" y="210" width="90" height="90" fill="#00D9FF" rx="30" />
-  <rect x="172" y="210" width="182" height="90" fill="#FF3DF2" rx="32" />
-  <rect x="382" y="210" width="76" height="90" fill="#00D9FF" rx="28" />
-  <rect x="54" y="346" width="404" height="88" fill="#FF7A00" rx="32" />
+  <defs>
+    <linearGradient id="bg" x1="56" y1="42" x2="456" y2="470" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#07100C" />
+      <stop offset="1" stop-color="#0A0D0C" />
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#bg)" />
+  <path
+    fill="#F2C14E"
+    d="M145 96h220c30 0 54 24 54 54s-24 54-54 54H214c-29 0-51 20-54 49h-16c-28 0-50-22-50-50V147c0-29 22-51 51-51Z"
+  />
+  <path
+    fill="#56D6A0"
+    d="M212 217h182c31 0 56 25 56 56v17c0 31-25 56-56 56H307c-4-30-30-52-61-52h-38c-31 0-56-25-56-56v-1c0-11 27-20 60-20Z"
+  />
+  <rect x="108" y="323" width="208" height="92" rx="39" fill="#8BD3FF" />
 </svg>

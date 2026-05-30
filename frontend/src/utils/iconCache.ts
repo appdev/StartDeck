@@ -19,6 +19,15 @@ export type IconCacheResult = {
   error: string | null;
 };
 
+const normalizeLocalIconCachePath = (value: string): string | null => {
+  const trimmed = value.trim();
+  const path = trimmed.split(/[?#]/, 1)[0] || "";
+  if (path.startsWith("/icon-cache/")) {
+    return path;
+  }
+  return null;
+};
+
 const extractIconCacheError = (data: IconCacheErrorResponse | null): string => {
   if (!data) return "图标缓存失败，请稍后重试";
   if (typeof data.error === "string") return data.error;
@@ -75,6 +84,12 @@ const normalizeIconUrlForCache = (
       inlineBeforeCache: true,
     };
   }
+  if (value.startsWith("/cache/")) {
+    return {
+      url: new URL(resolveManagedUrl(value), window.location.origin).toString(),
+      inlineBeforeCache: true,
+    };
+  }
   if (value.startsWith("/icons/")) {
     return {
       url: new URL(toAppUrl(value), window.location.origin).toString(),
@@ -95,7 +110,8 @@ export const cacheIconToLocal = async (
 ): Promise<IconCacheResult> => {
   const trimmed = icon.trim();
   if (!trimmed) return { path: null, error: null };
-  if (trimmed.startsWith("/icon-cache/")) return { path: trimmed, error: null };
+  const localCachePath = normalizeLocalIconCachePath(trimmed);
+  if (localCachePath) return { path: localCachePath, error: null };
 
   let payload: IconCachePayload | null = null;
   let payloadError = "";

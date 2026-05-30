@@ -18,16 +18,7 @@ import {
 const isObject = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
 
-export const ITAB_FOOD_PICKER_DEFAULT_MENU_ITEMS = [
-  "牛肉粉",
-  "砂锅粥",
-  "肠粉",
-  "咖喱饭",
-  "云吞面",
-  "麻辣烫",
-  "寿司",
-  "沙拉",
-];
+export const ITAB_FOOD_PICKER_DEFAULT_MENU_ITEMS: string[] = [];
 
 export const isItabFoodPickerSizeKey = (
   value: unknown,
@@ -41,12 +32,12 @@ const normalizeFoodName = (value: unknown) => {
 };
 
 export const normalizeItabFoodPickerMenuItems = (raw: unknown): string[] => {
-  if (!Array.isArray(raw)) return [...ITAB_FOOD_PICKER_DEFAULT_MENU_ITEMS];
+  if (!Array.isArray(raw)) return [];
   const items = raw
     .map(normalizeFoodName)
     .filter((item, index, list) => item && list.indexOf(item) === index)
     .slice(0, 48);
-  return items.length > 0 ? items : [...ITAB_FOOD_PICKER_DEFAULT_MENU_ITEMS];
+  return items;
 };
 
 export const normalizeItabFoodPickerWidgetData = (

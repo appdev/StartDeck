@@ -10,7 +10,7 @@ import {
 import { ITAB_FOOD_PICKER_WIDGET_TYPE } from "./itabFoodPickerTypes";
 
 describe("itabFoodPickerModel", () => {
-  it("creates the canonical iTab food picker widget with source defaults", () => {
+  it("creates the canonical iTab food picker widget without fallback menu items", () => {
     expect(createDefaultItabFoodPickerWidget()).toMatchObject({
       id: "food-picker",
       type: ITAB_FOOD_PICKER_WIDGET_TYPE,
@@ -47,10 +47,9 @@ describe("itabFoodPickerModel", () => {
     });
   });
 
-  it("falls back to source menu items when the menu becomes empty", () => {
-    expect(normalizeItabFoodPickerMenuItems(["", " "])).toEqual(
-      ITAB_FOOD_PICKER_DEFAULT_MENU_ITEMS,
-    );
+  it("keeps an empty menu empty", () => {
+    expect(normalizeItabFoodPickerMenuItems(["", " "])).toEqual([]);
+    expect(ITAB_FOOD_PICKER_DEFAULT_MENU_ITEMS).toEqual([]);
   });
 
   it("applies iTab size keys without StartDeck size inversion", () => {

@@ -4,6 +4,24 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import ItabFoodPickerOpenedPanel from "./ItabFoodPickerOpenedPanel.vue";
 import { createDefaultItabFoodPickerWidget } from "./itabFoodPickerModel";
 
+const createWidgetWithMenu = () => {
+  const widget = createDefaultItabFoodPickerWidget();
+  widget.data = {
+    ...widget.data,
+    menuItems: [
+      "牛肉粉",
+      "砂锅粥",
+      "肠粉",
+      "咖喱饭",
+      "云吞面",
+      "麻辣烫",
+      "汉堡",
+      "寿司",
+    ],
+  };
+  return widget;
+};
+
 describe("ItabFoodPickerOpenedPanel", () => {
   afterEach(() => {
     vi.restoreAllMocks();
@@ -12,7 +30,7 @@ describe("ItabFoodPickerOpenedPanel", () => {
   it("renders the source wheel and menu editor from persisted data", () => {
     const wrapper = mount(ItabFoodPickerOpenedPanel, {
       props: {
-        widget: createDefaultItabFoodPickerWidget(),
+        widget: createWidgetWithMenu(),
       },
     });
 
@@ -27,7 +45,7 @@ describe("ItabFoodPickerOpenedPanel", () => {
   it("saves edited menu text as canonical picker data", async () => {
     const wrapper = mount(ItabFoodPickerOpenedPanel, {
       props: {
-        widget: createDefaultItabFoodPickerWidget(),
+        widget: createWidgetWithMenu(),
       },
     });
 
@@ -51,7 +69,7 @@ describe("ItabFoodPickerOpenedPanel", () => {
     vi.spyOn(Date, "now").mockReturnValue(1770000000002);
     const wrapper = mount(ItabFoodPickerOpenedPanel, {
       props: {
-        widget: createDefaultItabFoodPickerWidget(),
+        widget: createWidgetWithMenu(),
       },
     });
 

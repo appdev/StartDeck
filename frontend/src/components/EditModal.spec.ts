@@ -44,8 +44,9 @@ const mountEditModal = (data: NavItem, onSave = vi.fn(async () => undefined)) =>
       ],
       stubs: {
         IconShape: {
-          props: ["icon"],
-          template: '<div data-testid="icon-shape">{{ icon }}</div>',
+          props: ["icon", "size", "bgClass", "imgScale", "shape"],
+          template:
+            '<div data-testid="icon-shape" :data-icon="icon" :data-size="size" :data-bg-class="bgClass" :data-img-scale="imgScale" :data-shape="shape">{{ icon }}</div>',
         },
         IconUploader: true,
         IconSelectionModal: true,
@@ -120,6 +121,38 @@ describe("EditModal", () => {
     await wrapper.vm.$nextTick();
 
     expect(inputClick).toHaveBeenCalledTimes(1);
+  });
+
+  it("renders the card preview from the saved form icon without an extra icon frame", async () => {
+    wrapper = mountEditModal({
+      id: "link-1",
+      title: "Doubao",
+      url: "https://www.doubao.com/chat",
+      icon: "/cache/saved-doubao.png",
+      iconSize: 100,
+      iconBackgroundMode: "custom",
+      iconCustomBackgroundColor: "#f3f4f6",
+      isPublic: true,
+    });
+    await wrapper.vm.$nextTick();
+
+    const previewIcon = document.body.querySelector<HTMLElement>(
+      ".edit-card-preview-card .edit-card-preview-icon [data-testid='icon-shape']",
+    );
+
+    expect(previewIcon?.dataset.icon).toBe("/cache/saved-doubao.png");
+    expect(previewIcon?.dataset.size).toBe("78");
+    expect(previewIcon?.dataset.imgScale).toBe("100");
+    expect(previewIcon?.dataset.bgClass).toBe("#f3f4f6");
+    expect(
+      document.body
+        .querySelector(".edit-card-preview-card .edit-card-preview-icon")
+        ?.classList.contains("is-empty"),
+    ).toBe(false);
+    expect(editModalSource).toContain(
+      'const cardPreviewIcon = computed(() => form.value.icon || "");',
+    );
+    expect(editModalSource).toContain(':icon="cardPreviewIcon"');
   });
 
   it("places links before base info and keeps extra addresses collapsed by default", async () => {

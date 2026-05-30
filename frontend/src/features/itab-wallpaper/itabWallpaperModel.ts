@@ -183,11 +183,7 @@ export const normalizeItabWallpaperWidgetData = (
       catalogId: ITAB_WALLPAPER_WIDGET_TYPE,
       localStateKey: "itab.wallpaper.16",
       adapterKind: "wallpaper",
-      state: {
-        progress: 0.8,
-        updatedAt: "2026-05-20T23:40:00+08:00",
-        ...state,
-      },
+      state: { ...state },
     },
   };
 };

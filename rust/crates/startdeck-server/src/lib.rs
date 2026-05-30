@@ -369,7 +369,9 @@ async fn get_data(
     headers: HeaderMap,
 ) -> Result<Json<Value>, ApiError> {
     let Some(username) = optional_username_from_headers(&headers, &state)? else {
-        return Ok(Json(default_template_to_api_value(&state).await?));
+        return Ok(Json(
+            default_template_to_api_value(state.config.as_ref()).await?,
+        ));
     };
     let snapshot = app_snapshot(&state.pool, &username).await?;
     Ok(Json(snapshot_to_api_value(snapshot)))
@@ -416,14 +418,7 @@ async fn save_default(
     let username = require_admin(&headers, &state)?;
     let snapshot = app_snapshot(&state.pool, &username).await?;
     let template = snapshot_to_template_value(snapshot);
-    sqlx::query(
-        r#"INSERT OR REPLACE INTO runtime_cache(kind, cache_key, value_json, expires_at, source_status, updated_at)
-           VALUES ('default_template', 'global', ?, NULL, 'ok', ?)"#,
-    )
-    .bind(template.to_string())
-    .bind(Utc::now().timestamp_millis())
-    .execute(&state.pool)
-    .await?;
+    write_default_template_file(state.config.as_ref(), &template).await?;
     Ok(Json(json!({"success": true})))
 }
 
@@ -432,7 +427,7 @@ async fn reset_data(
     headers: HeaderMap,
 ) -> Result<Json<Value>, ApiError> {
     let username = require_username(&headers, &state)?;
-    let template = load_default_template(&state).await?;
+    let template = read_default_template_file(state.config.as_ref()).await?;
     let snapshot = normalize_snapshot(&state.pool, username, template).await?;
     save_snapshot(&state.pool, &snapshot).await?;
     Ok(Json(json!({"success": true})))
@@ -449,7 +444,13 @@ async fn version(
     Ok(Json(json!({"version": snapshot.version})))
 }
 
-async fn get_system_config(State(state): State<AppState>) -> Result<Json<SystemConfig>, ApiError> {
+async fn get_system_config(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+) -> Result<Json<SystemConfig>, ApiError> {
+    let Some(_) = optional_username_from_headers(&headers, &state)? else {
+        return Ok(Json(SystemConfig::default()));
+    };
     Ok(Json(system_config(&state.pool).await?))
 }
 
@@ -495,7 +496,7 @@ async fn get_widget(
     AxumPath(id): AxumPath<String>,
 ) -> Result<Json<Value>, ApiError> {
     let Some(username) = optional_username_from_headers(&headers, &state)? else {
-        let template = load_default_template(&state).await?;
+        let template = read_default_template_file(state.config.as_ref()).await?;
         let widget = public_template_widget(&template, &id)
             .ok_or_else(|| ApiError::not_found("widget_not_found"))?;
         return Ok(Json(widget));
@@ -1128,14 +1129,11 @@ fn snapshot_to_api_value(snapshot: AppSnapshot) -> Value {
     })
 }
 
-async fn default_template_to_api_value(state: &AppState) -> Result<Value, ApiError> {
-    let template = load_default_template(state).await?;
-    let system = system_config(&state.pool).await?;
+async fn default_template_to_api_value(config: &RuntimeConfig) -> Result<Value, ApiError> {
+    let template = read_default_template_file(config).await?;
+    let system = SystemConfig::default();
     let mut out = object_from_value(template);
-    let groups = public_template_groups(
-        state.config.as_ref(),
-        out.remove("groups").unwrap_or_else(|| json!([])),
-    );
+    let groups = public_template_groups(config, out.remove("groups").unwrap_or_else(|| json!([])));
     let widgets = public_template_widgets(out.remove("widgets").unwrap_or_else(|| json!([])));
     out.entry("appConfig".to_string())
         .or_insert_with(|| json!({}));
@@ -1522,20 +1520,43 @@ fn widget_layout_to_api_object(layout: &Value) -> Map<String, Value> {
     layout_object.clone()
 }
 
-async fn load_default_template(state: &AppState) -> Result<Value, ApiError> {
-    if let Some(row) = sqlx::query(
-        "SELECT value_json FROM runtime_cache WHERE kind = 'default_template' AND cache_key = 'global'",
-    )
-    .fetch_optional(&state.pool)
-    .await?
-    {
-        return Ok(parse_json(row.get::<String, _>("value_json")));
-    }
-    let default_file = state.config.default_template_file.clone();
-    let bytes = fs::read(&default_file)
+async fn read_default_template_file(config: &RuntimeConfig) -> Result<Value, ApiError> {
+    let bytes = fs::read(&config.default_template_file)
         .await
         .map_err(|_| ApiError::not_found("default_template_not_found"))?;
     serde_json::from_slice(&bytes).map_err(ApiError::from)
+}
+
+async fn write_default_template_file(
+    config: &RuntimeConfig,
+    value: &Value,
+) -> Result<(), ApiError> {
+    let path = &config.default_template_file;
+    let parent = path.parent().ok_or_else(|| {
+        ApiError::internal("default_template_write_failed: missing parent directory")
+    })?;
+    fs::create_dir_all(parent)
+        .await
+        .map_err(default_template_write_error)?;
+
+    let file_name = path
+        .file_name()
+        .and_then(|value| value.to_str())
+        .unwrap_or("default.json");
+    let temp_path = parent.join(format!(".{file_name}.{}.tmp", Uuid::new_v4()));
+    let bytes = serde_json::to_vec_pretty(value)?;
+    if let Err(err) = fs::write(&temp_path, bytes).await {
+        return Err(default_template_write_error(err));
+    }
+    if let Err(err) = fs::rename(&temp_path, path).await {
+        let _ = fs::remove_file(&temp_path).await;
+        return Err(default_template_write_error(err));
+    }
+    Ok(())
+}
+
+fn default_template_write_error(err: std::io::Error) -> ApiError {
+    ApiError::internal(format!("default_template_write_failed: {err}"))
 }
 
 async fn list_files_with_ext(dir: &Path, exts: &[&str]) -> Result<Vec<String>, ApiError> {

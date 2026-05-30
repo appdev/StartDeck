@@ -89,4 +89,22 @@ describe("useItabPoemRuntime", () => {
     expect(updates.at(-1)).toMatchObject({ paletteIndex: 0 });
     expect(updates.at(-1)).not.toHaveProperty("paletteDate");
   });
+
+  it("does not synthesize a fallback poem when the backend has no entry", async () => {
+    vi.mocked(fetchItabPoem).mockRejectedValueOnce(new Error("cache_miss"));
+    const widget = ref(createDefaultItabPoemWidget());
+    const updates: ItabPoemWidgetData[] = [];
+    const runtime = useItabPoemRuntime(widget, (data) => {
+      updates.push(data);
+      widget.value.data = data;
+    });
+
+    runtime.ensureLoaded();
+    await flushPromises();
+
+    expect(runtime.sourceStatus.value).toBe("error");
+    expect(runtime.hasContent.value).toBe(false);
+    expect(runtime.activePoem.value.sentence).toBe("");
+    expect(updates).toEqual([]);
+  });
 });

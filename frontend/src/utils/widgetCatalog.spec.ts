@@ -129,7 +129,7 @@ describe("widgetCatalog", () => {
     });
   });
 
-  it("creates custom-css runtime widgets with unique ids and default data", () => {
+  it("creates custom-css runtime widgets with unique ids and empty content", () => {
     vi.spyOn(Date, "now").mockReturnValueOnce(1000).mockReturnValueOnce(1001);
     vi.spyOn(Math, "random")
       .mockReturnValueOnce(0.123456)
@@ -148,7 +148,9 @@ describe("widgetCatalog", () => {
       expect.objectContaining({
         runtime: "custom-css",
         layoutSystem: "itab-grid/2026-05-22",
-        title: "自定义组件",
+        title: "",
+        html: "",
+        css: "",
         sizeKey: "1x1",
       }),
     );
@@ -756,10 +758,7 @@ describe("widgetCatalog", () => {
       },
     });
     expect(memo.id).toMatch(/^memo-/);
-    expect(memo.data.notes[0]).toMatchObject({
-      id: "memo-tip",
-      title: "iTab操作小技巧",
-    });
+    expect(memo.data.notes).toEqual([]);
   });
 
   it("creates canonical iTab poem widgets from the user-facing poem item", () => {
@@ -901,7 +900,7 @@ describe("widgetCatalog", () => {
         currentItem: "",
       },
     });
-    expect(foodPicker.data.menuItems).toContain("牛肉粉");
+    expect(foodPicker.data.menuItems).toEqual([]);
     expect(foodPicker.id).toMatch(/^food-picker-/);
   });
 
@@ -1000,9 +999,9 @@ describe("widgetCatalog", () => {
         runtime: "itab-anniversary",
         version: 1,
         sizeKey: "2x2",
-        title: "纪念日",
-        eventName: "你在世界已经",
-        date: "1997-10-1",
+        title: "",
+        eventName: "",
+        date: "",
         backgroundMode: "image",
         mask: 0,
       },

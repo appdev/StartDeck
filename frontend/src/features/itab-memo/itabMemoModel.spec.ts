@@ -24,10 +24,7 @@ describe("itabMemoModel", () => {
         sizeKey: "2x2",
       },
     });
-    expect(createDefaultItabMemoWidget().data.notes[0]).toMatchObject({
-      id: "memo-tip",
-      title: "iTab操作小技巧",
-    });
+    expect(createDefaultItabMemoWidget().data.notes).toEqual([]);
   });
 
   it("normalizes canonical notes and legacy memo content", () => {
@@ -68,14 +65,7 @@ describe("itabMemoModel", () => {
 
     const defaultData = normalizeItabMemoWidgetData({});
     expect(defaultData.sizeKey).toBe("2x2");
-    expect(defaultData.notes).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({
-          id: "memo-tip",
-          title: "iTab操作小技巧",
-        }),
-      ]),
-    );
+    expect(defaultData.notes).toEqual([]);
   });
 
   it("applies iTab size keys to widget spans without inversion", () => {

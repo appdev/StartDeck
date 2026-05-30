@@ -42,6 +42,13 @@ const withCalendar = computed(() =>
 );
 const templateClass = computed(() => `is-template-${cardTemplate.value.id}`);
 const style = computed(() => anniversaryTemplateStyle(cardTemplate.value));
+const hasEventData = computed(() =>
+  Boolean(
+    cardTemplate.value.label ||
+      cardTemplate.value.eventName ||
+      cardTemplate.value.date,
+  ),
+);
 </script>
 
 <template>
@@ -61,7 +68,7 @@ const style = computed(() => anniversaryTemplateStyle(cardTemplate.value));
     :style="style"
     :data-itab-anniversary-card-size="cardTemplate.sizeKey"
   >
-    <span class="anniversary-card-copy">
+    <span v-if="hasEventData" class="anniversary-card-copy">
       <span>{{ cardTemplate.label }}</span>
       <strong>
         {{

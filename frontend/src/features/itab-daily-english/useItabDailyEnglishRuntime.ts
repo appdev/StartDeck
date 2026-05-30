@@ -6,21 +6,21 @@ export const ITAB_DAILY_ENGLISH_API_REFERENCE =
   "https://api.timelessq.com/english-sentence";
 export const ITAB_DAILY_ENGLISH_PROVIDER_REFERENCE =
   "https://api.timelessq.com";
-export const ITAB_DAILY_ENGLISH_FALLBACK_IMAGE =
-  "/itab-live-assets/today-shici.svg";
 
-export const fallbackItabDailyEnglishEntry = (): ItabDailyEnglishEntry => ({
-  mode: "跟读",
-  sentence: "Light stretches longer, painting walls gold.",
-  translation: "日光拉得更长，把墙壁染成金色。",
-  progressLabel: "00:00",
-  imageUrl: ITAB_DAILY_ENGLISH_FALLBACK_IMAGE,
+export const createEmptyItabDailyEnglishEntry = (
+  sourceStatus: ItabDailyEnglishEntry["sourceStatus"] = "loading",
+): ItabDailyEnglishEntry => ({
+  mode: "",
+  sentence: "",
+  translation: "",
+  progressLabel: "",
+  imageUrl: "",
   audioUrl: "",
-  dateline: "2026-05-20",
-  sourceStatus: "fallback",
+  dateline: "",
+  sourceStatus,
 });
 
-const entry = ref<ItabDailyEnglishEntry>(fallbackItabDailyEnglishEntry());
+const entry = ref<ItabDailyEnglishEntry>(createEmptyItabDailyEnglishEntry());
 const loading = ref(false);
 const error = ref("");
 let abortController: AbortController | null = null;
@@ -46,6 +46,7 @@ export const useItabDailyEnglishRuntime = () => {
       return true;
     } catch (loadError) {
       if (!controller.signal.aborted && serial === requestSerial) {
+        entry.value = createEmptyItabDailyEnglishEntry("error");
         error.value =
           loadError instanceof Error
             ? loadError.message
@@ -63,8 +64,19 @@ export const useItabDailyEnglishRuntime = () => {
   };
 
   const entryStyle = computed<Record<string, string>>(() => ({
-    "--daily-english-image": `url("${entry.value.imageUrl}")`,
+    "--daily-english-image": entry.value.imageUrl
+      ? `url("${entry.value.imageUrl}")`
+      : "none",
   }));
+
+  const hasContent = computed(() =>
+    Boolean(
+      entry.value.sentence ||
+        entry.value.translation ||
+        entry.value.imageUrl ||
+        entry.value.audioUrl,
+    ),
+  );
 
   const sourceStatus = computed(
     () => entry.value.sourceStatus || (error.value ? "error" : "ok"),
@@ -76,6 +88,7 @@ export const useItabDailyEnglishRuntime = () => {
     error,
     sourceStatus,
     entryStyle,
+    hasContent,
     load,
   };
 };

@@ -29,6 +29,7 @@ const BACKEND_PREFIXES = [
   "/api",
   "/backgrounds",
   "/mobile_backgrounds",
+  "/cache",
   "/icon-cache",
   "/public",
   "/proxy",
