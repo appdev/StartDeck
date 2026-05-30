@@ -1,5 +1,6 @@
 use axum::body::{Body, to_bytes};
 use axum::http::{Request, StatusCode};
+use serde_json::json;
 use startdeck_core::{
     RuntimeConfig, connect_sqlite, import_icon_service_data, import_legacy_app_data,
 };
@@ -18,6 +19,19 @@ async fn spawn_icon_service(base: &std::path::Path) -> (String, tokio::task::Joi
     std::fs::write(
         icon_resource_dir.join("icons/resource.svg"),
         r#"<svg id="resource"/>"#,
+    )
+    .unwrap();
+    std::fs::write(
+        icon_resource_dir.join("seed-data.json"),
+        serde_json::to_vec(&json!({
+            "items": [{
+                "title": "Example",
+                "url": "https://example.com/",
+                "icon_url": "data/icons/resource.svg",
+                "background_color": "#fff"
+            }]
+        }))
+        .unwrap(),
     )
     .unwrap();
     std::fs::write(
@@ -52,6 +66,27 @@ async fn main_app(icon_service_base: String, base: &std::path::Path) -> axum::Ro
     std::fs::create_dir_all(&data_dir).unwrap();
     std::fs::create_dir_all(public_dir.join("icons")).unwrap();
     std::fs::write(public_dir.join("index.html"), "<main>StartDeck</main>").unwrap();
+    std::fs::write(
+        data_dir.join("data.json"),
+        serde_json::to_vec(&json!({
+            "username": "admin",
+            "password": "secret",
+            "groups": [{
+                "id": "main",
+                "title": "Main",
+                "items": [{
+                    "id": "example",
+                    "title": "Example",
+                    "url": "https://example.com/",
+                    "icon": "/icon-cache/missing.svg",
+                    "isPublic": true
+                }]
+            }],
+            "widgets": []
+        }))
+        .unwrap(),
+    )
+    .unwrap();
     // This file must be ignored by /icons routing; Icon Server is the only icon source.
     std::fs::write(
         public_dir.join("icons/main-public.svg"),
@@ -107,6 +142,35 @@ async fn proxies_icon_service_static_resources_over_http() {
         .await
         .unwrap();
     assert_eq!(response.status(), StatusCode::NOT_FOUND);
+
+    icon_service.abort();
+}
+
+#[tokio::test]
+async fn missing_icon_cache_file_falls_back_to_icon_service() {
+    let temp = tempfile::tempdir().unwrap();
+    let base = temp.keep();
+    let (icon_service_base, icon_service) = spawn_icon_service(&base).await;
+    let app = main_app(icon_service_base, &base).await;
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/icon-cache/missing.svg?t=1780113685141")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
+    let content_type = response
+        .headers()
+        .get("content-type")
+        .and_then(|value| value.to_str().ok())
+        .unwrap_or_default();
+    assert_eq!(content_type, "image/svg+xml");
+    let body = to_bytes(response.into_body(), usize::MAX).await.unwrap();
+    assert_eq!(body.as_ref(), br#"<svg id="resource"/>"#);
 
     icon_service.abort();
 }

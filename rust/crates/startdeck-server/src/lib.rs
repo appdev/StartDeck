@@ -104,7 +104,6 @@ pub fn app(state: AppState) -> Router {
     let public_dir = state.config.public_dir.clone();
     let backgrounds_dir = state.config.backgrounds_dir.clone();
     let mobile_dir = state.config.mobile_backgrounds_dir.clone();
-    let icon_cache_dir = state.config.icon_cache_dir.clone();
     let itab_live_assets_dir = static_assets::public_subdir(&state.config, "itab-live-assets");
     let itab_assets_dir = static_assets::public_subdir(&state.config, "itab");
     let intro_assets_dir = static_assets::public_subdir(&state.config, "intro-assets");
@@ -152,6 +151,7 @@ pub fn app(state: AppState) -> Router {
         .route("/api/site/metadata", get(site_metadata))
         .route("/api/site/icon", get(site_icon))
         .route("/api/icon-cache", post(cache_icon))
+        .route("/icon-cache/{*path}", get(icon_cache_asset))
         .route("/icons/{*path}", get(icon_service_icon_asset))
         .route("/cache/{*path}", get(icon_service_cache_asset))
         .route("/api/ip/history", get(ip_lookup::user_ip_history))
@@ -240,7 +240,6 @@ pub fn app(state: AppState) -> Router {
             "/mobile_backgrounds",
             get_service(ServeDir::new(mobile_dir)),
         )
-        .nest_service("/icon-cache", get_service(ServeDir::new(icon_cache_dir)))
         .nest_service("/public", get_service(ServeDir::new(public_dir.clone())))
         .fallback(spa_or_404)
         .layer(DefaultBodyLimit::max(50 * 1024 * 1024))
@@ -620,6 +619,10 @@ async fn site_icon(
         .get("url")
         .cloned()
         .ok_or_else(|| ApiError::bad_request("missing_url"))?;
+    proxy_site_icon_response(&state, url).await
+}
+
+async fn proxy_site_icon_response(state: &AppState, url: String) -> Result<Response, ApiError> {
     let response = state
         .http
         .get(format!("{}/api/site/icon", state.icon_service_base))
@@ -641,6 +644,123 @@ async fn site_icon(
     *res.status_mut() = StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::BAD_GATEWAY);
     res.headers_mut().insert(header::CONTENT_TYPE, content_type);
     Ok(res)
+}
+
+async fn icon_cache_asset(
+    State(state): State<AppState>,
+    AxumPath(path): AxumPath<String>,
+) -> Result<Response, ApiError> {
+    let file_name = icon_cache_file_name(&path)?;
+    let target = state.config.icon_cache_dir.join(&file_name);
+    match fs::read(&target).await {
+        Ok(bytes) => {
+            let content_type = mime_guess::from_path(&target)
+                .first_or_octet_stream()
+                .essence_str()
+                .to_string();
+            let mut response = Response::new(Body::from(bytes));
+            if let Ok(value) = HeaderValue::from_str(&content_type) {
+                response.headers_mut().insert(header::CONTENT_TYPE, value);
+            }
+            return Ok(response);
+        }
+        Err(err) if err.kind() == std::io::ErrorKind::NotFound => {}
+        Err(err) => return Err(ApiError::from(err)),
+    }
+
+    let site_url = icon_cache_source_url(&state, &file_name)
+        .await?
+        .ok_or_else(|| ApiError::not_found("icon_cache_not_found"))?;
+    proxy_site_icon_response(&state, site_url).await
+}
+
+fn icon_cache_file_name(path: &str) -> Result<String, ApiError> {
+    let path = path.trim();
+    if path.is_empty()
+        || path.contains('/')
+        || path.contains('\\')
+        || path == "."
+        || path == ".."
+        || !path
+            .chars()
+            .all(|ch| ch.is_ascii_alphanumeric() || matches!(ch, '.' | '-' | '_'))
+    {
+        return Err(ApiError::not_found("icon_cache_not_found"));
+    }
+    Ok(path.to_string())
+}
+
+async fn icon_cache_source_url(
+    state: &AppState,
+    file_name: &str,
+) -> Result<Option<String>, ApiError> {
+    if let Some(url) = nav_item_icon_cache_source_url(&state.pool, file_name).await? {
+        return Ok(Some(url));
+    }
+    let template = read_default_template_file(&state.config).await?;
+    Ok(default_template_icon_cache_source_url(&template, file_name))
+}
+
+async fn nav_item_icon_cache_source_url(
+    pool: &SqlitePool,
+    file_name: &str,
+) -> Result<Option<String>, ApiError> {
+    let with_slash = format!("/icon-cache/{file_name}");
+    let without_slash = format!("icon-cache/{file_name}");
+    let with_slash_query = format!("{with_slash}?%");
+    let without_slash_query = format!("{without_slash}?%");
+    let row = sqlx::query(
+        r#"SELECT url FROM nav_items
+           WHERE url != ''
+             AND (
+               icon = ?
+               OR icon = ?
+               OR icon LIKE ?
+               OR icon LIKE ?
+             )
+           ORDER BY is_public DESC, sort_order ASC
+           LIMIT 1"#,
+    )
+    .bind(with_slash)
+    .bind(without_slash)
+    .bind(with_slash_query)
+    .bind(without_slash_query)
+    .fetch_optional(pool)
+    .await?;
+    Ok(row
+        .map(|row| row.get::<String, _>("url"))
+        .map(|url| url.trim().to_string())
+        .filter(|url| !url.is_empty()))
+}
+
+fn default_template_icon_cache_source_url(template: &Value, file_name: &str) -> Option<String> {
+    template
+        .get("groups")
+        .and_then(Value::as_array)?
+        .iter()
+        .flat_map(|group| {
+            group
+                .get("items")
+                .and_then(Value::as_array)
+                .into_iter()
+                .flatten()
+        })
+        .find_map(|item| {
+            let icon = string_value(item, "icon")?;
+            if icon_cache_reference_file(&icon)? != file_name {
+                return None;
+            }
+            string_value(item, "url")
+        })
+}
+
+fn icon_cache_reference_file(icon: &str) -> Option<&str> {
+    icon.trim()
+        .split(['?', '#'])
+        .next()
+        .unwrap_or_default()
+        .trim_start_matches('/')
+        .strip_prefix("icon-cache/")
 }
 
 async fn icon_service_icon_asset(
