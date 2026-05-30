@@ -618,7 +618,6 @@ export const useSyncStore = defineStore("sync", () => {
           await loadSnap();
           serverSnapshotLoaded = true;
           setTimeout(() => {
-            configStore.checkUpdate();
             networkStore.fetchLuckyStunData();
           }, 2000);
           break;
@@ -639,7 +638,6 @@ export const useSyncStore = defineStore("sync", () => {
             try {
               await loadSnap();
               setTimeout(() => {
-                configStore.checkUpdate();
                 networkStore.fetchLuckyStunData();
               }, 2000);
             } catch (e) {

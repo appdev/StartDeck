@@ -22,6 +22,7 @@ export const useMainStore = defineStore("main", () => {
     const success = await auth.login(usr, pwd);
     if (success) {
       await sync.fetchData();
+      void configStore.checkUpdate({ force: true, notify: true });
     }
     return success;
   };
@@ -78,8 +79,6 @@ export const useMainStore = defineStore("main", () => {
     },
   });
   const currentVersion = computed(() => configStore.currentVersion);
-  const latestVersion = computed(() => configStore.latestVersion);
-  const hasUpdate = computed(() => configStore.hasUpdate);
   const checkUpdate = configStore.checkUpdate;
   const refreshResources = configStore.refreshResources;
   const getAssetUrl = configStore.getAssetUrl;
@@ -274,8 +273,6 @@ export const useMainStore = defineStore("main", () => {
     networkLatency,
     effectiveIsLan,
     currentVersion,
-    latestVersion,
-    hasUpdate,
     checkUpdate,
     refreshResources,
     getAssetUrl,

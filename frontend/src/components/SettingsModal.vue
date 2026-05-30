@@ -1040,7 +1040,7 @@ watch(
 );
 
 onMounted(() => {
-  store.checkUpdate();
+  store.checkUpdate({ force: true, notify: true });
 });
 
 // 配置版本管理

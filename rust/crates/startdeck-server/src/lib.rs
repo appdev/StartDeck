@@ -118,6 +118,7 @@ pub fn app(state: AppState) -> Router {
         .route("/api/default/save", post(save_default))
         .route("/api/reset", post(reset_data))
         .route("/api/version", get(version))
+        .route("/api/app-version/check", get(app_version_check))
         .route("/api/admin/users", get(list_users).post(add_user))
         .route("/api/admin/users/{username}", delete(delete_user))
         .route("/api/admin/license", post(upload_license))
@@ -441,6 +442,28 @@ async fn version(
     };
     let snapshot = app_snapshot(&state.pool, &username).await?;
     Ok(Json(json!({"version": snapshot.version})))
+}
+
+async fn app_version_check(State(state): State<AppState>) -> Result<Json<Value>, ApiError> {
+    let current_version = env!("CARGO_PKG_VERSION");
+    match fetch_latest_docker_hub_version(&state).await {
+        Ok(latest_version) => Ok(Json(json!({
+            "success": true,
+            "currentVersion": current_version,
+            "latestVersion": latest_version,
+            "hasUpdate": latest_version
+                .as_deref()
+                .map(|latest| is_remote_version_newer(current_version, latest))
+                .unwrap_or(false),
+        }))),
+        Err(error) => Ok(Json(json!({
+            "success": false,
+            "currentVersion": current_version,
+            "latestVersion": Value::Null,
+            "hasUpdate": false,
+            "error": error,
+        }))),
+    }
 }
 
 async fn get_system_config(
@@ -1216,6 +1239,142 @@ async fn proxy_request(
     let mut out = Response::new(Body::from(bytes));
     *out.status_mut() = StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::BAD_GATEWAY);
     Ok(out)
+}
+
+const STARTDECK_DOCKER_HUB_TAGS_URL: &str =
+    "https://hub.docker.com/v2/repositories/apkdv/startdeck/tags?page_size=100";
+
+#[derive(Debug, Deserialize)]
+struct DockerHubTagsResponse {
+    results: Vec<DockerHubTag>,
+}
+
+#[derive(Debug, Deserialize)]
+struct DockerHubTag {
+    name: Option<String>,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+struct ParsedVersionTag {
+    numbers: [u64; 4],
+    prerelease: Vec<String>,
+}
+
+async fn fetch_latest_docker_hub_version(state: &AppState) -> Result<Option<String>, String> {
+    let response = state
+        .http
+        .get(STARTDECK_DOCKER_HUB_TAGS_URL)
+        .send()
+        .await
+        .map_err(|err| format!("docker_hub_request_failed: {err}"))?;
+    let status = response.status();
+    if !status.is_success() {
+        return Err(format!("docker_hub_status_{}", status.as_u16()));
+    }
+    let data = response
+        .json::<DockerHubTagsResponse>()
+        .await
+        .map_err(|err| format!("docker_hub_parse_failed: {err}"))?;
+    Ok(select_latest_docker_hub_version(data.results))
+}
+
+fn select_latest_docker_hub_version(tags: Vec<DockerHubTag>) -> Option<String> {
+    tags.into_iter()
+        .filter_map(|tag| tag.name)
+        .filter(|name| parse_version_tag(name).is_some())
+        .max_by(|left, right| compare_version_tags(left, right))
+}
+
+fn parse_version_tag(tag: &str) -> Option<ParsedVersionTag> {
+    let tag = tag.trim().strip_prefix('v').unwrap_or_else(|| tag.trim());
+    if tag.is_empty() {
+        return None;
+    }
+
+    let (body, dash_prerelease) = tag.split_once('-').unwrap_or((tag, ""));
+    let mut numbers = Vec::new();
+    let mut dot_prerelease = Vec::new();
+    for part in body.split('.') {
+        if dot_prerelease.is_empty() && part.chars().all(|ch| ch.is_ascii_digit()) {
+            numbers.push(part.parse::<u64>().ok()?);
+            continue;
+        }
+        dot_prerelease.push(part.to_string());
+    }
+
+    if !(2..=4).contains(&numbers.len()) || dot_prerelease.iter().any(String::is_empty) {
+        return None;
+    }
+
+    let mut normalized_numbers = [0_u64; 4];
+    for (index, value) in numbers.into_iter().enumerate() {
+        normalized_numbers[index] = value;
+    }
+
+    let mut prerelease = dot_prerelease;
+    if !dash_prerelease.is_empty() {
+        prerelease.extend(dash_prerelease.split('.').map(ToString::to_string));
+    }
+    if prerelease.iter().any(|part| part.is_empty()) {
+        return None;
+    }
+
+    Some(ParsedVersionTag {
+        numbers: normalized_numbers,
+        prerelease,
+    })
+}
+
+fn compare_version_tags(left: &str, right: &str) -> std::cmp::Ordering {
+    let Some(left_version) = parse_version_tag(left) else {
+        return std::cmp::Ordering::Less;
+    };
+    let Some(right_version) = parse_version_tag(right) else {
+        return std::cmp::Ordering::Greater;
+    };
+    left_version
+        .numbers
+        .cmp(&right_version.numbers)
+        .then_with(|| compare_prerelease(&left_version.prerelease, &right_version.prerelease))
+}
+
+fn compare_prerelease(left: &[String], right: &[String]) -> std::cmp::Ordering {
+    if left.is_empty() && right.is_empty() {
+        return std::cmp::Ordering::Equal;
+    }
+    if left.is_empty() {
+        return std::cmp::Ordering::Greater;
+    }
+    if right.is_empty() {
+        return std::cmp::Ordering::Less;
+    }
+
+    for index in 0..left.len().max(right.len()) {
+        let Some(left_part) = left.get(index) else {
+            return std::cmp::Ordering::Less;
+        };
+        let Some(right_part) = right.get(index) else {
+            return std::cmp::Ordering::Greater;
+        };
+        if left_part == right_part {
+            continue;
+        }
+
+        let left_number = left_part.parse::<u64>();
+        let right_number = right_part.parse::<u64>();
+        return match (left_number, right_number) {
+            (Ok(left_value), Ok(right_value)) => left_value.cmp(&right_value),
+            (Ok(_), Err(_)) => std::cmp::Ordering::Less,
+            (Err(_), Ok(_)) => std::cmp::Ordering::Greater,
+            (Err(_), Err(_)) => left_part.cmp(right_part),
+        };
+    }
+
+    std::cmp::Ordering::Equal
+}
+
+fn is_remote_version_newer(current: &str, remote: &str) -> bool {
+    compare_version_tags(remote, current).is_gt()
 }
 
 async fn spa_or_404(State(state): State<AppState>, uri: axum::http::Uri) -> Response {
@@ -2111,5 +2270,36 @@ impl From<std::io::Error> for ApiError {
 impl From<serde_json::Error> for ApiError {
     fn from(value: serde_json::Error) -> Self {
         ApiError::internal(value.to_string())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn tag(name: &str) -> DockerHubTag {
+        DockerHubTag {
+            name: Some(name.to_string()),
+        }
+    }
+
+    #[test]
+    fn app_version_helpers_select_highest_semver_tag() {
+        let latest = select_latest_docker_hub_version(vec![
+            tag("latest"),
+            tag("1.2.9"),
+            tag("v1.2.10"),
+            tag("nightly"),
+        ]);
+        assert_eq!(latest.as_deref(), Some("v1.2.10"));
+    }
+
+    #[test]
+    fn app_version_helpers_compare_prerelease_and_stable_versions() {
+        assert!(is_remote_version_newer("1.2.3", "1.2.4"));
+        assert!(!is_remote_version_newer("1.2.3", "1.2.3"));
+        assert!(!is_remote_version_newer("1.2.3", "1.2.2"));
+        assert!(!is_remote_version_newer("1.2.3", "1.2.3-rc.1"));
+        assert!(is_remote_version_newer("1.2.3-rc.1", "1.2.3"));
     }
 }

@@ -4,6 +4,19 @@ import { useStorage } from "@vueuse/core";
 import type { AppConfig, SystemConfig } from "@/types";
 import { resolveManagedUrl } from "@/utils/runtimeUrls";
 import { createDefaultSearchEngines } from "@/utils/searchEngines";
+import { useUiFeedbackStore } from "./uiFeedback";
+
+const STARTDECK_CURRENT_VERSION = __STARTDECK_VERSION__;
+
+type CheckUpdateOptions = {
+  force?: boolean;
+  notify?: boolean;
+};
+
+type AppVersionCheckResponse = {
+  latestVersion?: unknown;
+  hasUpdate?: unknown;
+};
 
 export const useConfigStore = defineStore("config", () => {
   // Pure client-only states (NOT synced to server)
@@ -21,22 +34,15 @@ export const useConfigStore = defineStore("config", () => {
   const serverSyncLockCount = ref(0);
 
   // Version / update checking
-  const currentVersion = "1.2.3";
+  const currentVersion = STARTDECK_CURRENT_VERSION;
   const latestVersion = ref("");
-  const dockerUpdateAvailable = ref(false);
+  const appUpdateAvailable = ref(false);
+  const notifiedLatestVersion = ref("");
   const updateCheckLastAt = useStorage<number>(
     "start-deck-update-check-last-at",
     0,
   );
   const UPDATE_CHECK_TTL = 30 * 60 * 1000;
-
-  const hasUpdate = computed(() => {
-    if (dockerUpdateAvailable.value) return true;
-    if (!latestVersion.value) return false;
-    const v1 = currentVersion.replace(/^v/, "");
-    const v2 = latestVersion.value.replace(/^v/, "");
-    return v1 !== v2;
-  });
 
   // Resource version for cache busting
   const resourceVersion = useStorage("start-deck-resource-version", Date.now());
@@ -137,45 +143,45 @@ export const useConfigStore = defineStore("config", () => {
   };
   const isServerSyncLocked = computed(() => serverSyncLockCount.value > 0);
 
-  const checkUpdate = async (force = false) => {
+  const notifyReleaseUpdate = () => {
+    if (!appUpdateAvailable.value || !latestVersion.value) return;
+    if (notifiedLatestVersion.value === latestVersion.value) return;
+
+    notifiedLatestVersion.value = latestVersion.value;
+    useUiFeedbackStore().notify({
+      title: "发现新版本",
+      message: `StartDeck ${latestVersion.value} 已发布，当前版本 ${currentVersion}。`,
+      tone: "info",
+      durationMs: 5000,
+    });
+  };
+
+  const applyAppVersionCheck = (data: unknown) => {
+    const payload = data as AppVersionCheckResponse | null;
+    latestVersion.value =
+      typeof payload?.latestVersion === "string" ? payload.latestVersion : "";
+    appUpdateAvailable.value = payload?.hasUpdate === true;
+  };
+
+  const checkUpdate = async (options: CheckUpdateOptions = {}) => {
     try {
       const now = Date.now();
       const shouldCheckRemote =
-        force ||
+        Boolean(options.force) ||
         !updateCheckLastAt.value ||
         now - updateCheckLastAt.value >= UPDATE_CHECK_TTL ||
         !latestVersion.value;
 
       if (shouldCheckRemote) {
         updateCheckLastAt.value = now;
-        const res = await fetch(
-          "https://gitee.com/api/v5/repos/gjx0808/StartDeck/tags",
-        );
+        const res = await fetch("/api/app-version/check");
         if (res.ok) {
-          const data = await res.json();
-          if (data.length > 0) {
-            latestVersion.value = data[0].name;
-          }
+          applyAppVersionCheck(await res.json());
         }
       }
+      if (options.notify) notifyReleaseUpdate();
     } catch (e) {
       console.error("Failed to check update", e);
-    }
-
-    if (!systemConfig.value.enableDocker) {
-      dockerUpdateAvailable.value = false;
-      return;
-    }
-
-    try {
-      const res = await fetch("/api/docker-status");
-      if (res.ok) {
-        const data = await res.json();
-        dockerUpdateAvailable.value =
-          data.state === "ready" && Boolean(data.hasUpdate);
-      }
-    } catch {
-      // ignore
     }
   };
 
@@ -207,10 +213,6 @@ export const useConfigStore = defineStore("config", () => {
     effectiveIsLan,
     isPageUnloading,
     currentVersion,
-    latestVersion,
-    dockerUpdateAvailable,
-    hasUpdate,
-    updateCheckLastAt,
     resourceVersion,
     checkUpdate,
     refreshResources,

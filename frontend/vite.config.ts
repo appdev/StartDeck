@@ -1,7 +1,22 @@
+import { readFileSync } from "node:fs";
 import { fileURLToPath, URL } from "node:url";
 import { defineConfig } from "vite";
 import vue from "@vitejs/plugin-vue";
 import vueDevTools from "vite-plugin-vue-devtools";
+
+const startdeckServerCargoToml = fileURLToPath(
+  new URL("../rust/crates/startdeck-server/Cargo.toml", import.meta.url),
+);
+
+const readStartdeckServerVersion = () => {
+  const source = readFileSync(startdeckServerCargoToml, "utf8");
+  const packageBlock = source.match(/\[package\]([\s\S]*?)(?=\n\[|$)/)?.[1];
+  const version = packageBlock?.match(/^\s*version\s*=\s*"([^"]+)"\s*$/m)?.[1];
+  if (!version) {
+    throw new Error(`Missing package.version in ${startdeckServerCargoToml}`);
+  }
+  return version;
+};
 
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => {
@@ -12,6 +27,7 @@ export default defineConfig(({ mode }) => {
   const backendWsTarget = backendTarget.replace(/^http/i, "ws");
   const isDockerBuild = process.env.VITE_DOCKER_BUILD === "1";
   const appBase = process.env.VITE_APP_BASE_PATH?.trim() || "./";
+  const startdeckVersion = readStartdeckServerVersion();
   // 注意：
   // 1. frontend/public 是前端静态素材源目录；默认图标库由 Icon Server 维护。
   // 2. Data/public 是本地运行时构建输出目录，会被 emptyOutDir 清空后重写。
@@ -43,6 +59,9 @@ export default defineConfig(({ mode }) => {
       },
     },
     plugins: [vue(), mode === "development" && vueDevTools()],
+    define: {
+      __STARTDECK_VERSION__: JSON.stringify(startdeckVersion),
+    },
     resolve: {
       alias: {
         "@": fileURLToPath(new URL("./src", import.meta.url)),
@@ -62,6 +81,10 @@ export default defineConfig(({ mode }) => {
       proxy: {
         // 告诉 Vite：遇到 /api 开头的请求，转给 9001 端口
         "/api": {
+          target: backendTarget,
+          changeOrigin: true,
+        },
+        "/proxy": {
           target: backendTarget,
           changeOrigin: true,
         },
