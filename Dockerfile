@@ -29,6 +29,8 @@ RUN npm ci
 
 # Copy source code
 COPY frontend/ .
+RUN mkdir -p /app/rust/crates/startdeck-server
+COPY rust/crates/startdeck-server/Cargo.toml /app/rust/crates/startdeck-server/Cargo.toml
 
 # Build frontend into a temporary dist; Rust-owned resource defaults are copied later.
 ENV TAILWIND_DISABLE_NATIVE=1
