@@ -1,3 +1,5 @@
+import { sessionFetch } from "@/utils/sessionFetch";
+
 export interface ItabTodoFetchOptions {
   headers?: Record<string, string>;
   signal?: AbortSignal;
@@ -7,7 +9,7 @@ export const fetchItabTodoWidgetData = async (
   widgetId: string,
   options: ItabTodoFetchOptions = {},
 ) => {
-  const res = await fetch(`/api/widgets/${encodeURIComponent(widgetId)}`, {
+  const res = await sessionFetch(`/api/widgets/${encodeURIComponent(widgetId)}`, {
     headers: options.headers,
     cache: "no-store",
     signal: options.signal,

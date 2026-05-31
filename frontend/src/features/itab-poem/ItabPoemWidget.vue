@@ -2,6 +2,7 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import type { WidgetConfig } from "@/types";
 import type { ItabWidgetSizeKey } from "@/features/itab-widgets/itabSizePresets";
+import { useAuthStore } from "@/stores/auth";
 import { ITAB_POEM_ICON_URL, useItabPoemRuntime } from "./useItabPoemRuntime";
 import type { ItabPoemWidgetData } from "./itabPoemTypes";
 
@@ -16,9 +17,10 @@ const emit = defineEmits<{
 }>();
 
 const widgetRef = computed(() => props.widget);
-const runtime = useItabPoemRuntime(widgetRef, (data) =>
-  emit("updateData", data),
-);
+const auth = useAuthStore();
+const runtime = useItabPoemRuntime(widgetRef, (data) => {
+  if (auth.isLogged) emit("updateData", data);
+});
 const lastRefreshToken = ref(props.refreshToken ?? 0);
 
 onMounted(() => {

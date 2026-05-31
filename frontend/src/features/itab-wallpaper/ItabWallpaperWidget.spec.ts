@@ -3,6 +3,7 @@ import { nextTick } from "vue";
 import { createPinia, setActivePinia } from "pinia";
 import { mount } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { useAuthStore } from "@/stores/auth";
 import { useMainStore } from "@/stores/main";
 import { fetchItabBingWallpapers } from "./itabWallpaperApi";
 import {
@@ -42,8 +43,11 @@ const flushRuntime = async () => {
 
 describe("ItabWallpaperWidget", () => {
   beforeEach(() => {
-    localStorage.setItem("start-deck-token", "token-for-test");
     setActivePinia(createPinia());
+    const auth = useAuthStore();
+    auth.sessionReady = true;
+    auth.username = "ying";
+    auth.sessionGeneration = "test-session";
     vi.mocked(fetchItabBingWallpapers).mockResolvedValue({
       entries: [latestWallpaper],
       sourceStatus: "ok",

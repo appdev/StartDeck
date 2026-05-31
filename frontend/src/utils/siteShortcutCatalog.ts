@@ -1,4 +1,5 @@
-import { getSiteIconUrl, normalizeSiteUrl } from "@/utils/siteMetadata";
+import { sanitizeNavigationIcon } from "@/utils/iconAssets";
+import { normalizeSiteUrl } from "@/utils/siteMetadata";
 
 export type SiteShortcutCategory =
   | "browser"
@@ -273,7 +274,7 @@ export const getSiteShortcutCatalogItem = (id: string) =>
 
 export const getSiteShortcutIcon = (
   item: StartDeckSiteShortcutCatalogItem,
-): string => item.iconSourceUrl || getSiteIconUrl(item.url);
+): string => sanitizeNavigationIcon(item.iconSourceUrl || "");
 
 export const filterAndSortSiteShortcuts = (
   items: StartDeckSiteShortcutCatalogItem[],

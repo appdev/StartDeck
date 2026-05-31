@@ -1,3 +1,8 @@
+import {
+  resolveSiteMetadata,
+  type ManagedIconCandidate,
+} from "@/utils/iconAssets";
+
 export type SiteMetadataData = {
   url: string | null;
   title: string | null;
@@ -5,15 +10,10 @@ export type SiteMetadataData = {
   description: string | null;
   backgroundColor: string | null;
   fetchedAt: string | null;
+  iconCandidates: ManagedIconCandidate[];
   fetchStatus?: "ok" | "no_icon" | "blocked" | "error" | string | null;
   failureKind?: string | null;
   retryAfter?: string | null;
-};
-
-type SiteMetadataResponse = {
-  code?: number;
-  data?: Partial<SiteMetadataData> | null;
-  msg?: string;
 };
 
 const isLocalHost = (host: string) => {
@@ -40,10 +40,6 @@ const isLocalHost = (host: string) => {
   );
 };
 
-const normalizeString = (value: unknown): string | null => {
-  return typeof value === "string" && value.trim() ? value.trim() : null;
-};
-
 export const normalizeSiteUrl = (input: string): string => {
   const raw = input.trim();
   if (!raw) return "";
@@ -52,41 +48,23 @@ export const normalizeSiteUrl = (input: string): string => {
   return `${isLocalHost(host) ? "http" : "https"}://${raw}`;
 };
 
-export const getSiteIconUrl = (input: string, size = 64): string => {
-  const url = normalizeSiteUrl(input);
-  if (!url) return "";
-  const params = new URLSearchParams({ url, size: size.toString() });
-  return `/api/site/icon?${params.toString()}`;
-};
-
-export const normalizeSiteMetadataPayload = (
-  payload: SiteMetadataResponse,
-  requestedUrl: string,
-): SiteMetadataData | null => {
-  if (!payload || payload.code !== 200 || !payload.data) return null;
-  const data = payload.data;
-  return {
-    url: normalizeString(data.url) || normalizeSiteUrl(requestedUrl) || null,
-    title: normalizeString(data.title),
-    icon: normalizeString(data.icon),
-    description: normalizeString(data.description),
-    backgroundColor: normalizeString(data.backgroundColor),
-    fetchedAt: normalizeString(data.fetchedAt),
-    fetchStatus: normalizeString(data.fetchStatus),
-    failureKind: normalizeString(data.failureKind),
-    retryAfter: normalizeString(data.retryAfter),
-  };
-};
-
 export const fetchSiteMetadata = async (
   input: string,
 ): Promise<SiteMetadataData | null> => {
   const url = normalizeSiteUrl(input);
   if (!url) return null;
-  const res = await fetch(`/api/site/metadata?url=${encodeURIComponent(url)}`);
-  if (!res.ok) return null;
-  const payload = (await res
-    .json()
-    .catch(() => null)) as SiteMetadataResponse | null;
-  return payload ? normalizeSiteMetadataPayload(payload, url) : null;
+  const data = await resolveSiteMetadata(url);
+  if (!data) return null;
+  return {
+    url: data.url || data.normalizedUrl || url,
+    title: data.title,
+    icon: data.selectedIcon?.url || null,
+    description: data.description,
+    backgroundColor: data.backgroundColor,
+    fetchedAt: null,
+    iconCandidates: data.iconCandidates,
+    fetchStatus: data.selectedIcon || data.iconCandidates.length > 0 ? "ok" : "no_icon",
+    failureKind: null,
+    retryAfter: null,
+  };
 };

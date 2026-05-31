@@ -7,6 +7,7 @@
  *
  * Supports both full data saves and fine-grained widget saves.
  */
+import { sanitizeSnapshotIcons } from "@/utils/iconAssets";
 
 export type SaveType = "full" | "widget";
 
@@ -18,20 +19,31 @@ export interface PendingSave {
   type: SaveType;
   widgetId?: string;
   widgetVersion?: number;
+  ownerUsername?: string;
+  ownerSessionGeneration?: string;
   retries: number;
 }
 
 const DB_NAME = "StartDeckOfflineQueue";
 const STORE_NAME = "pendingSaves";
+const QUARANTINE_STORE_NAME = "quarantinedSaves";
 const EXPIRY_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
+
+export type QueueOwner = {
+  username: string;
+  sessionGeneration: string;
+};
 
 function openDB(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
-    const req = indexedDB.open(DB_NAME, 2);
+    const req = indexedDB.open(DB_NAME, 3);
     req.onupgradeneeded = () => {
       const db = req.result;
       if (!db.objectStoreNames.contains(STORE_NAME)) {
         db.createObjectStore(STORE_NAME, { keyPath: "id" });
+      }
+      if (!db.objectStoreNames.contains(QUARANTINE_STORE_NAME)) {
+        db.createObjectStore(QUARANTINE_STORE_NAME, { keyPath: "id" });
       }
     };
     req.onsuccess = () => resolve(req.result);
@@ -46,13 +58,19 @@ export async function enqueue(
   data: Record<string, unknown>,
   baseVersion: number,
   operationTimestamp = Date.now(),
+  owner?: QueueOwner,
 ): Promise<void> {
+  if (!owner?.username || !owner.sessionGeneration) {
+    throw new Error("offline_queue_owner_required");
+  }
   return enqueueItem({
     id: `full_${operationTimestamp}_${Date.now()}`,
     timestamp: operationTimestamp,
     baseVersion,
-    data,
+    data: sanitizeSnapshotIcons(data),
     type: "full",
+    ownerUsername: owner.username,
+    ownerSessionGeneration: owner.sessionGeneration,
     retries: 0,
   });
 }
@@ -66,7 +84,11 @@ export async function enqueueWidget(
   baseVersion: number,
   widgetVersion?: number,
   operationTimestamp = Date.now(),
+  owner?: QueueOwner,
 ): Promise<void> {
+  if (!owner?.username || !owner.sessionGeneration) {
+    throw new Error("offline_queue_owner_required");
+  }
   // Remove existing queued saves for same widget to avoid duplicates
   await removeByWidget(widgetId);
 
@@ -74,10 +96,12 @@ export async function enqueueWidget(
     id: `widget_${widgetId}_${operationTimestamp}_${Date.now()}`,
     timestamp: operationTimestamp,
     baseVersion,
-    data,
+    data: sanitizeSnapshotIcons(data),
     type: "widget",
     widgetId,
     widgetVersion,
+    ownerUsername: owner.username,
+    ownerSessionGeneration: owner.sessionGeneration,
     retries: 0,
   });
 }
@@ -128,8 +152,25 @@ export async function getAll(): Promise<PendingSave[]> {
     req.onsuccess = () => {
       const items: PendingSave[] = (req.result || [])
         .filter((item) => Date.now() - item.timestamp <= EXPIRY_MS)
+        .map((item) => ({
+          ...item,
+          data: sanitizeSnapshotIcons(item.data),
+        }))
         .sort((a, b) => a.timestamp - b.timestamp);
       resolve(items);
+    };
+    req.onerror = () => reject(req.error);
+  });
+}
+
+export async function getQuarantined(): Promise<PendingSave[]> {
+  const db = await openDB();
+  const tx = db.transaction(QUARANTINE_STORE_NAME, "readonly");
+  const store = tx.objectStore(QUARANTINE_STORE_NAME);
+  return new Promise((resolve, reject) => {
+    const req = store.getAll();
+    req.onsuccess = () => {
+      resolve((req.result || []).sort((a, b) => a.timestamp - b.timestamp));
     };
     req.onerror = () => reject(req.error);
   });
@@ -157,6 +198,33 @@ export async function clear(): Promise<void> {
   });
 }
 
+async function quarantine(item: PendingSave): Promise<void> {
+  const db = await openDB();
+  const tx = db.transaction([STORE_NAME, QUARANTINE_STORE_NAME], "readwrite");
+  tx.objectStore(QUARANTINE_STORE_NAME).put({
+    ...item,
+    quarantinedAt: Date.now(),
+  });
+  tx.objectStore(STORE_NAME).delete(item.id);
+  return new Promise((resolve, reject) => {
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+const ownerMatches = (item: PendingSave, owner: QueueOwner) =>
+  item.ownerUsername === owner.username &&
+  item.ownerSessionGeneration === owner.sessionGeneration;
+
+export async function quarantineMismatched(owner: QueueOwner): Promise<void> {
+  const items = await getAll();
+  for (const item of items) {
+    if (!ownerMatches(item, owner)) {
+      await quarantine(item);
+    }
+  }
+}
+
 export async function size(): Promise<number> {
   const items = await getAll();
   return items.length;
@@ -170,6 +238,7 @@ export async function size(): Promise<number> {
  * - Non-recoverable errors (data format) - will abort and notify
  */
 export async function replay(
+  owner: QueueOwner,
   onSave: (
     data: Record<string, unknown>,
     operationTimestamp: number,
@@ -182,6 +251,7 @@ export async function replay(
   ) => Promise<boolean>,
   onNonRecoverableError: (item: PendingSave, error: unknown) => void,
 ): Promise<void> {
+  await quarantineMismatched(owner);
   const items = await getAll();
   if (items.length === 0) return;
 
@@ -202,12 +272,12 @@ export async function replay(
       if (item.type === "widget" && item.widgetId) {
         success = await onSaveWidget(
           item.widgetId,
-          item.data,
+          sanitizeSnapshotIcons(item.data),
           item.timestamp,
           item.widgetVersion,
         );
       } else {
-        success = await onSave(item.data, item.timestamp);
+        success = await onSave(sanitizeSnapshotIcons(item.data), item.timestamp);
       }
     } catch (e) {
       // Non-recoverable error (data format issue, etc.)

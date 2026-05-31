@@ -7,9 +7,17 @@ import TapdDefectsWidget from "./TapdDefectsWidget.vue";
 import { createDefaultTapdDefectWidget } from "./tapdDefectModel";
 import { TAPD_ACTIONABLE_DEFECT_STATUS } from "./tapdDefectTypes";
 
+const authenticatedState = {
+  auth: {
+    sessionReady: true,
+    isLogged: true,
+    username: "ying",
+    sessionGeneration: "test-session",
+  },
+};
+
 describe("TapdDefectsWidget", () => {
   beforeEach(() => {
-    localStorage.setItem("start-deck-token", "user-token");
     localStorage.setItem("start-deck-username", "ying");
   });
 
@@ -55,7 +63,7 @@ describe("TapdDefectsWidget", () => {
           plugins: [
             createTestingPinia({
               createSpy: vi.fn,
-              initialState: { auth: { token: "user-token" } },
+              initialState: authenticatedState,
             }),
           ],
         },
@@ -122,10 +130,10 @@ describe("TapdDefectsWidget", () => {
     const wrapper = mount(TapdDefectsWidget, {
       global: {
         plugins: [
-          createTestingPinia({
-            createSpy: vi.fn,
-            initialState: { auth: { token: "user-token" } },
-          }),
+            createTestingPinia({
+              createSpy: vi.fn,
+              initialState: authenticatedState,
+            }),
         ],
       },
       props: {
@@ -180,10 +188,10 @@ describe("TapdDefectsWidget", () => {
     const wrapper = mount(TapdDefectsWidget, {
       global: {
         plugins: [
-          createTestingPinia({
-            createSpy: vi.fn,
-            initialState: { auth: { token: "user-token" } },
-          }),
+            createTestingPinia({
+              createSpy: vi.fn,
+              initialState: authenticatedState,
+            }),
         ],
       },
       props: {
@@ -238,10 +246,10 @@ describe("TapdDefectsWidget", () => {
     const wrapper = mount(TapdDefectsWidget, {
       global: {
         plugins: [
-          createTestingPinia({
-            createSpy: vi.fn,
-            initialState: { auth: { token: "user-token" } },
-          }),
+            createTestingPinia({
+              createSpy: vi.fn,
+              initialState: authenticatedState,
+            }),
         ],
       },
       props: {

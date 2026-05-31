@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, type Ref } from "vue";
+import { computed, onMounted, onUnmounted, watch, type Ref } from "vue";
 import AppButton from "@/components/base/AppButton.vue";
 import AppSwitch from "@/components/base/AppSwitch.vue";
 import { useResumeRefresh } from "@/composables/useResumeRefresh";
@@ -8,6 +8,7 @@ import { useWidgetDisplaySize } from "@/composables/useWidgetDisplaySize";
 import { useSharedSystemStatusRuntimeState } from "@/features/widget-runtime/systemStatusRuntimeState";
 import { useMainStore } from "@/stores/main";
 import type { WidgetConfig } from "@/types";
+import { sessionFetch } from "@/utils/sessionFetch";
 
 type SystemStats = {
   cpu: {
@@ -112,6 +113,9 @@ const isCatalogPreview = computed(() =>
 );
 const activeSystemStats = computed(() =>
   isCatalogPreview.value ? SYSTEM_STATUS_PREVIEW_STATS : systemStats.value,
+);
+const canFetchSystemStats = computed(
+  () => !isCatalogPreview.value && store.sessionReady && store.isLogged,
 );
 
 const systemWidgetModel = computed(() => {
@@ -290,11 +294,12 @@ const setSystemWidgetMobileVisible = (visible: boolean) => {
   store.markDirty();
 };
 const startPolling = () => {
-  if (isCatalogPreview.value) return;
+  if (!canFetchSystemStats.value) return;
   systemRuntimeState.clearPollingTimer();
   systemRuntimeState.setPollingTimer(
     setInterval(() => {
-      if (document.visibilityState === "hidden") return;
+      if (document.visibilityState === "hidden" || !canFetchSystemStats.value)
+        return;
       void fetchSystemStats();
     }, pollInterval.value),
   );
@@ -305,10 +310,10 @@ const stopPolling = () => {
 };
 
 const fetchSystemStats = async () => {
-  if (isCatalogPreview.value) return;
+  if (!canFetchSystemStats.value) return;
   try {
     const headers = store.getHeaders();
-    const res = await fetch("/api/system/stats", { headers });
+    const res = await sessionFetch("/api/system/stats", { headers });
     if (!res.ok) {
       errorCount.value++;
       if (errorCount.value >= 3) {
@@ -338,12 +343,12 @@ useResumeRefresh({
     stopPolling();
   },
   onVisible: () => {
-    if (isCatalogPreview.value) return;
+    if (!canFetchSystemStats.value) return;
     void fetchSystemStats();
     startPolling();
   },
   onOnline: () => {
-    if (isCatalogPreview.value) return;
+    if (!canFetchSystemStats.value) return;
     void fetchSystemStats();
     startPolling();
   },
@@ -352,8 +357,22 @@ useResumeRefresh({
 onMounted(() => {
   if (isCatalogPreview.value) return;
   systemRuntimeState.retain();
-  void fetchSystemStats();
-  startPolling();
+  if (canFetchSystemStats.value) {
+    void fetchSystemStats();
+    startPolling();
+  }
+});
+
+watch(canFetchSystemStats, (active) => {
+  if (isCatalogPreview.value) return;
+  if (active) {
+    void fetchSystemStats();
+    startPolling();
+  } else {
+    stopPolling();
+    systemStats.value = null;
+    errorCount.value = 0;
+  }
 });
 
 onUnmounted(() => {

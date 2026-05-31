@@ -4,6 +4,7 @@ import { useAuthStore } from "./auth";
 import { useConfigStore } from "./config";
 import { toApiUrl } from "@/utils/runtimeUrls";
 import { useStorage } from "@vueuse/core";
+import { sessionFetch } from "@/utils/sessionFetch";
 
 export const useNetworkStore = defineStore("network", () => {
   const auth = useAuthStore();
@@ -34,11 +35,9 @@ export const useNetworkStore = defineStore("network", () => {
   };
 
   const getHeaders = (): Record<string, string> => {
-    const headers: Record<string, string> = {
+    return {
       "Content-Type": "application/json",
     };
-    if (auth.token) headers["Authorization"] = `Bearer ${auth.token}`;
-    return headers;
   };
 
   const getHeartbeatInterval = () =>
@@ -57,9 +56,8 @@ export const useNetworkStore = defineStore("network", () => {
   const emitNetworkHeartbeat = (
     wsSend: (msg: Record<string, unknown>) => void,
   ) => {
-    const t = auth.token || localStorage.getItem("start-deck-token");
-    if (!t) return;
-    wsSend({ type: "network_heartbeat", payload: { token: t } });
+    if (!auth.sessionReady || !auth.isLogged) return;
+    wsSend({ type: "network_heartbeat", payload: {} });
   };
 
   const updateNetworkSyncMode = (active: boolean) => {
@@ -138,8 +136,8 @@ export const useNetworkStore = defineStore("network", () => {
   const fetchCustomScripts = async () => {
     try {
       const headers = getHeaders();
-      if (!auth.token) return;
-      const res = await fetch("/api/custom-scripts", { headers });
+      if (!auth.sessionReady || !auth.isLogged) return;
+      const res = await sessionFetch("/api/custom-scripts", { headers });
       if (res.ok) {
         const data = await res.json();
         if (data.success) {
@@ -158,7 +156,7 @@ export const useNetworkStore = defineStore("network", () => {
   const saveCustomScripts = async () => {
     try {
       if (!auth.isLogged) return;
-      const res = await fetch("/api/custom-scripts", {
+      const res = await sessionFetch("/api/custom-scripts", {
         method: "POST",
         headers: getHeaders(),
         body: JSON.stringify({
@@ -240,8 +238,8 @@ export const useNetworkStore = defineStore("network", () => {
       configStore.appConfig.wallpaperApiMobileList || "/api/mobile_backgrounds";
     try {
       const [pcRes, mobileRes] = await Promise.all([
-        fetch(pcEndpoint, { headers }),
-        fetch(mobileEndpoint, { headers }),
+        sessionFetch(pcEndpoint, { headers }),
+        sessionFetch(mobileEndpoint, { headers }),
       ]);
       if (pcRes.ok) {
         wallpaperListPc.value = buildOrderedWallpaperList(
@@ -395,7 +393,7 @@ export const useNetworkStore = defineStore("network", () => {
   const fetchSystemConfig = async () => {
     if (import.meta.env.MODE === "test") return;
     try {
-      const res = await fetch(toApiUrl("/api/system-config"));
+      const res = await sessionFetch(toApiUrl("/api/system-config"));
       if (res.ok) configStore.systemConfig = await res.json();
     } catch (e) {
       console.error("Failed to fetch system config", e);

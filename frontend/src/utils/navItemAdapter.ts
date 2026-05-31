@@ -3,8 +3,8 @@ import {
   normalizeIconBackgroundColor,
   normalizeLegacyIconBackground,
 } from "@/utils/iconAppearance";
-import { cacheIconToLocal } from "@/utils/iconCache";
-import { getSiteIconUrl, normalizeSiteUrl } from "@/utils/siteMetadata";
+import { materializeIconInput } from "@/utils/iconAssets";
+import { normalizeSiteUrl } from "@/utils/siteMetadata";
 import {
   getSiteShortcutIcon,
   type StartDeckSiteShortcutCatalogItem,
@@ -128,7 +128,7 @@ export const createNavItemFromCustomIcon = (
             background.iconAutoBackgroundColor ||
             "#1890ff",
         )
-      : (draft.icon || "").trim() || getSiteIconUrl(valid.url);
+      : (draft.icon || "").trim();
 
   return {
     ok: true,
@@ -151,4 +151,4 @@ export const createTextIconDataUrl = (text: string, color = "#1890ff") => {
   return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
 };
 
-export const cacheNavItemIconToLocal = cacheIconToLocal;
+export const materializeNavItemIcon = materializeIconInput;

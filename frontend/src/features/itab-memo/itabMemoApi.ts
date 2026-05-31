@@ -1,3 +1,5 @@
+import { sessionFetch } from "@/utils/sessionFetch";
+
 export interface ItabMemoFetchOptions {
   headers?: Record<string, string>;
   signal?: AbortSignal;
@@ -7,7 +9,7 @@ export const fetchItabMemoWidgetData = async (
   widgetId: string,
   options: ItabMemoFetchOptions = {},
 ) => {
-  const res = await fetch(`/api/widgets/${encodeURIComponent(widgetId)}`, {
+  const res = await sessionFetch(`/api/widgets/${encodeURIComponent(widgetId)}`, {
     headers: options.headers,
     cache: "no-store",
     signal: options.signal,

@@ -5,6 +5,7 @@ import { useSyncStore } from "./sync";
 import { useWidgetsStore } from "./widgets";
 import { useGroupsStore } from "./groups";
 import { useConfigStore } from "./config";
+import { sessionFetch } from "@/utils/sessionFetch";
 
 export const useMainStore = defineStore("main", () => {
   const auth = useAuthStore();
@@ -14,8 +15,9 @@ export const useMainStore = defineStore("main", () => {
   const configStore = useConfigStore();
 
   // ---- Auth ----
-  const token = computed(() => auth.token);
+  const sessionReady = computed(() => auth.sessionReady);
   const username = computed(() => auth.username);
+  const sessionGeneration = computed(() => auth.sessionGeneration);
   const isLogged = computed(() => auth.isLogged);
   const password = computed(() => auth.password);
   const login = async (usr: string, pwd: string): Promise<boolean> => {
@@ -105,7 +107,7 @@ export const useMainStore = defineStore("main", () => {
   const saveCustomScripts = async () => {
     try {
       if (!isLogged.value) return;
-      const res = await fetch("/api/custom-scripts", {
+      const res = await sessionFetch("/api/custom-scripts", {
         method: "POST",
         headers: getHeaders(),
         body: JSON.stringify({
@@ -221,7 +223,7 @@ export const useMainStore = defineStore("main", () => {
   const fetchSystemConfig = sync.fetchSystemConfig;
   const updateSystemConfig = async (payload: Record<string, unknown>) => {
     try {
-      const res = await fetch("/api/system-config", {
+      const res = await sessionFetch("/api/system-config", {
         method: "POST",
         headers: getHeaders(),
         body: JSON.stringify(payload),
@@ -250,8 +252,9 @@ export const useMainStore = defineStore("main", () => {
 
   return {
     // Auth
-    token,
+    sessionReady,
     username,
+    sessionGeneration,
     isLogged,
     password,
     login,

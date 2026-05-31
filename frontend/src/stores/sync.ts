@@ -10,7 +10,8 @@ import { useConfigStore } from "./config";
 import { useCacheStore } from "./cache";
 import { useSaveStore } from "./save";
 import { useNetworkStore } from "./network";
-import { toWsUrl } from "@/utils/runtimeUrls";
+import { onStartDeckSessionInvalid, sessionFetch } from "@/utils/sessionFetch";
+import { sanitizeSnapshotIcons } from "@/utils/iconAssets";
 
 export const useSyncStore = defineStore("sync", () => {
   const auth = useAuthStore();
@@ -25,15 +26,8 @@ export const useSyncStore = defineStore("sync", () => {
   const lastWsUrl = ref("");
   const wsUrl = computed(() => {
     if (typeof window === "undefined") return "";
-    // In dev mode, connect directly to backend WS port to avoid Vite proxy issues
-    if (import.meta.env.DEV) {
-      const backend = import.meta.env.VITE_BACKEND || "http://127.0.0.1:9001";
-      const url = new URL(backend);
-      const wsProtocol = url.protocol === "https:" ? "wss:" : "ws:";
-      const port = url.port || (url.protocol === "https:" ? "443" : "80");
-      return `${wsProtocol}//${url.hostname}:${port}/ws`;
-    }
-    return toWsUrl("/ws");
+    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+    return `${protocol}//${window.location.host}/ws`;
   });
 
   const trackWsUrlChange = (url: string) => {
@@ -89,7 +83,7 @@ export const useSyncStore = defineStore("sync", () => {
   const startWsHealthCheck = () => {
     if (wsHealthCheckTimer) return;
     wsHealthCheckTimer = setInterval(() => {
-      if (!auth.isLogged || status.value !== "OPEN") return;
+      if (!auth.sessionReady || !auth.isLogged || status.value !== "OPEN") return;
       if (networkStore.isStale(30000)) {
         const elapsed = Date.now() - networkStore.lastPingAt;
         console.warn(
@@ -108,7 +102,7 @@ export const useSyncStore = defineStore("sync", () => {
   };
 
   const forceWsReconnect = () => {
-    if (!auth.isLogged) return;
+    if (!auth.sessionReady || !auth.isLogged) return;
     const currentUrl = wsUrl.value;
     if (!currentUrl) return;
     lastWsUrl.value = currentUrl;
@@ -116,7 +110,7 @@ export const useSyncStore = defineStore("sync", () => {
     networkStore.markStale();
     wsClose();
     setTimeout(() => {
-      if (auth.isLogged) {
+      if (auth.sessionReady && auth.isLogged) {
         wsOpen();
         startWsHealthCheck();
       }
@@ -173,14 +167,29 @@ export const useSyncStore = defineStore("sync", () => {
     localStorage.setItem("start-deck-username", nextUsername);
   };
 
+  const revalidateSession = async () => {
+    const wasLogged = auth.isLogged;
+    await auth.bootstrapSession();
+    if (wasLogged && !auth.isLogged) {
+      stopOfflineQueueReplayTimer();
+      networkStore.stopNetworkHeartbeat();
+      stopHttpPolling();
+      stopPingCheck();
+      resetActiveStateForGuest();
+      await init();
+      return false;
+    }
+    return auth.isLogged;
+  };
+
   // ---- HTTP Polling ----
   const fetchVersionOnly = async (): Promise<number> => {
-    if (!auth.isLogged) return dataVersion.value;
+    if (!auth.sessionReady || !auth.isLogged) return dataVersion.value;
     try {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 10000);
       activePollAbortController = controller;
-      const res = await fetch("/api/version", {
+      const res = await sessionFetch("/api/version", {
         method: "GET",
         headers: networkStore.getHeaders(),
         signal: controller.signal,
@@ -268,6 +277,7 @@ export const useSyncStore = defineStore("sync", () => {
   // ---- handleDataUpdate ----
   const handleDataUpdate = (data: Record<string, unknown>) => {
     isApplyingServerData = true;
+    data = sanitizeSnapshotIcons(data);
     // Route by role: guest responses must never overwrite auth state layout
     const responseRole = auth.isLogged ? detectResponseRole(data) : "guest";
     const shouldApply =
@@ -374,14 +384,12 @@ export const useSyncStore = defineStore("sync", () => {
 
   // ---- fetchAndProcessData ----
   const fetchAndProcessData = async () => {
+    if (!auth.sessionReady) return;
     if (cacheStore.isFetchingData) return;
     cacheStore.isFetchingData = true;
     try {
-      const headers: Record<string, string> = {};
-      if (auth.token) headers["Authorization"] = `Bearer ${auth.token}`;
-      const res = await fetch(`/api/data`, { headers });
+      const res = await sessionFetch(`/api/data`);
       if (res.status === 401 && auth.isLogged) {
-        auth.logout();
         resetActiveStateForGuest();
         void init();
         return;
@@ -413,7 +421,8 @@ export const useSyncStore = defineStore("sync", () => {
   let offlineQueueReplayInProgress = false;
 
   const replayOfflineQueueIfNeeded = async () => {
-    if (!auth.isLogged) return;
+    if (!auth.sessionReady || !auth.isLogged) return;
+    if (!auth.username || !auth.sessionGeneration) return;
     if (saveStore.isSaving || offlineQueueReplayInProgress) return;
     if (saveStore.offlineQueueConflictState.show) return;
     if (
@@ -428,6 +437,10 @@ export const useSyncStore = defineStore("sync", () => {
         fetchVersionOnly,
         dataVersion,
         networkStore.getHeaders,
+        {
+          username: auth.username,
+          sessionGeneration: auth.sessionGeneration,
+        },
       );
     } catch (error) {
       console.warn("[OfflineQueue] Periodic replay failed", error);
@@ -457,8 +470,6 @@ export const useSyncStore = defineStore("sync", () => {
       const isReconnect = wsWasConnectedBefore;
       if (!isReconnect) isFirstConnect = false;
       wsWasConnectedBefore = true;
-      if (auth.isLogged && auth.token)
-        wsSend({ type: "auth", payload: { token: auth.token } });
       networkStore.startNetworkHeartbeat(wsSend);
       startWsHealthCheck();
       if (isFirstConnect) return;
@@ -480,6 +491,10 @@ export const useSyncStore = defineStore("sync", () => {
                     fetchVersionOnly,
                     dataVersion,
                     networkStore.getHeaders,
+                    {
+                      username: auth.username,
+                      sessionGeneration: auth.sessionGeneration,
+                    },
                   ),
                 3000,
               );
@@ -497,8 +512,12 @@ export const useSyncStore = defineStore("sync", () => {
         wsContinuousFailures++;
       }
       networkStore.stopNetworkHeartbeat();
+      if (auth.sessionReady && auth.isLogged) {
+        void revalidateSession();
+      }
       // Only trigger HTTP polling fallback when authenticated; guests use HTTP-only mode
       if (
+        auth.sessionReady &&
         auth.isLogged &&
         wsContinuousFailures >= WS_FALLBACK_THRESHOLD &&
         !isHttpPollingActive
@@ -586,9 +605,11 @@ export const useSyncStore = defineStore("sync", () => {
     if (isInitializing) return;
     isInitializing = true;
     initCompleted.value = false;
+    await auth.bootstrapSession();
     // Only open WS when authenticated; avoid meaningless guest reconnect loops
     if (
       typeof window !== "undefined" &&
+      auth.sessionReady &&
       auth.isLogged &&
       status.value !== "OPEN"
     )
@@ -656,7 +677,7 @@ export const useSyncStore = defineStore("sync", () => {
           });
         }
       }
-      if (auth.isLogged) startOfflineQueueReplayTimer();
+      if (auth.sessionReady && auth.isLogged) startOfflineQueueReplayTimer();
     }
   };
 
@@ -690,7 +711,7 @@ export const useSyncStore = defineStore("sync", () => {
       stopHttpPolling();
       stopPingCheck();
       cacheStore.removeCacheForCurrentUser();
-      auth.logout();
+      await auth.logout();
       resetActiveStateForGuest();
       await init();
     } finally {
@@ -716,15 +737,24 @@ export const useSyncStore = defineStore("sync", () => {
   // ---- Init event bindings ----
   if (typeof window !== "undefined") {
     networkStore.initEventBindings(
-      wsOpen,
+      () => {
+        if (auth.sessionReady && auth.isLogged) wsOpen();
+      },
       () => status.value,
       () =>
         saveStore.triggerOfflineQueueReplay(
           fetchVersionOnly,
           dataVersion,
           networkStore.getHeaders,
+          {
+            username: auth.username,
+            sessionGeneration: auth.sessionGeneration,
+          },
         ),
     );
+    onStartDeckSessionInvalid(() => {
+      void revalidateSession();
+    });
   }
 
   // ---- Ping Timeout Detection ----
@@ -765,12 +795,19 @@ export const useSyncStore = defineStore("sync", () => {
 
   // Gate WS lifecycle on auth state changes to prevent guest reconnect storms
   watch(
-    () => auth.isLogged,
-    (logged) => {
-      if (logged) {
+    () => [auth.sessionReady, auth.isLogged, auth.sessionGeneration] as const,
+    async ([ready, logged], previous) => {
+      const previousGeneration = previous?.[2] || "";
+      if (ready && logged) {
         if (typeof window !== "undefined" && status.value !== "OPEN") wsOpen();
         stopHttpPolling();
         startOfflineQueueReplayTimer();
+        if (previousGeneration && previousGeneration !== auth.sessionGeneration) {
+          await saveStore.quarantineMismatchedOfflineQueue({
+            username: auth.username,
+            sessionGeneration: auth.sessionGeneration,
+          });
+        }
         void replayOfflineQueueIfNeeded();
       } else {
         // Guest mode: stop WS, polling, and ping checks to avoid reconnect storms
@@ -780,7 +817,7 @@ export const useSyncStore = defineStore("sync", () => {
         stopPingCheck();
         if (!logoutInProgress) {
           resetActiveStateForGuest();
-          void init();
+          if (ready) void init();
         }
       }
     },

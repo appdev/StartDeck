@@ -62,6 +62,18 @@ pub struct AppSnapshot {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct IconAssetRecord {
+    pub url: String,
+    pub content_type: String,
+    pub width: Option<i64>,
+    pub height: Option<i64>,
+    pub byte_size: i64,
+    pub quality_score: i64,
+    pub quality_checked_at: i64,
+    pub quality_refresh_after: i64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct IconRecord {
     pub host: String,
     pub title: String,
@@ -70,6 +82,7 @@ pub struct IconRecord {
     pub description: String,
     pub background_color: String,
     pub icon: Option<String>,
+    pub icon_asset: Option<IconAssetRecord>,
     pub source: String,
     pub fetch_status: String,
     pub failure_kind: String,

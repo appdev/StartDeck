@@ -12,9 +12,17 @@ import {
   type TapdDefectWidgetData,
 } from "./tapdDefectTypes";
 
+const authenticatedState = {
+  auth: {
+    sessionReady: true,
+    isLogged: true,
+    username: "ying",
+    sessionGeneration: "test-session",
+  },
+};
+
 describe("TapdDefectsOpenedPanel", () => {
   beforeEach(() => {
-    localStorage.setItem("start-deck-token", "user-token");
     localStorage.setItem("start-deck-username", "ying");
   });
 
@@ -90,7 +98,7 @@ describe("TapdDefectsOpenedPanel", () => {
     const updateData = vi.fn();
     const wrapper = mount(TapdDefectsOpenedPanel, {
       global: {
-        plugins: [createTestingPinia({ createSpy: vi.fn })],
+        plugins: [createTestingPinia({ createSpy: vi.fn, initialState: authenticatedState })],
       },
       props: { widget },
       attrs: {
@@ -168,7 +176,7 @@ describe("TapdDefectsOpenedPanel", () => {
     };
     const wrapper = mount(TapdDefectsOpenedPanel, {
       global: {
-        plugins: [createTestingPinia({ createSpy: vi.fn })],
+        plugins: [createTestingPinia({ createSpy: vi.fn, initialState: authenticatedState })],
       },
       props: { widget },
     });
@@ -228,7 +236,7 @@ describe("TapdDefectsOpenedPanel", () => {
     });
     const wrapper = mount(TapdDefectsOpenedPanel, {
       global: {
-        plugins: [createTestingPinia({ createSpy: vi.fn })],
+        plugins: [createTestingPinia({ createSpy: vi.fn, initialState: authenticatedState })],
       },
       props: { widget },
     });
@@ -275,7 +283,7 @@ describe("TapdDefectsOpenedPanel", () => {
     };
     const wrapper = mount(TapdDefectsOpenedPanel, {
       global: {
-        plugins: [createTestingPinia({ createSpy: vi.fn })],
+        plugins: [createTestingPinia({ createSpy: vi.fn, initialState: authenticatedState })],
       },
       props: { widget },
     });
@@ -361,7 +369,7 @@ describe("TapdDefectsOpenedPanel", () => {
     });
     const wrapper = mount(TapdDefectsOpenedPanel, {
       global: {
-        plugins: [createTestingPinia({ createSpy: vi.fn })],
+        plugins: [createTestingPinia({ createSpy: vi.fn, initialState: authenticatedState })],
       },
       props: { widget },
     });
@@ -418,7 +426,7 @@ describe("TapdDefectsOpenedPanel", () => {
     });
     const wrapper = mount(TapdDefectsOpenedPanel, {
       global: {
-        plugins: [createTestingPinia({ createSpy: vi.fn })],
+        plugins: [createTestingPinia({ createSpy: vi.fn, initialState: authenticatedState })],
       },
       props: { widget },
     });
@@ -468,7 +476,7 @@ describe("TapdDefectsOpenedPanel", () => {
     });
     const wrapper = mount(TapdDefectsOpenedPanel, {
       global: {
-        plugins: [createTestingPinia({ createSpy: vi.fn })],
+        plugins: [createTestingPinia({ createSpy: vi.fn, initialState: authenticatedState })],
       },
       props: { widget },
     });
@@ -515,7 +523,7 @@ describe("TapdDefectsOpenedPanel", () => {
     });
     const wrapper = mount(TapdDefectsOpenedPanel, {
       global: {
-        plugins: [createTestingPinia({ createSpy: vi.fn })],
+        plugins: [createTestingPinia({ createSpy: vi.fn, initialState: authenticatedState })],
       },
       props: { widget },
     });
@@ -580,7 +588,7 @@ describe("TapdDefectsOpenedPanel", () => {
     const updateData = vi.fn();
     const wrapper = mount(TapdDefectsOpenedPanel, {
       global: {
-        plugins: [createTestingPinia({ createSpy: vi.fn })],
+        plugins: [createTestingPinia({ createSpy: vi.fn, initialState: authenticatedState })],
         stubs: {
           TapdDefectsConfigDialog: {
             props: ["data", "widgetId"],
@@ -663,7 +671,7 @@ describe("TapdDefectsOpenedPanel", () => {
     const updateData = vi.fn();
     const wrapper = mount(TapdDefectsOpenedPanel, {
       global: {
-        plugins: [createTestingPinia({ createSpy: vi.fn })],
+        plugins: [createTestingPinia({ createSpy: vi.fn, initialState: authenticatedState })],
         stubs: {
           TapdDefectsConfigDialog: {
             props: ["data", "widgetId"],

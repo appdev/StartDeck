@@ -6,6 +6,7 @@ import {
   type ItabIpLookupResult,
 } from "./itabIpTypes";
 import { normalizeItabIpLookupResponse } from "./itabIpModel";
+import { sessionFetch } from "@/utils/sessionFetch";
 
 const now = () => globalThis.performance?.now?.() ?? Date.now();
 
@@ -20,16 +21,7 @@ const formatCheckedAt = () =>
   });
 
 const authHeaders = () => {
-  const headers: Record<string, string> = { accept: "application/json" };
-  try {
-    const token = localStorage.getItem("start-deck-token")?.trim();
-    if (token) {
-      headers.Authorization = `Bearer ${token}`;
-    }
-  } catch {
-    // Ignore storage access failures; /api/ip remains a public lookup endpoint.
-  }
-  return headers;
+  return { accept: "application/json" };
 };
 
 export const fetchItabIpLookup = async (
@@ -59,7 +51,7 @@ export const fetchItabIpLookup = async (
 export const fetchItabIpHistory = async (
   signal?: AbortSignal,
 ): Promise<ItabIpHistoryEntry[]> => {
-  const response = await fetch("/api/ip/history", {
+  const response = await sessionFetch("/api/ip/history", {
     cache: "no-store",
     credentials: "same-origin",
     headers: authHeaders(),

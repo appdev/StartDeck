@@ -14,10 +14,12 @@ async fn main() -> anyhow::Result<()> {
     let pool = connect_sqlite(&config).await?;
     import_legacy_app_data(&pool, &config).await?;
     let addr = format!("{}:{}", config.host, config.port);
+    let state = AppState::new(config, pool);
+    state.run_startup_icon_migration().await?;
     let listener = TcpListener::bind(&addr)
         .await
         .with_context(|| format!("bind {addr}"))?;
     tracing::info!(%addr, "startdeck rust backend listening");
-    axum::serve(listener, app(AppState::new(config, pool))).await?;
+    axum::serve(listener, app(state)).await?;
     Ok(())
 }

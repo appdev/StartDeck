@@ -28,7 +28,9 @@ describe("ItabTodoWidget", () => {
   beforeEach(() => {
     setActivePinia(createPinia());
     const auth = useAuthStore();
-    auth.token = "token";
+    auth.sessionReady = true;
+    auth.username = "ying";
+    auth.sessionGeneration = "session";
     auth.username = "ying";
     vi.stubGlobal(
       "fetch",
@@ -79,7 +81,8 @@ describe("ItabTodoWidget", () => {
 
   it("renders public default tasks for logged-out users", () => {
     const auth = useAuthStore();
-    auth.logout();
+    auth.clearLocalSession();
+    auth.sessionReady = true;
 
     const wrapper = mount(ItabTodoWidget, {
       props: {

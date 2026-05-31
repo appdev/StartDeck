@@ -10,6 +10,7 @@ import { normalizeIncomingWidgets as normalizeIncomingWidgetsUtil } from "@/util
 import type { WidgetConfig } from "@/types";
 import { useAuthStore } from "./auth";
 import { useUiFeedbackStore } from "./uiFeedback";
+import { sessionFetch } from "@/utils/sessionFetch";
 
 export const useWidgetsStore = defineStore("widgets", () => {
   const auth = useAuthStore();
@@ -165,7 +166,7 @@ export const useWidgetsStore = defineStore("widgets", () => {
   };
 
   const requireWidgetMutationPermission = () => {
-    if (auth.isLogged) return true;
+    if (auth.sessionReady && auth.isLogged) return true;
     uiFeedback.notify({
       title: "需要登录",
       message: "请先登录后再修改组件内容。",
@@ -198,11 +199,14 @@ export const useWidgetsStore = defineStore("widgets", () => {
         ? ((w as unknown as Record<string, unknown>)["widgetVersion"] ?? 0)
         : 0;
       const body = { ...payload, version: dataVersion.value, widgetVersion };
-      const res = await fetch(`/api/widgets/${encodeURIComponent(widgetId)}`, {
-        method: "PUT",
-        headers: { ...getHeaders(), "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
+      const res = await sessionFetch(
+        `/api/widgets/${encodeURIComponent(widgetId)}`,
+        {
+          method: "PUT",
+          headers: { ...getHeaders(), "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        },
+      );
       if (res.ok) {
         const result = await res.json().catch(() => null);
         if (
@@ -228,7 +232,7 @@ export const useWidgetsStore = defineStore("widgets", () => {
         return true;
       }
       if (res.status === 401) {
-        auth.logout();
+        auth.clearLocalSession();
       }
       return false;
     } catch (e) {

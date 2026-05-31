@@ -20,7 +20,6 @@ declare global {
 
 const APP_LOCAL_PREFIXES = [
   "/assets",
-  "/icons",
   "/favicon.ico",
   "/favicon.svg",
   "/default-wallpaper.svg",
@@ -29,8 +28,6 @@ const BACKEND_PREFIXES = [
   "/api",
   "/backgrounds",
   "/mobile_backgrounds",
-  "/cache",
-  "/icon-cache",
   "/public",
   "/proxy",
 ];
@@ -181,36 +178,6 @@ export const getApiBaseUrl = () => {
   return joinBaseAndPath(getBackendBaseUrl(), "/api");
 };
 
-const deriveWsBase = () => {
-  const runtime = getRuntimeConfig();
-  const explicitWs = normalizeBaseUrl(
-    firstNonBlank(runtime.wsBaseUrl, import.meta.env.VITE_WS_BASE_URL),
-  );
-  if (explicitWs) return explicitWs;
-
-  const explicitApi = normalizeBaseUrl(
-    firstNonBlank(runtime.apiBaseUrl, import.meta.env.VITE_API_BASE_URL),
-  );
-  if (explicitApi) {
-    const derived = joinBaseAndPath(stripApiSuffix(explicitApi), "/ws");
-    return derived.replace(/^http:/i, "ws:").replace(/^https:/i, "wss:");
-  }
-
-  const backendBase = getBackendBaseUrl();
-  if (backendBase && isAbsoluteLike(backendBase)) {
-    return joinBaseAndPath(
-      backendBase.replace(/^http:/i, "ws:").replace(/^https:/i, "wss:"),
-      "/ws",
-    );
-  }
-
-  if (typeof window === "undefined") return "";
-  const wsOrigin = window.location.origin
-    .replace(/^http:/i, "ws:")
-    .replace(/^https:/i, "wss:");
-  return joinBaseAndPath(wsOrigin, joinBaseAndPath(backendBase, "/ws"));
-};
-
 export const toAppUrl = (value: string) => {
   const raw = String(value || "").trim();
   if (!raw || isSpecialUrl(raw) || isAbsoluteLike(raw) || !raw.startsWith("/"))
@@ -230,20 +197,16 @@ export const toApiUrl = (value: string) => {
   if (!raw || isSpecialUrl(raw) || isAbsoluteLike(raw) || !raw.startsWith("/"))
     return raw;
   if (!matchesPrefix(raw, "/api")) return raw;
-  const apiBase = getApiBaseUrl();
-  const suffix = raw.slice("/api".length);
-  return suffix ? joinBaseAndPath(apiBase, suffix) : apiBase;
+  return joinBaseAndPath(getAppBasePath(), raw);
 };
 
 export const toWsUrl = (value = "/ws") => {
   const raw = String(value || "").trim();
   if (!raw || isSpecialUrl(raw) || isAbsoluteLike(raw)) return raw;
-  const wsBase = deriveWsBase();
   if (!matchesPrefix(raw, "/ws")) {
-    return raw.startsWith("/") ? joinBaseAndPath(wsBase, raw) : raw;
+    return raw.startsWith("/") ? joinBaseAndPath(getAppBasePath(), raw) : raw;
   }
-  const suffix = raw.slice("/ws".length);
-  return suffix ? joinBaseAndPath(wsBase, suffix) : wsBase;
+  return joinBaseAndPath(getAppBasePath(), raw);
 };
 
 export const resolveManagedUrl = (value: string) => {

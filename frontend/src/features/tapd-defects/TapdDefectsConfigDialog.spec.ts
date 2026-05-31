@@ -9,9 +9,17 @@ import type {
   TapdDefectWidgetData,
 } from "./tapdDefectTypes";
 
+const authenticatedState = {
+  auth: {
+    sessionReady: true,
+    isLogged: true,
+    username: "ying",
+    sessionGeneration: "test-session",
+  },
+};
+
 describe("TapdDefectsConfigDialog", () => {
   beforeEach(() => {
-    localStorage.setItem("start-deck-token", "user-token");
     localStorage.setItem("start-deck-username", "ying");
   });
 
@@ -42,7 +50,7 @@ describe("TapdDefectsConfigDialog", () => {
     });
     const wrapper = mount(TapdDefectsConfigDialog, {
       global: {
-        plugins: [createTestingPinia({ createSpy: vi.fn })],
+        plugins: [createTestingPinia({ createSpy: vi.fn, initialState: authenticatedState })],
       },
       props: {
         data,
@@ -97,7 +105,7 @@ describe("TapdDefectsConfigDialog", () => {
     });
     const wrapper = mount(TapdDefectsConfigDialog, {
       global: {
-        plugins: [createTestingPinia({ createSpy: vi.fn })],
+        plugins: [createTestingPinia({ createSpy: vi.fn, initialState: authenticatedState })],
       },
       props: {
         data,
@@ -172,7 +180,7 @@ describe("TapdDefectsConfigDialog", () => {
     });
     const wrapper = mount(TapdDefectsConfigDialog, {
       global: {
-        plugins: [createTestingPinia({ createSpy: vi.fn })],
+        plugins: [createTestingPinia({ createSpy: vi.fn, initialState: authenticatedState })],
       },
       props: {
         data,
@@ -224,7 +232,7 @@ describe("TapdDefectsConfigDialog", () => {
     );
     const wrapper = mount(TapdDefectsConfigDialog, {
       global: {
-        plugins: [createTestingPinia({ createSpy: vi.fn })],
+        plugins: [createTestingPinia({ createSpy: vi.fn, initialState: authenticatedState })],
       },
       props: {
         data: normalizeTapdDefectWidgetData({
@@ -280,7 +288,7 @@ describe("TapdDefectsConfigDialog", () => {
     );
     const wrapper = mount(TapdDefectsConfigDialog, {
       global: {
-        plugins: [createTestingPinia({ createSpy: vi.fn })],
+        plugins: [createTestingPinia({ createSpy: vi.fn, initialState: authenticatedState })],
       },
       props: {
         data: normalizeTapdDefectWidgetData({
@@ -340,7 +348,7 @@ describe("TapdDefectsConfigDialog", () => {
     vi.stubGlobal("fetch", fetchMock);
     const wrapper = mount(TapdDefectsConfigDialog, {
       global: {
-        plugins: [createTestingPinia({ createSpy: vi.fn })],
+        plugins: [createTestingPinia({ createSpy: vi.fn, initialState: authenticatedState })],
       },
       props: {
         data: normalizeTapdDefectWidgetData({}),
@@ -403,7 +411,13 @@ describe("TapdDefectsConfigDialog", () => {
     vi.stubGlobal("fetch", fetchMock);
     const wrapper = mount(TapdDefectsConfigDialog, {
       global: {
-        plugins: [createTestingPinia({ createSpy: vi.fn, stubActions: false })],
+        plugins: [
+          createTestingPinia({
+            createSpy: vi.fn,
+            stubActions: false,
+            initialState: authenticatedState,
+          }),
+        ],
       },
       props: {
         data: normalizeTapdDefectWidgetData({}),

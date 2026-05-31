@@ -41,6 +41,19 @@ class FakeImage {
 }
 
 describe("useSmartIconMatch", () => {
+  const managedIcon = {
+    id: "icn_example",
+    assetId: "icn_example",
+    url: "/api/assets/icons/icn_example",
+    source: "metadata",
+    label: "Example",
+    backgroundColor: "#111827",
+    contentType: "image/svg+xml",
+    width: 64,
+    height: 64,
+    reused: false,
+  };
+
   beforeEach(() => {
     vi.restoreAllMocks();
     resetSmartIconMatchCacheForTests();
@@ -76,19 +89,20 @@ describe("useSmartIconMatch", () => {
       "fetch",
       vi.fn(async (input: string | URL | Request) => {
         const url = String(input);
-        expect(url).toContain("/api/site/metadata?url=");
+        expect(url).toContain("/api/site/resolve?url=");
         return {
           ok: true,
           json: async () => ({
-            code: 200,
-            msg: "ok",
+            success: true,
             data: {
+              inputUrl: "https://example.com",
+              normalizedUrl: "https://example.com",
               url: "https://example.com",
               title: "Example",
-              icon: "/api/site/icon?url=https%3A%2F%2Fexample.com",
+              selectedIcon: managedIcon,
+              iconCandidates: [managedIcon],
               description: "Demo",
               backgroundColor: "#111827",
-              fetchedAt: "2026-05-08T00:00:00Z",
             },
           }),
         };
@@ -119,7 +133,9 @@ describe("useSmartIconMatch", () => {
     expect(smartIconMatch.isSmartMatching.value).toBe(false);
     expect(smartIconMatch.smartMatchCandidates.value).toEqual([
       {
-        url: "/api/site/icon?url=https%3A%2F%2Fexample.com",
+        id: "icn_example",
+        assetId: "icn_example",
+        url: "/api/assets/icons/icn_example",
         source: "site",
         label: "Example",
         backgroundColor: "#111827",
@@ -131,18 +147,20 @@ describe("useSmartIconMatch", () => {
     expect(notify).not.toHaveBeenCalled();
   });
 
-  it("falls back to the public site icon endpoint when metadata has no icon", async () => {
+  it("does not synthesize legacy icon URLs when metadata has no candidates", async () => {
     vi.stubGlobal(
       "fetch",
       vi.fn(async () => ({
         ok: true,
         json: async () => ({
-          code: 200,
-          msg: "ok",
+          success: true,
           data: {
+            inputUrl: "https://example.com",
+            normalizedUrl: "https://example.com",
             url: "https://example.com",
             title: "Example",
-            icon: null,
+            selectedIcon: null,
+            iconCandidates: [],
             backgroundColor: "#ffffff",
           },
         }),
@@ -160,14 +178,8 @@ describe("useSmartIconMatch", () => {
 
     expect(form.value.title).toBe("Example");
     expect(smartIconMatch.selectedSmartMatchCandidateUrl.value).toBe("");
-    expect(smartIconMatch.smartMatchCandidates.value).toEqual([
-      {
-        url: "/api/site/icon?url=https%3A%2F%2Fexample.com&size=64",
-        source: "site",
-        label: "Example",
-        backgroundColor: "#ffffff",
-      },
-    ]);
+    expect(smartIconMatch.smartMatchCandidates.value).toEqual([]);
+    expect(smartIconMatch.showSmartMatchModal.value).toBe(false);
   });
 
   it("applies the first candidate when automatic selection is requested", async () => {
@@ -176,12 +188,14 @@ describe("useSmartIconMatch", () => {
       vi.fn(async () => ({
         ok: true,
         json: async () => ({
-          code: 200,
-          msg: "ok",
+          success: true,
           data: {
+            inputUrl: "https://example.com",
+            normalizedUrl: "https://example.com",
             url: "https://example.com",
             title: "Example",
-            icon: "/api/site/icon?url=https%3A%2F%2Fexample.com",
+            selectedIcon: managedIcon,
+            iconCandidates: [managedIcon],
             backgroundColor: "#111827",
           },
         }),
@@ -204,10 +218,10 @@ describe("useSmartIconMatch", () => {
 
     expect(form.value.title).toBe("Example");
     expect(smartIconMatch.selectedSmartMatchCandidateUrl.value).toBe(
-      "/api/site/icon?url=https%3A%2F%2Fexample.com",
+      "/api/assets/icons/icn_example",
     );
     expect(onSelect).toHaveBeenCalledWith({
-      icon: "/api/site/icon?url=https%3A%2F%2Fexample.com",
+      icon: "/api/assets/icons/icn_example",
       source: "site",
       label: "Example",
       backgroundColor: "#111827",
@@ -223,18 +237,20 @@ describe("useSmartIconMatch", () => {
     });
 
     smartIconMatch.selectSmartMatchCandidate({
-      url: "/api/site/icon?url=https%3A%2F%2Fexample.com",
+      id: "icn_example",
+      assetId: "icn_example",
+      url: "/api/assets/icons/icn_example",
       source: "site",
       label: "Example",
       backgroundColor: "#111827",
     });
     expect(smartIconMatch.selectedSmartMatchCandidateUrl.value).toBe(
-      "/api/site/icon?url=https%3A%2F%2Fexample.com",
+      "/api/assets/icons/icn_example",
     );
     expect(smartIconMatch.showSmartMatchModal.value).toBe(true);
 
     expect(onSelect).toHaveBeenCalledWith({
-      icon: "/api/site/icon?url=https%3A%2F%2Fexample.com",
+      icon: "/api/assets/icons/icn_example",
       source: "site",
       label: "Example",
       backgroundColor: "#111827",

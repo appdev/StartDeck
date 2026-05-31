@@ -9,6 +9,7 @@ import AppModalShell from "@/components/base/AppModalShell.vue";
 import AppSwitch from "@/components/base/AppSwitch.vue";
 import { useWidgetDisplaySize } from "@/composables/useWidgetDisplaySize";
 import { useSharedDockerWidgetRuntimeState } from "@/features/widget-runtime/dockerWidgetRuntimeState";
+import { sessionFetch } from "@/utils/sessionFetch";
 
 type DockerApiState = "disabled" | "unavailable" | "ready";
 
@@ -443,7 +444,7 @@ const exportDockerLogs = async () => {
   try {
     isExportingDockerLogs.value = true;
     const headers = store.getHeaders();
-    const res = await fetch("/api/docker/export-logs", { headers });
+    const res = await sessionFetch("/api/docker/export-logs", { headers });
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
       throw new Error(data.error || String(res.status));
@@ -490,7 +491,7 @@ const triggerUpdateCheck = async () => {
   try {
     isCheckingUpdate.value = true;
     const headers = store.getHeaders();
-    await fetch("/api/docker/check-updates", { method: "POST", headers });
+    await sessionFetch("/api/docker/check-updates", { method: "POST", headers });
     // 立即刷新一次以获取最新状态（变为 isChecking=true）
     setTimeout(fetchContainers, 500);
   } catch (e) {
@@ -510,7 +511,7 @@ const fetchContainers = async () => {
   try {
     isLoading.value = true;
     const headers = store.getHeaders();
-    const res = await fetch("/api/docker/containers", { headers });
+    const res = await sessionFetch("/api/docker/containers", { headers });
 
     if (!res.ok) {
       // 网络请求失败，不停止轮询，只是记录错误
@@ -592,7 +593,7 @@ const fetchDockerInfo = async (silent = true) => {
   }
   try {
     const headers = store.getHeaders();
-    const res = await fetch("/api/docker/info", { headers });
+    const res = await sessionFetch("/api/docker/info", { headers });
     const data = (await res.json()) as DockerInfoResponse;
     if (data.success && data.state === "ready") {
       dockerState.value = "ready";
@@ -641,7 +642,7 @@ const handleAction = async (id: string, action: string) => {
   }
   try {
     const headers = store.getHeaders();
-    const res = await fetch(`/api/docker/container/${id}/${action}`, {
+    const res = await sessionFetch(`/api/docker/container/${id}/${action}`, {
       method: "POST",
       headers,
     });

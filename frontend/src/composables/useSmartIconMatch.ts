@@ -1,13 +1,14 @@
 import { ref, shallowRef, type Ref } from "vue";
 import {
   fetchSiteMetadata,
-  getSiteIconUrl,
   normalizeSiteUrl,
   type SiteMetadataData,
 } from "@/utils/siteMetadata";
 import { normalizeIconBackgroundColor } from "@/utils/iconAppearance";
 
 export interface SmartIconCandidate {
+  id?: string;
+  assetId?: string;
   url: string;
   source: "site";
   label?: string;
@@ -226,31 +227,36 @@ export const useSmartIconMatch = ({
         form.value.title = metadataTitle;
       }
 
-      const candidates: SmartIconCandidate[] = [];
+      const candidates: SmartIconCandidate[] =
+        metadata?.iconCandidates?.map((candidate) => ({
+          id: candidate.id,
+          assetId: candidate.assetId,
+          url: candidate.url,
+          source: "site",
+          label:
+            candidate.label ||
+            metadata?.title ||
+            extractKeywordFromUrl(targetUrl) ||
+            "site",
+          backgroundColor:
+            normalizeIconBackgroundColor(candidate.backgroundColor) ||
+            undefined,
+        })) || [];
       const metadataIcon = metadata?.icon?.trim();
       const metadataBackgroundColor = normalizeIconBackgroundColor(
         metadata?.backgroundColor,
       );
-      if (metadataIcon && (await validateIconCandidate(metadataIcon))) {
+      if (
+        metadataIcon &&
+        !candidates.some((candidate) => candidate.url === metadataIcon) &&
+        (await validateIconCandidate(metadataIcon))
+      ) {
         candidates.push({
           url: metadataIcon,
           source: "site",
           label: metadata?.title || extractKeywordFromUrl(targetUrl) || "site",
           backgroundColor: metadataBackgroundColor || undefined,
         });
-      }
-
-      if (candidates.length === 0) {
-        const fallbackIcon = getSiteIconUrl(targetUrl);
-        if (fallbackIcon && (await validateIconCandidate(fallbackIcon))) {
-          candidates.push({
-            url: fallbackIcon,
-            source: "site",
-            label:
-              metadata?.title || extractKeywordFromUrl(targetUrl) || "site",
-            backgroundColor: metadataBackgroundColor || undefined,
-          });
-        }
       }
 
       if (activeRunId.value !== runId) return;

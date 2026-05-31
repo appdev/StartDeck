@@ -76,6 +76,18 @@ const mountEditModal = (data: NavItem, onSave = vi.fn(async () => undefined)) =>
 
 describe("EditModal", () => {
   let wrapper: VueWrapper | null = null;
+  const managedIcon = {
+    id: "icn_example",
+    assetId: "icn_example",
+    url: "/api/assets/icons/icn_example",
+    source: "metadata",
+    label: "Example",
+    backgroundColor: "#111827",
+    contentType: "image/svg+xml",
+    width: 64,
+    height: 64,
+    reused: false,
+  };
 
   afterEach(() => {
     wrapper?.unmount();
@@ -147,7 +159,7 @@ describe("EditModal", () => {
       id: "link-1",
       title: "Doubao",
       url: "https://www.doubao.com/chat",
-      icon: "/cache/saved-doubao.png",
+      icon: "/api/assets/icons/icn_doubao",
       iconSize: 100,
       iconBackgroundMode: "custom",
       iconCustomBackgroundColor: "#f3f4f6",
@@ -159,7 +171,7 @@ describe("EditModal", () => {
       ".edit-card-preview-card .edit-card-preview-icon [data-testid='icon-shape']",
     );
 
-    expect(previewIcon?.dataset.icon).toBe("/cache/saved-doubao.png");
+    expect(previewIcon?.dataset.icon).toBe("/api/assets/icons/icn_doubao");
     expect(previewIcon?.dataset.size).toBe("78");
     expect(previewIcon?.dataset.imgScale).toBe("100");
     expect(previewIcon?.dataset.bgClass).toBe("#f3f4f6");
@@ -174,7 +186,7 @@ describe("EditModal", () => {
     expect(editModalSource).toContain(':icon="cardPreviewIcon"');
   });
 
-  it("keeps a clicked candidate icon when the picker emits a URL string", async () => {
+  it("keeps a clicked managed candidate icon from the picker", async () => {
     wrapper = mountEditModal({
       id: "link-1",
       title: "Candidate",
@@ -184,10 +196,9 @@ describe("EditModal", () => {
     });
     await wrapper.vm.$nextTick();
 
-    const candidateIcon = "/api/site/icon?url=https%3A%2F%2Fexample.com";
     wrapper
       .findComponent({ name: "IconSelectionModal" })
-      .vm.$emit("select", candidateIcon);
+      .vm.$emit("select", managedIcon);
     await wrapper.vm.$nextTick();
 
     const iconInput = document.body.querySelector<HTMLInputElement>(
@@ -197,8 +208,8 @@ describe("EditModal", () => {
       ".edit-card-preview-card .edit-card-preview-icon [data-testid='icon-shape']",
     );
 
-    expect(iconInput?.value).toBe(candidateIcon);
-    expect(previewIcon?.dataset.icon).toBe(candidateIcon);
+    expect(iconInput?.value).toBe("/api/assets/icons/icn_example");
+    expect(previewIcon?.dataset.icon).toBe("/api/assets/icons/icn_example");
   });
 
   it("automatically applies the first fetched icon and title from metadata", async () => {
@@ -208,15 +219,16 @@ describe("EditModal", () => {
       vi.fn(async () => ({
         ok: true,
         json: async () => ({
-          code: 200,
-          msg: "ok",
+          success: true,
           data: {
+            inputUrl: "https://example.com",
+            normalizedUrl: "https://example.com",
             url: "https://example.com",
             title: "Fetched Example",
-            icon: "/api/site/icon?url=https%3A%2F%2Fexample.com",
+            selectedIcon: managedIcon,
+            iconCandidates: [managedIcon],
             description: "Preview only",
             backgroundColor: "#111827",
-            fetchedAt: "2026-05-31T00:00:00Z",
           },
         }),
       })),
@@ -244,7 +256,7 @@ describe("EditModal", () => {
       );
       expect(titleInput?.value).toBe("Fetched Example");
       expect(iconInput?.value).toBe(
-        "/api/site/icon?url=https%3A%2F%2Fexample.com",
+        "/api/assets/icons/icn_example",
       );
     });
 
@@ -252,7 +264,7 @@ describe("EditModal", () => {
       ".edit-card-preview-card .edit-card-preview-icon [data-testid='icon-shape']",
     );
     expect(previewIcon?.dataset.icon).toBe(
-      "/api/site/icon?url=https%3A%2F%2Fexample.com",
+      "/api/assets/icons/icn_example",
     );
     expect(document.body.textContent).toContain("已获取标题、图标、描述");
   });

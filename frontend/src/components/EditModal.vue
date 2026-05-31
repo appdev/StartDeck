@@ -14,8 +14,10 @@ import AppButton from "@/components/base/AppButton.vue";
 import AppModalShell from "@/components/base/AppModalShell.vue";
 import AppWindowControls from "@/components/base/AppWindowControls.vue";
 import { VueCropper } from "vue-cropper";
-import { cacheIconToLocal } from "@/utils/iconCache";
-import { getSiteIconUrl } from "@/utils/siteMetadata";
+import {
+  materializeIconInput,
+  type ManagedIconCandidate,
+} from "@/utils/iconAssets";
 import {
   normalizeIconBackgroundColor,
   resolveIconBackground,
@@ -84,7 +86,7 @@ const autoResize = (event: Event) => {
 
 // 搜索相关状态
 const showIconSelection = ref(false);
-const iconCandidates = shallowRef<string[]>([]);
+const iconCandidates = shallowRef<ManagedIconCandidate[]>([]);
 const searchSource = ref<"local" | "api">("api");
 
 type EditCloseReason = "overlay" | "escape" | "programmatic";
@@ -190,12 +192,9 @@ const iconCustomColorValue = computed(
     "#111827",
 );
 
-const onIconSelect = (result: SmartIconMatchResult | string) => {
-  if (typeof result === "string") {
-    form.value.icon = result;
-    return;
-  }
-  form.value.icon = result.icon;
+const onIconSelect = (result: SmartIconMatchResult | ManagedIconCandidate) => {
+  const icon = "icon" in result ? result.icon : result.url;
+  form.value.icon = icon;
   const backgroundColor = normalizeIconBackgroundColor(result.backgroundColor);
   form.value.iconAutoBackgroundColor = backgroundColor || "";
   if (form.value.iconBackgroundMode !== "custom") {
@@ -301,8 +300,15 @@ const openCandidateSelection = async () => {
     closeSmartMatchModal();
   }
   iconCandidates.value = smartMatchCandidates.value
-    .map((candidate) => candidate.url)
-    .filter(Boolean);
+    .map((candidate) => ({
+      id: candidate.assetId || candidate.id || candidate.url,
+      assetId: candidate.assetId || candidate.id || candidate.url,
+      url: candidate.url,
+      source: candidate.source,
+      label: candidate.label,
+      backgroundColor: candidate.backgroundColor,
+    }))
+    .filter((candidate) => Boolean(candidate.url));
   if (iconCandidates.value.length === 0) {
     uiFeedback.notify({
       title: "暂无候选图标",
@@ -424,19 +430,12 @@ const processIconError = () => {
   const val = form.value.icon;
   if (
     val &&
-    val.startsWith("http") &&
-    !val.includes("simpleicons.org") &&
-    !val.includes("/api/site/icon")
-  ) {
-    try {
-      const urlObj = new URL(val);
-      form.value.icon = getSiteIconUrl(urlObj.origin);
-      return;
-    } catch {
-      // ignore
-    }
-  }
-  // 否则直接清空
+    (val.startsWith("/api/assets/icons/") ||
+      val.startsWith("http://") ||
+      val.startsWith("https://") ||
+      val.startsWith("data:"))
+  )
+    return;
   form.value.icon = "";
 };
 
@@ -448,7 +447,6 @@ const onIconInputBlur = () => {
   }
 };
 
-const saveIconToLocal = ref(true);
 const isSaving = ref(false);
 
 // Icon upload embedded in preview
@@ -556,20 +554,8 @@ const submit = async () => {
       form.value.iconBackgroundMode = "auto";
     }
 
-    if (saveIconToLocal.value) {
-      const icon = (form.value.icon || "").trim();
-      if (icon) {
-        const cached = await cacheIconToLocal(icon);
-        if (cached.path) {
-          form.value.icon = cached.path;
-        } else if (cached.error) {
-          void uiFeedback.alert({
-            title: "图标本地缓存失败",
-            message: `${cached.error}\n将保留当前图标继续保存。`,
-            tone: "warning",
-          });
-        }
-      }
+    if (form.value.icon) {
+      form.value.icon = await materializeIconInput(form.value.icon);
     }
 
     const payload = {

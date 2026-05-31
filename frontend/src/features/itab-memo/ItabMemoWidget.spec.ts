@@ -56,7 +56,9 @@ describe("ItabMemoWidget", () => {
   beforeEach(() => {
     setActivePinia(createPinia());
     const auth = useAuthStore();
-    auth.token = "token";
+    auth.sessionReady = true;
+    auth.username = "ying";
+    auth.sessionGeneration = "session";
     auth.username = "ying";
     vi.stubGlobal(
       "fetch",
@@ -87,7 +89,8 @@ describe("ItabMemoWidget", () => {
 
   it("renders public default memo rows for logged-out users", () => {
     const auth = useAuthStore();
-    auth.logout();
+    auth.clearLocalSession();
+    auth.sessionReady = true;
 
     const wrapper = mount(ItabMemoWidget, {
       props: {

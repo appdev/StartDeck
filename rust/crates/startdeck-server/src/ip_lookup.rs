@@ -72,13 +72,7 @@ pub(crate) async fn ip_info(
         .get("refresh")
         .map(String::as_str)
         .is_some_and(is_truthy);
-    let username = match crate::optional_username_from_headers(&headers, &state) {
-        Ok(username) => username,
-        Err(error) => {
-            tracing::debug!(?error, "skip user ip marker for invalid optional auth");
-            None
-        }
-    };
+    let username = crate::optional_username_from_headers(&headers, &state)?;
     let user_ip = if query_ip.is_none() {
         request_ip_from_headers(&headers).and_then(public_ipv4)
     } else {

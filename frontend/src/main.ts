@@ -40,9 +40,9 @@ const bootstrap = async () => {
   // Initialize store once after mount so the shell UI can render even if
   // the sync pipeline is slow or temporarily blocked.
   const store = useMainStore();
-  prefetchItabIpLocationOnBoot();
   try {
     await store.init();
+    prefetchItabIpLocationOnBoot();
   } catch (error) {
     console.error("Initial store init failed", error);
   }

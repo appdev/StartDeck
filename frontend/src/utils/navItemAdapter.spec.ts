@@ -17,10 +17,10 @@ describe("navItemAdapter", () => {
       expect(result.navItem).toMatchObject({
         title: "GitHub",
         url: "https://github.com",
+        icon: "",
         iconBackgroundMode: "auto",
       });
       expect(result.navItem).not.toHaveProperty("isPublic");
-      expect(result.navItem.icon).toContain("/api/site/icon?");
     }
   });
 
@@ -40,7 +40,7 @@ describe("navItemAdapter", () => {
     if (result.ok) {
       expect(result.navItem.title).toBe("Example");
       expect(result.navItem.url).toBe("https://example.com/app");
-      expect(result.navItem.icon).toContain("/api/site/icon?");
+      expect(result.navItem.icon).toBe("");
       expect(result.navItem.iconCustomBackgroundColor).toBe("#aabbcc");
       expect(result.navItem.iconSize).toBe(220);
     }

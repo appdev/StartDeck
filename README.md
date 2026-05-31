@@ -86,9 +86,10 @@ cd /opt/startdeck
 
 cat > .env <<'EOF'
 STARTDECK_ADMIN_PASSWORD=change-me
-STARTDECK_SECRET=replace-with-a-stable-random-secret
 EOF
 ```
+
+默认情况下，会话签名密钥会在挂载的 `Data/data/secrets/session-signing.key` 中自动生成并复用。只有在需要通过环境变量集中管理密钥时，才设置 `STARTDECK_SECRET`，且必须使用 `openssl rand -base64 32` 生成。
 
 2. 创建 `compose.yml`：
 
@@ -109,7 +110,7 @@ services:
       META_SERVER_DATA_DIR: /app/Data/meta-service
       META_SERVER_RESOURCE_DIR: /app/meta-service-defaults/data
       META_SERVER_BASE_URL: http://127.0.0.1:9002
-      META_SERVER_TIMEOUT_MS: "5000"
+      META_SERVER_TIMEOUT_MS: "60000"
       QWEATHER_API_HOST: "${QWEATHER_API_HOST:-}"
       QWEATHER_PROJECT_ID: "${QWEATHER_PROJECT_ID:-}"
       QWEATHER_CREDENTIAL_ID: "${QWEATHER_CREDENTIAL_ID:-}"
@@ -152,12 +153,11 @@ docker run -d \
   -e PORT=9001 \
   -e HOST=0.0.0.0 \
   -e STARTDECK_ADMIN_PASSWORD=change-me \
-  -e STARTDECK_SECRET=replace-with-a-stable-random-secret \
   -e META_SERVER_PORT=9002 \
   -e META_SERVER_DATA_DIR=/app/Data/meta-service \
   -e META_SERVER_RESOURCE_DIR=/app/meta-service-defaults/data \
   -e META_SERVER_BASE_URL=http://127.0.0.1:9002 \
-  -e META_SERVER_TIMEOUT_MS=5000 \
+  -e META_SERVER_TIMEOUT_MS=60000 \
   -v /var/run/docker.sock:/var/run/docker.sock \
   apkdv/startdeck:latest
 ```
@@ -208,6 +208,19 @@ Data/meta-service/                 # 元数据服务运行期缓存和数据
 
 子路径部署建议将完整路径转发到同一个容器端口，并保留 WebSocket Upgrade 头。前端默认使用相对资源路径，可适配常见子路径反代；如需要固定构建路径，请在构建阶段设置 `VITE_APP_BASE_PATH`。
 
+Nginx 反向代理示例需包含 WebSocket Upgrade 头：
+
+```nginx
+location /ws {
+    proxy_pass http://127.0.0.1:9001/ws;
+    proxy_http_version 1.1;
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection "upgrade";
+    proxy_set_header Host $host;
+    proxy_set_header X-Forwarded-Proto $scheme;
+}
+```
+
 ### 环境变量
 
 | 变量                                                      | 默认值                            | 说明                                                 |
@@ -215,7 +228,7 @@ Data/meta-service/                 # 元数据服务运行期缓存和数据
 | `HOST`                                                    | `0.0.0.0`                         | 主服务监听地址                                       |
 | `PORT`                                                    | `9001`                            | 主服务监听端口                                       |
 | `STARTDECK_ADMIN_PASSWORD`                                | `admin`                           | 初始化或同步管理员密码                               |
-| `STARTDECK_SECRET`                                        | 基于 SQLite 路径派生              | JWT 签名密钥；生产环境建议显式设置并长期保持稳定     |
+| `STARTDECK_SECRET`                                        | 未设置时使用 `Data/data/secrets/session-signing.key` | 可选会话签名密钥；如设置，必须是 `openssl rand -base64 32` 生成的 32 字节 base64 |
 | `STARTDECK_DATA_DIR` / `DATA_DIR`                         | `/app/Data/data`                  | SQLite 与运行数据目录                                |
 | `STARTDECK_PC_DIR` / `PC_DIR`                             | `/app/Data/PC`                    | 桌面端背景图目录                                     |
 | `STARTDECK_APP_DIR` / `APP_DIR`                           | `/app/Data/APP`                   | 移动端背景图目录                                     |
@@ -225,7 +238,7 @@ Data/meta-service/                 # 元数据服务运行期缓存和数据
 | `META_SERVER_DATA_DIR`                                   | `/app/Data/meta-service`          | 元数据服务可写数据目录                                 |
 | `META_SERVER_RESOURCE_DIR`                               | `/app/meta-service-defaults/data` | 元数据服务只读种子资源目录                             |
 | `META_SERVER_BASE_URL`                                    | `http://127.0.0.1:9002`           | 主服务访问元数据服务的地址                             |
-| `META_SERVER_TIMEOUT_MS`                                  | `5000`                            | 元数据服务请求超时时间                                 |
+| `META_SERVER_TIMEOUT_MS`                                  | `60000`                           | 元数据服务请求超时时间                                 |
 | `META_SERVER_MICROLINK_API_URL`                           | `https://api.microlink.io`        | 元数据服务优先使用的网站媒体信息接口；空值表示禁用      |
 | `PUBLIC_META_BASE_URL`                                    | 空                                | 对外返回图标 URL 时使用的公共基础地址                |
 | `DOCKER_HOST`                                             | 空                                | Docker API 地址；默认使用挂载的 Docker Socket        |

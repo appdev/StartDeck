@@ -35,7 +35,9 @@ describe("cache store auth scope", () => {
     const cache = useCacheStore();
     const widgets = useWidgetsStore();
 
-    auth.token = "token";
+    auth.sessionReady = true;
+    auth.username = "ying";
+    auth.sessionGeneration = "session";
     auth.username = "admin";
     cache.saveToCache({
       groups: [],
@@ -47,7 +49,7 @@ describe("cache store auth scope", () => {
     });
 
     widgets.widgets = [];
-    auth.logout();
+    auth.clearLocalSession();
 
     const loaded = cache.loadFromCache(ref(0));
     expect(loaded).toBe(false);
@@ -84,15 +86,64 @@ describe("cache store auth scope", () => {
     expect(version.value).toBe(2);
   });
 
+  it("sanitizes navigation icon refs before writing and after reading cache", () => {
+    const cache = useCacheStore();
+    const groups = useGroupsStore();
+
+    cache.saveToCache({
+      groups: [
+        {
+          id: "icons",
+          title: "Icons",
+          items: [
+            {
+              id: "old",
+              title: "Old",
+              url: "https://old.example",
+              icon: "/api/site/icon?url=https%3A%2F%2Fold.example",
+            },
+            {
+              id: "managed",
+              title: "Managed",
+              url: "https://managed.example",
+              icon: "/api/assets/icons/icn_valid_1",
+            },
+          ],
+        },
+      ],
+      widgets: [],
+      appConfig: {},
+      systemConfig: { enableDocker: false },
+      version: 3,
+    });
+
+    const raw = JSON.parse(
+      localStorage.getItem("start-deck-data-cache:guest") || "{}",
+    );
+    expect(raw.groups[0].items[0].icon).toBe("");
+    expect(raw.groups[0].items[1].icon).toBe(
+      "/api/assets/icons/icn_valid_1",
+    );
+
+    groups.groups = [];
+    const version = ref(0);
+    expect(cache.loadFromCache(version)).toBe(true);
+    expect(groups.groups[0].items[0].icon).toBe("");
+    expect(groups.groups[0].items[1].icon).toBe(
+      "/api/assets/icons/icn_valid_1",
+    );
+  });
+
   it("clears stale authenticated state when the server rejects the stored token", async () => {
     const auth = useAuthStore();
     const cache = useCacheStore();
     const widgets = useWidgetsStore();
     const version = ref(0);
 
-    auth.token = "stale-token";
+    auth.sessionReady = true;
     auth.username = "admin";
-    localStorage.setItem("start-deck-token", "stale-token");
+    auth.sessionGeneration = "stale-session";
+    auth.username = "admin";
     localStorage.setItem("start-deck-username", "admin");
     widgets.widgets = [privateWidget];
     vi.stubGlobal(
@@ -114,7 +165,6 @@ describe("cache store auth scope", () => {
 
     expect(auth.isLogged).toBe(false);
     expect(auth.username).toBe("");
-    expect(localStorage.getItem("start-deck-token")).toBeNull();
     expect(localStorage.getItem("start-deck-username")).toBeNull();
     expect(version.value).toBe(0);
   });

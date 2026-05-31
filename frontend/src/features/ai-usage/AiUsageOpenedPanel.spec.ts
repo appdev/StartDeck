@@ -14,7 +14,6 @@ describe("AiUsageOpenedPanel", () => {
 
   it("saves sanitized widget data while keeping credentials outside widget data", async () => {
     localStorage.clear();
-    localStorage.setItem("start-deck-token", "user-token");
     localStorage.setItem("start-deck-username", "ying");
     vi.stubGlobal(
       "fetch",
@@ -28,8 +27,10 @@ describe("AiUsageOpenedPanel", () => {
             createSpy: vi.fn,
             initialState: {
               auth: {
-                token: "user-token",
+                sessionReady: true,
+                isLogged: true,
                 username: "ying",
+                sessionGeneration: "test-session",
               },
             },
           }),

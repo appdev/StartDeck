@@ -11,7 +11,7 @@ use axum::response::Html;
 use axum::routing::get;
 use serde_json::{Value, json};
 use sqlx::SqlitePool;
-use startdeck_core::{RuntimeConfig, connect_sqlite, import_meta_server_data};
+use startdeck_core::{RuntimeConfig, connect_sqlite, icon_record, import_meta_server_data};
 use startdeck_metaserver::{MetaState, app};
 use tokio::net::TcpListener;
 use tower::ServiceExt;
@@ -339,6 +339,233 @@ async fn spawn_microlink_media_fixture() -> (
     )
 }
 
+async fn spawn_html_beats_low_microlink_fixture() -> (
+    String,
+    String,
+    Arc<AtomicUsize>,
+    tokio::task::JoinHandle<()>,
+    tokio::task::JoinHandle<()>,
+) {
+    let site_router = Router::new()
+        .route(
+            "/",
+            get(|| async {
+                Html(
+                    r#"<html><head>
+                        <title>High HTML Icon</title>
+                        <meta name="description" content="HTML description">
+                        <link rel="apple-touch-icon-precomposed" type="image/png" sizes="114x114" href="/touch.png">
+                    </head><body></body></html>"#,
+                )
+            }),
+        )
+        .route(
+            "/touch.png",
+            get(|| async { ([("content-type", "image/png")], "html-touch-icon") }),
+        )
+        .route(
+            "/low.ico",
+            get(|| async { ([("content-type", "image/x-icon")], "low-microlink-icon") }),
+        );
+    let site_listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let site_addr = site_listener.local_addr().unwrap();
+    let site_url = format!("http://{site_addr}");
+    let site_handle = tokio::spawn(async move {
+        axum::serve(site_listener, site_router).await.unwrap();
+    });
+
+    let force_hits = Arc::new(AtomicUsize::new(0));
+    let microlink_target_url = site_url.clone();
+    let low_icon_url = format!("{site_url}/low.ico");
+    let microlink_force_hits = force_hits.clone();
+    let microlink_router = Router::new().route(
+        "/",
+        get(move |Query(query): Query<HashMap<String, String>>| {
+            let target_url = microlink_target_url.clone();
+            let logo_url = low_icon_url.clone();
+            let force_hits = microlink_force_hits.clone();
+            async move {
+                if query.get("force").is_some_and(|value| value == "true") {
+                    force_hits.fetch_add(1, Ordering::SeqCst);
+                }
+                Json(json!({
+                    "status": "success",
+                    "data": {
+                        "title": "Microlink Low Icon",
+                        "description": "Microlink description",
+                        "url": target_url,
+                        "logo": {
+                            "url": logo_url,
+                            "type": "ico",
+                            "width": 16,
+                            "height": 16
+                        }
+                    },
+                    "statusCode": 200
+                }))
+            }
+        }),
+    );
+    let microlink_listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let microlink_addr = microlink_listener.local_addr().unwrap();
+    let microlink_handle = tokio::spawn(async move {
+        axum::serve(microlink_listener, microlink_router)
+            .await
+            .unwrap();
+    });
+
+    (
+        site_url,
+        format!("http://{microlink_addr}"),
+        force_hits,
+        site_handle,
+        microlink_handle,
+    )
+}
+
+async fn spawn_force_refresh_fixture() -> (
+    String,
+    String,
+    Arc<AtomicUsize>,
+    tokio::task::JoinHandle<()>,
+    tokio::task::JoinHandle<()>,
+) {
+    let site_router = Router::new()
+        .route(
+            "/",
+            get(|| async {
+                Html(
+                    r#"<html><head>
+                        <title>Force Icon Site</title>
+                    </head><body></body></html>"#,
+                )
+            }),
+        )
+        .route("/favicon.ico", get(|| async { StatusCode::NOT_FOUND }))
+        .route(
+            "/low.ico",
+            get(|| async { ([("content-type", "image/x-icon")], "low-microlink-icon") }),
+        )
+        .route(
+            "/force.png",
+            get(|| async { ([("content-type", "image/png")], "force-microlink-icon") }),
+        );
+    let site_listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let site_addr = site_listener.local_addr().unwrap();
+    let site_url = format!("http://{site_addr}");
+    let site_handle = tokio::spawn(async move {
+        axum::serve(site_listener, site_router).await.unwrap();
+    });
+
+    let force_hits = Arc::new(AtomicUsize::new(0));
+    let microlink_target_url = site_url.clone();
+    let low_icon_url = format!("{site_url}/low.ico");
+    let force_icon_url = format!("{site_url}/force.png");
+    let microlink_force_hits = force_hits.clone();
+    let microlink_router = Router::new().route(
+        "/",
+        get(move |Query(query): Query<HashMap<String, String>>| {
+            let target_url = microlink_target_url.clone();
+            let low_icon_url = low_icon_url.clone();
+            let force_icon_url = force_icon_url.clone();
+            let force_hits = microlink_force_hits.clone();
+            async move {
+                let force = query.get("force").is_some_and(|value| value == "true");
+                if force {
+                    force_hits.fetch_add(1, Ordering::SeqCst);
+                }
+                let (logo_url, logo_type, width, height) = if force {
+                    (force_icon_url, "png", 128, 128)
+                } else {
+                    (low_icon_url, "ico", 16, 16)
+                };
+                Json(json!({
+                    "status": "success",
+                    "data": {
+                        "title": "Microlink Force Icon",
+                        "description": "Microlink description",
+                        "url": target_url,
+                        "logo": {
+                            "url": logo_url,
+                            "type": logo_type,
+                            "width": width,
+                            "height": height
+                        }
+                    },
+                    "statusCode": 200
+                }))
+            }
+        }),
+    );
+    let microlink_listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let microlink_addr = microlink_listener.local_addr().unwrap();
+    let microlink_handle = tokio::spawn(async move {
+        axum::serve(microlink_listener, microlink_router)
+            .await
+            .unwrap();
+    });
+
+    (
+        site_url,
+        format!("http://{microlink_addr}"),
+        force_hits,
+        site_handle,
+        microlink_handle,
+    )
+}
+
+async fn spawn_high_quality_html_icon_site()
+-> (String, Arc<AtomicUsize>, tokio::task::JoinHandle<()>) {
+    let hits = Arc::new(AtomicUsize::new(0));
+    let png = png_bytes(128, 128, b"high-quality-html-icon");
+    let router = Router::new()
+        .route(
+            "/",
+            get(|State(hits): State<Arc<AtomicUsize>>| async move {
+                hits.fetch_add(1, Ordering::SeqCst);
+                Html(
+                    r#"<html><head>
+                        <title>Quality Refresh Site</title>
+                        <link rel="apple-touch-icon" type="image/png" sizes="128x128" href="/touch.png">
+                    </head><body></body></html>"#,
+                )
+            }),
+        )
+        .route(
+            "/touch.png",
+            get(move || {
+                let png = png.clone();
+                async move { ([("content-type", "image/png")], png) }
+            }),
+        )
+        .with_state(hits.clone());
+    let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let addr = listener.local_addr().unwrap();
+    let handle = tokio::spawn(async move {
+        axum::serve(listener, router).await.unwrap();
+    });
+    (format!("http://{addr}"), hits, handle)
+}
+
+async fn spawn_refresh_failure_site() -> (String, Arc<AtomicUsize>, tokio::task::JoinHandle<()>) {
+    let hits = Arc::new(AtomicUsize::new(0));
+    let router = Router::new()
+        .route(
+            "/",
+            get(|State(hits): State<Arc<AtomicUsize>>| async move {
+                hits.fetch_add(1, Ordering::SeqCst);
+                (StatusCode::INTERNAL_SERVER_ERROR, "refresh failed")
+            }),
+        )
+        .with_state(hits.clone());
+    let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let addr = listener.local_addr().unwrap();
+    let handle = tokio::spawn(async move {
+        axum::serve(listener, router).await.unwrap();
+    });
+    (format!("http://{addr}"), hits, handle)
+}
+
 fn encode_url_param(value: &str) -> String {
     value
         .replace(':', "%3A")
@@ -369,16 +596,27 @@ fn assert_public_icon_proxy(value: &Value) {
 }
 
 async fn insert_icon_record_with_asset(pool: &SqlitePool, host: &str, site_url: &str, icon: &str) {
+    insert_icon_record_with_asset_source(pool, host, site_url, icon, "test").await;
+}
+
+async fn insert_icon_record_with_asset_source(
+    pool: &SqlitePool,
+    host: &str,
+    site_url: &str,
+    icon: &str,
+    source: &str,
+) {
     sqlx::query(
         r#"INSERT OR REPLACE INTO icon_records(
             host, title, url, final_url, description, background_color, source,
             fetch_status, failure_kind, failure_count, retry_after, last_error, fetched_at, updated_at
-        ) VALUES (?, ?, ?, ?, '', '', 'test', 'ok', '', 0, 0, '', 1700000000000, 1700000000000)"#,
+        ) VALUES (?, ?, ?, ?, '', '', ?, 'ok', '', 0, 0, '', 1700000000000, 1700000000000)"#,
     )
     .bind(host)
     .bind(format!("Title {host}"))
     .bind(site_url)
     .bind(site_url)
+    .bind(source)
     .execute(pool)
     .await
     .unwrap();
@@ -396,6 +634,22 @@ async fn insert_icon_record_with_asset(pool: &SqlitePool, host: &str, site_url: 
     .execute(pool)
     .await
     .unwrap();
+}
+
+fn png_bytes(width: u32, height: u32, marker: &[u8]) -> Vec<u8> {
+    let mut bytes = Vec::from(&b"\x89PNG\r\n\x1a\n\0\0\0\rIHDR"[..]);
+    bytes.extend_from_slice(&width.to_be_bytes());
+    bytes.extend_from_slice(&height.to_be_bytes());
+    bytes.extend_from_slice(marker);
+    bytes
+}
+
+fn ico_bytes(width: u8, height: u8, marker: &[u8]) -> Vec<u8> {
+    let mut bytes = Vec::from(&[0, 0, 1, 0, 1, 0, width, height, 0, 0, 1, 0, 32, 0]);
+    bytes.extend_from_slice(&(marker.len() as u32).to_le_bytes());
+    bytes.extend_from_slice(&22_u32.to_le_bytes());
+    bytes.extend_from_slice(marker);
+    bytes
 }
 
 #[tokio::test]
@@ -683,6 +937,278 @@ async fn microlink_media_lookup_is_used_before_html_discovery() {
 
     site_handle.abort();
     microlink_handle.abort();
+}
+
+#[tokio::test]
+async fn html_apple_touch_icon_beats_low_resolution_microlink_logo_without_force() {
+    let (site_url, microlink_url, force_hits, site_handle, microlink_handle) =
+        spawn_html_beats_low_microlink_fixture().await;
+    let app = test_app_with_microlink_api(&microlink_url).await;
+    let encoded_site_url = encode_url_param(&site_url);
+
+    let (status, body) =
+        json_call(&app, &format!("/api/site/metadata?url={encoded_site_url}")).await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(body["data"]["fetchStatus"], "ok");
+    assert_eq!(body["data"]["title"], "Microlink Low Icon");
+    assert_eq!(force_hits.load(Ordering::SeqCst), 0);
+    let icon_path = body["data"]["icon"].as_str().unwrap();
+
+    let response = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .uri(icon_path)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
+    let bytes = to_bytes(response.into_body(), usize::MAX).await.unwrap();
+    assert_eq!(&bytes[..], b"html-touch-icon");
+
+    site_handle.abort();
+    microlink_handle.abort();
+}
+
+#[tokio::test]
+async fn low_resolution_result_uses_conditional_microlink_force() {
+    let (site_url, microlink_url, force_hits, site_handle, microlink_handle) =
+        spawn_force_refresh_fixture().await;
+    let app = test_app_with_microlink_api(&microlink_url).await;
+    let encoded_site_url = encode_url_param(&site_url);
+
+    let (status, body) =
+        json_call(&app, &format!("/api/site/metadata?url={encoded_site_url}")).await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(body["data"]["fetchStatus"], "ok");
+    assert_eq!(force_hits.load(Ordering::SeqCst), 1);
+    let icon_path = body["data"]["icon"].as_str().unwrap();
+
+    let response = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .uri(icon_path)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
+    let bytes = to_bytes(response.into_body(), usize::MAX).await.unwrap();
+    assert_eq!(&bytes[..], b"force-microlink-icon");
+
+    site_handle.abort();
+    microlink_handle.abort();
+}
+
+#[tokio::test]
+async fn new_fetch_persists_selected_icon_quality_fields() {
+    let (site_url, hits, site_handle) = spawn_high_quality_html_icon_site().await;
+    let context = test_app_context_with_microlink_api("").await;
+    let encoded_site_url = encode_url_param(&site_url);
+
+    let (status, body) = json_call(
+        &context.app,
+        &format!("/api/site/metadata?url={encoded_site_url}"),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(body["data"]["fetchStatus"], "ok");
+    assert_eq!(hits.load(Ordering::SeqCst), 1);
+
+    let stored = icon_record(&context.pool, &host_key(&site_url))
+        .await
+        .unwrap()
+        .unwrap();
+    let asset = stored.icon_asset.expect("quality asset");
+    assert_eq!(asset.content_type, "image/png");
+    assert_eq!(asset.width, Some(128));
+    assert_eq!(asset.height, Some(128));
+    assert!(asset.byte_size > 0);
+    assert!(asset.quality_score >= 120);
+    assert!(asset.quality_checked_at > 0);
+    assert_eq!(asset.quality_refresh_after, 0);
+
+    site_handle.abort();
+}
+
+#[tokio::test]
+async fn old_low_quality_cache_backfills_then_refreshes_to_high_quality_icon() {
+    let (site_url, hits, site_handle) = spawn_high_quality_html_icon_site().await;
+    let context = test_app_context_with_microlink_api("").await;
+    let host = host_key(&site_url);
+    let old_icon = "cache/old-low.ico";
+    std::fs::write(
+        context.config.meta_server_data_dir.join(old_icon),
+        ico_bytes(16, 16, b"old-low-icon"),
+    )
+    .unwrap();
+    insert_icon_record_with_asset_source(&context.pool, &host, &site_url, old_icon, "remote").await;
+
+    let encoded_site_url = encode_url_param(&site_url);
+    let (status, body) = json_call(
+        &context.app,
+        &format!("/api/site/metadata?url={encoded_site_url}"),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(body["data"]["fetchStatus"], "ok");
+    assert_eq!(hits.load(Ordering::SeqCst), 1);
+
+    let stored = icon_record(&context.pool, &host).await.unwrap().unwrap();
+    assert_ne!(stored.icon.as_deref(), Some(old_icon));
+    let asset = stored.icon_asset.expect("refreshed quality asset");
+    assert_eq!(asset.content_type, "image/png");
+    assert_eq!(asset.width, Some(128));
+    assert_eq!(asset.height, Some(128));
+    assert!(asset.quality_score >= 120);
+
+    let response = context
+        .app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .uri(body["data"]["icon"].as_str().unwrap())
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
+    let bytes = to_bytes(response.into_body(), usize::MAX).await.unwrap();
+    assert!(bytes.ends_with(b"high-quality-html-icon"));
+
+    site_handle.abort();
+}
+
+#[tokio::test]
+async fn old_high_quality_cache_backfills_quality_without_remote_refresh() {
+    let (site_url, hits, site_handle) = spawn_high_quality_html_icon_site().await;
+    let context = test_app_context_with_microlink_api("").await;
+    let host = host_key(&site_url);
+    let old_icon = "cache/old-high.png";
+    let old_bytes = png_bytes(128, 128, b"old-high-cache");
+    std::fs::write(
+        context.config.meta_server_data_dir.join(old_icon),
+        &old_bytes,
+    )
+    .unwrap();
+    insert_icon_record_with_asset_source(&context.pool, &host, &site_url, old_icon, "remote").await;
+
+    let encoded_site_url = encode_url_param(&site_url);
+    let (status, body) = json_call(
+        &context.app,
+        &format!("/api/site/metadata?url={encoded_site_url}"),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(body["data"]["fetchStatus"], "ok");
+    assert_eq!(hits.load(Ordering::SeqCst), 0);
+
+    let stored = icon_record(&context.pool, &host).await.unwrap().unwrap();
+    assert_eq!(stored.icon.as_deref(), Some(old_icon));
+    let asset = stored.icon_asset.expect("backfilled quality asset");
+    assert_eq!(asset.content_type, "image/png");
+    assert_eq!(asset.width, Some(128));
+    assert_eq!(asset.height, Some(128));
+    assert!(asset.quality_score >= 120);
+    assert_eq!(asset.quality_refresh_after, 0);
+
+    site_handle.abort();
+}
+
+#[tokio::test]
+async fn low_quality_refresh_failure_preserves_old_icon_and_defers_retry() {
+    let (site_url, hits, site_handle) = spawn_refresh_failure_site().await;
+    let context = test_app_context_with_microlink_api("").await;
+    let host = host_key(&site_url);
+    let old_icon = "cache/old-low-failure.ico";
+    let old_bytes = ico_bytes(16, 16, b"old-low-failure");
+    std::fs::write(
+        context.config.meta_server_data_dir.join(old_icon),
+        &old_bytes,
+    )
+    .unwrap();
+    insert_icon_record_with_asset_source(&context.pool, &host, &site_url, old_icon, "remote").await;
+
+    let encoded_site_url = encode_url_param(&site_url);
+    let (status, body) = json_call(
+        &context.app,
+        &format!("/api/site/metadata?url={encoded_site_url}"),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(body["data"]["fetchStatus"], "ok");
+    assert_eq!(hits.load(Ordering::SeqCst), 1);
+
+    let stored = icon_record(&context.pool, &host).await.unwrap().unwrap();
+    assert_eq!(stored.fetch_status, "ok");
+    assert_eq!(stored.icon.as_deref(), Some(old_icon));
+    let asset = stored.icon_asset.expect("deferred low-quality asset");
+    assert!(asset.quality_score < 120);
+    assert!(asset.quality_refresh_after > 0);
+
+    let (status, _) = json_call(
+        &context.app,
+        &format!("/api/site/metadata?url={encoded_site_url}"),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(hits.load(Ordering::SeqCst), 1);
+
+    let response = context
+        .app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .uri(body["data"]["icon"].as_str().unwrap())
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
+    let bytes = to_bytes(response.into_body(), usize::MAX).await.unwrap();
+    assert_eq!(&bytes[..], &old_bytes[..]);
+
+    site_handle.abort();
+}
+
+#[tokio::test]
+async fn seed_low_quality_cache_backfills_quality_without_remote_refresh() {
+    let (site_url, hits, site_handle) = spawn_high_quality_html_icon_site().await;
+    let context = test_app_context_with_microlink_api("").await;
+    let host = host_key(&site_url);
+    let old_icon = "cache/seed-low.ico";
+    std::fs::write(
+        context.config.meta_server_data_dir.join(old_icon),
+        ico_bytes(16, 16, b"seed-low-icon"),
+    )
+    .unwrap();
+    insert_icon_record_with_asset_source(&context.pool, &host, &site_url, old_icon, "seed").await;
+
+    let encoded_site_url = encode_url_param(&site_url);
+    let (status, body) = json_call(
+        &context.app,
+        &format!("/api/site/metadata?url={encoded_site_url}"),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(body["data"]["fetchStatus"], "ok");
+    assert_eq!(hits.load(Ordering::SeqCst), 0);
+
+    let stored = icon_record(&context.pool, &host).await.unwrap().unwrap();
+    assert_eq!(stored.icon.as_deref(), Some(old_icon));
+    let asset = stored.icon_asset.expect("seed backfilled quality asset");
+    assert_eq!(asset.width, Some(16));
+    assert_eq!(asset.height, Some(16));
+    assert!(asset.quality_score < 120);
+    assert_eq!(asset.quality_refresh_after, 0);
+
+    site_handle.abort();
 }
 
 #[tokio::test]

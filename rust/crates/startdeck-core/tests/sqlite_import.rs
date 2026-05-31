@@ -2,7 +2,7 @@ use bcrypt::verify;
 use chrono::Utc;
 use serde_json::json;
 use sqlx::{Row, SqlitePool};
-use startdeck_core::models::IconRecord;
+use startdeck_core::models::{IconAssetRecord, IconRecord};
 use startdeck_core::{
     RuntimeConfig, app_snapshot, connect_sqlite, icon_record, import_legacy_data,
     import_meta_server_data, save_snapshot, upsert_icon_record, user_password_hash,
@@ -143,12 +143,63 @@ async fn stored_primary_icon(pool: &SqlitePool, host: &str) -> Option<String> {
 }
 
 #[tokio::test]
-async fn fresh_sqlite_db_records_schema_version_5() {
+async fn fresh_sqlite_db_records_schema_version_7() {
     let temp = tempfile::tempdir().unwrap();
     let config = RuntimeConfig::from_base_dir(temp.path().to_path_buf());
     let pool = connect_sqlite(&config).await.unwrap();
 
-    assert_eq!(schema_versions(&pool).await, vec![5]);
+    assert_eq!(schema_versions(&pool).await, vec![7]);
+
+    let icon_asset_columns = sqlx::query("PRAGMA table_info(icon_assets)")
+        .fetch_all(&pool)
+        .await
+        .unwrap()
+        .into_iter()
+        .map(|row| row.get::<String, _>("name"))
+        .collect::<Vec<_>>();
+    for column in [
+        "content_type",
+        "width",
+        "height",
+        "byte_size",
+        "quality_score",
+        "quality_checked_at",
+        "quality_refresh_after",
+    ] {
+        assert!(icon_asset_columns.iter().any(|item| item == column));
+    }
+
+    let managed_asset_columns = sqlx::query("PRAGMA table_info(managed_icon_assets)")
+        .fetch_all(&pool)
+        .await
+        .unwrap()
+        .into_iter()
+        .map(|row| row.get::<String, _>("name"))
+        .collect::<Vec<_>>();
+    for column in [
+        "id",
+        "visibility",
+        "owner_username",
+        "blob_id",
+        "source_kind",
+        "source_ref",
+        "sha256",
+        "content_type",
+        "lifecycle",
+    ] {
+        assert!(managed_asset_columns.iter().any(|item| item == column));
+    }
+
+    let managed_blob_columns = sqlx::query("PRAGMA table_info(managed_icon_blobs)")
+        .fetch_all(&pool)
+        .await
+        .unwrap()
+        .into_iter()
+        .map(|row| row.get::<String, _>("name"))
+        .collect::<Vec<_>>();
+    for column in ["id", "sha256", "content_type", "byte_size", "storage_path"] {
+        assert!(managed_blob_columns.iter().any(|item| item == column));
+    }
 }
 
 #[tokio::test]
@@ -312,7 +363,7 @@ async fn migrates_v3_icon_records_to_fetch_status_schema_without_losing_assets()
     assert_eq!(record.retry_after, 0);
     assert_eq!(record.last_error, "");
 
-    assert_eq!(schema_versions(&pool).await, vec![3, 4, 5]);
+    assert_eq!(schema_versions(&pool).await, vec![3, 4, 5, 6, 7]);
 }
 
 #[tokio::test]
@@ -328,6 +379,7 @@ async fn upserting_non_ok_icon_record_clears_stale_primary_assets() {
         description: String::new(),
         background_color: String::new(),
         icon: Some("icons/example.svg".to_string()),
+        icon_asset: None,
         source: "remote".to_string(),
         fetch_status: "ok".to_string(),
         failure_kind: String::new(),
@@ -355,6 +407,57 @@ async fn upserting_non_ok_icon_record_clears_stale_primary_assets() {
     let stored = icon_record(&pool, "example.com").await.unwrap().unwrap();
     assert_eq!(stored.fetch_status, "no_icon");
     assert!(stored.icon.is_none());
+    assert!(stored.icon_asset.is_none());
+}
+
+#[tokio::test]
+async fn upserting_icon_record_persists_primary_asset_quality() {
+    let temp = tempfile::tempdir().unwrap();
+    let config = RuntimeConfig::from_base_dir(temp.path().to_path_buf());
+    let pool = connect_sqlite(&config).await.unwrap();
+    let record = IconRecord {
+        host: "quality.example.com".to_string(),
+        title: "Quality Example".to_string(),
+        url: "https://quality.example.com/".to_string(),
+        final_url: "https://quality.example.com/".to_string(),
+        description: String::new(),
+        background_color: String::new(),
+        icon: Some("/cache/quality.png".to_string()),
+        icon_asset: Some(IconAssetRecord {
+            url: "cache/quality.png".to_string(),
+            content_type: "image/png".to_string(),
+            width: Some(114),
+            height: Some(114),
+            byte_size: 4096,
+            quality_score: 220,
+            quality_checked_at: 1_700_000_000_000,
+            quality_refresh_after: 1_700_086_400_000,
+        }),
+        source: "remote".to_string(),
+        fetch_status: "ok".to_string(),
+        failure_kind: String::new(),
+        failure_count: 0,
+        retry_after: 0,
+        last_error: String::new(),
+        fetched_at: Utc::now(),
+    };
+
+    upsert_icon_record(&pool, &record).await.unwrap();
+
+    let stored = icon_record(&pool, "quality.example.com")
+        .await
+        .unwrap()
+        .unwrap();
+    assert_eq!(stored.icon.as_deref(), Some("cache/quality.png"));
+    let asset = stored.icon_asset.expect("icon asset quality");
+    assert_eq!(asset.url, "cache/quality.png");
+    assert_eq!(asset.content_type, "image/png");
+    assert_eq!(asset.width, Some(114));
+    assert_eq!(asset.height, Some(114));
+    assert_eq!(asset.byte_size, 4096);
+    assert_eq!(asset.quality_score, 220);
+    assert_eq!(asset.quality_checked_at, 1_700_000_000_000);
+    assert_eq!(asset.quality_refresh_after, 1_700_086_400_000);
 }
 
 #[tokio::test]
@@ -600,7 +703,7 @@ async fn incompatible_legacy_schema_is_rebuilt_destructively() {
         .unwrap();
     assert_eq!(stale_count, 0);
 
-    assert_eq!(max_schema_version(&pool).await, 5);
+    assert_eq!(max_schema_version(&pool).await, 7);
 
     let snapshot = app_snapshot(&pool, "admin").await.unwrap();
     assert!(snapshot.system_config.enable_docker);
@@ -690,7 +793,7 @@ async fn migrates_v4_icon_assets_to_v5_without_rerunning_older_migrations() {
 
     let pool = connect_sqlite(&config).await.unwrap();
 
-    assert_eq!(schema_versions(&pool).await, vec![4, 5]);
+    assert_eq!(schema_versions(&pool).await, vec![4, 5, 6, 7]);
     assert_eq!(
         icon_record(&pool, "v4.example.com")
             .await
@@ -700,6 +803,19 @@ async fn migrates_v4_icon_assets_to_v5_without_rerunning_older_migrations() {
             .as_deref(),
         Some("cache/v4.svg")
     );
+    let asset = icon_record(&pool, "v4.example.com")
+        .await
+        .unwrap()
+        .unwrap()
+        .icon_asset
+        .expect("migrated icon asset");
+    assert_eq!(asset.content_type, "");
+    assert_eq!(asset.width, None);
+    assert_eq!(asset.height, None);
+    assert_eq!(asset.byte_size, 0);
+    assert_eq!(asset.quality_score, 0);
+    assert_eq!(asset.quality_checked_at, 0);
+    assert_eq!(asset.quality_refresh_after, 0);
 }
 
 #[tokio::test]
@@ -875,7 +991,7 @@ async fn v4_main_service_data_survives_v5_migration_and_restart_import() {
     let migrated_pool = connect_sqlite(&config).await.unwrap();
     import_legacy_data(&migrated_pool, &config).await.unwrap();
 
-    assert_eq!(max_schema_version(&migrated_pool).await, 5);
+    assert_eq!(max_schema_version(&migrated_pool).await, 7);
     let after = app_snapshot(&migrated_pool, "admin").await.unwrap();
     assert_eq!(
         after.user.app_config["customTitle"],
@@ -902,7 +1018,7 @@ async fn v4_main_service_data_survives_v5_migration_and_restart_import() {
 }
 
 #[tokio::test]
-async fn opening_v5_database_twice_is_idempotent() {
+async fn opening_v6_database_twice_is_idempotent() {
     let temp = tempfile::tempdir().unwrap();
     let config = RuntimeConfig::from_base_dir(temp.path().to_path_buf());
     let legacy_pool = raw_sqlite_pool(&config).await;
@@ -1002,6 +1118,7 @@ async fn icon_reference_normalization_matrix_applies_to_import_upsert_and_migrat
             description: String::new(),
             background_color: String::new(),
             icon: Some((*raw).to_string()),
+            icon_asset: None,
             source: "remote".to_string(),
             fetch_status: "ok".to_string(),
             failure_kind: String::new(),

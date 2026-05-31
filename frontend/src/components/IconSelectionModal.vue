@@ -4,10 +4,11 @@ import { useMainStore } from "../stores/main";
 import ActionFooter from "@/components/base/ActionFooter.vue";
 import AppButton from "@/components/base/AppButton.vue";
 import AppModalShell from "@/components/base/AppModalShell.vue";
+import type { ManagedIconCandidate } from "@/utils/iconAssets";
 
 const props = defineProps<{
   show: boolean;
-  candidates: string[]; // List of icon URLs or paths
+  candidates: ManagedIconCandidate[];
   title: string; // Search term
   source: "local" | "api";
 }>();
@@ -15,15 +16,15 @@ const props = defineProps<{
 const emit = defineEmits(["update:show", "select", "cancelLink"]);
 const store = useMainStore();
 
-const selectIcon = (icon: string) => {
+const selectIcon = (icon: ManagedIconCandidate) => {
   emit("select", icon);
   emit("update:show", false);
 };
 
-const getIconName = (url: string) => {
+const getIconName = (candidate: ManagedIconCandidate) => {
+  const url = candidate.label || candidate.url;
   // Extract name from URL or path
-  // e.g., "icons/QQ.png" -> "QQ"
-  // e.g., "https://simpleicons.org/icons/github.svg" -> "github"
+  // e.g., "/api/assets/icons/icn_github" -> "github"
   // e.g., "https://cdn.simpleicons.org/github" -> "github"
   try {
     if (!url) return "";
@@ -93,7 +94,7 @@ watch(
       >
         <button
           v-for="icon in visibleCandidates"
-          :key="icon"
+          :key="icon.id || icon.url"
           @click="selectIcon(icon)"
           class="group flex flex-col items-center gap-3 rounded-xl border border-[var(--sd-color-border-subtle)] bg-[var(--sd-color-surface)] p-3 text-left transition-all hover:border-[var(--sd-color-border-accent)] hover:bg-[color-mix(in_srgb,var(--sd-color-surface-muted)_82%,var(--sd-color-surface)_18%)]"
         >
@@ -101,7 +102,7 @@ watch(
             class="flex h-12 w-12 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--sd-color-surface-muted)_88%,var(--sd-color-surface)_12%)] shadow-sm transition-transform group-hover:scale-[1.03]"
           >
             <img
-              :src="store.getAssetUrl(icon)"
+              :src="store.getAssetUrl(icon.url)"
               class="h-8 w-8 object-contain"
               loading="lazy"
             />

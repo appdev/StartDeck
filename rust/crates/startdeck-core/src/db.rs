@@ -12,10 +12,11 @@ use walkdir::WalkDir;
 
 use crate::RuntimeConfig;
 use crate::models::{
-    AppSnapshot, IconRecord, NavGroup, NavItem, SystemConfig, UserRecord, WidgetRecord,
+    AppSnapshot, IconAssetRecord, IconRecord, NavGroup, NavItem, SystemConfig, UserRecord,
+    WidgetRecord,
 };
 
-const CURRENT_SCHEMA_VERSION: i64 = 5;
+const CURRENT_SCHEMA_VERSION: i64 = 7;
 
 pub async fn connect_sqlite(config: &RuntimeConfig) -> Result<SqlitePool> {
     config.ensure_dirs().context("create runtime directories")?;
@@ -205,11 +206,44 @@ pub async fn ensure_schema(pool: &SqlitePool) -> Result<()> {
             url TEXT NOT NULL,
             is_local INTEGER NOT NULL,
             sort_order INTEGER NOT NULL,
+            content_type TEXT NOT NULL DEFAULT '',
+            width INTEGER,
+            height INTEGER,
+            byte_size INTEGER NOT NULL DEFAULT 0,
+            quality_score INTEGER NOT NULL DEFAULT 0,
+            quality_checked_at INTEGER NOT NULL DEFAULT 0,
+            quality_refresh_after INTEGER NOT NULL DEFAULT 0,
             PRIMARY KEY(host, asset_kind, url),
             FOREIGN KEY(host) REFERENCES icon_records(host) ON DELETE CASCADE
         )"#,
+        r#"CREATE TABLE IF NOT EXISTS managed_icon_blobs (
+            id TEXT PRIMARY KEY,
+            sha256 TEXT NOT NULL UNIQUE,
+            content_type TEXT NOT NULL,
+            byte_size INTEGER NOT NULL,
+            storage_path TEXT NOT NULL,
+            created_at INTEGER NOT NULL
+        )"#,
+        r#"CREATE TABLE IF NOT EXISTS managed_icon_assets (
+            id TEXT PRIMARY KEY,
+            visibility TEXT NOT NULL CHECK (visibility IN ('private', 'template')),
+            owner_username TEXT,
+            blob_id TEXT NOT NULL,
+            source_kind TEXT NOT NULL,
+            source_ref TEXT NOT NULL,
+            sha256 TEXT NOT NULL,
+            content_type TEXT NOT NULL,
+            lifecycle TEXT NOT NULL DEFAULT 'active',
+            created_at INTEGER NOT NULL,
+            updated_at INTEGER NOT NULL,
+            FOREIGN KEY(blob_id) REFERENCES managed_icon_blobs(id) ON DELETE RESTRICT
+        )"#,
+        r#"CREATE INDEX IF NOT EXISTS idx_managed_icon_assets_scope_sha
+           ON managed_icon_assets(visibility, owner_username, sha256, lifecycle)"#,
+        r#"CREATE INDEX IF NOT EXISTS idx_managed_icon_assets_blob
+           ON managed_icon_assets(blob_id)"#,
         r#"INSERT OR IGNORE INTO schema_migrations(version, applied_at)
-           VALUES (5, CAST(strftime('%s','now') AS INTEGER) * 1000)"#,
+           VALUES (7, CAST(strftime('%s','now') AS INTEGER) * 1000)"#,
     ];
     for statement in statements {
         sqlx::query(statement).execute(pool).await?;
@@ -246,8 +280,14 @@ async fn migrate_schema(pool: &SqlitePool) -> Result<()> {
     if version < 4 {
         migrate_to_schema_4(pool).await?;
     }
-    if version < CURRENT_SCHEMA_VERSION {
+    if version < 5 {
         migrate_to_schema_5(pool).await?;
+    }
+    if version < 6 {
+        migrate_to_schema_6(pool).await?;
+    }
+    if version < CURRENT_SCHEMA_VERSION {
+        migrate_to_schema_7(pool).await?;
     }
     Ok(())
 }
@@ -392,6 +432,120 @@ async fn migrate_to_schema_5(pool: &SqlitePool) -> Result<()> {
         .execute(&mut *tx)
         .await?;
     tx.commit().await?;
+    Ok(())
+}
+
+async fn migrate_to_schema_6(pool: &SqlitePool) -> Result<()> {
+    create_managed_icon_tables(pool).await?;
+    sqlx::query("INSERT OR IGNORE INTO schema_migrations(version, applied_at) VALUES (6, ?)")
+        .bind(now_ms())
+        .execute(pool)
+        .await?;
+    Ok(())
+}
+
+async fn migrate_to_schema_7(pool: &SqlitePool) -> Result<()> {
+    if table_exists(pool, "icon_assets").await? {
+        add_column_if_missing(
+            pool,
+            "icon_assets",
+            "content_type",
+            "ALTER TABLE icon_assets ADD COLUMN content_type TEXT NOT NULL DEFAULT ''",
+        )
+        .await?;
+        add_column_if_missing(
+            pool,
+            "icon_assets",
+            "width",
+            "ALTER TABLE icon_assets ADD COLUMN width INTEGER",
+        )
+        .await?;
+        add_column_if_missing(
+            pool,
+            "icon_assets",
+            "height",
+            "ALTER TABLE icon_assets ADD COLUMN height INTEGER",
+        )
+        .await?;
+        add_column_if_missing(
+            pool,
+            "icon_assets",
+            "byte_size",
+            "ALTER TABLE icon_assets ADD COLUMN byte_size INTEGER NOT NULL DEFAULT 0",
+        )
+        .await?;
+        add_column_if_missing(
+            pool,
+            "icon_assets",
+            "quality_score",
+            "ALTER TABLE icon_assets ADD COLUMN quality_score INTEGER NOT NULL DEFAULT 0",
+        )
+        .await?;
+        add_column_if_missing(
+            pool,
+            "icon_assets",
+            "quality_checked_at",
+            "ALTER TABLE icon_assets ADD COLUMN quality_checked_at INTEGER NOT NULL DEFAULT 0",
+        )
+        .await?;
+        add_column_if_missing(
+            pool,
+            "icon_assets",
+            "quality_refresh_after",
+            "ALTER TABLE icon_assets ADD COLUMN quality_refresh_after INTEGER NOT NULL DEFAULT 0",
+        )
+        .await?;
+    }
+    sqlx::query("INSERT OR IGNORE INTO schema_migrations(version, applied_at) VALUES (7, ?)")
+        .bind(now_ms())
+        .execute(pool)
+        .await?;
+    Ok(())
+}
+
+async fn create_managed_icon_tables(pool: &SqlitePool) -> Result<()> {
+    sqlx::query(
+        r#"CREATE TABLE IF NOT EXISTS managed_icon_blobs (
+            id TEXT PRIMARY KEY,
+            sha256 TEXT NOT NULL UNIQUE,
+            content_type TEXT NOT NULL,
+            byte_size INTEGER NOT NULL,
+            storage_path TEXT NOT NULL,
+            created_at INTEGER NOT NULL
+        )"#,
+    )
+    .execute(pool)
+    .await?;
+    sqlx::query(
+        r#"CREATE TABLE IF NOT EXISTS managed_icon_assets (
+            id TEXT PRIMARY KEY,
+            visibility TEXT NOT NULL CHECK (visibility IN ('private', 'template')),
+            owner_username TEXT,
+            blob_id TEXT NOT NULL,
+            source_kind TEXT NOT NULL,
+            source_ref TEXT NOT NULL,
+            sha256 TEXT NOT NULL,
+            content_type TEXT NOT NULL,
+            lifecycle TEXT NOT NULL DEFAULT 'active',
+            created_at INTEGER NOT NULL,
+            updated_at INTEGER NOT NULL,
+            FOREIGN KEY(blob_id) REFERENCES managed_icon_blobs(id) ON DELETE RESTRICT
+        )"#,
+    )
+    .execute(pool)
+    .await?;
+    sqlx::query(
+        r#"CREATE INDEX IF NOT EXISTS idx_managed_icon_assets_scope_sha
+           ON managed_icon_assets(visibility, owner_username, sha256, lifecycle)"#,
+    )
+    .execute(pool)
+    .await?;
+    sqlx::query(
+        r#"CREATE INDEX IF NOT EXISTS idx_managed_icon_assets_blob
+           ON managed_icon_assets(blob_id)"#,
+    )
+    .execute(pool)
+    .await?;
     Ok(())
 }
 
@@ -594,6 +748,8 @@ async fn any_runtime_table_exists(pool: &SqlitePool) -> Result<bool> {
         "visitor_stats",
         "icon_records",
         "icon_assets",
+        "managed_icon_blobs",
+        "managed_icon_assets",
     ] {
         if table_exists(pool, table).await? {
             return Ok(true);
@@ -672,6 +828,7 @@ fn table_info_sql(table: &str) -> Result<&'static str> {
         "widgets" => Ok("PRAGMA table_info(widgets)"),
         "config_versions" => Ok("PRAGMA table_info(config_versions)"),
         "icon_records" => Ok("PRAGMA table_info(icon_records)"),
+        "icon_assets" => Ok("PRAGMA table_info(icon_assets)"),
         _ => anyhow::bail!("unsupported table_info target: {table}"),
     }
 }
@@ -695,6 +852,8 @@ async fn destructive_reset_schema(pool: &SqlitePool) -> Result<()> {
         "DROP TABLE IF EXISTS json_documents",
         "DROP TABLE IF EXISTS storage_meta",
         "DROP TABLE IF EXISTS usage_snapshots",
+        "DROP TABLE IF EXISTS managed_icon_assets",
+        "DROP TABLE IF EXISTS managed_icon_blobs",
         "DROP TABLE IF EXISTS icon_assets",
         "DROP TABLE IF EXISTS nav_items",
         "DROP TABLE IF EXISTS widgets",
@@ -878,13 +1037,28 @@ pub async fn icon_record(pool: &SqlitePool, host: &str) -> Result<Option<IconRec
     else {
         return Ok(None);
     };
-    let icon = sqlx::query(
-        "SELECT url FROM icon_assets WHERE host = ? ORDER BY is_local DESC, sort_order ASC LIMIT 1",
+    let icon_asset = sqlx::query(
+        r#"SELECT url, content_type, width, height, byte_size, quality_score,
+                  quality_checked_at, quality_refresh_after
+           FROM icon_assets
+           WHERE host = ?
+           ORDER BY is_local DESC, sort_order ASC
+           LIMIT 1"#,
     )
     .bind(host)
     .fetch_optional(pool)
     .await?
-    .map(|asset| asset.get::<String, _>("url"));
+    .map(|asset| IconAssetRecord {
+        url: asset.get("url"),
+        content_type: asset.get("content_type"),
+        width: asset.get("width"),
+        height: asset.get("height"),
+        byte_size: asset.get("byte_size"),
+        quality_score: asset.get("quality_score"),
+        quality_checked_at: asset.get("quality_checked_at"),
+        quality_refresh_after: asset.get("quality_refresh_after"),
+    });
+    let icon = icon_asset.as_ref().map(|asset| asset.url.clone());
     Ok(Some(IconRecord {
         host: row.get("host"),
         title: row.get("title"),
@@ -893,6 +1067,7 @@ pub async fn icon_record(pool: &SqlitePool, host: &str) -> Result<Option<IconRec
         description: row.get("description"),
         background_color: row.get("background_color"),
         icon,
+        icon_asset,
         source: row.get("source"),
         fetch_status: row.get("fetch_status"),
         failure_kind: row.get("failure_kind"),
@@ -950,13 +1125,36 @@ pub async fn upsert_icon_record(pool: &SqlitePool, record: &IconRecord) -> Resul
     if record.fetch_status == "ok"
         && let Some(icon) = record.icon.as_deref().and_then(normalize_icon_reference)
     {
+        let quality = record.icon_asset.as_ref().filter(|asset| {
+            normalize_icon_reference(&asset.url)
+                .as_deref()
+                .is_some_and(|url| url == icon)
+        });
         sqlx::query(
-            r#"INSERT OR REPLACE INTO icon_assets(host, asset_kind, url, is_local, sort_order)
-               VALUES (?, 'primary', ?, ?, 0)"#,
+            r#"INSERT OR REPLACE INTO icon_assets(
+                 host, asset_kind, url, is_local, sort_order, content_type, width, height,
+                 byte_size, quality_score, quality_checked_at, quality_refresh_after
+               )
+               VALUES (?, 'primary', ?, ?, 0, ?, ?, ?, ?, ?, ?, ?)"#,
         )
         .bind(&record.host)
         .bind(&icon)
         .bind(is_local_icon(&icon) as i64)
+        .bind(
+            quality
+                .map(|asset| asset.content_type.as_str())
+                .unwrap_or(""),
+        )
+        .bind(quality.and_then(|asset| asset.width))
+        .bind(quality.and_then(|asset| asset.height))
+        .bind(quality.map(|asset| asset.byte_size).unwrap_or(0))
+        .bind(quality.map(|asset| asset.quality_score).unwrap_or(0))
+        .bind(quality.map(|asset| asset.quality_checked_at).unwrap_or(0))
+        .bind(
+            quality
+                .map(|asset| asset.quality_refresh_after)
+                .unwrap_or(0),
+        )
         .execute(&mut *tx)
         .await?;
     }
@@ -1338,6 +1536,7 @@ async fn import_icon_seed_file(pool: &SqlitePool, path: &Path, source: &str) -> 
                     string_field(item, "original_icon_url")
                         .and_then(|icon| normalize_icon_reference(&icon))
                 }),
+            icon_asset: None,
             source: source.to_string(),
             fetch_status: "ok".to_string(),
             failure_kind: String::new(),

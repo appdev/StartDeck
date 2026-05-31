@@ -10,6 +10,8 @@ import {
   normalizeVersion,
 } from "@/utils/storeHelpers";
 import type { AppConfig, WidgetConfig } from "@/types";
+import { sessionFetch } from "@/utils/sessionFetch";
+import { sanitizeSnapshotIcons } from "@/utils/iconAssets";
 
 const LEGACY_CACHE_KEY = "start-deck-data-cache";
 const CACHE_KEY_PREFIX = "start-deck-data-cache";
@@ -34,13 +36,9 @@ export const useCacheStore = defineStore("cache", () => {
   );
 
   const getHeaders = (): Record<string, string> => {
-    const headers: Record<string, string> = {
+    return {
       "Content-Type": "application/json",
     };
-    if (auth.token) {
-      headers["Authorization"] = `Bearer ${auth.token}`;
-    }
-    return headers;
   };
 
   const authCacheKey = (username: string) =>
@@ -70,8 +68,9 @@ export const useCacheStore = defineStore("cache", () => {
           )
         : data.widgets;
       const { key, username } = getCacheScopeForData(data);
+      const sanitized = sanitizeSnapshotIcons(data);
       const cacheData = {
-        groups: data.groups,
+        groups: sanitized.groups,
         widgets: cacheWidgets,
         appConfig: stripForceNetworkMode(
           (data.appConfig || undefined) as Record<string, unknown> | undefined,
@@ -132,7 +131,8 @@ export const useCacheStore = defineStore("cache", () => {
         : cachedUser === GUEST_CACHE_USER;
       if (!isMatch) return false;
 
-      if (cache.groups) groupsStore.groups = cache.groups;
+      const sanitizedCache = sanitizeSnapshotIcons(cache);
+      if (sanitizedCache.groups) groupsStore.groups = sanitizedCache.groups;
       if (cache.widgets) {
         widgetsStore.applyServerWidgets(
           widgetsStore.normalizeIncomingWidgets(
@@ -197,7 +197,7 @@ export const useCacheStore = defineStore("cache", () => {
     const controller = new AbortController();
     const timer = window.setTimeout(() => controller.abort(), timeoutMs);
     try {
-      return await fetch(input, { ...init, signal: controller.signal });
+      return await sessionFetch(input, { ...init, signal: controller.signal });
     } finally {
       window.clearTimeout(timer);
     }
@@ -210,11 +210,12 @@ export const useCacheStore = defineStore("cache", () => {
     if (isLoadingSnapshot) return;
     isLoadingSnapshot = true;
     try {
+      if (!auth.sessionReady) return;
       const res = await fetchWithTimeout("/api/data", {
         headers: getHeaders(),
       });
-      if (res.status === 401 && auth.isLogged) {
-        auth.logout();
+      if (res.status === 401) {
+        auth.clearLocalSession();
         throw new Error("Init unauthorized with stored token");
       }
       if (res.status === 304) {
@@ -223,8 +224,8 @@ export const useCacheStore = defineStore("cache", () => {
             headers: getHeaders(),
             cache: "reload",
           });
-          if (reloadRes.status === 401 && auth.isLogged) {
-            auth.logout();
+          if (reloadRes.status === 401) {
+            auth.clearLocalSession();
             throw new Error("Init reload unauthorized with stored token");
           }
           if (!reloadRes.ok)

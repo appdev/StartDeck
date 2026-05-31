@@ -196,7 +196,10 @@ describe("GridPanel Context Menu", () => {
             createSpy: () => vi.fn().mockResolvedValue(undefined),
             initialState: {
               auth: {
-                token: "test-token",
+                sessionReady: true,
+                isLogged: true,
+                username: "ying",
+                sessionGeneration: "test-session",
               },
               widgets: {
                 widgets: [
@@ -336,7 +339,9 @@ describe("GridPanel Context Menu", () => {
     const initialRemoveAllCalls =
       gridStackMock.instance.removeAll.mock.calls.length;
 
-    auth.token = "";
+    auth.sessionReady = true;
+    auth.username = "";
+    auth.sessionGeneration = "";
     await wrapper.vm.$nextTick();
     await flushPromises();
     await wrapper.vm.$nextTick();

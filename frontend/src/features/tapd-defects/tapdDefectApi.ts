@@ -1,4 +1,5 @@
 import { useAuthStore } from "@/stores/auth";
+import { sessionFetch } from "@/utils/sessionFetch";
 import type {
   TapdCredentialPayload,
   TapdCredentialStatus,
@@ -13,7 +14,7 @@ const parseJson = async <T>(response: Response): Promise<T> => {
     const message =
       data && typeof data.error === "string" ? data.error : "request_failed";
     if (response.status === 401 && message === "invalid_token") {
-      useAuthStore().logout();
+      void useAuthStore().logout();
       throw new Error("登录状态已失效，请重新登录");
     }
     throw new Error(message);
@@ -26,7 +27,7 @@ const authHeaders = () => useAuthStore().getHeaders();
 export const queryTapdDefects = async (
   request: TapdDefectsQueryRequest,
 ): Promise<TapdDefectSummary> => {
-  const response = await fetch("/api/tapd-defects/query", {
+  const response = await sessionFetch("/api/tapd-defects/query", {
     method: "POST",
     headers: authHeaders(),
     body: JSON.stringify(request),
@@ -38,7 +39,7 @@ export const resolveTapdWorkspace = async (
   widgetId: string,
   workspaceId: string,
 ): Promise<TapdWorkspaceResponse> => {
-  const response = await fetch("/api/tapd-defects/workspace", {
+  const response = await sessionFetch("/api/tapd-defects/workspace", {
     method: "POST",
     headers: authHeaders(),
     body: JSON.stringify({ widgetId, workspaceId }),
@@ -49,7 +50,7 @@ export const resolveTapdWorkspace = async (
 export const getTapdCredentialStatus = async (
   widgetId: string,
 ): Promise<TapdCredentialStatus> => {
-  const response = await fetch(
+  const response = await sessionFetch(
     `/api/tapd-defects/credentials/${encodeURIComponent(widgetId)}`,
     {
       headers: authHeaders(),
@@ -62,7 +63,7 @@ export const saveTapdServerCredential = async (
   widgetId: string,
   payload: TapdCredentialPayload,
 ): Promise<TapdCredentialStatus> => {
-  const response = await fetch(
+  const response = await sessionFetch(
     `/api/tapd-defects/credentials/${encodeURIComponent(widgetId)}`,
     {
       method: "PUT",
@@ -74,7 +75,7 @@ export const saveTapdServerCredential = async (
 };
 
 export const deleteTapdServerCredential = async (widgetId: string) => {
-  const response = await fetch(
+  const response = await sessionFetch(
     `/api/tapd-defects/credentials/${encodeURIComponent(widgetId)}`,
     {
       method: "DELETE",

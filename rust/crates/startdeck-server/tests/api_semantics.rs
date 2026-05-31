@@ -1,12 +1,19 @@
 use axum::body::{Body, to_bytes};
 use axum::http::{Request, StatusCode};
+use axum::routing::get;
+use axum::{Json, Router};
+use base64::Engine;
 use flate2::Compression;
 use flate2::write::GzEncoder;
 use serde_json::{Value, json};
 use startdeck_core::{RuntimeConfig, connect_sqlite, import_legacy_app_data};
 use startdeck_server::{AppState, app};
 use std::io::Write;
+use std::sync::Mutex;
+use tokio::net::TcpListener;
 use tower::ServiceExt;
+
+static ENV_LOCK: Mutex<()> = Mutex::new(());
 
 struct TestContext {
     app: axum::Router,
@@ -20,6 +27,46 @@ async fn test_app() -> axum::Router {
 
 async fn test_app_with_widget_cache(include_poem_cache: bool) -> axum::Router {
     test_context_with_widget_cache(include_poem_cache).await.app
+}
+
+async fn test_context_with_meta_server_base(meta_server_base: String) -> TestContext {
+    let temp = tempfile::tempdir().unwrap();
+    let base = temp.keep();
+    let data_dir = base.join("Data/data");
+    std::fs::create_dir_all(&data_dir).unwrap();
+    std::fs::write(
+        data_dir.join("system.json"),
+        r#"{"authMode":"multi","enableDocker":false}"#,
+    )
+    .unwrap();
+    std::fs::write(
+        data_dir.join("data.json"),
+        serde_json::to_vec(&json!({
+            "username": "admin",
+            "password": "secret",
+            "appConfig": {"customTitle": "Demo"},
+            "groups": [{"id": "g1", "title": "Main", "items": []}],
+            "widgets": []
+        }))
+        .unwrap(),
+    )
+    .unwrap();
+    let public_dir = base.join("Data/public");
+    std::fs::create_dir_all(&public_dir).unwrap();
+    std::fs::write(public_dir.join("index.html"), "<main>StartDeck</main>").unwrap();
+    let config = RuntimeConfig::from_base_dir(base);
+    let pool = connect_sqlite(&config).await.unwrap();
+    import_legacy_app_data(&pool, &config).await.unwrap();
+    let app = {
+        let _guard = ENV_LOCK.lock().unwrap();
+        app(AppState::new_with_meta_server_base(
+            config.clone(),
+            pool.clone(),
+            false,
+            meta_server_base,
+        ))
+    };
+    TestContext { app, pool, config }
 }
 
 async fn test_context_with_widget_cache(include_poem_cache: bool) -> TestContext {
@@ -142,11 +189,14 @@ async fn test_context_with_widget_cache(include_poem_cache: bool) -> TestContext
     let config = RuntimeConfig::from_base_dir(base);
     let pool = connect_sqlite(&config).await.unwrap();
     import_legacy_app_data(&pool, &config).await.unwrap();
-    let app = app(AppState::new_with_remote_itab_fetch(
-        config.clone(),
-        pool.clone(),
-        false,
-    ));
+    let app = {
+        let _guard = ENV_LOCK.lock().unwrap();
+        app(AppState::new_with_remote_itab_fetch(
+            config.clone(),
+            pool.clone(),
+            false,
+        ))
+    };
     TestContext { app, pool, config }
 }
 
@@ -214,19 +264,22 @@ async fn test_app_with_seeded_weather_cache() -> axum::Router {
     .execute(&pool)
     .await
     .unwrap();
-    app(AppState::new_with_remote_itab_fetch(config, pool, true))
+    {
+        let _guard = ENV_LOCK.lock().unwrap();
+        app(AppState::new_with_remote_itab_fetch(config, pool, true))
+    }
 }
 
 async fn json_call(
     app: &axum::Router,
     method: &str,
     uri: &str,
-    token: Option<&str>,
+    session_cookie: Option<&str>,
     body: Option<Value>,
 ) -> (StatusCode, Value) {
     let mut builder = Request::builder().method(method).uri(uri);
-    if let Some(token) = token {
-        builder = builder.header("authorization", format!("Bearer {token}"));
+    if let Some(session_cookie) = session_cookie {
+        builder = builder.header("cookie", session_cookie);
     }
     let request = if let Some(body) = body {
         builder
@@ -265,9 +318,29 @@ async fn login_token_for(app: &axum::Router, username: &str, password: &str) -> 
         .await
         .unwrap();
     assert_eq!(response.status(), StatusCode::OK);
+    let session_cookie = response
+        .headers()
+        .get("set-cookie")
+        .and_then(|value| value.to_str().ok())
+        .and_then(|value| value.split(';').next())
+        .unwrap()
+        .to_string();
     let body: Value =
         serde_json::from_slice(&to_bytes(response.into_body(), usize::MAX).await.unwrap()).unwrap();
-    body["token"].as_str().unwrap().to_string()
+    assert_eq!(body["success"], true);
+    assert_eq!(body["username"], username);
+    assert!(body.get("token").is_none());
+    assert!(body["sessionGeneration"].as_str().unwrap().len() > 20);
+    session_cookie
+}
+
+fn response_header(response: &axum::response::Response, name: &str) -> String {
+    response
+        .headers()
+        .get(name)
+        .and_then(|value| value.to_str().ok())
+        .unwrap_or_default()
+        .to_string()
 }
 
 async fn seed_stale_default_runtime_cache(pool: &sqlx::SqlitePool, value: Value) {
@@ -538,18 +611,25 @@ async fn login_and_read_data_snapshot() {
         .await
         .unwrap();
     assert_eq!(response.status(), StatusCode::OK);
+    let token = response
+        .headers()
+        .get("set-cookie")
+        .and_then(|value| value.to_str().ok())
+        .and_then(|value| value.split(';').next())
+        .unwrap()
+        .to_string();
     let body: Value =
         serde_json::from_slice(&to_bytes(response.into_body(), usize::MAX).await.unwrap()).unwrap();
     assert_eq!(body["success"], true);
-    assert!(body["token"].as_str().unwrap().len() > 20);
+    assert!(body.get("token").is_none());
+    assert!(body["sessionGeneration"].as_str().unwrap().len() > 20);
 
-    let token = body["token"].as_str().unwrap().to_string();
     let response = app
         .clone()
         .oneshot(
             Request::builder()
                 .uri("/api/data")
-                .header("authorization", format!("Bearer {token}"))
+                .header("cookie", &token)
                 .body(Body::empty())
                 .unwrap(),
         )
@@ -587,10 +667,7 @@ async fn login_and_read_data_snapshot() {
     assert_eq!(body["appConfig"]["customTitle"], "Guest Default");
     assert_eq!(body["groups"][0]["title"], "Guest Group");
     assert_eq!(body["groups"][0]["items"][0]["id"], "public-link");
-    assert_eq!(
-        body["groups"][0]["items"][0]["icon"],
-        "/api/site/icon?url=https%3A%2F%2Fexample.com%2Fpath%3Fq%3D1"
-    );
+    assert_eq!(body["groups"][0]["items"][0]["icon"], "");
     assert_eq!(body["groups"][0]["items"].as_array().unwrap().len(), 2);
     assert!(body["groups"][0]["items"][0].get("isPublic").is_none());
     assert!(body["groups"][0]["items"][1].get("isPublic").is_none());
@@ -607,7 +684,7 @@ async fn login_and_read_data_snapshot() {
         .oneshot(
             Request::builder()
                 .uri("/api/data")
-                .header("authorization", "Bearer invalid-token")
+                .header("cookie", "startdeck_session=invalid-token")
                 .body(Body::empty())
                 .unwrap(),
         )
@@ -646,6 +723,243 @@ async fn login_and_read_data_snapshot() {
         serde_json::from_slice(&to_bytes(response.into_body(), usize::MAX).await.unwrap()).unwrap();
     assert_eq!(body["id"], "private-widget");
     assert!(body.get("isPublic").is_none());
+}
+
+#[tokio::test]
+async fn login_sets_http_only_cookie_without_token_and_no_store() {
+    let app = test_app().await;
+    let response = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/api/login")
+                .header("content-type", "application/json")
+                .body(Body::from(r#"{"username":"admin","password":"secret"}"#))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
+    assert_eq!(response_header(&response, "cache-control"), "no-store");
+    let set_cookie = response_header(&response, "set-cookie");
+    assert!(set_cookie.starts_with("startdeck_session="));
+    assert!(set_cookie.contains("HttpOnly"));
+    assert!(set_cookie.contains("SameSite=Lax"));
+    assert!(set_cookie.contains("Path=/"));
+    assert!(set_cookie.contains("Max-Age=2592000"));
+    assert!(!set_cookie.contains("Domain="));
+    assert!(!set_cookie.contains("Secure"));
+    let body: Value =
+        serde_json::from_slice(&to_bytes(response.into_body(), usize::MAX).await.unwrap()).unwrap();
+    assert_eq!(body["success"], true);
+    assert!(body.get("token").is_none());
+    assert_eq!(body["username"], "admin");
+    assert!(body["sessionGeneration"].as_str().unwrap().len() > 20);
+}
+
+#[tokio::test]
+async fn login_marks_cookie_secure_behind_https_proxy() {
+    let app = test_app().await;
+    let response = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/api/login")
+                .header("x-forwarded-proto", "https")
+                .header("content-type", "application/json")
+                .body(Body::from(r#"{"username":"admin","password":"secret"}"#))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
+    assert!(response_header(&response, "set-cookie").contains("Secure"));
+}
+
+#[tokio::test]
+async fn session_and_logout_use_no_store_and_expire_invalid_cookie() {
+    let app = test_app().await;
+    let response = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .uri("/api/session")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
+    assert_eq!(response_header(&response, "cache-control"), "no-store");
+    let body: Value =
+        serde_json::from_slice(&to_bytes(response.into_body(), usize::MAX).await.unwrap()).unwrap();
+    assert_eq!(body["authenticated"], false);
+    assert!(body["username"].is_null());
+
+    let cookie = login_token(&app).await;
+    let response = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .uri("/api/session")
+                .header("cookie", &cookie)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
+    assert_eq!(response_header(&response, "cache-control"), "no-store");
+    let body: Value =
+        serde_json::from_slice(&to_bytes(response.into_body(), usize::MAX).await.unwrap()).unwrap();
+    assert_eq!(body["authenticated"], true);
+    assert_eq!(body["username"], "admin");
+    assert!(body["sessionGeneration"].as_str().unwrap().len() > 20);
+
+    let response = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .uri("/api/session")
+                .header("cookie", "startdeck_session=invalid")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
+    assert_eq!(response_header(&response, "cache-control"), "no-store");
+    let expired = response_header(&response, "set-cookie");
+    assert!(expired.contains("startdeck_session="));
+    assert!(expired.contains("Max-Age=0"));
+    assert!(expired.contains("Expires=Thu, 01 Jan 1970 00:00:00 GMT"));
+
+    let response = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/api/logout")
+                .header("cookie", &cookie)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
+    assert_eq!(response_header(&response, "cache-control"), "no-store");
+    assert!(response_header(&response, "set-cookie").contains("Max-Age=0"));
+}
+
+#[tokio::test]
+async fn startdeck_authorization_bearer_no_longer_authenticates_sessions() {
+    let app = test_app().await;
+    let response = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .uri("/api/data")
+                .header("authorization", "Bearer any-token")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
+    let body: Value =
+        serde_json::from_slice(&to_bytes(response.into_body(), usize::MAX).await.unwrap()).unwrap();
+    assert_eq!(body["appConfig"]["customTitle"], "Guest Default");
+
+    let (status, body) = json_call(
+        &app,
+        "GET",
+        "/api/data",
+        Some("startdeck_session=invalid"),
+        None,
+    )
+    .await;
+    assert_eq!(status, StatusCode::UNAUTHORIZED);
+    assert_eq!(body["error"], "invalid_token");
+}
+
+#[tokio::test]
+async fn session_signing_key_env_and_file_are_strict() {
+    let _guard = ENV_LOCK.lock().unwrap();
+    let temp = tempfile::tempdir().unwrap();
+    let base = temp.path().join("app");
+    let config = RuntimeConfig::from_base_dir(base);
+    std::fs::create_dir_all(&config.data_dir).unwrap();
+    let pool = connect_sqlite(&config).await.unwrap();
+
+    unsafe {
+        std::env::set_var(
+            "STARTDECK_SECRET",
+            base64::engine::general_purpose::STANDARD.encode([7_u8; 32]),
+        );
+    }
+    assert!(
+        AppState::try_new_with_meta_server_base(
+            config.clone(),
+            pool.clone(),
+            false,
+            "http://127.0.0.1:1",
+        )
+        .is_ok()
+    );
+
+    unsafe {
+        std::env::set_var(
+            "STARTDECK_SECRET",
+            base64::engine::general_purpose::STANDARD.encode([7_u8; 31]),
+        );
+    }
+    assert!(
+        AppState::try_new_with_meta_server_base(
+            config.clone(),
+            pool.clone(),
+            false,
+            "http://127.0.0.1:1",
+        )
+        .is_err()
+    );
+
+    unsafe {
+        std::env::remove_var("STARTDECK_SECRET");
+    }
+    let state = AppState::try_new_with_meta_server_base(
+        config.clone(),
+        pool.clone(),
+        false,
+        "http://127.0.0.1:1",
+    );
+    assert!(state.is_ok());
+    let key_path = config.data_dir.join("secrets/session-signing.key");
+    let first_key = std::fs::read_to_string(&key_path).unwrap();
+    assert_eq!(
+        base64::engine::general_purpose::STANDARD
+            .decode(first_key.trim())
+            .unwrap()
+            .len(),
+        32
+    );
+    let second = AppState::try_new_with_meta_server_base(
+        config.clone(),
+        pool.clone(),
+        false,
+        "http://127.0.0.1:1",
+    );
+    assert!(second.is_ok());
+    assert_eq!(std::fs::read_to_string(&key_path).unwrap(), first_key);
+
+    std::fs::write(&key_path, "invalid").unwrap();
+    assert!(
+        AppState::try_new_with_meta_server_base(config, pool, false, "http://127.0.0.1:1").is_err()
+    );
+    unsafe {
+        std::env::remove_var("STARTDECK_SECRET");
+    }
 }
 
 #[tokio::test]
@@ -746,7 +1060,7 @@ async fn system_config_get_uses_public_default_without_auth_and_db_for_valid_tok
         &context.app,
         "GET",
         "/api/system-config",
-        Some("invalid-token"),
+        Some("startdeck_session=invalid-token"),
         None,
     )
     .await;
@@ -1038,7 +1352,7 @@ async fn stale_full_save_is_ignored_instead_of_overwriting_navigation() {
                     "id": "github",
                     "title": "GitHub",
                     "url": "https://github.com/",
-                    "icon": "/icon-cache/github.svg",
+                    "icon": "",
                     "isPublic": true
                 }]
             }],
@@ -1147,7 +1461,7 @@ async fn save_updates_relational_snapshot() {
                 .uri("/api/save")
                 .header("content-type", "application/json")
                 .header("content-encoding", "gzip")
-                .header("authorization", format!("Bearer {token}"))
+                .header("cookie", &token)
                 .body(Body::from(compressed))
                 .unwrap(),
         )
@@ -1160,7 +1474,7 @@ async fn save_updates_relational_snapshot() {
         .oneshot(
             Request::builder()
                 .uri("/api/data")
-                .header("authorization", format!("Bearer {token}"))
+                .header("cookie", &token)
                 .body(Body::empty())
                 .unwrap(),
         )
@@ -1371,25 +1685,51 @@ async fn route_surface_smoke_covers_auth_and_runtime_semantics() {
     let (status, body) = json_call(
         &app,
         "POST",
+        "/api/assets/icons",
+        None,
+        Some(json!({"source": {"type": "dataUrl", "value": "data:image/svg+xml;base64,PHN2Zy8+"}})),
+    )
+    .await;
+    assert_eq!(status, StatusCode::UNAUTHORIZED);
+    assert_eq!(body["error"], "invalid_token");
+
+    let (status, body) = json_call(
+        &app,
+        "POST",
+        "/api/assets/icons",
+        Some(&token),
+        Some(json!({"source": {"type": "dataUrl", "value": "data:image/svg+xml;base64,PHN2Zy8+"}})),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK);
+    assert!(
+        body["data"]["url"]
+            .as_str()
+            .unwrap()
+            .starts_with("/api/assets/icons/icn_")
+    );
+    assert_eq!(body["data"]["assetId"], body["data"]["id"]);
+
+    let (status, body) = json_call(
+        &app,
+        "POST",
+        "/api/assets/icons",
+        Some(&token),
+        Some(json!({"source": {"type": "remoteUrl", "value": "http://127.0.0.1:9/icon.svg"}})),
+    )
+    .await;
+    assert_eq!(status, StatusCode::FORBIDDEN);
+    assert_eq!(body["error"], "blocked_host");
+
+    let (status, _) = json_call(
+        &app,
+        "POST",
         "/api/icon-cache",
         None,
         Some(json!({"dataUrl": "data:image/svg+xml;base64,PHN2Zy8+"})),
     )
     .await;
-    assert_eq!(status, StatusCode::OK);
-    assert!(body["url"].as_str().unwrap().starts_with("/icon-cache/"));
-    assert_eq!(body["path"], body["url"]);
-
-    let (status, body) = json_call(
-        &app,
-        "POST",
-        "/api/icon-cache",
-        None,
-        Some(json!({"url": "http://127.0.0.1:9/icon.svg"})),
-    )
-    .await;
-    assert_eq!(status, StatusCode::FORBIDDEN);
-    assert_eq!(body["error"], "blocked_host");
+    assert_eq!(status, StatusCode::NOT_FOUND);
 
     for uri in [
         "/api/ip",
@@ -1410,7 +1750,7 @@ async fn route_surface_smoke_covers_auth_and_runtime_semantics() {
             Request::builder()
                 .method("GET")
                 .uri("/api/ip")
-                .header("authorization", format!("Bearer {token}"))
+                .header("cookie", &token)
                 .header("x-forwarded-for", "8.8.8.8")
                 .body(Body::empty())
                 .unwrap(),
@@ -1435,17 +1775,17 @@ async fn route_surface_smoke_covers_auth_and_runtime_semantics() {
             Request::builder()
                 .method("GET")
                 .uri("/api/ip")
-                .header("authorization", "Bearer invalid-token")
+                .header("cookie", "startdeck_session=invalid-token")
                 .header("x-forwarded-for", "8.8.8.8")
                 .body(Body::empty())
                 .unwrap(),
         )
         .await
         .unwrap();
-    assert_eq!(response.status(), StatusCode::OK);
+    assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
     let body: Value =
         serde_json::from_slice(&to_bytes(response.into_body(), usize::MAX).await.unwrap()).unwrap();
-    assert_eq!(body["queryIp"], "8.8.8.8");
+    assert_eq!(body["error"], "invalid_token");
     let (status, body) = json_call(&app, "GET", "/api/ip/history", Some(&token), None).await;
     assert_eq!(status, StatusCode::OK);
     assert_eq!(body["data"][0]["seenCount"], 1);
@@ -1646,7 +1986,7 @@ async fn route_surface_smoke_covers_auth_and_runtime_semantics() {
             Request::builder()
                 .method("POST")
                 .uri("/api/backgrounds/upload")
-                .header("authorization", format!("Bearer {token}"))
+                .header("cookie", &token)
                 .header("content-type", "multipart/form-data; boundary=x-test")
                 .body(Body::from(
                     "--x-test\r\nContent-Disposition: form-data; name=\"files\"; filename=\"wall.png\"\r\nContent-Type: image/png\r\n\r\nabc\r\n--x-test--\r\n",
@@ -1700,6 +2040,194 @@ async fn dynamic_widgets_without_cache_return_empty_error() {
         assert_eq!(body["success"], false, "{uri}");
         assert_eq!(body["error"], "cache_miss", "{uri}");
     }
+}
+
+async fn spawn_mock_meta_server() -> (String, tokio::task::JoinHandle<()>) {
+    async fn metadata() -> Json<Value> {
+        Json(json!({
+            "code": 200,
+            "msg": "ok",
+            "data": {
+                "url": "https://example.com/",
+                "title": "Example Metadata",
+                "description": "Resolved from mock MetaServer",
+                "icon": "/cache/example.svg",
+                "backgroundColor": "#123456"
+            }
+        }))
+    }
+
+    async fn icon() -> impl axum::response::IntoResponse {
+        (
+            [("content-type", "image/svg+xml")],
+            r#"<svg xmlns="http://www.w3.org/2000/svg" id="example"/>"#,
+        )
+    }
+
+    let router = Router::new()
+        .route("/api/site/metadata", get(metadata))
+        .route("/api/site/icon", get(icon))
+        .route("/cache/example.svg", get(icon));
+    let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let addr = listener.local_addr().unwrap();
+    let handle = tokio::spawn(async move {
+        axum::serve(listener, router).await.unwrap();
+    });
+    (format!("http://{addr}"), handle)
+}
+
+#[tokio::test]
+async fn site_resolve_materializes_private_icon_assets_and_enforces_access() {
+    let (meta_server_base, meta_server) = spawn_mock_meta_server().await;
+    let ctx = test_context_with_meta_server_base(meta_server_base).await;
+    let TestContext { app, pool, .. } = ctx;
+    let admin_token = login_token(&app).await;
+
+    let (status, body) =
+        json_call(&app, "GET", "/api/site/resolve?url=example.com", None, None).await;
+    assert_eq!(status, StatusCode::UNAUTHORIZED);
+    assert_eq!(body["error"], "invalid_token");
+
+    let (status, body) = json_call(
+        &app,
+        "GET",
+        "/api/site/resolve?url=example.com",
+        Some(&admin_token),
+        None,
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(body["success"], true);
+    assert_eq!(body["data"]["title"], "Example Metadata");
+    assert_eq!(body["data"]["description"], "Resolved from mock MetaServer");
+    let icon_url = body["data"]["selectedIcon"]["url"].as_str().unwrap();
+    assert!(icon_url.starts_with("/api/assets/icons/icn_"));
+    assert_eq!(body["data"]["iconCandidates"].as_array().unwrap().len(), 1);
+
+    let (status, _) = json_call(
+        &app,
+        "POST",
+        "/api/admin/users",
+        Some(&admin_token),
+        Some(json!({"username": "alice", "password": "secret"})),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK);
+    let alice_token = login_token_for(&app, "alice", "secret").await;
+
+    let response = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .uri(icon_url)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
+
+    let response = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .uri(icon_url)
+                .header("cookie", &alice_token)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::FORBIDDEN);
+
+    let response = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .uri(icon_url)
+                .header("cookie", &admin_token)
+                .header("host", "startdeck.local")
+                .header("origin", "https://evil.example")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::FORBIDDEN);
+
+    let response = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method("HEAD")
+                .uri(icon_url)
+                .header("cookie", &admin_token)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
+    assert_eq!(
+        response
+            .headers()
+            .get("content-type")
+            .and_then(|value| value.to_str().ok()),
+        Some("image/svg+xml")
+    );
+
+    let response = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .uri(icon_url)
+                .header("cookie", &admin_token)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
+    let body = to_bytes(response.into_body(), usize::MAX).await.unwrap();
+    assert_eq!(
+        body.as_ref(),
+        br#"<svg xmlns="http://www.w3.org/2000/svg" id="example"/>"#
+    );
+
+    let (status, body) = json_call(
+        &app,
+        "POST",
+        "/api/data/import",
+        Some(&admin_token),
+        Some(json!({
+            "groups": [{
+                "id": "imported",
+                "title": "Imported",
+                "items": [{
+                    "id": "example-import",
+                    "title": "Example",
+                    "url": "https://example.com/",
+                    "lanUrl": "http://192.168.1.10/",
+                    "icon": ""
+                }]
+            }],
+            "widgets": []
+        })),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK);
+    let imported_icon = body["data"]["groups"][0]["items"][0]["icon"]
+        .as_str()
+        .unwrap();
+    assert!(imported_icon.starts_with("/api/assets/icons/icn_"));
+    let stored_icon: String =
+        sqlx::query_scalar("SELECT icon FROM nav_items WHERE id = 'example-import'")
+            .fetch_one(&pool)
+            .await
+            .unwrap();
+    assert_eq!(stored_icon, imported_icon);
+
+    meta_server.abort();
 }
 
 #[tokio::test]

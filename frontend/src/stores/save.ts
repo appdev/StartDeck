@@ -12,6 +12,8 @@ import { useWidgetsStore } from "./widgets";
 import { useGroupsStore } from "./groups";
 import { useConfigStore } from "./config";
 import { useCacheStore } from "./cache";
+import { sessionFetch } from "@/utils/sessionFetch";
+import { sanitizeSnapshotIcons } from "@/utils/iconAssets";
 
 export const SAVE_OPERATION_TIMESTAMP_HEADER =
   "X-StartDeck-Operation-Timestamp";
@@ -24,6 +26,11 @@ const withOperationTimestampHeader = (
   ...headers,
   [SAVE_OPERATION_TIMESTAMP_HEADER]: String(operationTimestamp),
 });
+
+const hasSnapshotData = (
+  value: unknown,
+): value is Record<string, unknown> =>
+  !!value && typeof value === "object" && !Array.isArray(value);
 
 export const useSaveStore = defineStore("save", () => {
   const auth = useAuthStore();
@@ -62,7 +69,7 @@ export const useSaveStore = defineStore("save", () => {
   const saveCustomScripts = async () => {
     try {
       if (!auth.isLogged) return;
-      const res = await fetch("/api/custom-scripts", {
+      const res = await sessionFetch("/api/custom-scripts", {
         method: "POST",
         headers: cacheStore.getHeaders(),
         body: JSON.stringify({
@@ -113,21 +120,27 @@ export const useSaveStore = defineStore("save", () => {
       let operationTimestamp = 0;
 
       try {
-        if (!auth.isLogged) return "unauthorized";
+        if (
+          !auth.sessionReady ||
+          !auth.isLogged ||
+          !auth.username ||
+          !auth.sessionGeneration
+        )
+          return "unauthorized";
         if (force && conflictState.value.show) {
           dataVersion.value = normalizeVersion(
             conflictState.value.serverVersion,
           );
         }
 
-        const businessBody: Record<string, unknown> = {
+        const businessBody: Record<string, unknown> = sanitizeSnapshotIcons({
           groups: groupsStore.groups,
           widgets: widgetsStore.widgets.map((w) => stripWidgetUiState(w)),
           appConfig: stripForceNetworkMode(
             configStore.appConfig as unknown as Record<string, unknown>,
           ),
           version: dataVersion.value,
-        };
+        });
         if (typeof auth.password === "string" && auth.password.length > 0) {
           businessBody.password = auth.password;
         }
@@ -163,7 +176,7 @@ export const useSaveStore = defineStore("save", () => {
               () => controller.abort(),
               SAVE_TIMEOUT_MS,
             );
-            res = await fetch("/api/save", {
+            res = await sessionFetch("/api/save", {
               method: "POST",
               headers: {
                 ...withOperationTimestampHeader(
@@ -202,6 +215,24 @@ export const useSaveStore = defineStore("save", () => {
           hasUnsavedChanges.value = false;
           const result = await res.json().catch(() => null);
           if ((result as { ignored?: boolean } | null)?.ignored) {
+            const normalizedData = hasSnapshotData(
+              (result as { data?: unknown } | null)?.data,
+            )
+              ? ((result as { data: Record<string, unknown> }).data)
+              : null;
+            if (normalizedData) {
+              groupsStore.groups = normalizedData.groups as typeof groupsStore.groups;
+              const normalizedWidgets = widgetsStore.normalizeIncomingWidgets(
+                normalizedData.widgets as never,
+                auth.isLogged,
+              );
+              widgetsStore.applyServerWidgets(
+                normalizedWidgets,
+                auth.isLogged,
+                widgetsStore.layoutEditInProgress,
+              );
+              cacheStore.saveToCache(normalizedData);
+            }
             if (
               result &&
               typeof (result as { version?: number }).version !== "undefined"
@@ -226,6 +257,24 @@ export const useSaveStore = defineStore("save", () => {
               (result as { version?: number }).version,
             );
           }
+          const normalizedData = hasSnapshotData(
+            (result as { data?: unknown } | null)?.data,
+          )
+            ? ((result as { data: Record<string, unknown> }).data)
+            : null;
+          if (normalizedData) {
+            groupsStore.groups = normalizedData.groups as typeof groupsStore.groups;
+            const normalizedWidgets = widgetsStore.normalizeIncomingWidgets(
+              normalizedData.widgets as never,
+              auth.isLogged,
+            );
+            widgetsStore.applyServerWidgets(
+              normalizedWidgets,
+              auth.isLogged,
+              widgetsStore.layoutEditInProgress,
+            );
+            cacheStore.saveToCache(normalizedData);
+          }
           lastSavedJson = JSON.stringify({
             ...businessBody,
             version: dataVersion.value,
@@ -237,10 +286,7 @@ export const useSaveStore = defineStore("save", () => {
         }
 
         if (res.status === 401) {
-          auth.token = "";
-          auth.username = "";
-          localStorage.removeItem("start-deck-token");
-          localStorage.removeItem("start-deck-username");
+          auth.clearLocalSession();
           return "unauthorized";
         }
 
@@ -249,7 +295,7 @@ export const useSaveStore = defineStore("save", () => {
         if (configStore.isPageUnloading) return "no_change";
         console.error("Save failed, enqueueing to offline queue", e);
         try {
-          const fallbackBody: Record<string, unknown> = {
+          const fallbackBody: Record<string, unknown> = sanitizeSnapshotIcons({
             groups: groupsStore.groups,
             widgets: widgetsStore.widgets.map((w) => stripWidgetUiState(w)),
             appConfig: stripForceNetworkMode(
@@ -258,12 +304,25 @@ export const useSaveStore = defineStore("save", () => {
             version: dataVersion.value,
             layoutSchemaVersion: HOME_GRID_LAYOUT_SCHEMA_VERSION,
             lastOperationAt: operationTimestamp || Date.now(),
-          };
-          await offlineQueue.enqueue(
-            fallbackBody,
-            dataVersion.value,
-            operationTimestamp || Date.now(),
-          );
+          });
+          if (
+            auth.sessionReady &&
+            auth.isLogged &&
+            auth.username &&
+            auth.sessionGeneration
+          ) {
+            await offlineQueue.enqueue(
+              fallbackBody,
+              dataVersion.value,
+              operationTimestamp || Date.now(),
+              {
+                username: auth.username,
+                sessionGeneration: auth.sessionGeneration,
+              },
+            );
+          } else {
+            return "unauthorized";
+          }
           offlineQueueCount.value = await offlineQueue.size();
           hasPendingSave.value = true;
           return "queued";
@@ -331,6 +390,18 @@ export const useSaveStore = defineStore("save", () => {
       await fetchData();
       return;
     }
+    if (!auth.username || !auth.sessionGeneration) {
+      await offlineQueue.quarantineMismatched({
+        username: "",
+        sessionGeneration: "",
+      });
+      offlineQueueCount.value = await offlineQueue.size();
+      return;
+    }
+    await offlineQueue.quarantineMismatched({
+      username: auth.username,
+      sessionGeneration: auth.sessionGeneration,
+    });
     const items = await offlineQueue.getAll();
     if (items.length === 0) {
       offlineQueueConflictState.value.show = false;
@@ -339,13 +410,13 @@ export const useSaveStore = defineStore("save", () => {
     const latestItem = items[items.length - 1];
     await offlineQueue.clear();
     offlineQueueConflictState.value.show = false;
-    const body = latestItem.data as Record<string, unknown>;
+    const body = sanitizeSnapshotIcons(latestItem.data as Record<string, unknown>);
     const json = JSON.stringify(body);
     const compressed = pako.gzip(json);
     try {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 120000);
-      const res = await fetch("/api/save", {
+      const res = await sessionFetch("/api/save", {
         method: "POST",
         headers: {
           ...withOperationTimestampHeader(
@@ -376,16 +447,20 @@ export const useSaveStore = defineStore("save", () => {
     _fetchVersionOnly: () => Promise<number>,
     dataVersion: { value: number },
     getHeaders: () => Record<string, string>,
+    owner: { username: string; sessionGeneration: string },
   ) => {
     const qSize = await offlineQueue.size();
     if (qSize === 0) return;
+    await offlineQueue.quarantineMismatched(owner);
     await offlineQueue.replay(
+      owner,
       async (data, operationTimestamp) => {
         try {
-          const compressed = pako.gzip(JSON.stringify(data));
+          const sanitized = sanitizeSnapshotIcons(data);
+          const compressed = pako.gzip(JSON.stringify(sanitized));
           const c = new AbortController();
           const t = setTimeout(() => c.abort(), 5000);
-          const res = await fetch("/api/save", {
+          const res = await sessionFetch("/api/save", {
             method: "POST",
             headers: {
               ...withOperationTimestampHeader(getHeaders(), operationTimestamp),
@@ -400,6 +475,14 @@ export const useSaveStore = defineStore("save", () => {
               dataVersion.value = normalizeVersion(
                 (r as { version?: number }).version,
               );
+            const normalizedData = hasSnapshotData((r as { data?: unknown })?.data)
+              ? ((r as { data: Record<string, unknown> }).data)
+              : null;
+            if (normalizedData) {
+              groupsStore.groups =
+                normalizedData.groups as typeof groupsStore.groups;
+              cacheStore.saveToCache(normalizedData);
+            }
             return true;
           }
           return false;
@@ -412,7 +495,7 @@ export const useSaveStore = defineStore("save", () => {
           const body = { ...data, version: dataVersion.value, widgetVersion };
           const c = new AbortController();
           const t = setTimeout(() => c.abort(), 5000);
-          const res = await fetch(
+          const res = await sessionFetch(
             `/api/widgets/${encodeURIComponent(widgetId)}`,
             {
               method: "PUT",
@@ -455,6 +538,14 @@ export const useSaveStore = defineStore("save", () => {
     offlineQueueCount.value = await offlineQueue.size();
   };
 
+  const quarantineMismatchedOfflineQueue = async (owner: {
+    username: string;
+    sessionGeneration: string;
+  }) => {
+    await offlineQueue.quarantineMismatched(owner);
+    offlineQueueCount.value = await offlineQueue.size();
+  };
+
   const discardOfflineQueue = async (fetchData: () => Promise<void>) => {
     await offlineQueue.clear();
     offlineQueueCount.value = 0;
@@ -485,6 +576,7 @@ export const useSaveStore = defineStore("save", () => {
     dismissSyncConfirm,
     resolveOfflineQueueConflict,
     triggerOfflineQueueReplay,
+    quarantineMismatchedOfflineQueue,
     discardOfflineQueue,
     saveCustomScripts,
   };

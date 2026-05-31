@@ -48,8 +48,7 @@ describe("itabIpApi", () => {
     expect(fetchMock.mock.calls[0]![0]).toContain("refresh=1");
   });
 
-  it("sends the stored login token with IP lookup requests so the backend can mark the user", async () => {
-    localStorage.setItem("start-deck-token", "user-token");
+  it("does not send legacy bearer tokens with IP lookup requests", async () => {
     const fetchMock = vi.fn<
       (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>
     >(async () =>
@@ -71,14 +70,12 @@ describe("itabIpApi", () => {
       expect.objectContaining({
         headers: {
           accept: "application/json",
-          Authorization: "Bearer user-token",
         },
       }),
     );
   });
 
   it("loads the current user's IP history from the backend", async () => {
-    localStorage.setItem("start-deck-token", "user-token");
     const fetchMock = vi.fn<
       (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>
     >(async () =>
@@ -115,10 +112,9 @@ describe("itabIpApi", () => {
     expect(fetchMock).toHaveBeenCalledWith(
       "/api/ip/history",
       expect.objectContaining({
-        headers: {
-          accept: "application/json",
-          Authorization: "Bearer user-token",
-        },
+        cache: "no-store",
+        credentials: "same-origin",
+        headers: expect.any(Headers),
       }),
     );
   });

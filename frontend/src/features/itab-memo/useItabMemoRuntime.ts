@@ -130,7 +130,6 @@ export const useItabMemoRuntime = (
     store.wsSend({
       type: "memo_update",
       payload: {
-        token: store.token || localStorage.getItem("start-deck-token"),
         widgetId: widget.value.id,
         content: data,
       },

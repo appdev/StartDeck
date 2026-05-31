@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 import type { WidgetConfig } from "@/types";
+import { useAuthStore } from "@/stores/auth";
 import { useItabPoemRuntime } from "./useItabPoemRuntime";
 import type { ItabPoemWidgetData } from "./itabPoemTypes";
 
@@ -13,9 +14,12 @@ const emit = defineEmits<{
 }>();
 
 const widgetRef = computed(() => props.widget);
+const auth = useAuthStore();
 const runtime = useItabPoemRuntime(
   widgetRef,
-  (data) => emit("updateData", data),
+  (data) => {
+    if (auth.isLogged) emit("updateData", data);
+  },
   {
     allowDailyPaletteRefresh: false,
   },

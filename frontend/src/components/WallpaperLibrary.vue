@@ -20,6 +20,7 @@ import StatusBanner from "@/components/base/StatusBanner.vue";
 import { fetchItabBingWallpapers } from "@/features/itab-wallpaper/itabWallpaperApi";
 import type { ItabWallpaperEntry } from "@/features/itab-wallpaper/itabWallpaperTypes";
 import { useUiFeedbackStore } from "@/stores/uiFeedback";
+import { sessionFetch } from "@/utils/sessionFetch";
 
 const props = defineProps<{
   show: boolean;
@@ -53,13 +54,7 @@ const showFeedbackAlert = (
     tone: options.tone ?? "info",
   });
 
-/** GET / multipart：只带 Bearer，不设 Content-Type（避免破坏 FormData） */
-const authHeadersOnly = (): Record<string, string> => {
-  const h: Record<string, string> = {};
-  const t = store.token || localStorage.getItem("start-deck-token");
-  if (t) h["Authorization"] = `Bearer ${t}`;
-  return h;
-};
+const authHeadersOnly = (): Record<string, string> => ({});
 
 const activeTab = ref<"pc" | "mobile" | "api">(props.initialTab || "pc");
 const wallpaperTabOptions = computed(() => [
@@ -325,7 +320,7 @@ const executeUpload = async () => {
         "/api/mobile_backgrounds/upload";
 
   try {
-    const res = await fetch(endpoint, {
+    const res = await sessionFetch(endpoint, {
       method: "POST",
       headers: authHeadersOnly(),
       body: formData,
@@ -388,7 +383,7 @@ const executeDelete = async (name: string, type: "pc" | "mobile") => {
   const endpoint = `${trimmed}/${encodeURIComponent(name)}`;
 
   try {
-    const res = await fetch(endpoint, {
+    const res = await sessionFetch(endpoint, {
       method: "DELETE",
       headers: store.getHeaders(),
     });
@@ -677,7 +672,7 @@ const fetchRemoteWallpaperBlob = async (
   sourceUrl: string,
   requestId: string,
 ) => {
-  const proxyRes = await fetch(
+  const proxyRes = await sessionFetch(
     `/api/wallpaper/proxy?url=${encodeURIComponent(sourceUrl)}&uuid=${requestId}`,
     { headers: authHeadersOnly() },
   );
@@ -726,7 +721,7 @@ const applyBingApiWallpaper = async (
           : store.appConfig.wallpaperApiMobileUpload ||
             "/api/mobile_backgrounds/upload";
 
-      const uploadRes = await fetch(endpoint, {
+      const uploadRes = await sessionFetch(endpoint, {
         method: "POST",
         headers: authHeadersOnly(),
         body: formData,

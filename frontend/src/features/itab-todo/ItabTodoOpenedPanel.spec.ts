@@ -23,7 +23,9 @@ describe("ItabTodoOpenedPanel", () => {
   beforeEach(() => {
     setActivePinia(createPinia());
     const auth = useAuthStore();
-    auth.token = "token";
+    auth.sessionReady = true;
+    auth.username = "ying";
+    auth.sessionGeneration = "session";
     auth.username = "ying";
   });
 

@@ -37,7 +37,9 @@ describe("ItabMemoFixedLayer", () => {
   beforeEach(() => {
     setActivePinia(createPinia());
     const auth = useAuthStore();
-    auth.token = "token";
+    auth.sessionReady = true;
+    auth.username = "ying";
+    auth.sessionGeneration = "session";
     auth.username = "ying";
   });
 
@@ -52,7 +54,8 @@ describe("ItabMemoFixedLayer", () => {
 
   it("renders public fixed notes as read-only when logged out", () => {
     const auth = useAuthStore();
-    auth.logout();
+    auth.clearLocalSession();
+    auth.sessionReady = true;
 
     const wrapper = mount(ItabMemoFixedLayer, {
       props: { widget },

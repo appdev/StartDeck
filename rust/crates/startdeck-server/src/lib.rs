@@ -1,10 +1,11 @@
 use std::collections::HashMap;
-use std::io::Read;
+use std::io::{Read, Write};
 use std::net::IpAddr;
 use std::path::Path;
 use std::sync::Arc;
 use std::time::Duration;
 
+use aes_gcm::aead::rand_core::{OsRng, RngCore};
 use axum::body::{Body, Bytes};
 use axum::extract::ws::{Message, WebSocket, WebSocketUpgrade};
 use axum::extract::{DefaultBodyLimit, Multipart, Path as AxumPath, Query, State};
@@ -18,10 +19,9 @@ use bcrypt::{DEFAULT_COST, hash, verify};
 use chrono::{Duration as ChronoDuration, Utc};
 use flate2::read::GzDecoder;
 use jsonwebtoken::{Algorithm, DecodingKey, EncodingKey, Header, Validation, decode, encode};
-use reqwest::{Client, Url};
+use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value, json};
-use sha2::{Digest, Sha256};
 use sqlx::{Row, SqlitePool};
 use startdeck_core::models::{
     AppSnapshot, NavGroup, NavItem, SystemConfig, UserRecord, WidgetRecord,
@@ -36,25 +36,32 @@ use tower_http::services::{ServeDir, ServeFile};
 use tower_http::trace::TraceLayer;
 use uuid::Uuid;
 
+#[cfg(unix)]
+use std::os::unix::fs::OpenOptionsExt;
+
 mod ai_usage;
 mod codelife;
 mod docker_api;
 mod ip_lookup;
 mod itab;
+mod managed_icons;
 mod qweather;
 mod static_assets;
 mod tapd_defects;
 mod telemetry;
 mod tencent_map;
 
-const ICON_CACHE_MAX_BYTES: usize = 5 * 1024 * 1024;
+const SESSION_COOKIE_NAME: &str = "startdeck_session";
+const SESSION_MAX_AGE_SECONDS: i64 = 30 * 24 * 60 * 60;
+const SESSION_SIGNING_KEY_BYTES: usize = 32;
+const SESSION_KEY_RELATIVE_PATH: &[&str] = &["secrets", "session-signing.key"];
 
 #[derive(Clone)]
 pub struct AppState {
     config: Arc<RuntimeConfig>,
     pool: SqlitePool,
     http: Client,
-    jwt_secret: Arc<String>,
+    jwt_secret: Arc<Vec<u8>>,
     meta_server_base: Arc<String>,
     remote_itab_fetch_enabled: bool,
 }
@@ -80,24 +87,114 @@ impl AppState {
         remote_itab_fetch_enabled: bool,
         meta_server_base: impl Into<String>,
     ) -> Self {
-        let jwt_secret = std::env::var("STARTDECK_SECRET").unwrap_or_else(|_| {
-            format!(
-                "{:x}",
-                Sha256::digest(config.sqlite_file.to_string_lossy().as_bytes())
-            )
-        });
-        Self {
+        Self::try_new_with_meta_server_base(
+            config,
+            pool,
+            remote_itab_fetch_enabled,
+            meta_server_base,
+        )
+        .expect("load StartDeck session signing key")
+    }
+
+    pub fn try_new_with_meta_server_base(
+        config: RuntimeConfig,
+        pool: SqlitePool,
+        remote_itab_fetch_enabled: bool,
+        meta_server_base: impl Into<String>,
+    ) -> anyhow::Result<Self> {
+        let jwt_secret = load_session_signing_key(&config)?;
+        Ok(Self {
             config: Arc::new(config),
             pool,
             http: Client::builder()
-                .timeout(Duration::from_secs(12))
+                .timeout(Duration::from_secs(60))
                 .build()
                 .expect("reqwest client"),
             jwt_secret: Arc::new(jwt_secret),
             meta_server_base: Arc::new(meta_server_base.into().trim_end_matches('/').to_string()),
             remote_itab_fetch_enabled,
-        }
+        })
     }
+
+    pub async fn run_startup_icon_migration(&self) -> anyhow::Result<()> {
+        managed_icons::cleanup_failed_assets(self)
+            .await
+            .map_err(|error| anyhow::anyhow!(error.into_message()))?;
+        let rows = sqlx::query("SELECT username FROM users ORDER BY username ASC")
+            .fetch_all(&self.pool)
+            .await?;
+        for row in rows {
+            let username = row.get::<String, _>("username");
+            let snapshot = app_snapshot(&self.pool, &username).await?;
+            let normalized = normalize_existing_snapshot(
+                self,
+                snapshot,
+                managed_icons::IconNormalizationMode::PreserveEmpty,
+            )
+            .await
+            .map_err(|error| anyhow::anyhow!(error.into_message()))?;
+            save_snapshot(&self.pool, &normalized).await?;
+        }
+        normalize_default_template_file_for_startup(self)
+            .await
+            .map_err(|error| anyhow::anyhow!(error.into_message()))?;
+        Ok(())
+    }
+}
+
+fn load_session_signing_key(config: &RuntimeConfig) -> anyhow::Result<Vec<u8>> {
+    if let Ok(value) = std::env::var("STARTDECK_SECRET") {
+        let trimmed = value.trim();
+        if trimmed.is_empty() {
+            anyhow::bail!("STARTDECK_SECRET must be base64-encoded 32 random bytes");
+        }
+        return decode_session_signing_key(trimmed, "STARTDECK_SECRET");
+    }
+
+    let key_path = SESSION_KEY_RELATIVE_PATH
+        .iter()
+        .fold(config.data_dir.clone(), |path, segment| path.join(segment));
+    match std::fs::read_to_string(&key_path) {
+        Ok(value) => decode_session_signing_key(value.trim(), &key_path.display().to_string()),
+        Err(err) if err.kind() == std::io::ErrorKind::NotFound => {
+            let parent = key_path.parent().ok_or_else(|| {
+                anyhow::anyhow!("session signing key path has no parent directory")
+            })?;
+            std::fs::create_dir_all(parent)?;
+            let mut key = vec![0_u8; SESSION_SIGNING_KEY_BYTES];
+            OsRng.fill_bytes(&mut key);
+            let encoded = STANDARD.encode(&key);
+            let mut options = std::fs::OpenOptions::new();
+            options.write(true).create_new(true);
+            #[cfg(unix)]
+            {
+                options.mode(0o600);
+            }
+            match options.open(&key_path) {
+                Ok(mut file) => {
+                    file.write_all(encoded.as_bytes())?;
+                    file.write_all(b"\n")?;
+                    Ok(key)
+                }
+                Err(open_err) if open_err.kind() == std::io::ErrorKind::AlreadyExists => {
+                    let value = std::fs::read_to_string(&key_path)?;
+                    decode_session_signing_key(value.trim(), &key_path.display().to_string())
+                }
+                Err(open_err) => Err(open_err.into()),
+            }
+        }
+        Err(err) => Err(err.into()),
+    }
+}
+
+fn decode_session_signing_key(value: &str, source: &str) -> anyhow::Result<Vec<u8>> {
+    let decoded = STANDARD
+        .decode(value)
+        .map_err(|err| anyhow::anyhow!("{source} is not valid base64: {err}"))?;
+    if decoded.len() != SESSION_SIGNING_KEY_BYTES {
+        anyhow::bail!("{source} must decode to exactly 32 bytes");
+    }
+    Ok(decoded)
 }
 
 pub fn app(state: AppState) -> Router {
@@ -112,6 +209,8 @@ pub fn app(state: AppState) -> Router {
         .route("/ws", get(ws_handler))
         .route("/proxy", any(proxy_request))
         .route("/api/login", post(login))
+        .route("/api/session", get(session))
+        .route("/api/logout", post(logout))
         .route("/api/data", get(get_data))
         .route("/api/data/import", post(import_data))
         .route("/api/save", post(save_data))
@@ -149,12 +248,12 @@ pub fn app(state: AppState) -> Router {
             "/api/custom-scripts",
             get(get_custom_scripts).post(save_custom_scripts),
         )
-        .route("/api/site/metadata", get(site_metadata))
-        .route("/api/site/icon", get(site_icon))
-        .route("/api/icon-cache", post(cache_icon))
-        .route("/icon-cache/{*path}", get(icon_cache_asset))
-        .route("/icons/{*path}", get(meta_server_icon_asset))
-        .route("/cache/{*path}", get(meta_server_cache_asset))
+        .route("/api/site/resolve", get(managed_icons::resolve_site))
+        .route("/api/assets/icons", post(managed_icons::create_icon_asset))
+        .route(
+            "/api/assets/icons/{id}",
+            get(managed_icons::get_icon_asset).head(managed_icons::head_icon_asset),
+        )
         .route("/api/ip/history", get(ip_lookup::user_ip_history))
         .route("/api/ip", get(ip_lookup::ip_info))
         .route("/api/ping", get(ping))
@@ -211,6 +310,9 @@ pub fn app(state: AppState) -> Router {
             "/api/movie-calendar/image/{kind}",
             get(itab::cached_movie_calendar_image),
         )
+        .route("/icon-cache/{*path}", any(removed_icon_route))
+        .route("/icons/{*path}", any(removed_icon_route))
+        .route("/cache/{*path}", any(removed_icon_route))
         .route(
             "/favicon.ico",
             get_service(ServeFile::new(public_dir.join("favicon.ico"))),
@@ -276,6 +378,20 @@ struct LicenseRequest {
 struct Claims {
     username: String,
     exp: i64,
+    sid: String,
+}
+
+#[derive(Debug, Clone)]
+pub(crate) struct AuthSession {
+    username: String,
+    sid: String,
+}
+
+#[derive(Debug, Clone)]
+pub(crate) enum SessionCookieAuth {
+    Missing,
+    Valid(AuthSession),
+    Invalid,
 }
 
 async fn healthz() -> Json<Value> {
@@ -284,8 +400,20 @@ async fn healthz() -> Json<Value> {
 
 async fn login(
     State(state): State<AppState>,
+    headers: HeaderMap,
     Json(req): Json<LoginRequest>,
-) -> Result<Json<Value>, ApiError> {
+) -> Response {
+    match login_inner(state, headers, req).await {
+        Ok(response) => response,
+        Err(error) => error.with_no_store().into_response(),
+    }
+}
+
+async fn login_inner(
+    state: AppState,
+    headers: HeaderMap,
+    req: LoginRequest,
+) -> Result<Response, ApiError> {
     let username = req.username.unwrap_or_default();
     if username.trim().is_empty() {
         return Err(ApiError::bad_request("username_required"));
@@ -297,19 +425,61 @@ async fn login(
     if !verify(req.password, &hash).unwrap_or(false) {
         return Err(ApiError::unauthorized("password_incorrect"));
     }
+    let sid = Uuid::new_v4().to_string();
     let claims = Claims {
         username: username.clone(),
         exp: (Utc::now() + ChronoDuration::days(30)).timestamp(),
+        sid: sid.clone(),
     };
     let token = encode(
         &Header::new(Algorithm::HS256),
         &claims,
-        &EncodingKey::from_secret(state.jwt_secret.as_bytes()),
+        &EncodingKey::from_secret(state.jwt_secret.as_ref().as_slice()),
     )
     .map_err(|err| ApiError::internal(err.to_string()))?;
-    Ok(Json(
-        json!({"success": true, "token": token, "username": username}),
-    ))
+    let secure = should_mark_session_cookie_secure(&headers);
+    let mut response =
+        Json(json!({"success": true, "username": username, "sessionGeneration": sid}))
+            .into_response();
+    insert_no_store(response.headers_mut());
+    insert_set_cookie(response.headers_mut(), session_cookie(&token, secure));
+    Ok(response)
+}
+
+async fn session(State(state): State<AppState>, headers: HeaderMap) -> Response {
+    match session_cookie_auth(&headers, &state) {
+        SessionCookieAuth::Missing => {
+            let mut response =
+                Json(json!({"success": true, "authenticated": false, "username": Value::Null}))
+                    .into_response();
+            insert_no_store(response.headers_mut());
+            response
+        }
+        SessionCookieAuth::Valid(session) => {
+            let mut response = Json(json!({
+                "success": true,
+                "authenticated": true,
+                "username": session.username,
+                "sessionGeneration": session.sid,
+            }))
+            .into_response();
+            insert_no_store(response.headers_mut());
+            response
+        }
+        SessionCookieAuth::Invalid => ApiError::invalid_token_with_cookie(&headers)
+            .with_no_store()
+            .into_response(),
+    }
+}
+
+async fn logout(headers: HeaderMap) -> Response {
+    let mut response = Json(json!({"success": true, "authenticated": false})).into_response();
+    insert_no_store(response.headers_mut());
+    insert_set_cookie(
+        response.headers_mut(),
+        expired_session_cookie(should_mark_session_cookie_secure(&headers)),
+    );
+    response
 }
 
 async fn list_users(
@@ -385,17 +555,28 @@ async fn save_data(
     let username = require_username(&headers, &state)?;
     let body = parse_json_body(&headers, &body)?;
     if let Some(version) = ignored_stale_save_version(&state.pool, &username, &body).await? {
+        let snapshot = app_snapshot(&state.pool, &username).await?;
         return Ok(Json(json!({
             "success": true,
             "ignored": true,
             "version": version,
+            "data": snapshot_to_api_value(snapshot),
         })));
     }
-    let snapshot = normalize_snapshot(&state.pool, username, body).await?;
+    let snapshot = normalize_snapshot(
+        &state,
+        username,
+        body,
+        managed_icons::IconNormalizationMode::PreserveEmpty,
+    )
+    .await?;
     save_snapshot(&state.pool, &snapshot).await?;
-    Ok(Json(
-        json!({"success": true, "version": Utc::now().timestamp_millis()}),
-    ))
+    let snapshot = app_snapshot(&state.pool, &snapshot.username).await?;
+    Ok(Json(json!({
+        "success": true,
+        "version": snapshot.version,
+        "data": snapshot_to_api_value(snapshot),
+    })))
 }
 
 async fn import_data(
@@ -404,11 +585,20 @@ async fn import_data(
     Json(body): Json<Value>,
 ) -> Result<Json<Value>, ApiError> {
     let username = require_username(&headers, &state)?;
-    let snapshot = normalize_snapshot(&state.pool, username, body).await?;
+    let snapshot = normalize_snapshot(
+        &state,
+        username,
+        body,
+        managed_icons::IconNormalizationMode::FillMissingFromUrl,
+    )
+    .await?;
     save_snapshot(&state.pool, &snapshot).await?;
-    Ok(Json(
-        json!({"success": true, "version": Utc::now().timestamp_millis()}),
-    ))
+    let snapshot = app_snapshot(&state.pool, &snapshot.username).await?;
+    Ok(Json(json!({
+        "success": true,
+        "version": snapshot.version,
+        "data": snapshot_to_api_value(snapshot),
+    })))
 }
 
 async fn save_default(
@@ -417,9 +607,16 @@ async fn save_default(
 ) -> Result<Json<Value>, ApiError> {
     let username = require_admin(&headers, &state)?;
     let snapshot = app_snapshot(&state.pool, &username).await?;
-    let template = snapshot_to_template_value(snapshot);
-    write_default_template_file(state.config.as_ref(), &template).await?;
-    Ok(Json(json!({"success": true})))
+    let (template, created_assets) = snapshot_to_template_value(&state, snapshot).await?;
+    if let Err(error) = write_default_template_file(state.config.as_ref(), &template).await {
+        managed_icons::mark_orphan_assets(&state, &created_assets, "staged_failed").await?;
+        return Err(error);
+    }
+    Ok(Json(json!({
+        "success": true,
+        "version": Utc::now().timestamp_millis(),
+        "data": template,
+    })))
 }
 
 async fn reset_data(
@@ -428,9 +625,20 @@ async fn reset_data(
 ) -> Result<Json<Value>, ApiError> {
     let username = require_username(&headers, &state)?;
     let template = read_default_template_file(state.config.as_ref()).await?;
-    let snapshot = normalize_snapshot(&state.pool, username, template).await?;
+    let snapshot = normalize_snapshot(
+        &state,
+        username,
+        template,
+        managed_icons::IconNormalizationMode::PreserveEmpty,
+    )
+    .await?;
     save_snapshot(&state.pool, &snapshot).await?;
-    Ok(Json(json!({"success": true})))
+    let snapshot = app_snapshot(&state.pool, &snapshot.username).await?;
+    Ok(Json(json!({
+        "success": true,
+        "version": snapshot.version,
+        "data": snapshot_to_api_value(snapshot),
+    })))
 }
 
 async fn version(
@@ -606,311 +814,13 @@ async fn save_custom_scripts(
     Ok(Json(json!({"success": true})))
 }
 
-async fn site_metadata(
-    State(state): State<AppState>,
-    Query(query): Query<HashMap<String, String>>,
-) -> Result<Json<Value>, ApiError> {
-    let url = query
-        .get("url")
-        .cloned()
-        .ok_or_else(|| ApiError::bad_request("missing_url"))?;
-    let response = state
-        .http
-        .get(format!("{}/api/site/metadata", state.meta_server_base))
-        .query(&[("url", url)])
-        .send()
-        .await
-        .map_err(|err| ApiError::bad_gateway(err.to_string()))?;
-    Ok(Json(
-        response
-            .json::<Value>()
-            .await
-            .map_err(|err| ApiError::bad_gateway(err.to_string()))?,
-    ))
-}
-
-async fn site_icon(
-    State(state): State<AppState>,
-    Query(query): Query<HashMap<String, String>>,
-) -> Result<Response, ApiError> {
-    let url = query
-        .get("url")
-        .cloned()
-        .ok_or_else(|| ApiError::bad_request("missing_url"))?;
-    proxy_site_icon_response(&state, url).await
-}
-
-async fn proxy_site_icon_response(state: &AppState, url: String) -> Result<Response, ApiError> {
-    let response = state
-        .http
-        .get(format!("{}/api/site/icon", state.meta_server_base))
-        .query(&[("url", url)])
-        .send()
-        .await
-        .map_err(|err| ApiError::bad_gateway(err.to_string()))?;
-    let status = response.status();
-    let content_type = response
-        .headers()
-        .get(header::CONTENT_TYPE)
-        .cloned()
-        .unwrap_or_else(|| HeaderValue::from_static("application/octet-stream"));
-    let bytes = response
-        .bytes()
-        .await
-        .map_err(|err| ApiError::bad_gateway(err.to_string()))?;
-    let mut res = Response::new(Body::from(bytes));
-    *res.status_mut() = StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::BAD_GATEWAY);
-    res.headers_mut().insert(header::CONTENT_TYPE, content_type);
-    Ok(res)
-}
-
-async fn icon_cache_asset(
-    State(state): State<AppState>,
-    AxumPath(path): AxumPath<String>,
-) -> Result<Response, ApiError> {
-    let file_name = icon_cache_file_name(&path)?;
-    let target = state.config.icon_cache_dir.join(&file_name);
-    match fs::read(&target).await {
-        Ok(bytes) => {
-            let content_type = mime_guess::from_path(&target)
-                .first_or_octet_stream()
-                .essence_str()
-                .to_string();
-            let mut response = Response::new(Body::from(bytes));
-            if let Ok(value) = HeaderValue::from_str(&content_type) {
-                response.headers_mut().insert(header::CONTENT_TYPE, value);
-            }
-            return Ok(response);
-        }
-        Err(err) if err.kind() == std::io::ErrorKind::NotFound => {}
-        Err(err) => return Err(ApiError::from(err)),
-    }
-
-    let site_url = icon_cache_source_url(&state, &file_name)
-        .await?
-        .ok_or_else(|| ApiError::not_found("icon_cache_not_found"))?;
-    proxy_site_icon_response(&state, site_url).await
-}
-
-fn icon_cache_file_name(path: &str) -> Result<String, ApiError> {
-    let path = path.trim();
-    if path.is_empty()
-        || path.contains('/')
-        || path.contains('\\')
-        || path == "."
-        || path == ".."
-        || !path
-            .chars()
-            .all(|ch| ch.is_ascii_alphanumeric() || matches!(ch, '.' | '-' | '_'))
-    {
-        return Err(ApiError::not_found("icon_cache_not_found"));
-    }
-    Ok(path.to_string())
-}
-
-async fn icon_cache_source_url(
-    state: &AppState,
-    file_name: &str,
-) -> Result<Option<String>, ApiError> {
-    if let Some(url) = nav_item_icon_cache_source_url(&state.pool, file_name).await? {
-        return Ok(Some(url));
-    }
-    let template = read_default_template_file(&state.config).await?;
-    Ok(default_template_icon_cache_source_url(&template, file_name))
-}
-
-async fn nav_item_icon_cache_source_url(
-    pool: &SqlitePool,
-    file_name: &str,
-) -> Result<Option<String>, ApiError> {
-    let with_slash = format!("/icon-cache/{file_name}");
-    let without_slash = format!("icon-cache/{file_name}");
-    let with_slash_query = format!("{with_slash}?%");
-    let without_slash_query = format!("{without_slash}?%");
-    let row = sqlx::query(
-        r#"SELECT url FROM nav_items
-           WHERE url != ''
-             AND (
-               icon = ?
-               OR icon = ?
-               OR icon LIKE ?
-               OR icon LIKE ?
-             )
-           ORDER BY sort_order ASC
-           LIMIT 1"#,
-    )
-    .bind(with_slash)
-    .bind(without_slash)
-    .bind(with_slash_query)
-    .bind(without_slash_query)
-    .fetch_optional(pool)
-    .await?;
-    Ok(row
-        .map(|row| row.get::<String, _>("url"))
-        .map(|url| url.trim().to_string())
-        .filter(|url| !url.is_empty()))
-}
-
-fn default_template_icon_cache_source_url(template: &Value, file_name: &str) -> Option<String> {
-    template
-        .get("groups")
-        .and_then(Value::as_array)?
-        .iter()
-        .flat_map(|group| {
-            group
-                .get("items")
-                .and_then(Value::as_array)
-                .into_iter()
-                .flatten()
-        })
-        .find_map(|item| {
-            let icon = string_value(item, "icon")?;
-            if icon_cache_reference_file(&icon)? != file_name {
-                return None;
-            }
-            string_value(item, "url")
-        })
-}
-
-fn icon_cache_reference_file(icon: &str) -> Option<&str> {
-    icon.trim()
-        .split(['?', '#'])
-        .next()
-        .unwrap_or_default()
-        .trim_start_matches('/')
-        .strip_prefix("icon-cache/")
-}
-
-async fn meta_server_icon_asset(
-    State(state): State<AppState>,
-    AxumPath(path): AxumPath<String>,
-) -> Result<Response, ApiError> {
-    proxy_meta_server_asset(&state, "icons", &path).await
-}
-
-async fn meta_server_cache_asset(
-    State(state): State<AppState>,
-    AxumPath(path): AxumPath<String>,
-) -> Result<Response, ApiError> {
-    proxy_meta_server_asset(&state, "cache", &path).await
-}
-
-async fn proxy_meta_server_asset(
-    state: &AppState,
-    namespace: &str,
-    path: &str,
-) -> Result<Response, ApiError> {
-    let mut url = Url::parse(state.meta_server_base.as_str())
-        .map_err(|err| ApiError::bad_gateway(err.to_string()))?;
-    {
-        let mut segments = url
-            .path_segments_mut()
-            .map_err(|_| ApiError::bad_gateway("invalid_meta_server_base"))?;
-        segments.pop_if_empty();
-        segments.push(namespace);
-        for segment in path.split('/').filter(|segment| !segment.is_empty()) {
-            segments.push(segment);
-        }
-    }
-    let response = state
-        .http
-        .get(url)
-        .send()
-        .await
-        .map_err(|err| ApiError::bad_gateway(err.to_string()))?;
-    let status = response.status();
-    let mut headers = HeaderMap::new();
-    for header_name in [
-        header::CONTENT_TYPE,
-        header::CACHE_CONTROL,
-        header::ETAG,
-        header::LAST_MODIFIED,
-    ] {
-        if let Some(value) = response.headers().get(&header_name) {
-            headers.insert(header_name, value.clone());
-        }
-    }
-    let bytes = response
-        .bytes()
-        .await
-        .map_err(|err| ApiError::bad_gateway(err.to_string()))?;
-    let mut res = Response::new(Body::from(bytes));
-    *res.status_mut() = StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::BAD_GATEWAY);
-    *res.headers_mut() = headers;
-    Ok(res)
-}
-
-async fn cache_icon(
-    State(state): State<AppState>,
-    Json(body): Json<Value>,
-) -> Result<Json<Value>, ApiError> {
-    let (content_type, data) = resolve_icon_cache_input(&state, &body).await?;
-    let ext = extension_for_content_type(&content_type).unwrap_or(".bin");
-    let hash = format!("{:x}", Sha256::digest(&data));
-    let file_name = format!("{hash}{ext}");
-    let target = state.config.icon_cache_dir.join(&file_name);
-    fs::write(&target, data).await?;
-    let path = format!("/icon-cache/{file_name}");
-    Ok(Json(json!({"success": true, "path": path, "url": path})))
-}
-
-async fn resolve_icon_cache_input(
-    state: &AppState,
-    body: &Value,
-) -> Result<(String, Vec<u8>), ApiError> {
-    if let Some(raw) = body
-        .get("dataUrl")
-        .or_else(|| body.get("data_url"))
-        .and_then(Value::as_str)
-    {
-        let (content_type, data) = decode_data_url(raw)?;
-        return validate_icon_cache_bytes(content_type, data);
-    }
-
-    let raw_url = body
-        .get("url")
-        .or_else(|| body.get("iconUrl"))
-        .and_then(Value::as_str)
-        .ok_or_else(|| ApiError::bad_request("data_url_required"))?;
-    let parsed = validate_remote_url(raw_url).await?;
-    if is_blocked_host(parsed.host_str().unwrap_or_default()).await? {
-        return Err(ApiError::forbidden("blocked_host"));
-    }
-
-    let response = state
-        .http
-        .get(parsed.clone())
-        .send()
-        .await
-        .map_err(|err| ApiError::bad_gateway(err.to_string()))?;
-    if !response.status().is_success() {
-        return Err(ApiError::bad_gateway("fetch_failed"));
-    }
-    if response
-        .content_length()
-        .map(|length| length > ICON_CACHE_MAX_BYTES as u64)
-        .unwrap_or(false)
-    {
-        return Err(ApiError::bad_request("icon_too_large"));
-    }
-    let content_type = response
-        .headers()
-        .get(header::CONTENT_TYPE)
-        .and_then(|value| value.to_str().ok())
-        .map(normalize_icon_content_type)
-        .or_else(|| icon_content_type_from_path(parsed.path()))
-        .unwrap_or_else(|| "application/octet-stream".to_string());
-    let data = response
-        .bytes()
-        .await
-        .map_err(|err| ApiError::bad_gateway(err.to_string()))?
-        .to_vec();
-    validate_icon_cache_bytes(content_type, data)
-}
-
 async fn ping(Query(query): Query<HashMap<String, String>>) -> Json<Value> {
     let url = query.get("url").cloned().unwrap_or_default();
     Json(json!({"success": !url.is_empty(), "url": url, "latency": null}))
+}
+
+async fn removed_icon_route() -> StatusCode {
+    StatusCode::NOT_FOUND
 }
 
 async fn rtt(Query(query): Query<HashMap<String, String>>) -> Json<Value> {
@@ -1102,9 +1012,20 @@ async fn restore_config_version(
     };
     let mut snapshot: AppSnapshot = serde_json::from_str(&row.get::<String, _>("snapshot_json"))?;
     snapshot.username = username.clone();
-    snapshot.user.username = username;
+    snapshot.user.username = username.clone();
+    let snapshot = normalize_existing_snapshot(
+        &state,
+        snapshot,
+        managed_icons::IconNormalizationMode::PreserveEmpty,
+    )
+    .await?;
     save_snapshot(&state.pool, &snapshot).await?;
-    Ok(Json(json!({"success": true})))
+    let snapshot = app_snapshot(&state.pool, &username).await?;
+    Ok(Json(json!({
+        "success": true,
+        "version": snapshot.version,
+        "data": snapshot_to_api_value(snapshot),
+    })))
 }
 
 async fn delete_config_version(
@@ -1121,11 +1042,34 @@ async fn delete_config_version(
     Ok(Json(json!({"success": true})))
 }
 
-async fn ws_handler(State(state): State<AppState>, ws: WebSocketUpgrade) -> impl IntoResponse {
-    ws.on_upgrade(move |socket| ws_loop(socket, state))
+async fn ws_handler(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+    ws: WebSocketUpgrade,
+) -> Response {
+    match session_cookie_auth(&headers, &state) {
+        SessionCookieAuth::Valid(session) => ws
+            .on_upgrade(move |socket| ws_loop(socket, state, session))
+            .into_response(),
+        SessionCookieAuth::Missing => ApiError::unauthorized("invalid_token").into_response(),
+        SessionCookieAuth::Invalid => ApiError::invalid_token_with_cookie(&headers).into_response(),
+    }
 }
 
-async fn ws_loop(mut socket: WebSocket, state: AppState) {
+async fn ws_loop(mut socket: WebSocket, _state: AppState, session: AuthSession) {
+    let _ = socket
+        .send(Message::Text(
+            json!({
+                "type": "auth_success",
+                "payload": {
+                    "sessionID": session.sid,
+                    "username": session.username
+                }
+            })
+            .to_string()
+            .into(),
+        ))
+        .await;
     let mut heartbeat = tokio::time::interval(Duration::from_secs(10));
     loop {
         tokio::select! {
@@ -1144,7 +1088,7 @@ async fn ws_loop(mut socket: WebSocket, state: AppState) {
                 };
                 match message {
                     Message::Text(text) => {
-                        let response = handle_ws_text(&state, text.as_str());
+                        let response = handle_ws_text(text.as_str());
                         if let Some(response) = response
                             && socket.send(Message::Text(response.into())).await.is_err()
                         {
@@ -1164,34 +1108,11 @@ async fn ws_loop(mut socket: WebSocket, state: AppState) {
     }
 }
 
-fn handle_ws_text(state: &AppState, text: &str) -> Option<String> {
+fn handle_ws_text(text: &str) -> Option<String> {
     let value: Value = serde_json::from_str(text).ok()?;
     let message_type = value.get("type").and_then(Value::as_str)?;
     match message_type {
         "ping" => Some(json!({"type": "pong"}).to_string()),
-        "auth" => {
-            let token = value
-                .get("payload")
-                .and_then(|payload| payload.get("token"))
-                .and_then(Value::as_str)?;
-            let claims = decode::<Claims>(
-                token,
-                &DecodingKey::from_secret(state.jwt_secret.as_bytes()),
-                &Validation::new(Algorithm::HS256),
-            )
-            .ok()?
-            .claims;
-            Some(
-                json!({
-                    "type": "auth_success",
-                    "payload": {
-                        "sessionID": Uuid::new_v4().to_string(),
-                        "username": claims.username
-                    }
-                })
-                .to_string(),
-            )
-        }
         "network_heartbeat" => Some(
             json!({
                 "type": "network_heartbeat",
@@ -1407,7 +1328,7 @@ async fn default_template_to_api_value(config: &RuntimeConfig) -> Result<Value, 
     let template = read_default_template_file(config).await?;
     let system = SystemConfig::default();
     let mut out = object_from_value(template);
-    let groups = default_template_groups(config, out.remove("groups").unwrap_or_else(|| json!([])));
+    let groups = default_template_groups(out.remove("groups").unwrap_or_else(|| json!([])));
     let widgets = default_template_widgets(out.remove("widgets").unwrap_or_else(|| json!([])));
     out.entry("appConfig".to_string())
         .or_insert_with(|| json!({}));
@@ -1421,7 +1342,109 @@ async fn default_template_to_api_value(config: &RuntimeConfig) -> Result<Value, 
     Ok(Value::Object(out))
 }
 
-fn default_template_groups(config: &RuntimeConfig, value: Value) -> Value {
+async fn normalize_default_template_file_for_startup(state: &AppState) -> Result<(), ApiError> {
+    let template = read_default_template_file(state.config.as_ref()).await?;
+    let mut created_assets = Vec::new();
+    let normalized = normalize_default_template_value(state, template, &mut created_assets).await?;
+    verify_template_icon_assets(state, &normalized).await?;
+    if let Err(error) = write_default_template_file(state.config.as_ref(), &normalized).await {
+        managed_icons::mark_orphan_assets(state, &created_assets, "staged_failed").await?;
+        return Err(error);
+    }
+    Ok(())
+}
+
+async fn normalize_default_template_value(
+    state: &AppState,
+    mut template: Value,
+    created_assets: &mut Vec<String>,
+) -> Result<Value, ApiError> {
+    let Some(object) = template.as_object_mut() else {
+        return Ok(template);
+    };
+    let groups = object.remove("groups").unwrap_or_else(|| json!([]));
+    object.insert(
+        "groups".to_string(),
+        normalize_default_template_groups_for_startup(state, groups, created_assets).await?,
+    );
+    Ok(template)
+}
+
+async fn normalize_default_template_groups_for_startup(
+    state: &AppState,
+    value: Value,
+    created_assets: &mut Vec<String>,
+) -> Result<Value, ApiError> {
+    let Value::Array(groups) = value else {
+        return Ok(json!([]));
+    };
+    let mut out = Vec::with_capacity(groups.len());
+    for mut group in groups {
+        if let Some(object) = group.as_object_mut() {
+            let items = object.remove("items").unwrap_or_else(|| json!([]));
+            object.insert(
+                "items".to_string(),
+                normalize_default_template_items_for_startup(state, items, created_assets).await?,
+            );
+        }
+        out.push(group);
+    }
+    Ok(Value::Array(out))
+}
+
+async fn normalize_default_template_items_for_startup(
+    state: &AppState,
+    value: Value,
+    created_assets: &mut Vec<String>,
+) -> Result<Value, ApiError> {
+    let Value::Array(items) = value else {
+        return Ok(json!([]));
+    };
+    let mut out = Vec::with_capacity(items.len());
+    for mut item in items {
+        let raw_icon = string_value(&item, "icon").unwrap_or_default();
+        let fallback_url = string_value(&item, "url");
+        let icon = match managed_icons::materialize_icon_value(
+            state,
+            managed_icons::IconVisibility::Template,
+            &raw_icon,
+            fallback_url.as_deref(),
+            managed_icons::IconNormalizationMode::FillMissingFromUrl,
+            "startup",
+        )
+        .await
+        {
+            Ok(Some(icon)) => {
+                if !icon.reused {
+                    created_assets.push(icon.asset.id.clone());
+                }
+                managed_icons::canonical_icon_url(&icon.asset.id)
+            }
+            Ok(None) => String::new(),
+            Err(error)
+                if matches!(
+                    error.status(),
+                    StatusCode::NOT_FOUND
+                        | StatusCode::BAD_GATEWAY
+                        | StatusCode::FORBIDDEN
+                        | StatusCode::UNPROCESSABLE_ENTITY
+                        | StatusCode::UNSUPPORTED_MEDIA_TYPE
+                ) =>
+            {
+                tracing::warn!(error = %error.message(), "dropping unresolved startup default icon");
+                String::new()
+            }
+            Err(error) => return Err(error),
+        };
+        if let Some(object) = item.as_object_mut() {
+            object.insert("icon".to_string(), json!(icon));
+        }
+        out.push(item);
+    }
+    Ok(Value::Array(out))
+}
+
+fn default_template_groups(value: Value) -> Value {
     let Value::Array(groups) = value else {
         return json!([]);
     };
@@ -1432,7 +1455,7 @@ fn default_template_groups(config: &RuntimeConfig, value: Value) -> Value {
                 strip_visibility_fields(&mut group);
                 if let Some(object) = group.as_object_mut() {
                     let items = object.remove("items").unwrap_or_else(|| json!([]));
-                    object.insert("items".to_string(), default_template_items(config, items));
+                    object.insert("items".to_string(), default_template_items(items));
                 }
                 group
             })
@@ -1440,7 +1463,7 @@ fn default_template_groups(config: &RuntimeConfig, value: Value) -> Value {
     )
 }
 
-fn default_template_items(config: &RuntimeConfig, value: Value) -> Value {
+fn default_template_items(value: Value) -> Value {
     let Value::Array(items) = value else {
         return json!([]);
     };
@@ -1449,60 +1472,23 @@ fn default_template_items(config: &RuntimeConfig, value: Value) -> Value {
             .into_iter()
             .map(|mut item| {
                 strip_visibility_fields(&mut item);
-                normalize_default_template_item_icon(config, &mut item);
+                normalize_default_template_item_icon(&mut item);
                 item
             })
             .collect(),
     )
 }
 
-fn normalize_default_template_item_icon(config: &RuntimeConfig, item: &mut Value) {
+fn normalize_default_template_item_icon(item: &mut Value) {
     let Some(object) = item.as_object_mut() else {
         return;
     };
     let Some(icon) = object.get("icon").and_then(Value::as_str) else {
         return;
     };
-    if !default_template_icon_cache_missing(config, icon) {
-        return;
+    if !managed_icons::is_canonical_icon_url(icon) {
+        object.insert("icon".to_string(), Value::String(String::new()));
     }
-    let Some(site_url) = object.get("url").and_then(Value::as_str) else {
-        return;
-    };
-    let site_url = site_url.trim();
-    if site_url.is_empty() {
-        return;
-    }
-    if let Some(fallback) = icon_server_icon_url(site_url) {
-        object.insert("icon".to_string(), Value::String(fallback));
-    }
-}
-
-fn default_template_icon_cache_missing(config: &RuntimeConfig, icon: &str) -> bool {
-    let path = icon
-        .trim()
-        .split(['?', '#'])
-        .next()
-        .unwrap_or_default()
-        .trim_start_matches('/');
-    if let Some(name) = path.strip_prefix("icon-cache/") {
-        return !config.icon_cache_dir.join(name).is_file();
-    }
-    if let Some(name) = path.strip_prefix("cache/") {
-        return !config
-            .meta_server_data_dir
-            .join("cache")
-            .join(name)
-            .is_file();
-    }
-    false
-}
-
-fn icon_server_icon_url(site_url: &str) -> Option<String> {
-    let parsed =
-        Url::parse_with_params("http://startdeck.local/api/site/icon", [("url", site_url)]).ok()?;
-    let query = parsed.query()?;
-    Some(format!("/api/site/icon?{query}"))
 }
 
 fn default_template_widgets(value: Value) -> Value {
@@ -1582,52 +1568,22 @@ fn widget_to_api_value(widget: &WidgetRecord) -> Value {
 }
 
 async fn normalize_snapshot(
-    pool: &SqlitePool,
+    state: &AppState,
     username: String,
     body: Value,
+    icon_mode: managed_icons::IconNormalizationMode,
 ) -> Result<AppSnapshot, ApiError> {
-    let existing = app_snapshot(pool, &username).await?;
+    let existing = app_snapshot(&state.pool, &username).await?;
     let app_config = body
         .get("appConfig")
         .or_else(|| body.get("app_config"))
         .cloned()
         .unwrap_or(existing.user.app_config);
-    let groups = body
-        .get("groups")
-        .and_then(Value::as_array)
-        .map(|items| {
-            items
-                .iter()
-                .enumerate()
-                .map(|(index, group)| NavGroup {
-                    id: string_value(group, "id").unwrap_or_else(|| Uuid::new_v4().to_string()),
-                    title: string_value(group, "title").unwrap_or_default(),
-                    sort_order: index as i64,
-                    settings: normalize_group_settings(group),
-                    items: group
-                        .get("items")
-                        .and_then(Value::as_array)
-                        .map(|items| {
-                            items
-                                .iter()
-                                .enumerate()
-                                .map(|(item_index, item)| NavItem {
-                                    id: string_value(item, "id")
-                                        .unwrap_or_else(|| Uuid::new_v4().to_string()),
-                                    title: string_value(item, "title").unwrap_or_default(),
-                                    url: string_value(item, "url").unwrap_or_default(),
-                                    icon: string_value(item, "icon").unwrap_or_default(),
-                                    is_public: false,
-                                    sort_order: item_index as i64,
-                                    metadata: normalize_item_metadata(item),
-                                })
-                                .collect()
-                        })
-                        .unwrap_or_default(),
-                })
-                .collect()
-        })
-        .unwrap_or(existing.groups);
+    let groups = if let Some(items) = body.get("groups").and_then(Value::as_array) {
+        normalize_groups(state, &username, items, icon_mode).await?
+    } else {
+        normalize_existing_groups(state, &username, existing.groups, icon_mode).await?
+    };
     let widgets = body
         .get("widgets")
         .and_then(Value::as_array)
@@ -1667,6 +1623,118 @@ async fn normalize_snapshot(
     })
 }
 
+async fn normalize_existing_snapshot(
+    state: &AppState,
+    mut snapshot: AppSnapshot,
+    icon_mode: managed_icons::IconNormalizationMode,
+) -> Result<AppSnapshot, ApiError> {
+    snapshot.groups =
+        normalize_existing_groups(state, &snapshot.username, snapshot.groups, icon_mode).await?;
+    snapshot.version = Utc::now().timestamp_millis();
+    Ok(snapshot)
+}
+
+async fn normalize_groups(
+    state: &AppState,
+    username: &str,
+    groups: &[Value],
+    icon_mode: managed_icons::IconNormalizationMode,
+) -> Result<Vec<NavGroup>, ApiError> {
+    let mut out = Vec::with_capacity(groups.len());
+    for (index, group) in groups.iter().enumerate() {
+        let mut items_out = Vec::new();
+        if let Some(items) = group.get("items").and_then(Value::as_array) {
+            for (item_index, item) in items.iter().enumerate() {
+                let url = string_value(item, "url").unwrap_or_default();
+                let fallback_url = if url.is_empty() {
+                    string_value(item, "lanUrl")
+                } else {
+                    Some(url.clone())
+                };
+                let raw_icon = string_value(item, "icon").unwrap_or_default();
+                let icon = normalize_nav_item_icon(
+                    state,
+                    username,
+                    &raw_icon,
+                    fallback_url.as_deref(),
+                    icon_mode,
+                )
+                .await?;
+                let mut metadata_source = item.clone();
+                if let Some(object) = metadata_source.as_object_mut() {
+                    object.insert("icon".to_string(), json!(icon.clone()));
+                }
+                items_out.push(NavItem {
+                    id: string_value(item, "id").unwrap_or_else(|| Uuid::new_v4().to_string()),
+                    title: string_value(item, "title").unwrap_or_default(),
+                    url,
+                    icon,
+                    is_public: false,
+                    sort_order: item_index as i64,
+                    metadata: normalize_item_metadata(&metadata_source),
+                });
+            }
+        }
+        out.push(NavGroup {
+            id: string_value(group, "id").unwrap_or_else(|| Uuid::new_v4().to_string()),
+            title: string_value(group, "title").unwrap_or_default(),
+            sort_order: index as i64,
+            settings: normalize_group_settings(group),
+            items: items_out,
+        });
+    }
+    Ok(out)
+}
+
+async fn normalize_existing_groups(
+    state: &AppState,
+    username: &str,
+    groups: Vec<NavGroup>,
+    icon_mode: managed_icons::IconNormalizationMode,
+) -> Result<Vec<NavGroup>, ApiError> {
+    let mut values = Vec::with_capacity(groups.len());
+    for group in groups {
+        values.push(nav_group_to_api_value(&group));
+    }
+    normalize_groups(state, username, &values, icon_mode).await
+}
+
+async fn normalize_nav_item_icon(
+    state: &AppState,
+    username: &str,
+    raw_icon: &str,
+    fallback_url: Option<&str>,
+    icon_mode: managed_icons::IconNormalizationMode,
+) -> Result<String, ApiError> {
+    match managed_icons::materialize_icon_value(
+        state,
+        managed_icons::IconVisibility::Private(username),
+        raw_icon,
+        fallback_url,
+        icon_mode,
+        "snapshot",
+    )
+    .await
+    {
+        Ok(Some(icon)) => Ok(managed_icons::canonical_icon_url(&icon.asset.id)),
+        Ok(None) => Ok(String::new()),
+        Err(error)
+            if matches!(
+                error.status(),
+                StatusCode::NOT_FOUND
+                    | StatusCode::BAD_GATEWAY
+                    | StatusCode::FORBIDDEN
+                    | StatusCode::UNPROCESSABLE_ENTITY
+                    | StatusCode::UNSUPPORTED_MEDIA_TYPE
+            ) =>
+        {
+            tracing::warn!(error = %error.message(), "dropping unresolved navigation icon");
+            Ok(String::new())
+        }
+        Err(error) => Err(error),
+    }
+}
+
 async fn ignored_stale_save_version(
     pool: &SqlitePool,
     username: &str,
@@ -1682,12 +1750,122 @@ async fn ignored_stale_save_version(
     Ok(None)
 }
 
-fn snapshot_to_template_value(snapshot: AppSnapshot) -> Value {
-    json!({
+async fn snapshot_to_template_value(
+    state: &AppState,
+    snapshot: AppSnapshot,
+) -> Result<(Value, Vec<String>), ApiError> {
+    let mut created_assets = Vec::new();
+    let mut groups = Vec::with_capacity(snapshot.groups.len());
+    for group in &snapshot.groups {
+        let mut group_value = nav_group_to_api_value(group);
+        if let Some(object) = group_value.as_object_mut() {
+            let items = object.remove("items").unwrap_or_else(|| json!([]));
+            let normalized_items =
+                normalize_template_items(state, items, &mut created_assets).await?;
+            object.insert("items".to_string(), normalized_items);
+        }
+        groups.push(group_value);
+    }
+    let template = json!({
         "appConfig": snapshot.user.app_config,
-        "groups": snapshot.groups.iter().map(nav_group_to_api_value).collect::<Vec<_>>(),
+        "groups": groups,
         "widgets": snapshot.widgets.iter().map(widget_to_api_value).collect::<Vec<_>>(),
-    })
+    });
+    verify_template_icon_assets(state, &template).await?;
+    Ok((template, created_assets))
+}
+
+async fn normalize_template_items(
+    state: &AppState,
+    value: Value,
+    created_assets: &mut Vec<String>,
+) -> Result<Value, ApiError> {
+    let Value::Array(items) = value else {
+        return Ok(json!([]));
+    };
+    let mut out = Vec::with_capacity(items.len());
+    for mut item in items {
+        let raw_icon = string_value(&item, "icon").unwrap_or_default();
+        let normalized = match managed_icons::materialize_icon_value(
+            state,
+            managed_icons::IconVisibility::Template,
+            &raw_icon,
+            None,
+            managed_icons::IconNormalizationMode::PreserveEmpty,
+            "template",
+        )
+        .await
+        {
+            Ok(Some(icon)) => {
+                if !icon.reused {
+                    created_assets.push(icon.asset.id.clone());
+                }
+                managed_icons::canonical_icon_url(&icon.asset.id)
+            }
+            Ok(None) => String::new(),
+            Err(error)
+                if matches!(
+                    error.status(),
+                    StatusCode::NOT_FOUND
+                        | StatusCode::BAD_GATEWAY
+                        | StatusCode::FORBIDDEN
+                        | StatusCode::UNPROCESSABLE_ENTITY
+                        | StatusCode::UNSUPPORTED_MEDIA_TYPE
+                ) =>
+            {
+                tracing::warn!(error = %error.message(), "dropping unresolved default-template icon");
+                String::new()
+            }
+            Err(error) => return Err(error),
+        };
+        if let Some(object) = item.as_object_mut() {
+            object.insert("icon".to_string(), json!(normalized));
+        }
+        out.push(item);
+    }
+    Ok(Value::Array(out))
+}
+
+async fn verify_template_icon_assets(state: &AppState, template: &Value) -> Result<(), ApiError> {
+    let Some(groups) = template.get("groups").and_then(Value::as_array) else {
+        return Ok(());
+    };
+    for group in groups {
+        let Some(items) = group.get("items").and_then(Value::as_array) else {
+            continue;
+        };
+        for item in items {
+            let Some(icon) = item.get("icon").and_then(Value::as_str) else {
+                continue;
+            };
+            let Some(asset_id) = managed_icons::extract_asset_id(icon) else {
+                if icon.trim().is_empty() {
+                    continue;
+                }
+                return Err(ApiError::internal("default_template_noncanonical_icon"));
+            };
+            let row = sqlx::query(
+                r#"SELECT b.storage_path
+                   FROM managed_icon_assets a
+                   JOIN managed_icon_blobs b ON b.id = a.blob_id
+                   WHERE a.id = ? AND a.visibility = 'template' AND a.lifecycle = 'active'"#,
+            )
+            .bind(asset_id)
+            .fetch_optional(&state.pool)
+            .await?;
+            let Some(row) = row else {
+                return Err(ApiError::internal("default_template_icon_missing"));
+            };
+            let path = state
+                .config
+                .data_dir
+                .join(row.get::<String, _>("storage_path"));
+            if !path.is_file() {
+                return Err(ApiError::internal("default_template_blob_missing"));
+            }
+        }
+    }
+    Ok(())
 }
 
 fn object_from_value(value: Value) -> Map<String, Value> {
@@ -1817,9 +1995,23 @@ async fn write_default_template_file(
         .unwrap_or("default.json");
     let temp_path = parent.join(format!(".{file_name}.{}.tmp", Uuid::new_v4()));
     let bytes = serde_json::to_vec_pretty(value)?;
-    if let Err(err) = fs::write(&temp_path, bytes).await {
+    let mut file = match fs::OpenOptions::new()
+        .create_new(true)
+        .write(true)
+        .open(&temp_path)
+        .await
+    {
+        Ok(file) => file,
+        Err(err) => return Err(default_template_write_error(err)),
+    };
+    if let Err(err) = tokio::io::AsyncWriteExt::write_all(&mut file, &bytes).await {
+        let _ = fs::remove_file(&temp_path).await;
         return Err(default_template_write_error(err));
     }
+    if let Err(err) = file.sync_all().await {
+        return Err(default_template_write_error(err));
+    }
+    drop(file);
     if let Err(err) = fs::rename(&temp_path, path).await {
         let _ = fs::remove_file(&temp_path).await;
         return Err(default_template_write_error(err));
@@ -1906,38 +2098,23 @@ async fn delete_named_file(dir: &Path, name: &str) -> Result<Json<Value>, ApiErr
     }
 }
 
-fn bearer_token(headers: &HeaderMap) -> Option<&str> {
-    headers
-        .get(header::AUTHORIZATION)
-        .and_then(|value| value.to_str().ok())
-        .and_then(|value| value.strip_prefix("Bearer "))
-        .map(str::trim)
-        .filter(|value| !value.is_empty())
-}
-
-fn decode_bearer_username(token: &str, state: &AppState) -> Result<String, ApiError> {
-    decode::<Claims>(
-        token,
-        &DecodingKey::from_secret(state.jwt_secret.as_bytes()),
-        &Validation::new(Algorithm::HS256),
-    )
-    .map(|data| data.claims.username)
-    .map_err(|_| ApiError::unauthorized("invalid_token"))
-}
-
 fn optional_username_from_headers(
     headers: &HeaderMap,
     state: &AppState,
 ) -> Result<Option<String>, ApiError> {
-    let Some(token) = bearer_token(headers) else {
-        return Ok(None);
-    };
-    Ok(Some(decode_bearer_username(token, state)?))
+    match session_cookie_auth(headers, state) {
+        SessionCookieAuth::Missing => Ok(None),
+        SessionCookieAuth::Valid(session) => Ok(Some(session.username)),
+        SessionCookieAuth::Invalid => Err(ApiError::invalid_token_with_cookie(headers)),
+    }
 }
 
 fn require_username(headers: &HeaderMap, state: &AppState) -> Result<String, ApiError> {
-    optional_username_from_headers(headers, state)?
-        .ok_or_else(|| ApiError::unauthorized("invalid_token"))
+    match session_cookie_auth(headers, state) {
+        SessionCookieAuth::Valid(session) => Ok(session.username),
+        SessionCookieAuth::Missing => Err(ApiError::unauthorized("invalid_token")),
+        SessionCookieAuth::Invalid => Err(ApiError::invalid_token_with_cookie(headers)),
+    }
 }
 
 fn require_admin(headers: &HeaderMap, state: &AppState) -> Result<String, ApiError> {
@@ -1946,6 +2123,92 @@ fn require_admin(headers: &HeaderMap, state: &AppState) -> Result<String, ApiErr
         return Err(ApiError::forbidden("permission_denied"));
     }
     Ok(username)
+}
+
+fn session_cookie_auth(headers: &HeaderMap, state: &AppState) -> SessionCookieAuth {
+    let Some(token) = session_cookie_value(headers) else {
+        return SessionCookieAuth::Missing;
+    };
+    let validation = Validation::new(Algorithm::HS256);
+    match decode::<Claims>(
+        token,
+        &DecodingKey::from_secret(state.jwt_secret.as_ref().as_slice()),
+        &validation,
+    ) {
+        Ok(data)
+            if !data.claims.username.trim().is_empty() && !data.claims.sid.trim().is_empty() =>
+        {
+            SessionCookieAuth::Valid(AuthSession {
+                username: data.claims.username,
+                sid: data.claims.sid,
+            })
+        }
+        _ => SessionCookieAuth::Invalid,
+    }
+}
+
+fn session_cookie_value(headers: &HeaderMap) -> Option<&str> {
+    headers
+        .get(header::COOKIE)?
+        .to_str()
+        .ok()?
+        .split(';')
+        .find_map(|part| {
+            let (name, value) = part.trim().split_once('=')?;
+            (name.trim() == SESSION_COOKIE_NAME)
+                .then(|| value.trim())
+                .filter(|value| !value.is_empty())
+        })
+}
+
+fn should_mark_session_cookie_secure(headers: &HeaderMap) -> bool {
+    headers
+        .get("x-forwarded-proto")
+        .and_then(|value| value.to_str().ok())
+        .map(|value| {
+            value
+                .split(',')
+                .any(|part| part.trim().eq_ignore_ascii_case("https"))
+        })
+        .unwrap_or(false)
+        || headers
+            .get("x-forwarded-ssl")
+            .and_then(|value| value.to_str().ok())
+            .is_some_and(|value| value.eq_ignore_ascii_case("on"))
+        || headers
+            .get("forwarded")
+            .and_then(|value| value.to_str().ok())
+            .is_some_and(|value| value.to_ascii_lowercase().contains("proto=https"))
+}
+
+fn session_cookie(token: &str, secure: bool) -> String {
+    let mut cookie = format!(
+        "{SESSION_COOKIE_NAME}={token}; Max-Age={SESSION_MAX_AGE_SECONDS}; Path=/; HttpOnly; SameSite=Lax"
+    );
+    if secure {
+        cookie.push_str("; Secure");
+    }
+    cookie
+}
+
+fn expired_session_cookie(secure: bool) -> String {
+    let mut cookie = format!(
+        "{SESSION_COOKIE_NAME}=; Max-Age=0; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Path=/; HttpOnly; SameSite=Lax"
+    );
+    if secure {
+        cookie.push_str("; Secure");
+    }
+    cookie
+}
+
+fn insert_no_store(headers: &mut HeaderMap) {
+    headers.insert(header::CACHE_CONTROL, HeaderValue::from_static("no-store"));
+}
+
+fn insert_set_cookie(headers: &mut HeaderMap, value: String) {
+    if let Ok(value) = HeaderValue::from_str(&value) {
+        headers.append(header::SET_COOKIE, value);
+    }
 }
 
 async fn create_user(state: &AppState, username: &str, password: &str) -> Result<(), ApiError> {
@@ -2052,20 +2315,6 @@ fn icon_content_type_from_path(path: &str) -> Option<String> {
     mime_guess::from_path(path)
         .first()
         .map(|mime| mime.essence_str().to_string())
-}
-
-fn validate_icon_cache_bytes(
-    content_type: String,
-    data: Vec<u8>,
-) -> Result<(String, Vec<u8>), ApiError> {
-    if data.len() > ICON_CACHE_MAX_BYTES {
-        return Err(ApiError::bad_request("icon_too_large"));
-    }
-    let content_type = normalize_icon_content_type(&content_type);
-    if extension_for_content_type(&content_type).is_none() {
-        return Err(ApiError::bad_request("unsupported_icon_type"));
-    }
-    Ok((content_type, data))
 }
 
 fn extension_for_content_type(content_type: &str) -> Option<&'static str> {
@@ -2175,70 +2424,93 @@ fn sanitize_filename(raw: &str) -> String {
 pub struct ApiError {
     status: StatusCode,
     message: String,
+    clear_session_cookie: bool,
+    secure_session_cookie: bool,
+    no_store: bool,
 }
 
 impl ApiError {
-    pub(crate) fn bad_request(message: impl Into<String>) -> Self {
+    fn new(status: StatusCode, message: impl Into<String>) -> Self {
         Self {
-            status: StatusCode::BAD_REQUEST,
+            status,
             message: message.into(),
+            clear_session_cookie: false,
+            secure_session_cookie: false,
+            no_store: false,
         }
     }
 
+    pub(crate) fn bad_request(message: impl Into<String>) -> Self {
+        Self::new(StatusCode::BAD_REQUEST, message)
+    }
+
     fn unauthorized(message: impl Into<String>) -> Self {
+        Self::new(StatusCode::UNAUTHORIZED, message)
+    }
+
+    fn invalid_token_with_cookie(headers: &HeaderMap) -> Self {
         Self {
-            status: StatusCode::UNAUTHORIZED,
-            message: message.into(),
+            clear_session_cookie: true,
+            secure_session_cookie: should_mark_session_cookie_secure(headers),
+            ..Self::unauthorized("invalid_token")
         }
     }
 
     pub(crate) fn not_found(message: impl Into<String>) -> Self {
-        Self {
-            status: StatusCode::NOT_FOUND,
-            message: message.into(),
-        }
+        Self::new(StatusCode::NOT_FOUND, message)
     }
 
     pub(crate) fn bad_gateway(message: impl Into<String>) -> Self {
-        Self {
-            status: StatusCode::BAD_GATEWAY,
-            message: message.into(),
-        }
+        Self::new(StatusCode::BAD_GATEWAY, message)
     }
 
     pub(crate) fn forbidden(message: impl Into<String>) -> Self {
-        Self {
-            status: StatusCode::FORBIDDEN,
-            message: message.into(),
-        }
+        Self::new(StatusCode::FORBIDDEN, message)
     }
 
     fn conflict(message: impl Into<String>) -> Self {
-        Self {
-            status: StatusCode::CONFLICT,
-            message: message.into(),
-        }
+        Self::new(StatusCode::CONFLICT, message)
     }
 
     fn internal(message: impl Into<String>) -> Self {
-        Self {
-            status: StatusCode::INTERNAL_SERVER_ERROR,
-            message: message.into(),
-        }
+        Self::new(StatusCode::INTERNAL_SERVER_ERROR, message)
     }
 
     pub(crate) fn into_message(self) -> String {
         self.message
     }
+
+    pub(crate) fn status(&self) -> StatusCode {
+        self.status
+    }
+
+    pub(crate) fn message(&self) -> &str {
+        &self.message
+    }
+
+    fn with_no_store(mut self) -> Self {
+        self.no_store = true;
+        self
+    }
 }
 
 impl IntoResponse for ApiError {
     fn into_response(self) -> Response {
-        (
+        let mut response = (
             self.status,
             Json(json!({"success": false, "error": self.message})),
         )
-            .into_response()
+            .into_response();
+        if self.no_store {
+            insert_no_store(response.headers_mut());
+        }
+        if self.clear_session_cookie {
+            insert_set_cookie(
+                response.headers_mut(),
+                expired_session_cookie(self.secure_session_cookie),
+            );
+        }
+        response
     }
 }
 

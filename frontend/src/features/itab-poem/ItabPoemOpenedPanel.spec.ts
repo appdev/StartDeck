@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { readFileSync } from "node:fs";
+import { createTestingPinia } from "@pinia/testing";
 import { mount } from "@vue/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import ItabPoemOpenedPanel from "./ItabPoemOpenedPanel.vue";
@@ -25,10 +26,27 @@ describe("ItabPoemOpenedPanel", () => {
     vi.clearAllMocks();
   });
 
-  it("keeps the opened flow with refresh, full text, translation, annotations and preface sections", async () => {
-    const wrapper = mount(ItabPoemOpenedPanel, {
+  const mountOpenedPanel = (loggedIn = true) =>
+    mount(ItabPoemOpenedPanel, {
       props: { widget: createDefaultItabPoemWidget() },
+      global: {
+        plugins: [
+          createTestingPinia({
+            createSpy: vi.fn,
+            initialState: {
+              auth: {
+                sessionReady: true,
+                username: loggedIn ? "admin" : "",
+                sessionGeneration: loggedIn ? "test-session" : "",
+              },
+            },
+          }),
+        ],
+      },
     });
+
+  it("keeps the opened flow with refresh, full text, translation, annotations and preface sections", async () => {
+    const wrapper = mountOpenedPanel();
 
     await new Promise((resolve) => setTimeout(resolve, 0));
 
@@ -54,6 +72,18 @@ describe("ItabPoemOpenedPanel", () => {
     expect(wrapper.emitted("updateData")?.at(-1)?.[0]).not.toHaveProperty(
       "paletteDate",
     );
+  });
+
+  it("lets guests view refreshed poem content without emitting persistent updates", async () => {
+    const wrapper = mountOpenedPanel(false);
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    await wrapper.find("button").trigger("click");
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(wrapper.text()).toContain("斜月沉沉藏海雾");
+    expect(fetchItabPoem).toHaveBeenCalledWith(true, expect.any(AbortSignal));
+    expect(wrapper.emitted("updateData")).toBeUndefined();
   });
 
   it("keeps source opened light dialog anchors", () => {

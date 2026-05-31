@@ -144,6 +144,7 @@ frontend/test-results/
 # generate these files during build instead of tracking hash artifacts.
 server/
 Data/public/**
+Data/meta-service/**
 debian/Data/public/index.html
 debian/Data/public/assets/
 

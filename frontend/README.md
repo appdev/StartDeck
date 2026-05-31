@@ -151,7 +151,7 @@ StartDeck 后端集成了智能网络环境识别功能，能够根据用户的�
      -e META_SERVER_PORT=9002 \
      -e META_SERVER_DATA_DIR=/app/Data/meta-service \
      -e META_SERVER_BASE_URL=http://127.0.0.1:9002 \
-     -e META_SERVER_TIMEOUT_MS=5000 \
+     -e META_SERVER_TIMEOUT_MS=60000 \
      -v /var/run/docker.sock:/var/run/docker.sock \
      --name startdeck \
      apkdv/startdeck
@@ -177,7 +177,7 @@ StartDeck 后端集成了智能网络环境识别功能，能够根据用户的�
          - META_SERVER_PORT=9002
          - META_SERVER_DATA_DIR=/app/Data/meta-service
          - META_SERVER_BASE_URL=http://127.0.0.1:9002
-         - META_SERVER_TIMEOUT_MS=5000
+         - META_SERVER_TIMEOUT_MS=60000
        volumes:
          - ./Data:/app/Data #映射全部运行期数据
          - /var/run/docker.sock:/var/run/docker.sock #映射Docker Socket

@@ -1,4 +1,5 @@
 import { useAuthStore } from "@/stores/auth";
+import { sessionFetch } from "@/utils/sessionFetch";
 import type {
   AiUsageCredentialPayload,
   AiUsageCredentialStatus,
@@ -21,7 +22,7 @@ const authHeaders = () => useAuthStore().getHeaders();
 export const queryAiUsage = async (
   request: AiUsageQueryRequest,
 ): Promise<AiUsageProviderSummary> => {
-  const response = await fetch("/api/ai-usage/query", {
+  const response = await sessionFetch("/api/ai-usage/query", {
     method: "POST",
     headers: authHeaders(),
     body: JSON.stringify(request),
@@ -33,7 +34,7 @@ export const getAiUsageCredentialStatus = async (
   widgetId: string,
   providerId: string,
 ): Promise<AiUsageCredentialStatus> => {
-  const response = await fetch(
+  const response = await sessionFetch(
     `/api/ai-usage/credentials/${encodeURIComponent(widgetId)}/${encodeURIComponent(providerId)}`,
     {
       headers: authHeaders(),
@@ -47,7 +48,7 @@ export const saveAiUsageServerCredential = async (
   providerId: string,
   payload: AiUsageCredentialPayload,
 ): Promise<AiUsageCredentialStatus> => {
-  const response = await fetch(
+  const response = await sessionFetch(
     `/api/ai-usage/credentials/${encodeURIComponent(widgetId)}/${encodeURIComponent(providerId)}`,
     {
       method: "PUT",
@@ -62,7 +63,7 @@ export const deleteAiUsageServerCredential = async (
   widgetId: string,
   providerId: string,
 ) => {
-  const response = await fetch(
+  const response = await sessionFetch(
     `/api/ai-usage/credentials/${encodeURIComponent(widgetId)}/${encodeURIComponent(providerId)}`,
     {
       method: "DELETE",

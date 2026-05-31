@@ -203,7 +203,7 @@ StartDeck server 保持前端 BFF，不直接让前端访问本服务。
 
 ```bash
 META_SERVER_BASE_URL=http://127.0.0.1:9002
-META_SERVER_TIMEOUT_MS=5000
+META_SERVER_TIMEOUT_MS=60000
 ```
 
 这样 StartDeck 后端会继续对前端暴露 `/api/site/metadata` 与 `/api/site/icon`，内部再调用本服务。

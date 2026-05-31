@@ -116,6 +116,7 @@ import {
   getWidgetCatalogItem,
 } from "@/utils/widgetCatalog";
 import { blurActiveElementMatching } from "@/utils/focus";
+import { sessionFetch } from "@/utils/sessionFetch";
 import {
   DEFAULT_GROUP_GAP,
   DEFAULT_NAV_CARD_SIZE,
@@ -127,7 +128,7 @@ import type {
   AddComponentPayload,
   AddComponentResult,
 } from "@/utils/addComponentTypes";
-import { cacheNavItemIconToLocal } from "@/utils/navItemAdapter";
+import { materializeNavItemIcon } from "@/utils/navItemAdapter";
 import { isDuplicateSiteShortcut } from "@/utils/siteShortcutCatalog";
 import DOMPurify from "dompurify";
 const uiFeedback = useUiFeedbackStore();
@@ -1537,15 +1538,15 @@ const addNavItemPayload = async (
   };
 
   if (payload.kind === "custom-icon" && navItem.icon) {
-    const cached = await cacheNavItemIconToLocal(navItem.icon);
-    if (cached.path) {
-      navItem.icon = cached.path;
-    } else if (cached.error) {
+    try {
+      navItem.icon = await materializeNavItemIcon(navItem.icon);
+    } catch {
       uiFeedback.notify({
         title: "图标缓存失败",
-        message: "已保留当前图标继续保存。",
+        message: "图标无法写入当前账户，请重新选择。",
         tone: "warning",
       });
+      navItem.icon = "";
     }
   }
 
@@ -1756,7 +1757,7 @@ const handleDockerAction = async (item: NavItem, action: string) => {
 
   try {
     const headers = store.getHeaders();
-    await fetch(`/api/docker/container/${containerId}/${action}`, {
+    await sessionFetch(`/api/docker/container/${containerId}/${action}`, {
       method: "POST",
       headers,
     });
@@ -1938,7 +1939,7 @@ const fetchContainerStatuses = async () => {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 20000);
 
-      const res = await fetch("/api/docker/containers", {
+      const res = await sessionFetch("/api/docker/containers", {
         headers,
         signal: controller.signal,
       });

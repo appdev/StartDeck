@@ -86,7 +86,6 @@ export const useItabTodoRuntime = (
     store.wsSend({
       type: "todo_update",
       payload: {
-        token: store.token || localStorage.getItem("start-deck-token"),
         widgetId: widget.value.id,
         content: data,
       },

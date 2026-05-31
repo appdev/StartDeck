@@ -38,7 +38,6 @@ import {
   networkLocationMatches,
   normalizeNetworkLocationAddress,
 } from "@/utils/network";
-import { getSiteIconUrl, normalizeSiteUrl } from "@/utils/siteMetadata";
 import {
   DEFAULT_SEARCH_ENGINE_KEYS,
   createDefaultSearchEngines,
@@ -46,12 +45,17 @@ import {
   normalizeDefaultSearchEngine,
   normalizeSearchEngines,
 } from "@/utils/searchEngines";
+import { sessionFetch } from "@/utils/sessionFetch";
 
 const props = defineProps<{ show: boolean }>();
 const emit = defineEmits(["update:show"]);
 const store = useMainStore();
 const uiFeedback = useUiFeedbackStore();
 const ipRuntime = useItabIpRuntime();
+
+const sessionJsonHeaders = (): Record<string, string> => ({
+  "Content-Type": "application/json",
+});
 
 const notify = (
   message: string,
@@ -1050,28 +1054,12 @@ const versions = ref<
 >([]);
 const loadingVersions = ref(false);
 const isImporting = ref(false);
-/** 上传阶段 | 导入完成后后台补图标 */
-const importOverlayMode = ref<"upload" | "icons">("upload");
-const importProgress = ref(0);
-const importTotal = ref(0);
-
-const findNavItemByIdInStore = (id: string): NavItem | null => {
-  for (const g of store.groups) {
-    const found = g.items.find((it) => it.id === id);
-    if (found) return found;
-  }
-  return null;
-};
 
 const fetchVersions = async () => {
   try {
     loadingVersions.value = true;
-    const token = localStorage.getItem("start-deck-token");
-    const headers: Record<string, string> = {
-      "Content-Type": "application/json",
-    };
-    if (token) headers["Authorization"] = `Bearer ${token}`;
-    const r = await fetch("/api/config-versions", { headers });
+    const headers = sessionJsonHeaders();
+    const r = await sessionFetch("/api/config-versions", { headers });
     if (!r.ok) return;
     const j = await r.json();
     versions.value = j.versions || [];
@@ -1082,12 +1070,8 @@ const fetchVersions = async () => {
 
 const saveVersion = async () => {
   try {
-    const token = localStorage.getItem("start-deck-token");
-    const headers: Record<string, string> = {
-      "Content-Type": "application/json",
-    };
-    if (token) headers["Authorization"] = `Bearer ${token}`;
-    const r = await fetch("/api/config-versions", {
+    const headers = sessionJsonHeaders();
+    const r = await sessionFetch("/api/config-versions", {
       method: "POST",
       headers,
       body: JSON.stringify({ label: versionLabel.value.trim() }),
@@ -1119,12 +1103,8 @@ const restoreVersion = async (id: string) => {
       },
     );
     if (!confirmed) return;
-    const token = localStorage.getItem("start-deck-token");
-    const headers: Record<string, string> = {
-      "Content-Type": "application/json",
-    };
-    if (token) headers["Authorization"] = `Bearer ${token}`;
-    const r = await fetch("/api/config-versions/restore", {
+    const headers = sessionJsonHeaders();
+    const r = await sessionFetch("/api/config-versions/restore", {
       method: "POST",
       headers,
       body: JSON.stringify({ id }),
@@ -1145,12 +1125,8 @@ const restoreVersion = async (id: string) => {
 
 const deleteVersion = async (id: string) => {
   try {
-    const token = localStorage.getItem("start-deck-token");
-    const headers: Record<string, string> = {
-      "Content-Type": "application/json",
-    };
-    if (token) headers["Authorization"] = `Bearer ${token}`;
-    const r = await fetch(`/api/config-versions/${encodeURIComponent(id)}`, {
+    const headers = sessionJsonHeaders();
+    const r = await sessionFetch(`/api/config-versions/${encodeURIComponent(id)}`, {
       method: "DELETE",
       headers,
     });
@@ -1206,62 +1182,11 @@ const triggerImport = () => {
   fileInput.value?.click();
 };
 
-const AUTO_ICON_CHECK_TIMEOUT_MS = 1500;
-const autoIconCache = new Map<string, Promise<string>>();
-
-const checkImage = (
-  url: string,
-  timeoutMs = AUTO_ICON_CHECK_TIMEOUT_MS,
-): Promise<boolean> => {
-  return new Promise((resolve) => {
-    const img = new Image();
-    let settled = false;
-    const finalize = (ok: boolean) => {
-      if (settled) return;
-      settled = true;
-      window.clearTimeout(timer);
-      img.onload = null;
-      img.onerror = null;
-      // Stop any pending image work once we already know the result.
-      img.src = "";
-      resolve(ok);
-    };
-    const timer = window.setTimeout(() => finalize(false), timeoutMs);
-    img.onload = () => finalize(true);
-    img.onerror = () => finalize(false);
-    img.src = url;
-  });
-};
-
-const getAutoIcon = async (url: string) => {
-  if (!url) return "";
-  try {
-    const normalizedUrl = normalizeSiteUrl(url);
-    const cacheKey =
-      new URL(normalizedUrl).hostname.toLowerCase() || normalizedUrl;
-    let task = autoIconCache.get(cacheKey);
-
-    if (!task) {
-      task = (async () => {
-        const src = getSiteIconUrl(normalizedUrl);
-        return (await checkImage(src)) ? src : "";
-      })();
-      autoIconCache.set(cacheKey, task);
-    }
-
-    return await task;
-  } catch {
-    // ignore
-  }
-  return "";
-};
-
 const handleFileChange = (event: Event) => {
   const file = (event.target as HTMLInputElement).files?.[0];
   if (!file) return;
   const reader = new FileReader();
   reader.onload = async (e: ProgressEvent<FileReader>) => {
-    let sunPanelItemsNeedingIcons: NavItem[] = [];
     try {
       const content = e.target?.result as string;
       let data = JSON.parse(content);
@@ -1318,12 +1243,6 @@ const handleFileChange = (event: Event) => {
           }),
         );
 
-        // SunPanel：先快速导入；图标在「导入成功」后于后台抓取并单独保存（见下方 POST 之后逻辑）
-        const allItems = newGroups.flatMap((g) => g.items);
-        sunPanelItemsNeedingIcons = allItems.filter(
-          (it) => !it.icon && !!(it.url || it.lanUrl),
-        );
-
         // Preserve existing config, append new groups
         const existingGroups = store.groups;
         const finalGroups = [...existingGroups, ...newGroups];
@@ -1347,17 +1266,9 @@ const handleFileChange = (event: Event) => {
       }
 
       isImporting.value = true;
-      importOverlayMode.value = "upload";
-      importProgress.value = 0;
-      importTotal.value = 0;
+      const headers = sessionJsonHeaders();
 
-      const token = localStorage.getItem("start-deck-token");
-      const headers: Record<string, string> = {
-        "Content-Type": "application/json",
-      };
-      if (token) headers["Authorization"] = `Bearer ${token}`;
-
-      const r = await fetch("/api/data/import", {
+      const r = await sessionFetch("/api/data/import", {
         method: "POST",
         headers,
         body: JSON.stringify(data),
@@ -1365,47 +1276,6 @@ const handleFileChange = (event: Event) => {
       if (!r.ok) throw new Error("import_post_failed:" + r.status);
 
       await store.fetchData();
-
-      if (sunPanelItemsNeedingIcons.length > 0) {
-        importOverlayMode.value = "icons";
-        importTotal.value = sunPanelItemsNeedingIcons.length;
-        importProgress.value = 0;
-
-        const batchSize = 10;
-        for (let i = 0; i < sunPanelItemsNeedingIcons.length; i += batchSize) {
-          const batch = sunPanelItemsNeedingIcons.slice(i, i + batchSize);
-          await Promise.all(
-            batch.map(async (refItem) => {
-              try {
-                const live = findNavItemByIdInStore(refItem.id);
-                if (!live || live.icon) return;
-                const targetUrl = live.url || live.lanUrl;
-                if (targetUrl) {
-                  const icon = await getAutoIcon(targetUrl);
-                  if (icon) live.icon = icon;
-                }
-              } finally {
-                importProgress.value++;
-              }
-            }),
-          );
-        }
-
-        const saveResult = await store.saveData(true, true);
-        if (saveResult !== "saved" && saveResult !== "no_change") {
-          console.warn(
-            "[SettingsModal][Import] post-icon saveData:",
-            saveResult,
-          );
-          if (saveResult === "conflict") {
-            void showFeedbackAlert("请刷新页面后再试。", {
-              title: "配置已导入，但补图标保存发生版本冲突",
-              tone: "warning",
-            });
-            return;
-          }
-        }
-      }
 
       notify("配置和资源已写入当前面板。", "success", "导入成功");
     } catch (err) {
@@ -1417,9 +1287,6 @@ const handleFileChange = (event: Event) => {
     } finally {
       if (fileInput.value) fileInput.value.value = "";
       isImporting.value = false;
-      importOverlayMode.value = "upload";
-      importProgress.value = 0;
-      importTotal.value = 0;
     }
   };
   reader.readAsText(file);
@@ -1431,13 +1298,9 @@ const handleReset = async () => {
   requestAuth(async () => {
     // 密码验证通过后直接执行
     try {
-      const token = localStorage.getItem("start-deck-token");
-      const headers: Record<string, string> = {
-        "Content-Type": "application/json",
-      };
-      if (token) headers["Authorization"] = `Bearer ${token}`;
+    const headers = sessionJsonHeaders();
 
-      const r = await fetch("/api/reset", {
+      const r = await sessionFetch("/api/reset", {
         method: "POST",
         headers,
       });
@@ -1462,13 +1325,9 @@ const handleSaveAsDefault = async () => {
   requestAuth(async () => {
     // 密码验证通过后直接执行
     try {
-      const token = localStorage.getItem("start-deck-token");
-      const headers: Record<string, string> = {
-        "Content-Type": "application/json",
-      };
-      if (token) headers["Authorization"] = `Bearer ${token}`;
+    const headers = sessionJsonHeaders();
 
-      const r = await fetch("/api/default/save", {
+      const r = await sessionFetch("/api/default/save", {
         method: "POST",
         headers,
       });
@@ -1636,19 +1495,8 @@ watch(activeTab, (val) => {
     :show="show"
     v-if="isImporting"
     :z-index="130"
-    :title="
-      importOverlayMode === 'upload' ? '正在导入配置…' : '正在后台抓取图标…'
-    "
-    :message="
-      importOverlayMode === 'upload'
-        ? '正在保存到服务器，请稍候（完成后若需补图标会继续显示进度）'
-        : '配置已保存。正在从网络获取网站图标，完成后会自动写入配置。若某个站点较慢会短暂停顿，属于正常现象。'
-    "
-    :progress="importProgress"
-    :total="importTotal"
-    :progress-label="
-      importTotal > 0 ? `图标进度：${importProgress} / ${importTotal}` : ''
-    "
+    title="正在导入配置…"
+    message="正在保存到服务器，请稍候。"
   />
 
   <AppSettingsShell
