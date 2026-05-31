@@ -17,9 +17,9 @@ describe("navItemAdapter", () => {
       expect(result.navItem).toMatchObject({
         title: "GitHub",
         url: "https://github.com",
-        isPublic: true,
         iconBackgroundMode: "auto",
       });
+      expect(result.navItem).not.toHaveProperty("isPublic");
       expect(result.navItem.icon).toContain("/api/site/icon?");
     }
   });

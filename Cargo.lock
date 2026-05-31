@@ -2980,7 +2980,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "startdeck-iconserver"
+name = "startdeck-metaserver"
 version = "0.1.0"
 dependencies = [
  "anyhow",
@@ -3025,7 +3025,7 @@ dependencies = [
  "sha2 0.10.9",
  "sqlx",
  "startdeck-core",
- "startdeck-iconserver",
+ "startdeck-metaserver",
  "tempfile",
  "thiserror",
  "tokio",

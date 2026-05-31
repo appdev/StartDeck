@@ -332,7 +332,7 @@ export const useItabPomodoroRuntime = (
   const secondaryControlVisible = computed(
     () => state.value.running.value || state.value.phase.value === "focus",
   );
-  const audioIconState = computed(() =>
+  const audioMetaState = computed(() =>
     state.value.audioEnabled.value ? "sound" : "muted",
   );
 
@@ -608,7 +608,7 @@ export const useItabPomodoroRuntime = (
     activeAudioUrl,
     audioBlocked,
     audioEnabled,
-    audioIconState,
+    audioMetaState,
     displayText,
     elapsedSeconds,
     phase,

@@ -120,7 +120,6 @@ export const createDefaultAiUsageWidget = (
     id: AI_USAGE_CATALOG_ID,
     type: AI_USAGE_WIDGET_TYPE,
     enable: true,
-    isPublic: false,
     colSpan: size.colSpan,
     rowSpan: size.rowSpan,
     w: size.colSpan,

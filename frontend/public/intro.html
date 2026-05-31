@@ -1428,7 +1428,7 @@
               <div class="hero-point">
                 <span class="point-dot" aria-hidden="true"></span>
                 <span
-                  >前端、Rust 主服务、独立 Icon Server 和 SQLite
+                  >前端、Rust 主服务、独立 MetaServer 和 SQLite
                   组成完整自托管链路。</span
                 >
               </div>
@@ -1513,7 +1513,7 @@
                 <li>站点、分组、搜索和组件用同一套网格组织。</li>
                 <li>公网/内网地址、客户端 IP 和延迟探测一起参与入口选择。</li>
                 <li>天气、日历、待办、AI 使用量、TAPD 和系统状态进入首页。</li>
-                <li>独立 Icon Server 负责默认图标、站点元数据和本地缓存。</li>
+                <li>独立 MetaServer 负责默认图标、站点元数据和本地缓存。</li>
               </ul>
             </article>
           </div>
@@ -1571,7 +1571,7 @@
                 <div>
                   <h3>补齐资产</h3>
                   <p>
-                    站点标题、描述、图标、上传图标和背景色由图标服务统一补齐。
+                    站点标题、描述、图标、上传图标和背景色由元数据服务统一补齐。
                   </p>
                 </div>
               </article>
@@ -1728,7 +1728,7 @@
                 <p>提供认证、配置、Docker、代理、天气、IP 与站点元数据接口。</p>
               </article>
               <article class="pipe-step reveal">
-                <strong>Icon Service</strong>
+                <strong>MetaServer</strong>
                 <h3>图标元数据</h3>
                 <p>独立处理内置图标库、站点图标识别、缓存和标题描述补齐。</p>
               </article>
@@ -1807,8 +1807,8 @@ ctx.proxy("/api/custom/status").then(updatePanel);</code></pre>
           <div class="section-head reveal">
             <h2>用 Docker 或 Debian/Ubuntu 脚本部署到自己的服务器。</h2>
             <p>
-              默认 Web 入口为 9001，图标服务为 9002。Docker
-              镜像内同时启动主服务与图标服务；Debian/Ubuntu 脚本适合非容器部署。
+              默认 Web 入口为 9001，元数据服务为 9002。Docker
+              镜像内同时启动主服务与元数据服务；Debian/Ubuntu 脚本适合非容器部署。
             </p>
           </div>
           <div class="deploy-grid">
@@ -1831,10 +1831,10 @@ ctx.proxy("/api/custom/status").then(updatePanel);</code></pre>
   -v /var/run/docker.sock:/var/run/docker.sock \
   -e PORT=9001 \
   -e STARTDECK_ADMIN_PASSWORD=change-me \
-  -e ICON_SERVICE_PORT=9002 \
-  -e ICON_SERVICE_DATA_DIR=/app/Data/icon-service \
-  -e ICON_SERVER_BASE_URL=http://127.0.0.1:9002 \
-  -e ICON_SERVER_TIMEOUT_MS=5000 \
+  -e META_SERVER_PORT=9002 \
+  -e META_SERVER_DATA_DIR=/app/Data/meta-service \
+  -e META_SERVER_BASE_URL=http://127.0.0.1:9002 \
+  -e META_SERVER_TIMEOUT_MS=5000 \
   apkdv/startdeck:latest</code></pre>
             </article>
 

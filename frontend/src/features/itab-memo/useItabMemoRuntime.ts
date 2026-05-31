@@ -56,9 +56,7 @@ export const useItabMemoRuntime = (
   const shouldUseSocket = computed(
     () => store.isLanModeInited && store.effectiveIsLan && store.isConnected,
   );
-  const canReadMemo = computed(
-    () => !authRequired || store.isLogged || widget.value.isPublic === true,
-  );
+  const canReadMemo = computed(() => !authRequired || !!widget.value);
   const canWriteMemo = computed(
     () => !authRequired || canWriteResource(store.isLogged),
   );

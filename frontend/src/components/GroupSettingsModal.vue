@@ -96,30 +96,6 @@ onBeforeUnmount(() => {
   flushGroupChanges();
 });
 
-const handleBatchPublish = () => {
-  if (!group.value) return;
-
-  const updates: Partial<NavGroup> = { isPublic: true };
-  if (group.value.items) {
-    const newItems = group.value.items.map((item) => ({
-      ...item,
-      isPublic: true,
-    }));
-    updates.items = newItems;
-  }
-  updateGroup(updates);
-};
-
-const handleBatchUnpublish = () => {
-  if (!group.value || !group.value.items) return;
-
-  const newItems = group.value.items.map((item) => ({
-    ...item,
-    isPublic: false,
-  }));
-  updateGroup({ isPublic: false, items: newItems });
-};
-
 // --- Color Helper ---
 const currentBgColor = computed(
   () => group.value?.cardBgColor || store.appConfig.cardBgColor || "#ffffff",
@@ -175,9 +151,6 @@ const layoutOptions = [
 ] as const;
 
 const groupItemCount = computed(() => group.value?.items?.length ?? 0);
-const groupVisibilityLabel = computed(() =>
-  group.value?.isPublic ? "访客可见" : "仅管理员",
-);
 const groupTitleValue = computed(() => group.value?.title || "未命名分组");
 const isLayoutCustomized = computed(
   () =>
@@ -228,15 +201,8 @@ const isMediaCustomized = computed(() => !!group.value?.backgroundImage);
           <p class="group-settings-kicker">Group Settings</p>
           <h3 class="group-settings-title">{{ groupTitleValue }}</h3>
           <p class="group-settings-summary">
-            {{ groupItemCount }} 个项目 · {{ groupVisibilityLabel }}
+            {{ groupItemCount }} 个项目
           </p>
-        </div>
-
-        <div class="group-settings-quick-actions" aria-label="分组公开操作">
-          <button type="button" @click="handleBatchPublish">公开</button>
-          <button type="button" class="is-danger" @click="handleBatchUnpublish">
-            不公开
-          </button>
         </div>
 
         <div class="group-settings-overview" aria-label="分组设置摘要">
@@ -261,7 +227,7 @@ const isMediaCustomized = computed(() => !!group.value?.backgroundImage);
             <p class="group-settings-section-kicker">分组设置</p>
             <h3 class="group-settings-section-title">常用设置</h3>
             <p class="group-settings-section-summary">
-              标题、公开状态、布局、样式和背景集中在同一页。
+              标题、布局、样式和背景集中在同一页。
             </p>
           </div>
           <div class="group-settings-status-badges" aria-label="自定义状态">
@@ -280,8 +246,8 @@ const isMediaCustomized = computed(() => !!group.value?.backgroundImage);
         <div class="group-settings-scroll">
           <div class="group-settings-stack">
             <AppSectionCard
-              title="基础与公开状态"
-              description="标题、标题颜色和访客可见状态会立即同步到首页分组。"
+              title="基础信息"
+              description="标题和标题颜色会立即同步到首页分组。"
               body-class="group-settings-field-stack"
             >
               <AppFieldRow label="分组标题" hint="显示在首页分组标题区。">
@@ -334,28 +300,6 @@ const isMediaCustomized = computed(() => !!group.value?.backgroundImage);
                 </template>
               </AppFieldRow>
 
-              <div class="group-settings-visibility-card">
-                <div>
-                  <span>当前状态</span>
-                  <strong>{{ groupVisibilityLabel }}</strong>
-                </div>
-                <div class="group-settings-action-row">
-                  <AppButton
-                    size="sm"
-                    variant="secondary"
-                    @click="handleBatchPublish"
-                  >
-                    公开
-                  </AppButton>
-                  <AppButton
-                    size="sm"
-                    variant="danger-soft"
-                    @click="handleBatchUnpublish"
-                  >
-                    不公开
-                  </AppButton>
-                </div>
-              </div>
             </AppSectionCard>
 
             <AppSectionCard

@@ -183,7 +183,6 @@ export function createDefaultWidgetList(isLoggedIn: boolean): WidgetConfig[] {
       id: "docker",
       type: "docker",
       enable: true,
-      isPublic: false,
       hideOnMobile: true,
       data: normalizeDockerWidgetData({}),
     }),
@@ -241,7 +240,6 @@ export function normalizeIncomingWidgets(
     keep.id = ITAB_WEATHER_CATALOG_ID;
     keep.type = ITAB_WEATHER_WIDGET_TYPE;
     keep.enable = keep.enable !== false;
-    keep.isPublic = keep.isPublic ?? true;
     applyItabWeatherSizeToWidget(keep, normalizedData.sizeKey);
     const withoutItabWeather = nextWidgets.filter(
       (widget) => widget.type !== ITAB_WEATHER_WIDGET_TYPE,
@@ -261,7 +259,6 @@ export function normalizeIncomingWidgets(
     keep.id = ITAB_TODO_CATALOG_ID;
     keep.type = ITAB_TODO_WIDGET_TYPE;
     keep.enable = keep.enable !== false;
-    keep.isPublic = keep.isPublic ?? true;
     applyItabTodoSizeToWidget(keep, normalizedData.sizeKey);
     const withoutItabTodo = nextWidgets.filter(
       (widget) => widget.type !== ITAB_TODO_WIDGET_TYPE,
@@ -281,7 +278,6 @@ export function normalizeIncomingWidgets(
     keep.id = ITAB_MEMO_CATALOG_ID;
     keep.type = ITAB_MEMO_WIDGET_TYPE;
     keep.enable = keep.enable !== false;
-    keep.isPublic = keep.isPublic ?? true;
     keep.data = normalizedData;
     applyItabMemoSizeToWidget(keep, normalizedData.sizeKey);
     const withoutItabMemo = nextWidgets.filter(
@@ -303,7 +299,6 @@ export function normalizeIncomingWidgets(
     keep.id = ITAB_CLOCK_CATALOG_ID;
     keep.type = ITAB_CLOCK_WIDGET_TYPE;
     keep.enable = keep.enable !== false;
-    keep.isPublic = keep.isPublic ?? true;
     keep.data = normalizedData;
     applyItabClockSizeToWidget(keep, normalizedData.sizeKey);
     const withoutItabClock = nextWidgets.filter(
@@ -325,7 +320,6 @@ export function normalizeIncomingWidgets(
     keep.id = ITAB_DAILY_ENGLISH_CATALOG_ID;
     keep.type = ITAB_DAILY_ENGLISH_WIDGET_TYPE;
     keep.enable = keep.enable !== false;
-    keep.isPublic = keep.isPublic ?? true;
     applyItabDailyEnglishSizeToWidget(keep, normalizedData.sizeKey);
     const withoutItabDailyEnglish = nextWidgets.filter(
       (widget) => widget.type !== ITAB_DAILY_ENGLISH_WIDGET_TYPE,
@@ -345,7 +339,6 @@ export function normalizeIncomingWidgets(
     keep.id = ITAB_POEM_CATALOG_ID;
     keep.type = ITAB_POEM_WIDGET_TYPE;
     keep.enable = keep.enable !== false;
-    keep.isPublic = keep.isPublic ?? true;
     applyItabPoemSizeToWidget(keep, normalizedData.sizeKey);
     const withoutItabPoem = nextWidgets.filter(
       (widget) => widget.type !== ITAB_POEM_WIDGET_TYPE,
@@ -366,7 +359,6 @@ export function normalizeIncomingWidgets(
     keep.id = ITAB_POMODORO_CATALOG_ID;
     keep.type = ITAB_POMODORO_WIDGET_TYPE;
     keep.enable = keep.enable !== false;
-    keep.isPublic = keep.isPublic ?? true;
     applyItabPomodoroSizeToWidget(keep, normalizedData.sizeKey);
     const withoutItabPomodoro = nextWidgets.filter(
       (widget) => widget.type !== ITAB_POMODORO_WIDGET_TYPE,
@@ -382,7 +374,6 @@ export function normalizeIncomingWidgets(
     const normalizedData = normalizeItabAnniversaryWidgetData(widget.data);
     widget.type = ITAB_ANNIVERSARY_WIDGET_TYPE;
     widget.enable = widget.enable !== false;
-    widget.isPublic = widget.isPublic ?? true;
     applyItabAnniversarySizeToWidget(widget, normalizedData.sizeKey);
   }
 
@@ -398,7 +389,6 @@ export function normalizeIncomingWidgets(
     keep.id = ITAB_MOVIE_CALENDAR_CATALOG_ID;
     keep.type = ITAB_MOVIE_CALENDAR_WIDGET_TYPE;
     keep.enable = keep.enable !== false;
-    keep.isPublic = keep.isPublic ?? true;
     applyItabMovieCalendarSizeToWidget(keep, normalizedData.sizeKey);
     const withoutItabMovieCalendar = nextWidgets.filter(
       (widget) => widget.type !== ITAB_MOVIE_CALENDAR_WIDGET_TYPE,
@@ -418,7 +408,6 @@ export function normalizeIncomingWidgets(
     keep.id = ITAB_IP_CATALOG_ID;
     keep.type = ITAB_IP_WIDGET_TYPE;
     keep.enable = keep.enable !== false;
-    keep.isPublic = keep.isPublic ?? true;
     applyItabIpSizeToWidget(keep, normalizedData.sizeKey);
     const withoutItabIp = nextWidgets.filter(
       (widget) => widget.type !== ITAB_IP_WIDGET_TYPE,
@@ -439,7 +428,6 @@ export function normalizeIncomingWidgets(
     keep.id = ITAB_CALENDAR_CATALOG_ID;
     keep.type = ITAB_CALENDAR_WIDGET_TYPE;
     keep.enable = keep.enable !== false;
-    keep.isPublic = keep.isPublic ?? true;
     applyItabCalendarSizeToWidget(keep, normalizedData.sizeKey);
     const withoutItabCalendar = nextWidgets.filter(
       (widget) => widget.type !== ITAB_CALENDAR_WIDGET_TYPE,
@@ -455,7 +443,6 @@ export function normalizeIncomingWidgets(
     const normalizedData = normalizeItabNumberUppercaseWidgetData(widget.data);
     widget.type = ITAB_NUMBER_UPPERCASE_WIDGET_TYPE;
     widget.enable = widget.enable !== false;
-    widget.isPublic = widget.isPublic ?? true;
     applyItabNumberUppercaseSizeToWidget(widget, normalizedData.sizeKey);
   }
 
@@ -466,7 +453,6 @@ export function normalizeIncomingWidgets(
     const normalizedData = normalizeItabFoodPickerWidgetData(widget.data);
     widget.type = ITAB_FOOD_PICKER_WIDGET_TYPE;
     widget.enable = widget.enable !== false;
-    widget.isPublic = widget.isPublic ?? true;
     applyItabFoodPickerSizeToWidget(widget, normalizedData.sizeKey);
   }
 
@@ -477,7 +463,6 @@ export function normalizeIncomingWidgets(
     const normalizedData = normalizeAiUsageWidgetData(widget.data);
     widget.type = AI_USAGE_WIDGET_TYPE;
     widget.enable = widget.enable !== false;
-    widget.isPublic = widget.isPublic ?? false;
     applyAiUsageSizeToWidget(widget, normalizedData.sizeKey);
   }
 
@@ -488,7 +473,6 @@ export function normalizeIncomingWidgets(
     const normalizedData = normalizeTapdDefectWidgetData(widget.data);
     widget.type = TAPD_DEFECTS_WIDGET_TYPE;
     widget.enable = widget.enable !== false;
-    widget.isPublic = widget.isPublic ?? false;
     applyTapdDefectSizeToWidget(widget, normalizedData.sizeKey);
   }
 
@@ -499,7 +483,6 @@ export function normalizeIncomingWidgets(
     const normalizedData = normalizeCustomCssWidgetData(widget.data);
     widget.type = "custom-css";
     widget.enable = widget.enable !== false;
-    widget.isPublic = widget.isPublic ?? true;
     applyCustomCssWidgetSizeToWidget(widget, normalizedData.sizeKey);
   }
 
@@ -536,14 +519,11 @@ export function normalizeIncomingWidgets(
     applyDockerWidgetSizeToWidget(finalDockerWidget, dockerSizeKey);
     if (typeof finalDockerWidget.enable !== "boolean")
       finalDockerWidget.enable = false;
-    if (typeof finalDockerWidget.isPublic !== "boolean")
-      finalDockerWidget.isPublic = true;
   } else if (isLoggedIn) {
     finalDockerWidget = withDefaultWidgetSize({
       id: "docker",
       type: "docker",
       enable: false,
-      isPublic: true,
       data: normalizeDockerWidgetData({}),
     });
   }
@@ -596,8 +576,6 @@ export function normalizeIncomingWidgets(
     );
     if (typeof finalSystemStatusWidget.enable !== "boolean")
       finalSystemStatusWidget.enable = false;
-    if (typeof finalSystemStatusWidget.isPublic !== "boolean")
-      finalSystemStatusWidget.isPublic = true;
   }
   if (finalSystemStatusWidget) {
     listWithoutSystemStatus.push(finalSystemStatusWidget);
@@ -606,7 +584,7 @@ export function normalizeIncomingWidgets(
   nextWidgets.length = 0;
   nextWidgets.push(...listWithoutSystemStatus);
 
-  // 游客数据已经由后端按公开权限过滤，不能补齐缺失默认组件，避免私有组件被重新显示。
+  // 游客数据来自后端默认模板；登录数据才补齐管理员默认组件。
   if (isLoggedIn) {
     for (const fallback of createDefaultWidgetList(true)) {
       if (!nextWidgets.some((widget) => widget.type === fallback.type)) {

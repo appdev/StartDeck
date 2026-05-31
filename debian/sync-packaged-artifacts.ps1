@@ -1,19 +1,19 @@
 # 将「当前仓库」里刚构建的产物同步到本目录（Debian 离线包 / deploy.sh 所用布局）。
 # Rust 默认资源源头位于 crate resources 目录；Data/public 仅作为前端构建输出兼容路径。
 # 用法（在仓库根目录）:  powershell -ExecutionPolicy Bypass -File debian/sync-packaged-artifacts.ps1
-# 可选: 跳过前端构建 -SkipFrontend   跳过后端构建 -SkipBackend   跳过图标服务 -SkipIconService
+# 可选: 跳过前端构建 -SkipFrontend   跳过后端构建 -SkipBackend   跳过元数据服务 -SkipMetaServer
 
 param(
     [switch] $SkipFrontend,
     [switch] $SkipBackend,
-    [switch] $SkipIconService
+    [switch] $SkipMetaServer
 )
 
 $ErrorActionPreference = "Stop"
 $debianRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 $repoRoot = Split-Path -Parent $debianRoot
 
-if ((-not $SkipBackend) -or (-not $SkipIconService)) {
+if ((-not $SkipBackend) -or (-not $SkipMetaServer)) {
     Push-Location $repoRoot
     try {
         cargo build --release --locked --workspace --bins
@@ -26,8 +26,8 @@ if (-not $SkipBackend) {
     Copy-Item -Force (Join-Path $repoRoot "target\release\startdeck-server") (Join-Path $debianRoot "startdeck-server")
 }
 
-if (-not $SkipIconService) {
-    Copy-Item -Force (Join-Path $repoRoot "target\release\startdeck-iconserver") (Join-Path $debianRoot "startdeck-iconserver")
+if (-not $SkipMetaServer) {
+    Copy-Item -Force (Join-Path $repoRoot "target\release\startdeck-metaserver") (Join-Path $debianRoot "startdeck-metaserver")
 }
 
 if (-not $SkipFrontend) {
@@ -61,13 +61,13 @@ New-Item -ItemType Directory -Force -Path $dstServerResources | Out-Null
 robocopy $srcServerResources $dstServerResources /MIR /XF .DS_Store /NFL /NDL /NJH /NJS /nc /ns /np | Out-Null
 if ($LASTEXITCODE -ge 8) { exit $LASTEXITCODE }
 
-$srcIconData = Join-Path $repoRoot "rust\crates\startdeck-iconserver\resources\data"
-$dstIconData = Join-Path $debianRoot "startdeck-iconserver\resources\data"
-if (-not (Test-Path $srcIconData)) {
-    Write-Error "缺少 $srcIconData。"
+$srcMetaData = Join-Path $repoRoot "rust\crates\startdeck-metaserver\resources\data"
+$dstMetaData = Join-Path $debianRoot "startdeck-metaserver\resources\data"
+if (-not (Test-Path $srcMetaData)) {
+    Write-Error "缺少 $srcMetaData。"
 }
-New-Item -ItemType Directory -Force -Path $dstIconData | Out-Null
-robocopy $srcIconData $dstIconData /MIR /XD .gocache /XF .DS_Store /NFL /NDL /NJH /NJS /nc /ns /np | Out-Null
+New-Item -ItemType Directory -Force -Path $dstMetaData | Out-Null
+robocopy $srcMetaData $dstMetaData /MIR /XD .gocache /XF .DS_Store /NFL /NDL /NJH /NJS /nc /ns /np | Out-Null
 if ($LASTEXITCODE -ge 8) { exit $LASTEXITCODE }
 
-Write-Host "已同步: startdeck-server + startdeck-iconserver + Data/public + Rust resources -> debian/"
+Write-Host "已同步: startdeck-server + startdeck-metaserver + Data/public + Rust resources -> debian/"

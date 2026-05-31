@@ -24,7 +24,6 @@ const fallbackWidget = computed<WidgetConfig>(
       id: "memo",
       type: "itab-memo-04",
       enable: false,
-      isPublic: true,
     },
 );
 const runtime = useItabMemoRuntime(

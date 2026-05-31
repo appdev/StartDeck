@@ -29,7 +29,7 @@ export default defineConfig(({ mode }) => {
   const appBase = process.env.VITE_APP_BASE_PATH?.trim() || "./";
   const startdeckVersion = readStartdeckServerVersion();
   // 注意：
-  // 1. frontend/public 是前端静态素材源目录；默认图标库由 Icon Server 维护。
+  // 1. frontend/public 是前端静态素材源目录；默认图标库由 MetaServer 维护。
   // 2. Data/public 是本地运行时构建输出目录，会被 emptyOutDir 清空后重写。
   // 3. 不要再把 Data/public 当作素材源目录，否则执行构建时素材会被误覆盖。
   const runtimePublicDirAbs = fileURLToPath(

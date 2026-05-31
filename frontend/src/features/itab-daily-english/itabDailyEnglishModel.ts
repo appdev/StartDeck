@@ -45,7 +45,6 @@ export const createDefaultItabDailyEnglishWidget = (): WidgetConfig => {
     id: ITAB_DAILY_ENGLISH_CATALOG_ID,
     type: ITAB_DAILY_ENGLISH_WIDGET_TYPE,
     enable: true,
-    isPublic: true,
     colSpan: size.colSpan,
     rowSpan: size.rowSpan,
     w: size.colSpan,

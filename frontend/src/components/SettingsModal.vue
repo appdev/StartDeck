@@ -1312,7 +1312,6 @@ const handleFileChange = (event: Event) => {
                   description1: c.description || "",
                   // SunPanel: 2 usually means new tab
                   openInNewTab: c.openMethod === 2,
-                  isPublic: true,
                 };
               },
             ),
@@ -1338,7 +1337,6 @@ const handleFileChange = (event: Event) => {
       } else if ((!data.groups || data.groups.length === 0) && data.items) {
         const items = data.items.map((item: NavItem) => ({
           ...item,
-          isPublic: item.isPublic ?? true,
         }));
         data.groups = [
           { id: Date.now().toString(), title: "默认分组", items: items },
@@ -2429,7 +2427,7 @@ watch(activeTab, (val) => {
           >
             <AppFieldRow
               label="显示访客统计"
-              hint="为公开页脚补充访问统计信息。"
+              hint="为页脚补充访问统计信息。"
               align="center"
             >
               <template #control>
@@ -3039,7 +3037,7 @@ watch(activeTab, (val) => {
               <div>
                 <strong>站点元数据</strong>
                 <span
-                  >图标服务抓取网站标题、描述和图标，并与卡片编辑联动。</span
+                  >元数据服务抓取网站标题、描述和图标，并与卡片编辑联动。</span
                 >
               </div>
             </div>
@@ -3048,7 +3046,7 @@ watch(activeTab, (val) => {
           <AppSectionCard
             class="settings-system-card"
             title="技术组成"
-            description="前端、后端、图标服务和部署路径保持解耦。"
+            description="前端、后端、元数据服务和部署路径保持解耦。"
           >
             <div class="settings-about-chip-row">
               <span>Vue 3</span>
@@ -3057,12 +3055,12 @@ watch(activeTab, (val) => {
               <span>Vite</span>
               <span>Rust</span>
               <span>SQLite</span>
-              <span>Icon Service</span>
+              <span>MetaServer</span>
               <span>Docker</span>
               <span>Debian</span>
             </div>
             <p class="settings-system-note">
-              前端负责仪表盘交互和组件配置；后端负责本地数据持久化、系统能力和文件接口；图标元数据服务独立运行，便于在
+              前端负责仪表盘交互和组件配置；后端负责本地数据持久化、系统能力和文件接口；站点元数据服务独立运行，便于在
               Docker、Debian 或本地开发环境中组合部署。
             </p>
           </AppSectionCard>

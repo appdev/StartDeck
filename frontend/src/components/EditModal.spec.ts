@@ -8,6 +8,19 @@ import type { NavItem } from "@/types";
 
 const editModalSource = readFileSync("src/components/EditModal.vue", "utf8");
 
+class FakeImage {
+  onload: (() => void) | null = null;
+  onerror: (() => void) | null = null;
+  naturalWidth = 16;
+  naturalHeight = 16;
+  width = 16;
+  height = 16;
+
+  set src(_value: string) {
+    queueMicrotask(() => this.onload?.());
+  }
+}
+
 const mountEditModal = (data: NavItem, onSave = vi.fn(async () => undefined)) =>
   mount(EditModal, {
     attachTo: document.body,
@@ -49,7 +62,12 @@ const mountEditModal = (data: NavItem, onSave = vi.fn(async () => undefined)) =>
             '<div data-testid="icon-shape" :data-icon="icon" :data-size="size" :data-bg-class="bgClass" :data-img-scale="imgScale" :data-shape="shape">{{ icon }}</div>',
         },
         IconUploader: true,
-        IconSelectionModal: true,
+        IconSelectionModal: {
+          name: "IconSelectionModal",
+          props: ["show", "candidates", "title", "source"],
+          emits: ["select", "update:show", "cancelLink"],
+          template: '<div data-testid="icon-selection-modal-stub"></div>',
+        },
         VueCropper: true,
         transition: false,
       },
@@ -64,6 +82,7 @@ describe("EditModal", () => {
     wrapper = null;
     document.body.innerHTML = "";
     vi.restoreAllMocks();
+    vi.unstubAllGlobals();
   });
 
   it("renders the edit-card shell for a link card with backup URLs", async () => {
@@ -153,6 +172,89 @@ describe("EditModal", () => {
       'const cardPreviewIcon = computed(() => form.value.icon || "");',
     );
     expect(editModalSource).toContain(':icon="cardPreviewIcon"');
+  });
+
+  it("keeps a clicked candidate icon when the picker emits a URL string", async () => {
+    wrapper = mountEditModal({
+      id: "link-1",
+      title: "Candidate",
+      url: "https://example.com",
+      icon: "icons/current.svg",
+      isPublic: true,
+    });
+    await wrapper.vm.$nextTick();
+
+    const candidateIcon = "/api/site/icon?url=https%3A%2F%2Fexample.com";
+    wrapper
+      .findComponent({ name: "IconSelectionModal" })
+      .vm.$emit("select", candidateIcon);
+    await wrapper.vm.$nextTick();
+
+    const iconInput = document.body.querySelector<HTMLInputElement>(
+      ".edit-card-icon-url-input",
+    );
+    const previewIcon = document.body.querySelector<HTMLElement>(
+      ".edit-card-preview-card .edit-card-preview-icon [data-testid='icon-shape']",
+    );
+
+    expect(iconInput?.value).toBe(candidateIcon);
+    expect(previewIcon?.dataset.icon).toBe(candidateIcon);
+  });
+
+  it("automatically applies the first fetched icon and title from metadata", async () => {
+    vi.stubGlobal("Image", FakeImage);
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => ({
+        ok: true,
+        json: async () => ({
+          code: 200,
+          msg: "ok",
+          data: {
+            url: "https://example.com",
+            title: "Fetched Example",
+            icon: "/api/site/icon?url=https%3A%2F%2Fexample.com",
+            description: "Preview only",
+            backgroundColor: "#111827",
+            fetchedAt: "2026-05-31T00:00:00Z",
+          },
+        }),
+      })),
+    );
+    wrapper = mountEditModal({
+      id: "link-1",
+      title: "Old title",
+      url: "https://example.com",
+      icon: "icons/current.svg",
+      isPublic: true,
+    });
+    await wrapper.vm.$nextTick();
+
+    const autoButton = Array.from(
+      document.body.querySelectorAll<HTMLButtonElement>("button"),
+    ).find((button) => button.textContent?.includes("自动获取"));
+    expect(autoButton).not.toBeNull();
+    autoButton?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+
+    await vi.waitFor(() => {
+      const titleInput =
+        document.body.querySelector<HTMLInputElement>("#edit-card-title");
+      const iconInput = document.body.querySelector<HTMLInputElement>(
+        ".edit-card-icon-url-input",
+      );
+      expect(titleInput?.value).toBe("Fetched Example");
+      expect(iconInput?.value).toBe(
+        "/api/site/icon?url=https%3A%2F%2Fexample.com",
+      );
+    });
+
+    const previewIcon = document.body.querySelector<HTMLElement>(
+      ".edit-card-preview-card .edit-card-preview-icon [data-testid='icon-shape']",
+    );
+    expect(previewIcon?.dataset.icon).toBe(
+      "/api/site/icon?url=https%3A%2F%2Fexample.com",
+    );
+    expect(document.body.textContent).toContain("已获取标题、图标、描述");
   });
 
   it("places links before base info and keeps extra addresses collapsed by default", async () => {
@@ -247,7 +349,7 @@ describe("EditModal", () => {
       document.body.querySelector(".edit-card-section-advanced")?.textContent ||
       "";
     expect(basicText).toContain("标题");
-    expect(basicText).toContain("公开");
+    expect(basicText).not.toContain("公开");
     expect(basicText).not.toContain("分组");
     expect(advancedText).toContain("分组");
     expect(editModalSource).toContain("groupId: localGroupId.value");
@@ -257,6 +359,65 @@ describe("EditModal", () => {
     );
     expect(editModalSource).toContain("item: { ...form.value");
     expect(editModalSource).toContain("groupId: localGroupId.value");
+  });
+
+  it("closes a dirty form directly from the window close control", async () => {
+    wrapper = mountEditModal({
+      id: "link-1",
+      title: "Link Card",
+      url: "https://example.com",
+      icon: "https://example.com/favicon.ico",
+      isPublic: true,
+    });
+    await wrapper.vm.$nextTick();
+
+    const titleInput =
+      document.body.querySelector<HTMLInputElement>("#edit-card-title");
+    expect(titleInput).not.toBeNull();
+    titleInput!.value = "Changed";
+    titleInput!.dispatchEvent(new Event("input", { bubbles: true }));
+    await wrapper.vm.$nextTick();
+
+    const closeButton = document.body.querySelector<HTMLButtonElement>(
+      '[aria-label="关闭编辑卡片"]',
+    );
+    expect(closeButton).not.toBeNull();
+    closeButton?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    await wrapper.vm.$nextTick();
+
+    expect(wrapper.emitted("update:show")).toEqual([[false]]);
+    expect(document.body.textContent).not.toContain("放弃未保存的修改？");
+    expect(editModalSource).not.toContain("ConfirmDialog");
+    expect(editModalSource).not.toContain("useDirtyStateGuard");
+    expect(editModalSource).not.toContain("放弃未保存的修改？");
+  });
+
+  it("closes a dirty form directly from the footer cancel action", async () => {
+    wrapper = mountEditModal({
+      id: "link-1",
+      title: "Link Card",
+      url: "https://example.com",
+      icon: "https://example.com/favicon.ico",
+      isPublic: true,
+    });
+    await wrapper.vm.$nextTick();
+
+    const titleInput =
+      document.body.querySelector<HTMLInputElement>("#edit-card-title");
+    expect(titleInput).not.toBeNull();
+    titleInput!.value = "Changed";
+    titleInput!.dispatchEvent(new Event("input", { bubbles: true }));
+    await wrapper.vm.$nextTick();
+
+    const cancelButton = Array.from(
+      document.body.querySelectorAll<HTMLButtonElement>("button"),
+    ).find((button) => button.textContent?.trim() === "取消");
+    expect(cancelButton).not.toBeNull();
+    cancelButton?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    await wrapper.vm.$nextTick();
+
+    expect(wrapper.emitted("update:show")).toEqual([[false]]);
+    expect(document.body.textContent).not.toContain("放弃未保存的修改？");
   });
 
   it("keeps shared window control dots out of edit-card header button theming", () => {

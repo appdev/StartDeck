@@ -158,11 +158,6 @@ export const useSyncStore = defineStore("sync", () => {
     if (data.isGuest === false) return "auth";
     if (auth.isLogged) return "auth";
     if (data.username && data.version !== undefined) return "auth";
-    if (Array.isArray(data.widgets)) {
-      const widgets = data.widgets as WidgetConfig[];
-      const allPublic = widgets.every((w) => w.isPublic === true);
-      if (allPublic && widgets.length > 0) return "guest";
-    }
     return "auth";
   };
 

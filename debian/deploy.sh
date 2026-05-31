@@ -15,12 +15,12 @@ IFS=$'\n\t'
 APP_NAME="startdeck"
 APP_USER="startdeck"
 SERVICE_NAME="startdeck"
-ICON_SERVICE_NAME="startdeck-iconserver"
-ICON_SERVICE_BINARY="startdeck-iconserver"
+META_SERVER_NAME="startdeck-metaserver"
+META_SERVER_BINARY="startdeck-metaserver"
 BASE_DIR="$(cd "$(dirname "$0")" && pwd)"
 BIN_SRC="${BASE_DIR}/startdeck"
 BIN_SRC_ALT="${BASE_DIR}/startdeck-server"
-ICON_BIN_SRC="${BASE_DIR}/${ICON_SERVICE_BINARY}"
+META_BIN_SRC="${BASE_DIR}/${META_SERVER_BINARY}"
 DIST_SRC="${BASE_DIR}/dist"
 DIST_SRC_ALT="${BASE_DIR}/Data/public"
 
@@ -35,8 +35,8 @@ DATA_DIR="${SERVER_DIR}/data"
 PC_DIR="${SERVER_DIR}/PC"
 APP_DIR="${SERVER_DIR}/APP"
 DOC_DIR="${SERVER_DIR}/doc"
-ICON_SERVICE_DIR="${INSTALL_DIR}/icon-service"
-ICON_DATA_DIR="${ICON_SERVICE_DIR}/data"
+META_SERVER_DIR="${INSTALL_DIR}/meta-service"
+META_DATA_DIR="${META_SERVER_DIR}/data"
 LOG_DIR="/var/log/${APP_NAME}"
 CONFIG_DIR="/etc/${APP_NAME}"
 CONFIG_FILE="${CONFIG_DIR}/${APP_NAME}.env"
@@ -45,7 +45,7 @@ NGINX_LINK="/etc/nginx/sites-enabled/${APP_NAME}"
 
 # 系统配置
 SYSTEMD_SERVICE="/etc/systemd/system/${APP_NAME}.service"
-ICON_SYSTEMD_SERVICE="/etc/systemd/system/${ICON_SERVICE_NAME}.service"
+META_SYSTEMD_SERVICE="/etc/systemd/system/${META_SERVER_NAME}.service"
 
 COLOR_GREEN="\033[0;32m"
 COLOR_RED="\033[0;31m"
@@ -119,7 +119,7 @@ require_free_port() {
   # 检查端口是否被占用，如果是被我们要重启的服务占用则忽略
   if is_port_in_use "${port}"; then
     # 简单的检查，如果服务正在运行，端口占用可能是正常的
-    if systemctl is-active --quiet "${SERVICE_NAME}" || systemctl is-active --quiet "${ICON_SERVICE_NAME}" || systemctl is-active --quiet nginx; then
+    if systemctl is-active --quiet "${SERVICE_NAME}" || systemctl is-active --quiet "${META_SERVER_NAME}" || systemctl is-active --quiet nginx; then
         log_warn "${name} 端口 ${port} 正在使用中，假设是现有服务占用"
     else
         fail_with_tip "${name} 端口 ${port} 已被占用且服务未运行" "可使用: lsof -iTCP:${port} -sTCP:LISTEN 查看占用进程"
@@ -161,10 +161,10 @@ create_user() {
 load_existing_config() {
   EXISTING_FRONTEND_PORT=""
   EXISTING_BACKEND_PORT=""
-  EXISTING_ICON_SERVER_PORT=""
+  EXISTING_META_SERVER_PORT=""
   if [ -f "${CONFIG_FILE}" ]; then
     EXISTING_BACKEND_PORT=$(grep '^PORT=' "${CONFIG_FILE}" | cut -d= -f2)
-    EXISTING_ICON_SERVER_PORT=$(grep '^ICON_SERVER_PORT=' "${CONFIG_FILE}" | cut -d= -f2)
+    EXISTING_META_SERVER_PORT=$(grep '^META_SERVER_PORT=' "${CONFIG_FILE}" | cut -d= -f2)
     # 尝试从 nginx 配置读取前端端口
     if [ -f "${NGINX_CONF}" ]; then
         EXISTING_FRONTEND_PORT=$(grep 'listen' "${NGINX_CONF}" | head -n1 | awk '{print $2}' | tr -d ';')
@@ -176,8 +176,8 @@ write_systemd_service() {
   cat > "${SYSTEMD_SERVICE}" <<EOF
 [Unit]
 Description=StartDeck Rust Service
-Wants=${ICON_SERVICE_NAME}.service
-After=network.target ${ICON_SERVICE_NAME}.service
+Wants=${META_SERVER_NAME}.service
+After=network.target ${META_SERVER_NAME}.service
 
 [Service]
 Type=simple
@@ -203,34 +203,34 @@ EOF
   systemctl daemon-reload
 }
 
-ensure_icon_service_data_dirs() {
-  mkdir -p "${ICON_SERVICE_DIR}" "${ICON_DATA_DIR}/icons" "${ICON_DATA_DIR}/cache"
-  chown -R "${APP_USER}:${APP_USER}" "${ICON_SERVICE_DIR}"
+ensure_meta_server_data_dirs() {
+  mkdir -p "${META_SERVER_DIR}" "${META_DATA_DIR}/icons" "${META_DATA_DIR}/cache"
+  chown -R "${APP_USER}:${APP_USER}" "${META_SERVER_DIR}"
 }
 
-write_icon_systemd_service() {
-  cat > "${ICON_SYSTEMD_SERVICE}" <<EOF
+write_meta_systemd_service() {
+  cat > "${META_SYSTEMD_SERVICE}" <<EOF
 [Unit]
-Description=StartDeck Icon Service
+Description=StartDeck MetaServer
 After=network.target
 
 [Service]
 Type=simple
 User=${APP_USER}
 Group=${APP_USER}
-WorkingDirectory=${ICON_SERVICE_DIR}
+WorkingDirectory=${META_SERVER_DIR}
 EnvironmentFile=-${CONFIG_FILE}
 Environment=BASE_DIR=${INSTALL_DIR}
-Environment=ICON_SERVICE_PORT=${ICON_SERVER_PORT}
-Environment=ICON_SERVICE_DATA_DIR=${ICON_DATA_DIR}
-ExecStart=${BIN_DIR}/${ICON_SERVICE_BINARY}
+Environment=META_SERVER_PORT=${META_SERVER_PORT}
+Environment=META_SERVER_DATA_DIR=${META_DATA_DIR}
+ExecStart=${BIN_DIR}/${META_SERVER_BINARY}
 Restart=on-failure
 RestartSec=5
 LimitNOFILE=65535
 
 StandardOutput=journal
 StandardError=journal
-SyslogIdentifier=${ICON_SERVICE_NAME}
+SyslogIdentifier=${META_SERVER_NAME}
 
 [Install]
 WantedBy=multi-user.target
@@ -306,11 +306,10 @@ APP_DIR=${APP_DIR}
 STARTDECK_DEFAULT_TEMPLATE_FILE=${DATA_DIR}/default.json
 FRONTEND_PORT=${FRONTEND_PORT}
 BACKEND_PORT=${BACKEND_PORT}
-ICON_SERVER_PORT=${ICON_SERVER_PORT}
-ICON_SERVICE_PORT=${ICON_SERVER_PORT}
-ICON_SERVICE_DATA_DIR=${ICON_DATA_DIR}
-ICON_SERVER_BASE_URL=http://127.0.0.1:${ICON_SERVER_PORT}
-ICON_SERVER_TIMEOUT_MS=5000
+META_SERVER_PORT=${META_SERVER_PORT}
+META_SERVER_DATA_DIR=${META_DATA_DIR}
+META_SERVER_BASE_URL=http://127.0.0.1:${META_SERVER_PORT}
+META_SERVER_TIMEOUT_MS=5000
 EOF
   # 配置文件权限
   chown root:root "${CONFIG_FILE}"
@@ -319,7 +318,7 @@ EOF
 
 verify_deploy() {
   systemctl is-active --quiet "${SERVICE_NAME}" || fail_with_tip "startdeck 服务未处于运行状态"
-  systemctl is-active --quiet "${ICON_SERVICE_NAME}" || fail_with_tip "图标服务未处于运行状态"
+  systemctl is-active --quiet "${META_SERVER_NAME}" || fail_with_tip "元数据服务未处于运行状态"
   systemctl is-active --quiet nginx || fail_with_tip "nginx 服务未处于运行状态"
   
   # 增加等待时间，确保服务有足够时间启动
@@ -347,11 +346,11 @@ verify_deploy() {
     fi
   fi
 
-  if curl -fsSL --max-time 5 "http://127.0.0.1:${ICON_SERVER_PORT}/healthz" >/dev/null 2>&1; then
-    log_info "图标服务健康检查通过"
+  if curl -fsSL --max-time 5 "http://127.0.0.1:${META_SERVER_PORT}/healthz" >/dev/null 2>&1; then
+    log_info "元数据服务健康检查通过"
   else
-    log_warn "图标服务健康检查失败: http://127.0.0.1:${ICON_SERVER_PORT}/healthz"
-    journalctl -u "${ICON_SERVICE_NAME}" -n 20 --no-pager || true
+    log_warn "元数据服务健康检查失败: http://127.0.0.1:${META_SERVER_PORT}/healthz"
+    journalctl -u "${META_SERVER_NAME}" -n 20 --no-pager || true
   fi
   
   if ! ss -ltnH 2>/dev/null | awk '{print $4}' | grep -Eq "[:.]${FRONTEND_PORT}$"; then
@@ -400,22 +399,22 @@ if [ -z "${BACKEND_PORT}" ]; then
   BACKEND_PORT="$(prompt_port "后端服务端口 (Internal)" "9001" "${EXISTING_BACKEND_PORT}")"
 fi
 
-ICON_SERVER_PORT="${STARTDECK_ICON_SERVER_PORT:-}"
-if [ -z "${ICON_SERVER_PORT}" ]; then
-  ICON_SERVER_PORT="$(prompt_port "图标服务端口 (Internal)" "9002" "${EXISTING_ICON_SERVER_PORT}")"
+META_SERVER_PORT="${STARTDECK_META_SERVER_PORT:-}"
+if [ -z "${META_SERVER_PORT}" ]; then
+  META_SERVER_PORT="$(prompt_port "元数据服务端口 (Internal)" "9002" "${EXISTING_META_SERVER_PORT}")"
 fi
 
-if ! validate_port "${FRONTEND_PORT}" || ! validate_port "${BACKEND_PORT}" || ! validate_port "${ICON_SERVER_PORT}"; then
+if ! validate_port "${FRONTEND_PORT}" || ! validate_port "${BACKEND_PORT}" || ! validate_port "${META_SERVER_PORT}"; then
   fail_with_tip "端口非法"
 fi
 
-if [ "${FRONTEND_PORT}" -eq "${BACKEND_PORT}" ] || [ "${FRONTEND_PORT}" -eq "${ICON_SERVER_PORT}" ] || [ "${BACKEND_PORT}" -eq "${ICON_SERVER_PORT}" ]; then
-  fail_with_tip "前端、后端和图标服务端口不能相同"
+if [ "${FRONTEND_PORT}" -eq "${BACKEND_PORT}" ] || [ "${FRONTEND_PORT}" -eq "${META_SERVER_PORT}" ] || [ "${BACKEND_PORT}" -eq "${META_SERVER_PORT}" ]; then
+  fail_with_tip "前端、后端和元数据服务端口不能相同"
 fi
 
 require_free_port "${FRONTEND_PORT}" "前端"
 require_free_port "${BACKEND_PORT}" "后端"
-require_free_port "${ICON_SERVER_PORT}" "图标服务"
+require_free_port "${META_SERVER_PORT}" "元数据服务"
 
 log_info "检查 Nginx..."
 check_nginx
@@ -427,7 +426,7 @@ log_info "创建用户和组..."
 create_user
 
 log_info "准备目录结构..."
-mkdir -p "${BIN_DIR}" "${STATIC_DIR}" "${PUBLIC_DIR}" "${CACHE_DIR}" "${LOG_DIR}" "${CONFIG_DIR}" "${ICON_SERVICE_DIR}" "${ICON_DATA_DIR}"
+mkdir -p "${BIN_DIR}" "${STATIC_DIR}" "${PUBLIC_DIR}" "${CACHE_DIR}" "${LOG_DIR}" "${CONFIG_DIR}" "${META_SERVER_DIR}" "${META_DATA_DIR}"
 mkdir -p "${DATA_DIR}" "${PC_DIR}" "${APP_DIR}" "${DOC_DIR}"
 
 # 尝试从 Rust crate 资源、离线包运行时目录或源码目录初始化数据 (仅当目标为空时)
@@ -462,40 +461,37 @@ init_data_dir() {
   fi
 }
 
-init_icon_service_data() {
+init_meta_server_data() {
   local src_path=""
   for candidate in \
-    "${BASE_DIR}/startdeck-iconserver/resources/data" \
-    "${BASE_DIR}/rust/crates/startdeck-iconserver/resources/data" \
-    "${BASE_DIR}/icon-service/data" \
-    "${SOURCE_ROOT}/rust/crates/startdeck-iconserver/resources/data" \
-    "${SOURCE_ROOT}/startdeck-iconserver/resources/data" \
-    "${SOURCE_ROOT}/icon-service/data"; do
+    "${BASE_DIR}/startdeck-metaserver/resources/data" \
+    "${BASE_DIR}/rust/crates/startdeck-metaserver/resources/data" \
+    "${BASE_DIR}/meta-service/data" \
+    "${SOURCE_ROOT}/rust/crates/startdeck-metaserver/resources/data" \
+    "${SOURCE_ROOT}/startdeck-metaserver/resources/data" \
+    "${SOURCE_ROOT}/meta-service/data"; do
     if [ -d "${candidate}" ]; then
       src_path="${candidate}"
       break
     fi
   done
 
-  mkdir -p "${ICON_DATA_DIR}/icons" "${ICON_DATA_DIR}/cache"
+  mkdir -p "${META_DATA_DIR}/icons" "${META_DATA_DIR}/cache"
 
   if [ -n "${src_path}" ]; then
-    if [ ! -f "${ICON_DATA_DIR}/seed-data.json" ] && [ -f "${src_path}/seed-data.json" ]; then
-      log_info "初始化 icon-service seed-data.json ..."
-      cp -f "${src_path}/seed-data.json" "${ICON_DATA_DIR}/seed-data.json"
+    if [ ! -f "${META_DATA_DIR}/seed-data.json" ] && [ -f "${src_path}/seed-data.json" ]; then
+      log_info "初始化 meta-service seed-data.json ..."
+      cp -f "${src_path}/seed-data.json" "${META_DATA_DIR}/seed-data.json"
     fi
-    if [ ! -f "${ICON_DATA_DIR}/cache.json" ] && [ -f "${src_path}/cache.json" ]; then
-      cp -f "${src_path}/cache.json" "${ICON_DATA_DIR}/cache.json"
+    if [ -d "${src_path}/icons" ] && [ -z "$(ls -A "${META_DATA_DIR}/icons" 2>/dev/null)" ]; then
+      log_info "初始化 meta-service 种子图标 ..."
+      cp -a "${src_path}/icons/." "${META_DATA_DIR}/icons/"
     fi
-    if [ -d "${src_path}/icons" ] && [ -z "$(ls -A "${ICON_DATA_DIR}/icons" 2>/dev/null)" ]; then
-      log_info "初始化 icon-service 种子图标 ..."
-      cp -a "${src_path}/icons/." "${ICON_DATA_DIR}/icons/"
-    fi
-    if [ -d "${src_path}/cache" ] && [ -z "$(ls -A "${ICON_DATA_DIR}/cache" 2>/dev/null)" ]; then
-      cp -a "${src_path}/cache/." "${ICON_DATA_DIR}/cache/"
+    if [ -d "${src_path}/cache" ] && [ -z "$(ls -A "${META_DATA_DIR}/cache" 2>/dev/null)" ]; then
+      cp -a "${src_path}/cache/." "${META_DATA_DIR}/cache/"
     fi
   else
-    log_warn "未找到 Rust 图标服务资源目录，图标服务将以空种子数据启动"
+    log_warn "未找到 Rust 元数据服务资源目录，元数据服务将以空种子数据启动"
   fi
 }
 
@@ -503,7 +499,7 @@ init_data_dir "data" "${DATA_DIR}"
 init_data_dir "PC" "${PC_DIR}"
 init_data_dir "APP" "${APP_DIR}"
 init_data_dir "doc" "${DOC_DIR}"
-init_icon_service_data
+init_meta_server_data
 
 log_info "检查源文件..."
 if [ ! -f "${BIN_SRC}" ]; then
@@ -522,17 +518,17 @@ if [ ! -d "${DIST_SRC}" ]; then
   fi
 fi
 
-if [ ! -f "${ICON_BIN_SRC}" ]; then
-  fail_with_tip "未找到图标服务二进制文件: ${ICON_BIN_SRC}" "请先执行 debian/sync-packaged-artifacts.ps1 或确认 release 包包含 ${ICON_SERVICE_BINARY}"
+if [ ! -f "${META_BIN_SRC}" ]; then
+  fail_with_tip "未找到元数据服务二进制文件: ${META_BIN_SRC}" "请先执行 debian/sync-packaged-artifacts.ps1 或确认 release 包包含 ${META_SERVER_BINARY}"
 fi
 
 log_info "部署文件..."
 systemctl stop "${SERVICE_NAME}" >/dev/null 2>&1 || true
-systemctl stop "${ICON_SERVICE_NAME}" >/dev/null 2>&1 || true
+systemctl stop "${META_SERVER_NAME}" >/dev/null 2>&1 || true
 
 # 复制二进制
 install -m 755 "${BIN_SRC}" "${BIN_DIR}/${APP_NAME}"
-install -m 755 "${ICON_BIN_SRC}" "${BIN_DIR}/${ICON_SERVICE_BINARY}"
+install -m 755 "${META_BIN_SRC}" "${BIN_DIR}/${META_SERVER_BINARY}"
 
 # 复制静态文件
 # 检查源目录和目标目录是否相同
@@ -557,23 +553,23 @@ find "${PUBLIC_DIR}" -type d -exec chmod 755 {} \;
 chown -R "${APP_USER}:${APP_USER}" "${INSTALL_DIR}"
 chown -R "${APP_USER}:${APP_USER}" "${LOG_DIR}"
 chmod 755 "${CACHE_DIR}"
-chmod 755 "${BIN_DIR}/${ICON_SERVICE_BINARY}"
+chmod 755 "${BIN_DIR}/${META_SERVER_BINARY}"
 # 重新设置数据目录权限 (防止复制过来的文件权限不对)
 chown -R "${APP_USER}:${APP_USER}" "${DATA_DIR}" "${PC_DIR}" "${APP_DIR}" "${DOC_DIR}"
-chown -R "${APP_USER}:${APP_USER}" "${ICON_SERVICE_DIR}"
+chown -R "${APP_USER}:${APP_USER}" "${META_SERVER_DIR}"
 chmod -R 755 "${DATA_DIR}" "${PC_DIR}" "${APP_DIR}" "${DOC_DIR}"
-chmod -R 755 "${ICON_SERVICE_DIR}"
+chmod -R 755 "${META_SERVER_DIR}"
 
 log_info "生成配置..."
 write_config
-ensure_icon_service_data_dirs
-write_icon_systemd_service
+ensure_meta_server_data_dirs
+write_meta_systemd_service
 write_systemd_service
 write_nginx_config
 
 log_info "启动服务..."
-systemctl enable "${ICON_SERVICE_NAME}" >/dev/null
-systemctl restart "${ICON_SERVICE_NAME}"
+systemctl enable "${META_SERVER_NAME}" >/dev/null
+systemctl restart "${META_SERVER_NAME}"
 systemctl enable "${SERVICE_NAME}" >/dev/null
 systemctl restart "${SERVICE_NAME}"
 systemctl restart nginx
@@ -584,4 +580,4 @@ verify_deploy
 log_info "部署完成!"
 log_info "访问地址: http://<服务器IP>:${FRONTEND_PORT}"
 log_info "后端监听: 127.0.0.1:${BACKEND_PORT}"
-log_info "图标服务: 127.0.0.1:${ICON_SERVER_PORT}"
+log_info "元数据服务: 127.0.0.1:${META_SERVER_PORT}"

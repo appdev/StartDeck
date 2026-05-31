@@ -52,7 +52,6 @@ const expectOnlyDockerDefault = (widgets: WidgetConfig[]) => {
     id: "docker",
     type: "docker",
     enable: true,
-    isPublic: false,
     hideOnMobile: true,
     colSpan: 2,
     rowSpan: 2,

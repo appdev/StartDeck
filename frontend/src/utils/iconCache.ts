@@ -139,7 +139,7 @@ export const cacheIconToLocal = async (
       path: null,
       error:
         payloadError ||
-        "图标地址格式不支持本地缓存，请改为上传图片、http/https 链接或 Icon Server 图标路径",
+        "图标地址格式不支持本地缓存，请改为上传图片、http/https 链接或 MetaServer 图标路径",
     };
   }
 

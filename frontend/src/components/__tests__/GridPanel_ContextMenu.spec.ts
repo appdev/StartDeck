@@ -250,7 +250,11 @@ describe("GridPanel Context Menu", () => {
               '<div v-if="show" data-testid="edit-modal-stub">{{ data?.title }} {{ groupId }}</div>',
           },
           SettingsModal: true,
-          GroupSettingsModal: true,
+          GroupSettingsModal: {
+            props: ["show", "groupId"],
+            template:
+              '<div v-if="show" data-testid="group-settings-modal-stub">{{ groupId }}</div>',
+          },
           AddWidgetModal: {
             props: ["show"],
             template: '<div v-if="show" data-testid="itab-add-modal"></div>',
@@ -390,6 +394,22 @@ describe("GridPanel Context Menu", () => {
     expect(dragEnabledBlock).toContain("store.isLogged &&");
   });
 
+  it("keeps mobile whole-card dragging behind explicit edit mode", () => {
+    const mobileDragGateBlock =
+      /const isMobileHomeWidgetDragAllowed = computed\([\s\S]*?\n\);/.exec(
+        gridPanelSource,
+      )?.[0];
+    const dragEnabledBlock =
+      /const isHomeWidgetDragEnabled = computed\([\s\S]*?\n\);/.exec(
+        gridPanelSource,
+      )?.[0];
+
+    expect(mobileDragGateBlock).toBeTruthy();
+    expect(mobileDragGateBlock).toContain('deviceKey.value !== "mobile"');
+    expect(mobileDragGateBlock).toContain("isHomeEditChromeVisible.value");
+    expect(dragEnabledBlock).toContain("isMobileHomeWidgetDragAllowed.value");
+  });
+
   it("removes the old drag moved shadow state", () => {
     expect(gridPanelSource).not.toContain("sd-home-drag-moved");
     expect(gridPanelSource).not.toContain("onHomeWidgetMove");
@@ -452,6 +472,45 @@ describe("GridPanel Context Menu", () => {
 
     expect(store.saveData).toHaveBeenCalledWith(true);
     expect(store.layoutEditInProgress).toBe(false);
+  });
+
+  it("opens group settings without entering home edit mode or saving layout", async () => {
+    store.groups = [
+      {
+        id: "g-common",
+        title: "常用",
+        items: [
+          {
+            id: "site-1",
+            title: "Docs",
+            url: "https://example.com",
+            icon: "",
+          },
+        ],
+      },
+    ];
+    vi.mocked(store.markDirty).mockClear();
+    vi.mocked(store.saveData).mockClear();
+
+    await wrapper.vm.$nextTick();
+    await flushPromises();
+
+    const settingsButton = wrapper.find('button[title="分组设置"]');
+    expect(settingsButton.exists()).toBe(true);
+
+    await settingsButton.trigger("click");
+    await wrapper.vm.$nextTick();
+    await flushPromises();
+
+    const modal = wrapper.find('[data-testid="group-settings-modal-stub"]');
+    expect(modal.exists()).toBe(true);
+    expect(modal.text()).toContain("g-common");
+    expect(wrapper.find('[data-testid="home-action-bar"]').exists()).toBe(
+      false,
+    );
+    expect(store.layoutEditInProgress).toBe(false);
+    expect(store.markDirty).not.toHaveBeenCalled();
+    expect(store.saveData).not.toHaveBeenCalled();
   });
 
   it("does not save a drag when the final grid position is unchanged", async () => {

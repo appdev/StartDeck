@@ -37,7 +37,7 @@ ENV TAILWIND_DISABLE_NATIVE=1
 ENV VITE_DOCKER_BUILD=1
 RUN npm run build-only
 
-# Stage 2: Build Rust backend and icon service
+# Stage 2: Build Rust backend and meta server
 FROM --platform=$BUILDPLATFORM rust:1.94-bookworm AS rust-builder
 
 ARG HTTP_PROXY
@@ -65,7 +65,7 @@ RUN if [ -n "$STARTDECK_CRATES_IO_INDEX" ]; then \
       && printf '[source.crates-io]\nreplace-with = "startdeck-mirror"\n\n[source.startdeck-mirror]\nregistry = "%s"\n' "$STARTDECK_CRATES_IO_INDEX" > "${CARGO_HOME:-/usr/local/cargo}/config.toml"; \
     fi
 RUN cargo build --release --locked --workspace --bins
-RUN strip target/release/startdeck-server target/release/startdeck-iconserver
+RUN strip target/release/startdeck-server target/release/startdeck-metaserver
 
 # Stage 3: Runtime files copied into the slim final image.
 FROM debian:bookworm-slim AS runtime-deps
@@ -88,8 +88,8 @@ RUN rm -rf public/icons
 FROM busybox:1.37.0-glibc AS icon-resource-filter
 
 WORKDIR /icon-resources
-COPY rust/crates/startdeck-iconserver/resources/data .
-RUN rm -rf cache cache.json
+COPY rust/crates/startdeck-metaserver/resources/data .
+RUN rm -rf cache
 
 # Stage 6: Final Image
 FROM busybox:1.37.0-glibc
@@ -118,12 +118,12 @@ ENV TZ=Asia/Shanghai \
     DATA_DIR=/app/Data/data \
     PC_DIR=/app/Data/PC \
     APP_DIR=/app/Data/APP \
-    ICON_SERVICE_DATA_DIR=/app/Data/icon-service \
-    ICON_SERVICE_RESOURCE_DIR=/app/icon-service-defaults/data \
+    META_SERVER_DATA_DIR=/app/Data/meta-service \
+    META_SERVER_RESOURCE_DIR=/app/meta-service-defaults/data \
     PORT=9001 \
-    ICON_SERVICE_PORT=9002 \
-    ICON_SERVER_BASE_URL=http://127.0.0.1:9002 \
-    ICON_SERVER_TIMEOUT_MS=5000 \
+    META_SERVER_PORT=9002 \
+    META_SERVER_BASE_URL=http://127.0.0.1:9002 \
+    META_SERVER_TIMEOUT_MS=5000 \
     QWEATHER_API_HOST=$QWEATHER_API_HOST \
     QWEATHER_PROJECT_ID=$QWEATHER_PROJECT_ID \
     QWEATHER_CREDENTIAL_ID=$QWEATHER_CREDENTIAL_ID \
@@ -134,10 +134,10 @@ ENV TZ=Asia/Shanghai \
 # Copy Rust backend binary
 COPY --from=rust-builder /app/target/release/startdeck-server .
 
-# Copy Rust icon service binary, seed data, and startup script.
-COPY --from=rust-builder /app/target/release/startdeck-iconserver ./icon-service/startdeck-iconserver
+# Copy Rust meta server binary, seed data, and startup script.
+COPY --from=rust-builder /app/target/release/startdeck-metaserver ./meta-service/startdeck-metaserver
 COPY --from=server-resource-filter /server-resources/. ./startdeck-server-defaults
-COPY --from=icon-resource-filter /icon-resources/. ./icon-service-defaults/data
+COPY --from=icon-resource-filter /icon-resources/. ./meta-service-defaults/data
 COPY scripts/docker-entrypoint.sh ./scripts/docker-entrypoint.sh
 
 # Copy frontend dist to an image-owned public directory so mounting /app/Data
@@ -146,7 +146,7 @@ COPY scripts/docker-entrypoint.sh ./scripts/docker-entrypoint.sh
 COPY --from=frontend-builder /app/frontend/dist ./startdeck-public
 
 # Create necessary directories for volumes
-RUN mkdir -p Data/data Data/PC Data/APP Data/doc Data/icon-service/cache \
+RUN mkdir -p Data/data Data/PC Data/APP Data/doc Data/meta-service/cache \
     && chmod +x ./scripts/docker-entrypoint.sh
 
 # Expose port

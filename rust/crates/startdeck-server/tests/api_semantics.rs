@@ -564,7 +564,7 @@ async fn login_and_read_data_snapshot() {
     assert_eq!(body["widgets"][0]["type"], "memo");
     assert_eq!(body["widgets"][0]["enable"], true);
     assert!(body["widgets"][0].get("enabled").is_none());
-    assert_eq!(body["widgets"][0]["isPublic"], true);
+    assert!(body["widgets"][0].get("isPublic").is_none());
     assert!(body["widgets"][0].get("is_public").is_none());
     assert!(body.get("authMode").is_none());
     assert!(body["systemConfig"].get("authMode").is_none());
@@ -591,9 +591,13 @@ async fn login_and_read_data_snapshot() {
         body["groups"][0]["items"][0]["icon"],
         "/api/site/icon?url=https%3A%2F%2Fexample.com%2Fpath%3Fq%3D1"
     );
-    assert_eq!(body["groups"][0]["items"].as_array().unwrap().len(), 1);
+    assert_eq!(body["groups"][0]["items"].as_array().unwrap().len(), 2);
+    assert!(body["groups"][0]["items"][0].get("isPublic").is_none());
+    assert!(body["groups"][0]["items"][1].get("isPublic").is_none());
     assert_eq!(body["widgets"][0]["id"], "memo");
-    assert_eq!(body["widgets"].as_array().unwrap().len(), 1);
+    assert_eq!(body["widgets"].as_array().unwrap().len(), 2);
+    assert!(body["widgets"][0].get("isPublic").is_none());
+    assert!(body["widgets"][1].get("isPublic").is_none());
     assert!(body.get("authMode").is_none());
     assert!(body["systemConfig"].get("authMode").is_none());
     assert_eq!(body["enableDocker"], false);
@@ -637,7 +641,11 @@ async fn login_and_read_data_snapshot() {
         )
         .await
         .unwrap();
-    assert_eq!(response.status(), StatusCode::NOT_FOUND);
+    assert_eq!(response.status(), StatusCode::OK);
+    let body: Value =
+        serde_json::from_slice(&to_bytes(response.into_body(), usize::MAX).await.unwrap()).unwrap();
+    assert_eq!(body["id"], "private-widget");
+    assert!(body.get("isPublic").is_none());
 }
 
 #[tokio::test]
@@ -1163,13 +1171,13 @@ async fn save_updates_relational_snapshot() {
     assert_eq!(body["appConfig"]["customTitle"], "Updated");
     assert_eq!(body["groups"][0]["gridGap"], 12);
     assert_eq!(body["groups"][0]["items"][0]["title"], "Docs");
-    assert_eq!(body["groups"][0]["items"][0]["isPublic"], false);
+    assert!(body["groups"][0]["items"][0].get("isPublic").is_none());
     assert_eq!(body["groups"][0]["items"][0]["titleColor"], "#fff");
     assert!(body["groups"][0]["items"][0].get("is_public").is_none());
     assert_eq!(body["widgets"][0]["type"], "todo");
     assert_eq!(body["widgets"][0]["enable"], true);
     assert!(body["widgets"][0].get("enabled").is_none());
-    assert_eq!(body["widgets"][0]["isPublic"], true);
+    assert!(body["widgets"][0].get("isPublic").is_none());
     assert!(body["widgets"][0].get("is_public").is_none());
     assert_eq!(body["widgets"][0]["x"], 2);
     assert_eq!(body["widgets"][0]["y"], 3);

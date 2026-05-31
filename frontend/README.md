@@ -32,7 +32,7 @@ StartDeck 内置了多种实用的小组件，满足日常需求：
 ### 🎨 个性化定制
 
 - **图标管理**: 内置图标库，支持上传自定义图片，并全面支持 **Hex 颜色代码** (如 `#ffffff`) 自定义图标背景色。
-- **站点元数据服务**: 使用独立 Rust 图标服务获取网站标题、描述和图标，Docker 与 Debian 部署会一起启动。
+- **站点元数据服务**: 使用独立 Rust 元数据服务获取网站标题、描述和图标，Docker 与 Debian 部署会一起启动。
 - **背景设置**: 支持自定义壁纸。
 - **分组卡片背景**: 支持在分组设置中统一配置该组所有卡片的背景（图片、模糊、遮罩），实现风格统一的视觉效果。
 - **访客统计**: 底部页脚显示网站总访问量、今日访问量及当前在线时长（需在设置中开启）。
@@ -107,7 +107,7 @@ StartDeck 后端集成了智能网络环境识别功能，能够根据用户的�
    >
    >   ```bash
    >   # 终端 1 (后端)
-   >   cd .. && PORT=9001 ICON_SERVER_BASE_URL=http://127.0.0.1:9002 cargo run --bin startdeck-server
+   >   cd .. && PORT=9001 META_SERVER_BASE_URL=http://127.0.0.1:9002 cargo run --bin startdeck-server
    >
    >   # 终端 2 (前端)
    >   VITE_BACKEND=http://127.0.0.1:9001 node node_modules/vite/bin/vite.js --host 127.0.0.1 --port 9003
@@ -148,16 +148,16 @@ StartDeck 后端集成了智能网络环境识别功能，能够根据用户的�
      -p 9001:9001 \
      -v $(pwd)/Data:/app/Data \
      -e PORT=9001 \
-     -e ICON_SERVICE_PORT=9002 \
-     -e ICON_SERVICE_DATA_DIR=/app/Data/icon-service \
-     -e ICON_SERVER_BASE_URL=http://127.0.0.1:9002 \
-     -e ICON_SERVER_TIMEOUT_MS=5000 \
+     -e META_SERVER_PORT=9002 \
+     -e META_SERVER_DATA_DIR=/app/Data/meta-service \
+     -e META_SERVER_BASE_URL=http://127.0.0.1:9002 \
+     -e META_SERVER_TIMEOUT_MS=5000 \
      -v /var/run/docker.sock:/var/run/docker.sock \
      --name startdeck \
      apkdv/startdeck
    ```
 
-   > **注意**: 建议挂载整个 `Data` 目录，以确保配置数据、自定义壁纸和图标服务缓存不会丢失。镜像内置前端静态资源位于 `/app/startdeck-public`，不会被 `Data` 挂载覆盖。若需要使用 Docker 管理功能，必须挂载 `/var/run/docker.sock`。
+   > **注意**: 建议挂载整个 `Data` 目录，以确保配置数据、自定义壁纸和元数据服务缓存不会丢失。镜像内置前端静态资源位于 `/app/startdeck-public`，不会被 `Data` 挂载覆盖。若需要使用 Docker 管理功能，必须挂载 `/var/run/docker.sock`。
 
 3. **docker-compose**
 
@@ -174,10 +174,10 @@ StartDeck 后端集成了智能网络环境识别功能，能够根据用户的�
        environment:
          - PORT=9001
          - STARTDECK_ADMIN_PASSWORD=violet
-         - ICON_SERVICE_PORT=9002
-         - ICON_SERVICE_DATA_DIR=/app/Data/icon-service
-         - ICON_SERVER_BASE_URL=http://127.0.0.1:9002
-         - ICON_SERVER_TIMEOUT_MS=5000
+         - META_SERVER_PORT=9002
+         - META_SERVER_DATA_DIR=/app/Data/meta-service
+         - META_SERVER_BASE_URL=http://127.0.0.1:9002
+         - META_SERVER_TIMEOUT_MS=5000
        volumes:
          - ./Data:/app/Data #映射全部运行期数据
          - /var/run/docker.sock:/var/run/docker.sock #映射Docker Socket
@@ -209,7 +209,7 @@ sudo ./deploy.sh install
 
 - **默认密码**: 系统初始密码为 `admin`。Docker 部署可设置 `STARTDECK_ADMIN_PASSWORD`，容器启动时会同步 admin 密码；未设置时请登录后在设置中及时修改。
 - **数据文件**: 所有配置（布局、组件、书签等）均存储在 `Data/data/startdeck.sqlite3` 中，二进制资源保存在 `Data/` 下的对应目录。
-- **站点图标数据**: Rust crate 下的 `rust/crates/startdeck-iconserver/resources/data` 保存默认种子图标；运行期缓存和站点 metadata 写入 Docker `/app/Data/icon-service` 或 Debian `/opt/startdeck/icon-service/data`。
+- **站点图标数据**: Rust crate 下的 `rust/crates/startdeck-metaserver/resources/data` 保存默认种子图标；运行期缓存和站点 metadata 写入 Docker `/app/Data/meta-service` 或 Debian `/opt/startdeck/meta-service/data`。
 - **Docker 自动升级镜像**:
   - 入口：设置 → Docker 管理 → 自动升级镜像(每2小时)。
   - 关闭时：后台不会进行任何镜像拉取或版本对比。

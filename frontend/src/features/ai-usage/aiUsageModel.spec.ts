@@ -8,15 +8,15 @@ import {
 import { AI_USAGE_WIDGET_TYPE } from "./aiUsageTypes";
 
 describe("aiUsageModel", () => {
-  it("creates a private OpenAI usage widget with approved defaults", () => {
-    expect(createDefaultAiUsageWidget()).toMatchObject({
+  it("creates an OpenAI usage widget with approved defaults", () => {
+    const widget = createDefaultAiUsageWidget();
+    expect(widget).toMatchObject({
       id: "ai-usage",
       type: AI_USAGE_WIDGET_TYPE,
       colSpan: 2,
       rowSpan: 2,
       w: 2,
       h: 2,
-      isPublic: false,
       data: {
         runtime: "ai-usage",
         layoutSystem: ITAB_GRID_SCHEMA_VERSION,
@@ -29,6 +29,7 @@ describe("aiUsageModel", () => {
         credentialType: "access_token",
       },
     });
+    expect(widget).not.toHaveProperty("isPublic");
   });
 
   it("normalizes data without preserving raw credentials", () => {

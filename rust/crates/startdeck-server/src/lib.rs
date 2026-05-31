@@ -55,7 +55,7 @@ pub struct AppState {
     pool: SqlitePool,
     http: Client,
     jwt_secret: Arc<String>,
-    icon_service_base: Arc<String>,
+    meta_server_base: Arc<String>,
     remote_itab_fetch_enabled: bool,
 }
 
@@ -69,16 +69,16 @@ impl AppState {
         pool: SqlitePool,
         remote_itab_fetch_enabled: bool,
     ) -> Self {
-        let icon_service_base = std::env::var("ICON_SERVER_BASE_URL")
+        let meta_server_base = std::env::var("META_SERVER_BASE_URL")
             .unwrap_or_else(|_| "http://127.0.0.1:9002".to_string());
-        Self::new_with_icon_service_base(config, pool, remote_itab_fetch_enabled, icon_service_base)
+        Self::new_with_meta_server_base(config, pool, remote_itab_fetch_enabled, meta_server_base)
     }
 
-    pub fn new_with_icon_service_base(
+    pub fn new_with_meta_server_base(
         config: RuntimeConfig,
         pool: SqlitePool,
         remote_itab_fetch_enabled: bool,
-        icon_service_base: impl Into<String>,
+        meta_server_base: impl Into<String>,
     ) -> Self {
         let jwt_secret = std::env::var("STARTDECK_SECRET").unwrap_or_else(|_| {
             format!(
@@ -94,7 +94,7 @@ impl AppState {
                 .build()
                 .expect("reqwest client"),
             jwt_secret: Arc::new(jwt_secret),
-            icon_service_base: Arc::new(icon_service_base.into().trim_end_matches('/').to_string()),
+            meta_server_base: Arc::new(meta_server_base.into().trim_end_matches('/').to_string()),
             remote_itab_fetch_enabled,
         }
     }
@@ -153,8 +153,8 @@ pub fn app(state: AppState) -> Router {
         .route("/api/site/icon", get(site_icon))
         .route("/api/icon-cache", post(cache_icon))
         .route("/icon-cache/{*path}", get(icon_cache_asset))
-        .route("/icons/{*path}", get(icon_service_icon_asset))
-        .route("/cache/{*path}", get(icon_service_cache_asset))
+        .route("/icons/{*path}", get(meta_server_icon_asset))
+        .route("/cache/{*path}", get(meta_server_cache_asset))
         .route("/api/ip/history", get(ip_lookup::user_ip_history))
         .route("/api/ip", get(ip_lookup::ip_info))
         .route("/api/ping", get(ping))
@@ -519,7 +519,7 @@ async fn get_widget(
 ) -> Result<Json<Value>, ApiError> {
     let Some(username) = optional_username_from_headers(&headers, &state)? else {
         let template = read_default_template_file(state.config.as_ref()).await?;
-        let widget = public_template_widget(&template, &id)
+        let widget = default_template_widget(&template, &id)
             .ok_or_else(|| ApiError::not_found("widget_not_found"))?;
         return Ok(Json(widget));
     };
@@ -570,12 +570,7 @@ async fn save_widget(
             .and_then(Value::as_bool)
             .unwrap_or(true) as i64,
     )
-    .bind(
-        body.get("isPublic")
-            .or_else(|| body.get("is_public"))
-            .and_then(Value::as_bool)
-            .unwrap_or(true) as i64,
-    )
+    .bind(false as i64)
     .bind(body.get("data").cloned().unwrap_or_else(|| json!({})).to_string())
     .bind(normalize_widget_layout(&body).to_string())
     .bind(Utc::now().timestamp_millis())
@@ -621,7 +616,7 @@ async fn site_metadata(
         .ok_or_else(|| ApiError::bad_request("missing_url"))?;
     let response = state
         .http
-        .get(format!("{}/api/site/metadata", state.icon_service_base))
+        .get(format!("{}/api/site/metadata", state.meta_server_base))
         .query(&[("url", url)])
         .send()
         .await
@@ -648,7 +643,7 @@ async fn site_icon(
 async fn proxy_site_icon_response(state: &AppState, url: String) -> Result<Response, ApiError> {
     let response = state
         .http
-        .get(format!("{}/api/site/icon", state.icon_service_base))
+        .get(format!("{}/api/site/icon", state.meta_server_base))
         .query(&[("url", url)])
         .send()
         .await
@@ -741,7 +736,7 @@ async fn nav_item_icon_cache_source_url(
                OR icon LIKE ?
                OR icon LIKE ?
              )
-           ORDER BY is_public DESC, sort_order ASC
+           ORDER BY sort_order ASC
            LIMIT 1"#,
     )
     .bind(with_slash)
@@ -786,31 +781,31 @@ fn icon_cache_reference_file(icon: &str) -> Option<&str> {
         .strip_prefix("icon-cache/")
 }
 
-async fn icon_service_icon_asset(
+async fn meta_server_icon_asset(
     State(state): State<AppState>,
     AxumPath(path): AxumPath<String>,
 ) -> Result<Response, ApiError> {
-    proxy_icon_service_asset(&state, "icons", &path).await
+    proxy_meta_server_asset(&state, "icons", &path).await
 }
 
-async fn icon_service_cache_asset(
+async fn meta_server_cache_asset(
     State(state): State<AppState>,
     AxumPath(path): AxumPath<String>,
 ) -> Result<Response, ApiError> {
-    proxy_icon_service_asset(&state, "cache", &path).await
+    proxy_meta_server_asset(&state, "cache", &path).await
 }
 
-async fn proxy_icon_service_asset(
+async fn proxy_meta_server_asset(
     state: &AppState,
     namespace: &str,
     path: &str,
 ) -> Result<Response, ApiError> {
-    let mut url = Url::parse(state.icon_service_base.as_str())
+    let mut url = Url::parse(state.meta_server_base.as_str())
         .map_err(|err| ApiError::bad_gateway(err.to_string()))?;
     {
         let mut segments = url
             .path_segments_mut()
-            .map_err(|_| ApiError::bad_gateway("invalid_icon_service_base"))?;
+            .map_err(|_| ApiError::bad_gateway("invalid_meta_server_base"))?;
         segments.pop_if_empty();
         segments.push(namespace);
         for segment in path.split('/').filter(|segment| !segment.is_empty()) {
@@ -1412,8 +1407,8 @@ async fn default_template_to_api_value(config: &RuntimeConfig) -> Result<Value, 
     let template = read_default_template_file(config).await?;
     let system = SystemConfig::default();
     let mut out = object_from_value(template);
-    let groups = public_template_groups(config, out.remove("groups").unwrap_or_else(|| json!([])));
-    let widgets = public_template_widgets(out.remove("widgets").unwrap_or_else(|| json!([])));
+    let groups = default_template_groups(config, out.remove("groups").unwrap_or_else(|| json!([])));
+    let widgets = default_template_widgets(out.remove("widgets").unwrap_or_else(|| json!([])));
     out.entry("appConfig".to_string())
         .or_insert_with(|| json!({}));
     out.insert("groups".to_string(), groups);
@@ -1426,18 +1421,18 @@ async fn default_template_to_api_value(config: &RuntimeConfig) -> Result<Value, 
     Ok(Value::Object(out))
 }
 
-fn public_template_groups(config: &RuntimeConfig, value: Value) -> Value {
+fn default_template_groups(config: &RuntimeConfig, value: Value) -> Value {
     let Value::Array(groups) = value else {
         return json!([]);
     };
     Value::Array(
         groups
             .into_iter()
-            .filter(template_entry_is_public)
             .map(|mut group| {
+                strip_visibility_fields(&mut group);
                 if let Some(object) = group.as_object_mut() {
                     let items = object.remove("items").unwrap_or_else(|| json!([]));
-                    object.insert("items".to_string(), public_template_items(config, items));
+                    object.insert("items".to_string(), default_template_items(config, items));
                 }
                 group
             })
@@ -1445,30 +1440,30 @@ fn public_template_groups(config: &RuntimeConfig, value: Value) -> Value {
     )
 }
 
-fn public_template_items(config: &RuntimeConfig, value: Value) -> Value {
+fn default_template_items(config: &RuntimeConfig, value: Value) -> Value {
     let Value::Array(items) = value else {
         return json!([]);
     };
     Value::Array(
         items
             .into_iter()
-            .filter(template_entry_is_public)
             .map(|mut item| {
-                normalize_public_template_item_icon(config, &mut item);
+                strip_visibility_fields(&mut item);
+                normalize_default_template_item_icon(config, &mut item);
                 item
             })
             .collect(),
     )
 }
 
-fn normalize_public_template_item_icon(config: &RuntimeConfig, item: &mut Value) {
+fn normalize_default_template_item_icon(config: &RuntimeConfig, item: &mut Value) {
     let Some(object) = item.as_object_mut() else {
         return;
     };
     let Some(icon) = object.get("icon").and_then(Value::as_str) else {
         return;
     };
-    if !public_template_icon_cache_missing(config, icon) {
+    if !default_template_icon_cache_missing(config, icon) {
         return;
     }
     let Some(site_url) = object.get("url").and_then(Value::as_str) else {
@@ -1483,7 +1478,7 @@ fn normalize_public_template_item_icon(config: &RuntimeConfig, item: &mut Value)
     }
 }
 
-fn public_template_icon_cache_missing(config: &RuntimeConfig, icon: &str) -> bool {
+fn default_template_icon_cache_missing(config: &RuntimeConfig, icon: &str) -> bool {
     let path = icon
         .trim()
         .split(['?', '#'])
@@ -1495,7 +1490,7 @@ fn public_template_icon_cache_missing(config: &RuntimeConfig, icon: &str) -> boo
     }
     if let Some(name) = path.strip_prefix("cache/") {
         return !config
-            .icon_service_data_dir
+            .meta_server_data_dir
             .join("cache")
             .join(name)
             .is_file();
@@ -1510,37 +1505,42 @@ fn icon_server_icon_url(site_url: &str) -> Option<String> {
     Some(format!("/api/site/icon?{query}"))
 }
 
-fn public_template_widgets(value: Value) -> Value {
+fn default_template_widgets(value: Value) -> Value {
     let Value::Array(widgets) = value else {
         return json!([]);
     };
     Value::Array(
         widgets
             .into_iter()
-            .filter(template_entry_is_public)
+            .map(|mut widget| {
+                strip_visibility_fields(&mut widget);
+                widget
+            })
             .collect(),
     )
 }
 
-fn public_template_widget(template: &Value, id: &str) -> Option<Value> {
+fn default_template_widget(template: &Value, id: &str) -> Option<Value> {
     template
         .get("widgets")
         .and_then(Value::as_array)
         .and_then(|widgets| {
             widgets
                 .iter()
-                .filter(|widget| template_entry_is_public(widget))
                 .find(|widget| string_value(widget, "id").as_deref() == Some(id))
                 .cloned()
         })
+        .map(|mut widget| {
+            strip_visibility_fields(&mut widget);
+            widget
+        })
 }
 
-fn template_entry_is_public(value: &Value) -> bool {
-    value
-        .get("isPublic")
-        .or_else(|| value.get("is_public"))
-        .and_then(Value::as_bool)
-        .unwrap_or(true)
+fn strip_visibility_fields(value: &mut Value) {
+    if let Some(object) = value.as_object_mut() {
+        object.remove("isPublic");
+        object.remove("is_public");
+    }
 }
 
 fn nav_group_to_api_value(group: &NavGroup) -> Value {
@@ -1548,6 +1548,8 @@ fn nav_group_to_api_value(group: &NavGroup) -> Value {
     out.remove("items");
     out.remove("settings");
     out.remove("sort_order");
+    out.remove("isPublic");
+    out.remove("is_public");
     out.insert("id".to_string(), json!(group.id));
     out.insert("title".to_string(), json!(group.title));
     out.insert(
@@ -1560,13 +1562,13 @@ fn nav_group_to_api_value(group: &NavGroup) -> Value {
 fn nav_item_to_api_value(item: &NavItem) -> Value {
     let mut out = object_from_value(unwrap_nested_object(&item.metadata, "metadata"));
     out.remove("metadata");
+    out.remove("isPublic");
     out.remove("is_public");
     out.remove("sort_order");
     out.insert("id".to_string(), json!(item.id));
     out.insert("title".to_string(), json!(item.title));
     out.insert("url".to_string(), json!(item.url));
     out.insert("icon".to_string(), json!(item.icon));
-    out.insert("isPublic".to_string(), json!(item.is_public));
     Value::Object(out)
 }
 
@@ -1575,7 +1577,6 @@ fn widget_to_api_value(widget: &WidgetRecord) -> Value {
     out.insert("id".to_string(), json!(widget.id));
     out.insert("type".to_string(), json!(widget.widget_type));
     out.insert("enable".to_string(), json!(widget.enabled));
-    out.insert("isPublic".to_string(), json!(widget.is_public));
     out.insert("data".to_string(), widget.data.clone());
     Value::Object(out)
 }
@@ -1616,11 +1617,7 @@ async fn normalize_snapshot(
                                     title: string_value(item, "title").unwrap_or_default(),
                                     url: string_value(item, "url").unwrap_or_default(),
                                     icon: string_value(item, "icon").unwrap_or_default(),
-                                    is_public: item
-                                        .get("isPublic")
-                                        .or_else(|| item.get("is_public"))
-                                        .and_then(Value::as_bool)
-                                        .unwrap_or(true),
+                                    is_public: false,
                                     sort_order: item_index as i64,
                                     metadata: normalize_item_metadata(item),
                                 })
@@ -1647,11 +1644,7 @@ async fn normalize_snapshot(
                         .or_else(|| widget.get("enabled"))
                         .and_then(Value::as_bool)
                         .unwrap_or(true),
-                    is_public: widget
-                        .get("isPublic")
-                        .or_else(|| widget.get("is_public"))
-                        .and_then(Value::as_bool)
-                        .unwrap_or(true),
+                    is_public: false,
                     data: widget.get("data").cloned().unwrap_or_else(|| json!({})),
                     layout: normalize_widget_layout(widget),
                     sort_order: index as i64,
@@ -1724,6 +1717,8 @@ fn normalize_group_settings(group: &Value) -> Value {
     out.remove("items");
     out.remove("settings");
     out.remove("sort_order");
+    out.remove("isPublic");
+    out.remove("is_public");
     if let Some(id) = string_value(group, "id") {
         out.insert("id".to_string(), json!(id));
     }
@@ -1736,15 +1731,13 @@ fn normalize_group_settings(group: &Value) -> Value {
 fn normalize_item_metadata(item: &Value) -> Value {
     let mut out = object_from_value(unwrap_nested_object(item, "metadata"));
     out.remove("metadata");
+    out.remove("isPublic");
     out.remove("is_public");
     out.remove("sort_order");
     for key in ["id", "title", "url", "icon"] {
         if let Some(value) = item.get(key) {
             out.insert(key.to_string(), value.clone());
         }
-    }
-    if let Some(value) = item.get("isPublic").or_else(|| item.get("is_public")) {
-        out.insert("isPublic".to_string(), value.clone());
     }
     Value::Object(out)
 }

@@ -18,6 +18,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   close: [];
   refresh: [widget: WidgetConfig];
+  reload: [widget: WidgetConfig];
   editIcon: [widget: WidgetConfig];
   editHome: [widget: WidgetConfig];
   delete: [widget: WidgetConfig];
@@ -35,11 +36,14 @@ const panelStyle = computed(() => ({
   top: `${Math.max(8, props.y)}px`,
 }));
 
-const runAction = (action: "refresh" | "editIcon" | "editHome" | "delete") => {
+const runAction = (
+  action: "refresh" | "reload" | "editIcon" | "editHome" | "delete",
+) => {
   const widget = props.widget;
   if (!widget) return;
   emit("close");
   if (action === "refresh") emit("refresh", widget);
+  if (action === "reload") emit("reload", widget);
   if (action === "editIcon") emit("editIcon", widget);
   if (action === "editHome") emit("editHome", widget);
   if (action === "delete") emit("delete", widget);
@@ -109,6 +113,13 @@ const selectSize = (sizeKey: RuntimeWidgetSizeKey) => {
             <path d="M5.8 15A7 7 0 0 0 17.6 17.2L20 15" />
           </svg>
           <span>刷新</span>
+        </button>
+        <button type="button" role="menuitem" @click="runAction('reload')">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M21 12a9 9 0 1 1-2.6-6.4" />
+            <path d="M21 4v6h-6" />
+          </svg>
+          <span>重新加载</span>
         </button>
         <button type="button" role="menuitem" @click="runAction('editIcon')">
           <svg viewBox="0 0 24 24" aria-hidden="true">

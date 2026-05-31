@@ -99,7 +99,6 @@ export const createDefaultItabAnniversaryWidget = (): WidgetConfig => {
     id: ITAB_ANNIVERSARY_CATALOG_ID,
     type: ITAB_ANNIVERSARY_WIDGET_TYPE,
     enable: true,
-    isPublic: true,
     colSpan: size.colSpan,
     rowSpan: size.rowSpan,
     w: size.colSpan,

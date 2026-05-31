@@ -274,7 +274,6 @@ export const createDefaultTapdDefectWidget = (): WidgetConfig => {
     id: TAPD_DEFECTS_CATALOG_ID,
     type: TAPD_DEFECTS_WIDGET_TYPE,
     enable: true,
-    isPublic: false,
     colSpan: size.colSpan,
     rowSpan: size.rowSpan,
     w: size.colSpan,

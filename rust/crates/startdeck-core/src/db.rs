@@ -1,3 +1,4 @@
+use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result};
@@ -14,7 +15,7 @@ use crate::models::{
     AppSnapshot, IconRecord, NavGroup, NavItem, SystemConfig, UserRecord, WidgetRecord,
 };
 
-const CURRENT_SCHEMA_VERSION: i64 = 3;
+const CURRENT_SCHEMA_VERSION: i64 = 5;
 
 pub async fn connect_sqlite(config: &RuntimeConfig) -> Result<SqlitePool> {
     config.ensure_dirs().context("create runtime directories")?;
@@ -190,6 +191,11 @@ pub async fn ensure_schema(pool: &SqlitePool) -> Result<()> {
             description TEXT NOT NULL,
             background_color TEXT NOT NULL,
             source TEXT NOT NULL,
+            fetch_status TEXT NOT NULL DEFAULT 'ok',
+            failure_kind TEXT NOT NULL DEFAULT '',
+            failure_count INTEGER NOT NULL DEFAULT 0,
+            retry_after INTEGER NOT NULL DEFAULT 0,
+            last_error TEXT NOT NULL DEFAULT '',
             fetched_at INTEGER NOT NULL,
             updated_at INTEGER NOT NULL
         )"#,
@@ -203,7 +209,7 @@ pub async fn ensure_schema(pool: &SqlitePool) -> Result<()> {
             FOREIGN KEY(host) REFERENCES icon_records(host) ON DELETE CASCADE
         )"#,
         r#"INSERT OR IGNORE INTO schema_migrations(version, applied_at)
-           VALUES (3, CAST(strftime('%s','now') AS INTEGER) * 1000)"#,
+           VALUES (5, CAST(strftime('%s','now') AS INTEGER) * 1000)"#,
     ];
     for statement in statements {
         sqlx::query(statement).execute(pool).await?;
@@ -233,8 +239,15 @@ async fn migrate_schema(pool: &SqlitePool) -> Result<()> {
     let row = sqlx::query("SELECT COALESCE(MAX(version), 0) AS version FROM schema_migrations")
         .fetch_one(pool)
         .await?;
-    if row.get::<i64, _>("version") < CURRENT_SCHEMA_VERSION {
+    let version = row.get::<i64, _>("version");
+    if version < 3 {
         migrate_to_schema_3(pool).await?;
+    }
+    if version < 4 {
+        migrate_to_schema_4(pool).await?;
+    }
+    if version < CURRENT_SCHEMA_VERSION {
+        migrate_to_schema_5(pool).await?;
     }
     Ok(())
 }
@@ -254,6 +267,131 @@ async fn migrate_to_schema_3(pool: &SqlitePool) -> Result<()> {
         .bind(now_ms())
         .execute(pool)
         .await?;
+    Ok(())
+}
+
+async fn migrate_to_schema_4(pool: &SqlitePool) -> Result<()> {
+    if table_exists(pool, "icon_records").await? {
+        add_column_if_missing(
+            pool,
+            "icon_records",
+            "fetch_status",
+            "ALTER TABLE icon_records ADD COLUMN fetch_status TEXT NOT NULL DEFAULT 'ok'",
+        )
+        .await?;
+        add_column_if_missing(
+            pool,
+            "icon_records",
+            "failure_kind",
+            "ALTER TABLE icon_records ADD COLUMN failure_kind TEXT NOT NULL DEFAULT ''",
+        )
+        .await?;
+        add_column_if_missing(
+            pool,
+            "icon_records",
+            "failure_count",
+            "ALTER TABLE icon_records ADD COLUMN failure_count INTEGER NOT NULL DEFAULT 0",
+        )
+        .await?;
+        add_column_if_missing(
+            pool,
+            "icon_records",
+            "retry_after",
+            "ALTER TABLE icon_records ADD COLUMN retry_after INTEGER NOT NULL DEFAULT 0",
+        )
+        .await?;
+        add_column_if_missing(
+            pool,
+            "icon_records",
+            "last_error",
+            "ALTER TABLE icon_records ADD COLUMN last_error TEXT NOT NULL DEFAULT ''",
+        )
+        .await?;
+    }
+    sqlx::query("INSERT OR IGNORE INTO schema_migrations(version, applied_at) VALUES (4, ?)")
+        .bind(now_ms())
+        .execute(pool)
+        .await?;
+    Ok(())
+}
+
+async fn migrate_to_schema_5(pool: &SqlitePool) -> Result<()> {
+    let mut normalized_assets = BTreeMap::<(String, String, String), (i64, i64)>::new();
+    if table_exists(pool, "icon_assets").await? {
+        let rows =
+            sqlx::query("SELECT host, asset_kind, url, is_local, sort_order FROM icon_assets")
+                .fetch_all(pool)
+                .await?;
+        for row in rows {
+            let Some(normalized_url) =
+                normalize_icon_reference(row.get::<String, _>("url").as_str())
+            else {
+                continue;
+            };
+            let key = (
+                row.get::<String, _>("host"),
+                row.get::<String, _>("asset_kind"),
+                normalized_url,
+            );
+            let is_local = row.get::<i64, _>("is_local");
+            let sort_order = row.get::<i64, _>("sort_order");
+            normalized_assets
+                .entry(key)
+                .and_modify(|asset| {
+                    asset.0 = asset.0.max(is_local);
+                    asset.1 = asset.1.min(sort_order);
+                })
+                .or_insert((is_local, sort_order));
+        }
+    }
+
+    let mut tx = pool.begin().await?;
+    if table_exists(pool, "icon_assets").await? {
+        sqlx::query(
+            r#"CREATE TEMP TABLE icon_assets_v5 (
+                host TEXT NOT NULL,
+                asset_kind TEXT NOT NULL,
+                url TEXT NOT NULL,
+                is_local INTEGER NOT NULL,
+                sort_order INTEGER NOT NULL,
+                PRIMARY KEY(host, asset_kind, url)
+            )"#,
+        )
+        .execute(&mut *tx)
+        .await?;
+        for ((host, asset_kind, url), (is_local, sort_order)) in normalized_assets {
+            sqlx::query(
+                r#"INSERT INTO icon_assets_v5(host, asset_kind, url, is_local, sort_order)
+                   VALUES (?, ?, ?, ?, ?)"#,
+            )
+            .bind(host)
+            .bind(asset_kind)
+            .bind(url)
+            .bind(is_local)
+            .bind(sort_order)
+            .execute(&mut *tx)
+            .await?;
+        }
+        sqlx::query("DELETE FROM icon_assets")
+            .execute(&mut *tx)
+            .await?;
+        sqlx::query(
+            r#"INSERT INTO icon_assets(host, asset_kind, url, is_local, sort_order)
+               SELECT host, asset_kind, url, is_local, sort_order
+               FROM icon_assets_v5
+               ORDER BY host, asset_kind, sort_order, url"#,
+        )
+        .execute(&mut *tx)
+        .await?;
+        sqlx::query("DROP TABLE icon_assets_v5")
+            .execute(&mut *tx)
+            .await?;
+    }
+    sqlx::query("INSERT OR IGNORE INTO schema_migrations(version, applied_at) VALUES (5, ?)")
+        .bind(now_ms())
+        .execute(&mut *tx)
+        .await?;
+    tx.commit().await?;
     Ok(())
 }
 
@@ -504,6 +642,18 @@ async fn table_has_column(pool: &SqlitePool, table: &str, column: &str) -> Resul
         .any(|row| row.get::<String, _>("name") == column))
 }
 
+async fn add_column_if_missing(
+    pool: &SqlitePool,
+    table: &str,
+    column: &str,
+    statement: &'static str,
+) -> Result<()> {
+    if !table_has_column(pool, table, column).await? {
+        sqlx::query(statement).execute(pool).await?;
+    }
+    Ok(())
+}
+
 async fn table_primary_key_is_single_id(pool: &SqlitePool, table: &str) -> Result<bool> {
     let rows = sqlx::query(table_info_sql(table)?).fetch_all(pool).await?;
     let pk_columns = rows
@@ -521,6 +671,7 @@ fn table_info_sql(table: &str) -> Result<&'static str> {
         "nav_items" => Ok("PRAGMA table_info(nav_items)"),
         "widgets" => Ok("PRAGMA table_info(widgets)"),
         "config_versions" => Ok("PRAGMA table_info(config_versions)"),
+        "icon_records" => Ok("PRAGMA table_info(icon_records)"),
         _ => anyhow::bail!("unsupported table_info target: {table}"),
     }
 }
@@ -569,7 +720,7 @@ async fn destructive_reset_schema(pool: &SqlitePool) -> Result<()> {
 
 pub async fn import_legacy_data(pool: &SqlitePool, config: &RuntimeConfig) -> Result<()> {
     import_legacy_app_data(pool, config).await?;
-    import_icon_service_data(pool, config).await?;
+    import_meta_server_data(pool, config).await?;
     Ok(())
 }
 
@@ -590,14 +741,13 @@ pub async fn import_legacy_app_data(pool: &SqlitePool, config: &RuntimeConfig) -
     Ok(())
 }
 
-pub async fn import_icon_service_data(pool: &SqlitePool, config: &RuntimeConfig) -> Result<()> {
+pub async fn import_meta_server_data(pool: &SqlitePool, config: &RuntimeConfig) -> Result<()> {
     import_icon_seed_file(
         pool,
-        &config.icon_service_resource_dir.join("seed-data.json"),
+        &config.meta_server_resource_dir.join("seed-data.json"),
         "seed",
     )
     .await?;
-    import_icon_cache_file(pool, &config.icon_service_data_dir.join("cache.json")).await?;
     Ok(())
 }
 
@@ -718,7 +868,9 @@ pub async fn save_snapshot(pool: &SqlitePool, snapshot: &AppSnapshot) -> Result<
 
 pub async fn icon_record(pool: &SqlitePool, host: &str) -> Result<Option<IconRecord>> {
     let Some(row) = sqlx::query(
-        "SELECT host, title, url, final_url, description, background_color, source, fetched_at FROM icon_records WHERE host = ?",
+        r#"SELECT host, title, url, final_url, description, background_color, source,
+                  fetch_status, failure_kind, failure_count, retry_after, last_error, fetched_at
+           FROM icon_records WHERE host = ?"#,
     )
     .bind(host)
     .fetch_optional(pool)
@@ -742,15 +894,24 @@ pub async fn icon_record(pool: &SqlitePool, host: &str) -> Result<Option<IconRec
         background_color: row.get("background_color"),
         icon,
         source: row.get("source"),
+        fetch_status: row.get("fetch_status"),
+        failure_kind: row.get("failure_kind"),
+        failure_count: row.get("failure_count"),
+        retry_after: row.get("retry_after"),
+        last_error: row.get("last_error"),
         fetched_at: millis_to_datetime(row.get::<i64, _>("fetched_at")),
     }))
 }
 
 pub async fn upsert_icon_record(pool: &SqlitePool, record: &IconRecord) -> Result<()> {
     let now = now_ms();
+    let mut tx = pool.begin().await?;
     sqlx::query(
-        r#"INSERT INTO icon_records(host, title, url, final_url, description, background_color, source, fetched_at, updated_at)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        r#"INSERT INTO icon_records(
+             host, title, url, final_url, description, background_color, source,
+             fetch_status, failure_kind, failure_count, retry_after, last_error, fetched_at, updated_at
+           )
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
            ON CONFLICT(host) DO UPDATE SET
              title=excluded.title,
              url=excluded.url,
@@ -758,6 +919,11 @@ pub async fn upsert_icon_record(pool: &SqlitePool, record: &IconRecord) -> Resul
              description=excluded.description,
              background_color=excluded.background_color,
              source=excluded.source,
+             fetch_status=excluded.fetch_status,
+             failure_kind=excluded.failure_kind,
+             failure_count=excluded.failure_count,
+             retry_after=excluded.retry_after,
+             last_error=excluded.last_error,
              fetched_at=excluded.fetched_at,
              updated_at=excluded.updated_at"#,
     )
@@ -768,21 +934,33 @@ pub async fn upsert_icon_record(pool: &SqlitePool, record: &IconRecord) -> Resul
     .bind(&record.description)
     .bind(&record.background_color)
     .bind(&record.source)
+    .bind(&record.fetch_status)
+    .bind(&record.failure_kind)
+    .bind(record.failure_count)
+    .bind(record.retry_after)
+    .bind(&record.last_error)
     .bind(record.fetched_at.timestamp_millis())
     .bind(now)
-    .execute(pool)
+    .execute(&mut *tx)
     .await?;
-    if let Some(icon) = &record.icon {
+    sqlx::query("DELETE FROM icon_assets WHERE host = ? AND asset_kind = 'primary'")
+        .bind(&record.host)
+        .execute(&mut *tx)
+        .await?;
+    if record.fetch_status == "ok"
+        && let Some(icon) = record.icon.as_deref().and_then(normalize_icon_reference)
+    {
         sqlx::query(
             r#"INSERT OR REPLACE INTO icon_assets(host, asset_kind, url, is_local, sort_order)
                VALUES (?, 'primary', ?, ?, 0)"#,
         )
         .bind(&record.host)
-        .bind(icon)
-        .bind(is_local_icon(icon) as i64)
-        .execute(pool)
+        .bind(&icon)
+        .bind(is_local_icon(&icon) as i64)
+        .execute(&mut *tx)
         .await?;
     }
+    tx.commit().await?;
     Ok(())
 }
 
@@ -942,7 +1120,7 @@ async fn insert_legacy_item(
     .bind(string_field(item, "title").unwrap_or_default())
     .bind(string_field(item, "url").unwrap_or_default())
     .bind(string_field(item, "icon").unwrap_or_default())
-    .bind(item.get("isPublic").and_then(Value::as_bool).unwrap_or(true) as i64)
+    .bind(false as i64)
     .bind(sort_order)
     .bind(item.to_string())
     .execute(pool)
@@ -970,7 +1148,7 @@ async fn insert_legacy_widget(
     .bind(username)
     .bind(string_field(widget, "type").unwrap_or_else(|| "custom".to_string()))
     .bind(widget.get("enable").and_then(Value::as_bool).unwrap_or(true) as i64)
-    .bind(widget.get("isPublic").and_then(Value::as_bool).unwrap_or(true) as i64)
+    .bind(false as i64)
     .bind(widget.get("data").cloned().unwrap_or_else(|| json!({})).to_string())
     .bind(layout.to_string())
     .bind(sort_order)
@@ -1155,45 +1333,18 @@ async fn import_icon_seed_file(pool: &SqlitePool, path: &Path, source: &str) -> 
             description: String::new(),
             background_color: string_field(item, "background_color").unwrap_or_default(),
             icon: string_field(item, "icon_url")
-                .or_else(|| string_field(item, "original_icon_url"))
-                .map(|icon| normalize_icon_reference(&icon, None)),
+                .and_then(|icon| normalize_icon_reference(&icon))
+                .or_else(|| {
+                    string_field(item, "original_icon_url")
+                        .and_then(|icon| normalize_icon_reference(&icon))
+                }),
             source: source.to_string(),
+            fetch_status: "ok".to_string(),
+            failure_kind: String::new(),
+            failure_count: 0,
+            retry_after: 0,
+            last_error: String::new(),
             fetched_at: Utc::now(),
-        };
-        upsert_icon_record(pool, &record).await?;
-    }
-    Ok(())
-}
-
-async fn import_icon_cache_file(pool: &SqlitePool, path: &Path) -> Result<()> {
-    let value = read_json_or(path, json!({"records":[]}))?;
-    let Some(records) = value.get("records").and_then(Value::as_array) else {
-        return Ok(());
-    };
-    for item in records {
-        let host = string_field(item, "host")
-            .or_else(|| normalize_host(&string_field(item, "url").unwrap_or_default()));
-        let Some(host) = host else {
-            continue;
-        };
-        let fetched_at = item
-            .get("fetchedAt")
-            .and_then(Value::as_str)
-            .and_then(|value| DateTime::parse_from_rfc3339(value).ok())
-            .map(|value| value.with_timezone(&Utc))
-            .unwrap_or_else(Utc::now);
-        let record = IconRecord {
-            host,
-            title: string_field(item, "title")
-                .or_else(|| string_field(item, "name"))
-                .unwrap_or_default(),
-            url: string_field(item, "url").unwrap_or_default(),
-            final_url: string_field(item, "finalUrl").unwrap_or_default(),
-            description: string_field(item, "description").unwrap_or_default(),
-            background_color: string_field(item, "backgroundColor").unwrap_or_default(),
-            icon: first_icon(item),
-            source: string_field(item, "source").unwrap_or_else(|| "cache".to_string()),
-            fetched_at,
         };
         upsert_icon_record(pool, &record).await?;
     }
@@ -1240,42 +1391,62 @@ fn string_field(value: &Value, key: &str) -> Option<String> {
         .map(ToOwned::to_owned)
 }
 
-fn first_icon(value: &Value) -> Option<String> {
-    if let Some(local) = value
-        .get("localIcons")
-        .and_then(Value::as_array)
-        .and_then(|items| items.first())
-        .and_then(Value::as_str)
-    {
-        return Some(normalize_icon_reference(local, Some("cache")));
+fn normalize_icon_reference(icon: &str) -> Option<String> {
+    let trimmed = icon.trim();
+    if trimmed.is_empty() {
+        return None;
     }
-    value
-        .get("icons")
-        .and_then(Value::as_array)
-        .and_then(|items| items.first())
-        .and_then(Value::as_str)
-        .map(|icon| normalize_icon_reference(icon, None))
-        .or_else(|| string_field(value, "src"))
-}
-
-fn normalize_icon_reference(icon: &str, default_local_prefix: Option<&str>) -> String {
-    let trimmed = icon.trim().trim_start_matches('/');
-    if trimmed.starts_with("http://") || trimmed.starts_with("https://") {
-        return trimmed.to_string();
+    let lower = trimmed.to_ascii_lowercase();
+    if lower.starts_with("http://") || lower.starts_with("https://") {
+        return Some(trimmed.to_string());
+    }
+    if trimmed.contains("://") || trimmed.contains(':') || trimmed.contains('\\') {
+        return None;
     }
     if let Some(name) = trimmed.strip_prefix("data/icons/") {
-        return format!("icons/{name}");
+        return normalize_prefixed_icon_reference("icons", name);
     }
     if let Some(name) = trimmed.strip_prefix("data/cache/") {
-        return format!("cache/{name}");
+        return normalize_prefixed_icon_reference("cache", name);
     }
-    if trimmed.contains('/') {
-        return trimmed.to_string();
+    if let Some(name) = trimmed.strip_prefix("/icons/") {
+        return normalize_prefixed_icon_reference("icons", name);
     }
-    if let Some(prefix) = default_local_prefix {
-        return format!("{prefix}/{trimmed}");
+    if let Some(name) = trimmed.strip_prefix("/cache/") {
+        return normalize_prefixed_icon_reference("cache", name);
     }
-    trimmed.to_string()
+    if trimmed.starts_with('/') {
+        return None;
+    }
+    if let Some(name) = trimmed.strip_prefix("icons/") {
+        return normalize_prefixed_icon_reference("icons", name);
+    }
+    if let Some(name) = trimmed.strip_prefix("cache/") {
+        return normalize_prefixed_icon_reference("cache", name);
+    }
+    if trimmed.contains('/') || !is_safe_icon_file_name(trimmed) {
+        return None;
+    }
+    Some(format!("icons/{trimmed}"))
+}
+
+fn normalize_prefixed_icon_reference(prefix: &str, name: &str) -> Option<String> {
+    let name = name.trim();
+    if is_safe_icon_file_name(name) {
+        Some(format!("{prefix}/{name}"))
+    } else {
+        None
+    }
+}
+
+fn is_safe_icon_file_name(name: &str) -> bool {
+    !name.is_empty()
+        && !name.contains('/')
+        && !name.contains('\\')
+        && !name.contains(':')
+        && Path::new(name)
+            .components()
+            .all(|component| matches!(component, std::path::Component::Normal(_)))
 }
 
 fn normalize_host(raw: &str) -> Option<String> {
@@ -1288,7 +1459,7 @@ fn normalize_host(raw: &str) -> Option<String> {
         .or_else(|| raw.strip_prefix("http://"))
         .unwrap_or(raw);
     let host = without_scheme
-        .split('/')
+        .split(['/', '?', '#'])
         .next()
         .unwrap_or_default()
         .split('@')
@@ -1303,7 +1474,12 @@ fn normalize_host(raw: &str) -> Option<String> {
 }
 
 fn is_local_icon(raw: &str) -> bool {
-    raw.starts_with('/') || !raw.contains("://")
+    normalize_icon_reference(raw)
+        .map(|icon| {
+            let lower = icon.to_ascii_lowercase();
+            !lower.starts_with("http://") && !lower.starts_with("https://")
+        })
+        .unwrap_or(false)
 }
 
 fn millis_to_datetime(ms: i64) -> DateTime<Utc> {

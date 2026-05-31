@@ -13,11 +13,11 @@ import {
 
 describe("itabCalendarModel", () => {
   it("creates the canonical main-project calendar widget", () => {
-    expect(createDefaultItabCalendarWidget()).toMatchObject({
+    const widget = createDefaultItabCalendarWidget();
+    expect(widget).toMatchObject({
       id: ITAB_CALENDAR_CATALOG_ID,
       type: ITAB_CALENDAR_WIDGET_TYPE,
       enable: true,
-      isPublic: true,
       colSpan: 2,
       rowSpan: 2,
       w: 2,
@@ -29,6 +29,7 @@ describe("itabCalendarModel", () => {
         sizeKey: "2x2",
       },
     });
+    expect(widget).not.toHaveProperty("isPublic");
   });
 
   it("normalizes persisted data without resurrecting legacy calendar fields", () => {

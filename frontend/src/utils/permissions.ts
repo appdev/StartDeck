@@ -4,10 +4,10 @@ type PublicResource = {
 
 export const canReadResource = (
   resource: PublicResource | null | undefined,
-  isLogged: boolean,
+  _isLogged: boolean,
 ) => {
   if (!resource) return false;
-  return isLogged || resource.isPublic === true;
+  return true;
 };
 
 export const canWriteResource = (isLogged: boolean) => isLogged === true;

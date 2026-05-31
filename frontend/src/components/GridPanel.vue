@@ -22,7 +22,6 @@ import type {
 import { useStorage, useWindowSize, useIntervalFn } from "@vueuse/core";
 import { SolarDay } from "tyme4ts";
 import { useMainStore } from "../stores/main";
-import { canReadResource } from "@/utils/permissions";
 import { useWallpaperRotation } from "../composables/useWallpaperRotation";
 import { useDevice } from "../composables/useDevice";
 import { useLoginRequiredToast } from "@/composables/useRequireLogin";
@@ -447,23 +446,6 @@ const currentGroupId = ref<string>("");
 
 const isGridAlive = ref(true);
 
-watch(showGroupSettingsModal, (val) => {
-  if (val && !store.isLogged) {
-    notifyLoginRequired("请先登录后再修改分组设置。");
-    showGroupSettingsModal.value = false;
-    isEditMode.value = false;
-    store.layoutEditInProgress = false;
-    return;
-  }
-  const wasEditing = isEditMode.value;
-  isEditMode.value = val;
-  if (val) {
-    store.layoutEditInProgress = true;
-  } else if (wasEditing) {
-    store.markDirty();
-    store.layoutEditInProgress = false;
-  }
-});
 const isLanMode = ref(false);
 const latency = ref(0);
 const isChecking = ref(false);
@@ -710,7 +692,7 @@ const checkVisible = (obj?: WidgetConfig | NavItem) => {
   if (!obj) return false;
   if ("enable" in obj && !obj.enable) return false;
   if ("hideOnMobile" in obj && obj.hideOnMobile && isMobile.value) return false;
-  return canReadResource(obj, store.isLogged);
+  return true;
 };
 const isGridWidget = (widget: WidgetConfig) => gridWidgetTypes.has(widget.type);
 const isMainShellManagedWidget = (widget: WidgetConfig) =>
@@ -1028,9 +1010,13 @@ onUnmounted(() => {
 
 const gridLayoutRootRef = ref<HTMLElement | null>(null);
 const openedRuntimeWidgetId = ref("");
+const isMobileHomeWidgetDragAllowed = computed(
+  () => deviceKey.value !== "mobile" || isHomeEditChromeVisible.value,
+);
 const isHomeWidgetDragEnabled = computed(
   () =>
     store.isLogged &&
+    isMobileHomeWidgetDragAllowed.value &&
     !showAddWidgetModal.value &&
     !showSettingsModal.value &&
     !showGroupSettingsModal.value &&
@@ -1483,7 +1469,6 @@ const addWidgetPayload = (
   }
   if (existingWidget && action === "enable") {
     existingWidget.enable = true;
-    existingWidget.isPublic = existingWidget.isPublic ?? true;
     existingWidget.hideOnMobile = false;
     applyWidgetSizeFromPayload(existingWidget, item, payload.sizeKey);
     syncCatalogWidgetLayout(existingWidget);
@@ -1549,7 +1534,6 @@ const addNavItemPayload = async (
   const navItem: NavItem = {
     ...payload.navItem,
     id: createdId,
-    isPublic: payload.navItem.isPublic ?? true,
   };
 
   if (payload.kind === "custom-icon" && navItem.icon) {
@@ -2378,7 +2362,7 @@ const openRuntimeContextMenu = (widget: WidgetConfig, event: MouseEvent) => {
   event.preventDefault();
   event.stopPropagation();
   const menuWidth = 140;
-  const menuHeight = 232;
+  const menuHeight = 266;
   let finalX = event.clientX;
   let finalY = event.clientY;
   if (finalX + menuWidth > window.innerWidth) {
@@ -2440,6 +2424,10 @@ const refreshRuntimeWidget = (widget: WidgetConfig) => {
     ...runtimeRefreshTokens.value,
     [widget.id]: (runtimeRefreshTokens.value[widget.id] || 0) + 1,
   };
+};
+
+const reloadRuntimeWidget = (widget: WidgetConfig) => {
+  refreshRuntimeWidget(widget);
 };
 
 const updateRuntimeWidgetData = (
@@ -3651,13 +3639,6 @@ onUnmounted(() => {
                 </div>
 
                 <div
-                  v-if="isHomeEditChromeVisible && item.isPublic"
-                  class="absolute bottom-1 right-1 text-[10px] bg-green-100 text-green-700 px-1.5 py-0.5 rounded border border-green-200 z-20"
-                >
-                  公开
-                </div>
-
-                <div
                   class="relative flex items-center justify-center flex-shrink-0 transition-all duration-300 relative z-10"
                   v-if="
                     (group.iconShape || store.appConfig.iconShape) !== 'hidden'
@@ -4069,6 +4050,7 @@ onUnmounted(() => {
       :widget="runtimeMenuWidget"
       @close="closeRuntimeContextMenu"
       @refresh="refreshRuntimeWidget"
+      @reload="reloadRuntimeWidget"
       @edit-icon="editRuntimeWidgetIcon"
       @edit-home="editRuntimeWidgetHome"
       @delete="deleteRuntimeWidget"

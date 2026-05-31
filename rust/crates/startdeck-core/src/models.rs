@@ -71,5 +71,10 @@ pub struct IconRecord {
     pub background_color: String,
     pub icon: Option<String>,
     pub source: String,
+    pub fetch_status: String,
+    pub failure_kind: String,
+    pub failure_count: i64,
+    pub retry_after: i64,
+    pub last_error: String,
     pub fetched_at: DateTime<Utc>,
 }

@@ -26,7 +26,6 @@ describe("itabIpModel", () => {
       id: ITAB_IP_CATALOG_ID,
       type: ITAB_IP_WIDGET_TYPE,
       enable: true,
-      isPublic: true,
       colSpan: 2,
       rowSpan: 2,
       w: 2,
@@ -38,6 +37,7 @@ describe("itabIpModel", () => {
         sizeKey: "2x2",
       },
     });
+    expect(widget).not.toHaveProperty("isPublic");
   });
 
   it("normalizes persisted data and applies iTab size keys to grid spans", () => {

@@ -95,7 +95,6 @@ export const createDefaultItabPoemWidget = (): WidgetConfig => {
     id: ITAB_POEM_CATALOG_ID,
     type: ITAB_POEM_WIDGET_TYPE,
     enable: true,
-    isPublic: true,
     colSpan: size.colSpan,
     rowSpan: size.rowSpan,
     w: size.colSpan,

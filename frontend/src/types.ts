@@ -18,7 +18,7 @@ export interface NavItem {
   iconCustomBackgroundColor?: string;
   color?: string;
   titleColor?: string;
-  isPublic: boolean;
+  isPublic?: boolean;
   backgroundImage?: string;
   backgroundBlur?: number;
   backgroundMask?: number;
@@ -213,7 +213,7 @@ export interface WidgetConfig {
   y?: number;
   w?: number;
   h?: number;
-  isPublic: boolean;
+  isPublic?: boolean;
   hideOnMobile?: boolean;
   opacity?: number;
   textColor?: string;

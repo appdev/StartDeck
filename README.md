@@ -21,7 +21,7 @@ StartDeck 不是简单的书签页，而是面向自托管场景的浏览器工�
 - **统一入口**：集中管理站点、分组、搜索引擎、内网地址与公网地址。
 - **自托管数据**：布局、书签、组件配置、上传资源和运行缓存保存在用户自己的服务器中。
 - **组件化桌面**：通过网格布局组合天气、日历、待办、备忘录、番茄时钟、Docker、系统状态、AI 使用量、TAPD 缺陷等组件。
-- **智能元数据**：自动识别站点标题、描述和图标，并通过独立图标服务维护内置图标库与运行期缓存。
+- **智能元数据**：自动识别站点标题、描述和图标，并通过独立元数据服务维护内置图标库与运行期缓存。
 - **运维友好**：提供系统状态、Docker 容器状态、IP 与网络信息、版本检查等自托管常用能力。
 - **可扩展**：支持自定义 HTML/CSS/JS 组件、iframe 组件、全局自定义 CSS 和运行时脚本。
 
@@ -33,7 +33,7 @@ StartDeck 不是简单的书签页，而是面向自托管场景的浏览器工�
 | 组件系统     | 时钟、天气、纪念日、日历、壁纸、备忘录、待办、番茄时钟、今日诗词、今日英语、电影日历 |
 | 工具组件     | 本机 IP、金额换算、今天吃什么、AI 使用量、TAPD 缺陷                                  |
 | 系统组件     | Docker 容器状态、系统状态、CPU/内存/磁盘信息                                         |
-| 图标与元数据 | 独立 Rust 图标服务、站点标题识别、描述识别、图标缓存、内置图标库                     |
+| 图标与元数据 | 独立 Rust 元数据服务、站点标题识别、描述识别、图标缓存、内置图标库                     |
 | 网络访问     | 内网/公网地址配置、客户端 IP 信息、访问域名识别、延迟探测、反向代理适配              |
 | 个性化       | 桌面端壁纸、移动端壁纸、卡片背景、图标背景色、上传图标、全局 CSS                     |
 | 数据管理     | SQLite 本地存储、运行目录集中挂载、配置导入导出、版本恢复                            |
@@ -47,7 +47,7 @@ StartDeck 不是简单的书签页，而是面向自托管场景的浏览器工�
 
 ## 架构概览
 
-StartDeck 由 Vue 前端、Rust 主服务和 Rust 图标服务组成。Docker 镜像会同时启动主服务和图标服务，生产环境通常只需要对外暴露主服务端口。
+StartDeck 由 Vue 前端、Rust 主服务和 Rust 元数据服务组成。Docker 镜像会同时启动主服务和元数据服务，生产环境通常只需要对外暴露主服务端口。
 
 ```text
 Browser
@@ -62,13 +62,13 @@ Rust startdeck-server
   |
   | SQLite, runtime files, Docker socket, icon API
   v
-Rust startdeck-iconserver
+Rust startdeck-metaserver
 ```
 
 - **Frontend**：Vue 3、TypeScript、Pinia、GridStack，负责首页、设置、组件运行态和交互。
 - **Backend**：Rust + Axum，提供认证、配置持久化、站点元数据、代理、Docker、系统状态、天气/IP 等接口。
-- **Icon Service**：独立 Rust 服务，负责站点图标识别、图标库和图标缓存。
-- **Storage**：SQLite 保存配置和运行数据，`Data/` 保存上传资源、背景图和图标服务缓存。
+- **MetaServer**：独立 Rust 服务，负责站点元数据识别、图标库和图标缓存。
+- **Storage**：SQLite 保存配置和运行数据，`Data/` 保存上传资源、背景图和元数据服务缓存。
 
 ## 部署方案
 
@@ -105,11 +105,11 @@ services:
     environment:
       PORT: "9001"
       HOST: "0.0.0.0"
-      ICON_SERVICE_PORT: "9002"
-      ICON_SERVICE_DATA_DIR: /app/Data/icon-service
-      ICON_SERVICE_RESOURCE_DIR: /app/icon-service-defaults/data
-      ICON_SERVER_BASE_URL: http://127.0.0.1:9002
-      ICON_SERVER_TIMEOUT_MS: "5000"
+      META_SERVER_PORT: "9002"
+      META_SERVER_DATA_DIR: /app/Data/meta-service
+      META_SERVER_RESOURCE_DIR: /app/meta-service-defaults/data
+      META_SERVER_BASE_URL: http://127.0.0.1:9002
+      META_SERVER_TIMEOUT_MS: "5000"
       QWEATHER_API_HOST: "${QWEATHER_API_HOST:-}"
       QWEATHER_PROJECT_ID: "${QWEATHER_PROJECT_ID:-}"
       QWEATHER_CREDENTIAL_ID: "${QWEATHER_CREDENTIAL_ID:-}"
@@ -153,11 +153,11 @@ docker run -d \
   -e HOST=0.0.0.0 \
   -e STARTDECK_ADMIN_PASSWORD=change-me \
   -e STARTDECK_SECRET=replace-with-a-stable-random-secret \
-  -e ICON_SERVICE_PORT=9002 \
-  -e ICON_SERVICE_DATA_DIR=/app/Data/icon-service \
-  -e ICON_SERVICE_RESOURCE_DIR=/app/icon-service-defaults/data \
-  -e ICON_SERVER_BASE_URL=http://127.0.0.1:9002 \
-  -e ICON_SERVER_TIMEOUT_MS=5000 \
+  -e META_SERVER_PORT=9002 \
+  -e META_SERVER_DATA_DIR=/app/Data/meta-service \
+  -e META_SERVER_RESOURCE_DIR=/app/meta-service-defaults/data \
+  -e META_SERVER_BASE_URL=http://127.0.0.1:9002 \
+  -e META_SERVER_TIMEOUT_MS=5000 \
   -v /var/run/docker.sock:/var/run/docker.sock \
   apkdv/startdeck:latest
 ```
@@ -174,7 +174,7 @@ docker compose pull
 docker compose up -d
 ```
 
-升级后可检查主服务和图标服务：
+升级后可检查主服务和元数据服务：
 
 ```bash
 curl -fsS http://127.0.0.1:9001/healthz
@@ -190,7 +190,7 @@ Data/data/startdeck.sqlite3        # 布局、书签、组件配置、用户与�
 Data/data/users/                   # 用户配置数据
 Data/PC/                           # 桌面端背景图
 Data/APP/                          # 移动端背景图
-Data/icon-service/                 # 图标服务运行期缓存和数据
+Data/meta-service/                 # 元数据服务运行期缓存和数据
 ```
 
 迁移到新服务器时，停止旧容器后复制整个 `Data` 目录，并在新服务器使用相同挂载路径启动。
@@ -221,12 +221,13 @@ Data/icon-service/                 # 图标服务运行期缓存和数据
 | `STARTDECK_APP_DIR` / `APP_DIR`                           | `/app/Data/APP`                   | 移动端背景图目录                                     |
 | `STARTDECK_PUBLIC_DIR` / `PUBLIC_DIR`                     | `/app/startdeck-public`           | 前端静态资源目录                                     |
 | `STARTDECK_SERVER_RESOURCE_DIR`                           | `/app/startdeck-server-defaults`  | 主服务只读默认资源目录                               |
-| `ICON_SERVICE_PORT`                                       | `9002`                            | 图标服务监听端口                                     |
-| `ICON_SERVICE_DATA_DIR`                                   | `/app/Data/icon-service`          | 图标服务可写数据目录                                 |
-| `ICON_SERVICE_RESOURCE_DIR`                               | `/app/icon-service-defaults/data` | 图标服务只读种子资源目录                             |
-| `ICON_SERVER_BASE_URL`                                    | `http://127.0.0.1:9002`           | 主服务访问图标服务的地址                             |
-| `ICON_SERVER_TIMEOUT_MS`                                  | `5000`                            | 图标服务请求超时时间                                 |
-| `PUBLIC_ICON_BASE_URL`                                    | 空                                | 对外返回图标 URL 时使用的公共基础地址                |
+| `META_SERVER_PORT`                                       | `9002`                            | 元数据服务监听端口                                     |
+| `META_SERVER_DATA_DIR`                                   | `/app/Data/meta-service`          | 元数据服务可写数据目录                                 |
+| `META_SERVER_RESOURCE_DIR`                               | `/app/meta-service-defaults/data` | 元数据服务只读种子资源目录                             |
+| `META_SERVER_BASE_URL`                                    | `http://127.0.0.1:9002`           | 主服务访问元数据服务的地址                             |
+| `META_SERVER_TIMEOUT_MS`                                  | `5000`                            | 元数据服务请求超时时间                                 |
+| `META_SERVER_MICROLINK_API_URL`                           | `https://api.microlink.io`        | 元数据服务优先使用的网站媒体信息接口；空值表示禁用      |
+| `PUBLIC_META_BASE_URL`                                    | 空                                | 对外返回图标 URL 时使用的公共基础地址                |
 | `DOCKER_HOST`                                             | 空                                | Docker API 地址；默认使用挂载的 Docker Socket        |
 | `WALLPAPER_WHITELIST`                                     | Bing 相关域名                     | 壁纸代理额外允许的域名列表，支持逗号、分号或换行分隔 |
 | `TENCENT_MAP_KEY` / `TENCENT_MAP_API_KEY`                 | 内置默认 Key                      | 腾讯地图 IP 定位 Key                                 |
@@ -263,8 +264,8 @@ npm run start:hot
 也可以分开启动：
 
 ```bash
-# 终端 1：图标服务
-npm --prefix frontend run icon-server
+# 终端 1：元数据服务
+npm --prefix frontend run meta-server
 
 # 终端 2：主服务
 npm --prefix frontend run server:hot
@@ -279,7 +280,7 @@ npm --prefix frontend run dev
 | ------------- | ----------------------- |
 | 前端 Vite     | `http://127.0.0.1:9003` |
 | StartDeck API | `http://127.0.0.1:9001` |
-| Icon Service  | `http://127.0.0.1:9002` |
+| MetaServer    | `http://127.0.0.1:9002` |
 
 ### 常用命令
 
@@ -295,7 +296,7 @@ npm run lint
 cargo test --workspace
 cargo clippy --workspace --all-targets -- -D warnings
 cargo run --bin startdeck-server
-cargo run --bin startdeck-iconserver
+cargo run --bin startdeck-metaserver
 ```
 
 ### 本地容器构建
@@ -335,7 +336,7 @@ frontend/                                  # Vue 3 frontend
   src/stores/                              # Pinia stores
   public/                                  # Source static assets
 rust/crates/startdeck-server/              # Main Rust backend
-rust/crates/startdeck-iconserver/          # Icon metadata service
+rust/crates/startdeck-metaserver/          # Site metadata service
 rust/crates/startdeck-core/                # Shared SQLite/domain code
 Data/                                      # Runtime data and generated public assets
 debian/                                    # Debian/Ubuntu packaging and service files

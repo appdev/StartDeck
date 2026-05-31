@@ -915,7 +915,6 @@ describe("widgetCatalog", () => {
       rowSpan: 2,
       w: 2,
       h: 2,
-      isPublic: false,
       data: {
         runtime: "ai-usage",
         version: 1,
@@ -941,7 +940,6 @@ describe("widgetCatalog", () => {
       rowSpan: 2,
       w: 2,
       h: 2,
-      isPublic: false,
       data: {
         runtime: "tapd-defects",
         version: 1,

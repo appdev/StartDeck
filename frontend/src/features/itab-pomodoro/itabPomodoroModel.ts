@@ -91,7 +91,6 @@ export const createDefaultItabPomodoroWidget = (): WidgetConfig => {
     id: ITAB_POMODORO_CATALOG_ID,
     type: ITAB_POMODORO_WIDGET_TYPE,
     enable: true,
-    isPublic: true,
     colSpan: size.colSpan,
     rowSpan: size.rowSpan,
     w: size.colSpan,

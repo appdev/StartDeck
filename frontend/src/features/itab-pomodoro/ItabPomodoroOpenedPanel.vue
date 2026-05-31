@@ -172,7 +172,7 @@ const runtime = useItabPomodoroRuntime(widgetRef, (data) =>
         }"
         aria-label="声音"
         :aria-pressed="runtime.audioEnabled.value"
-        :data-tomato-audio-icon="runtime.audioIconState.value"
+        :data-tomato-audio-icon="runtime.audioMetaState.value"
         :title="
           runtime.audioBlocked.value
             ? '浏览器阻止自动播放，点击开始后会重试'

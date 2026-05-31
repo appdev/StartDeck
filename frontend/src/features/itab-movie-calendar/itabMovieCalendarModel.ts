@@ -45,7 +45,6 @@ export const createDefaultItabMovieCalendarWidget = (): WidgetConfig => {
     id: ITAB_MOVIE_CALENDAR_CATALOG_ID,
     type: ITAB_MOVIE_CALENDAR_WIDGET_TYPE,
     enable: true,
-    isPublic: true,
     colSpan: size.colSpan,
     rowSpan: size.rowSpan,
     w: size.colSpan,

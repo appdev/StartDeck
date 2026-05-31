@@ -13,15 +13,15 @@ import {
 } from "./tapdDefectTypes";
 
 describe("tapdDefectModel", () => {
-  it("creates a private TAPD defect widget with approved defaults", () => {
-    expect(createDefaultTapdDefectWidget()).toMatchObject({
+  it("creates a TAPD defect widget with approved defaults", () => {
+    const widget = createDefaultTapdDefectWidget();
+    expect(widget).toMatchObject({
       id: "tapd-defects",
       type: TAPD_DEFECTS_WIDGET_TYPE,
       colSpan: 2,
       rowSpan: 2,
       w: 2,
       h: 2,
-      isPublic: false,
       data: {
         runtime: "tapd-defects",
         layoutSystem: ITAB_GRID_SCHEMA_VERSION,
@@ -35,6 +35,7 @@ describe("tapdDefectModel", () => {
         },
       },
     });
+    expect(widget).not.toHaveProperty("isPublic");
   });
 
   it("normalizes data without preserving raw credentials or follow filters", () => {

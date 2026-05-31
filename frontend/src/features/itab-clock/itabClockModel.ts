@@ -47,7 +47,6 @@ export const createDefaultItabClockWidget = (): WidgetConfig => {
     id: ITAB_CLOCK_CATALOG_ID,
     type: ITAB_CLOCK_WIDGET_TYPE,
     enable: true,
-    isPublic: true,
     colSpan: size.colSpan,
     rowSpan: size.rowSpan,
     w: size.colSpan,

@@ -14,8 +14,8 @@ pub struct RuntimeConfig {
     pub backgrounds_dir: PathBuf,
     pub mobile_backgrounds_dir: PathBuf,
     pub icon_cache_dir: PathBuf,
-    pub icon_service_data_dir: PathBuf,
-    pub icon_service_resource_dir: PathBuf,
+    pub meta_server_data_dir: PathBuf,
+    pub meta_server_resource_dir: PathBuf,
     pub default_template_file: PathBuf,
     pub qweather_api_host: String,
     pub qweather_project_id: String,
@@ -60,11 +60,11 @@ impl RuntimeConfig {
         let host = env::var("HOST").unwrap_or_else(|_| "0.0.0.0".to_string());
         let admin_password =
             env::var("STARTDECK_ADMIN_PASSWORD").unwrap_or_else(|_| "admin".to_string());
-        let icon_service_data_dir = env_path(&["ICON_SERVICE_DATA_DIR", "ICON_DATA_DIR"])
-            .unwrap_or_else(|| default_icon_service_data_dir(&base_dir));
-        let icon_service_resource_dir = env_path(&["ICON_SERVICE_RESOURCE_DIR"])
-            .or_else(|| default_icon_service_resource_dir(&base_dir))
-            .unwrap_or_else(|| icon_service_data_dir.clone());
+        let meta_server_data_dir = env_path(&["META_SERVER_DATA_DIR"])
+            .unwrap_or_else(|| default_meta_server_data_dir(&base_dir));
+        let meta_server_resource_dir = env_path(&["META_SERVER_RESOURCE_DIR"])
+            .or_else(|| default_meta_server_resource_dir(&base_dir))
+            .unwrap_or_else(|| meta_server_data_dir.clone());
         let qweather_api_host = env::var("QWEATHER_API_HOST")
             .or_else(|_| env::var("QWEATHER_GEO_API_HOST"))
             .unwrap_or_default()
@@ -91,8 +91,8 @@ impl RuntimeConfig {
             mobile_backgrounds_dir: env_path(&["STARTDECK_APP_DIR", "APP_DIR"])
                 .unwrap_or_else(|| base_dir.join("Data").join("APP")),
             icon_cache_dir: data_dir.join("icon-cache"),
-            icon_service_data_dir,
-            icon_service_resource_dir,
+            meta_server_data_dir,
+            meta_server_resource_dir,
             default_template_file,
             qweather_api_host,
             qweather_project_id,
@@ -116,7 +116,7 @@ impl RuntimeConfig {
             &self.backgrounds_dir,
             &self.mobile_backgrounds_dir,
             &self.icon_cache_dir,
-            &self.icon_service_data_dir,
+            &self.meta_server_data_dir,
         ] {
             std::fs::create_dir_all(dir)?;
         }
@@ -138,9 +138,9 @@ fn infer_base_dir(cwd: &Path) -> PathBuf {
     match cwd.file_name().and_then(|value| value.to_str()) {
         Some("backend")
         | Some("frontend")
-        | Some("icon-service")
+        | Some("meta-service")
         | Some("startdeck-server")
-        | Some("startdeck-iconserver") => cwd
+        | Some("startdeck-metaserver") => cwd
             .parent()
             .map(Path::to_path_buf)
             .unwrap_or_else(|| cwd.to_path_buf()),
@@ -180,15 +180,15 @@ fn default_server_resource_dir(base_dir: &Path) -> PathBuf {
     }
 }
 
-fn default_icon_service_data_dir(base_dir: &Path) -> PathBuf {
-    base_dir.join("icon-service").join("data")
+fn default_meta_server_data_dir(base_dir: &Path) -> PathBuf {
+    base_dir.join("Data").join("meta-service")
 }
 
-fn default_icon_service_resource_dir(base_dir: &Path) -> Option<PathBuf> {
+fn default_meta_server_resource_dir(base_dir: &Path) -> Option<PathBuf> {
     let rust_resources = base_dir
         .join("rust")
         .join("crates")
-        .join("startdeck-iconserver")
+        .join("startdeck-metaserver")
         .join("resources")
         .join("data");
     rust_resources.exists().then_some(rust_resources)

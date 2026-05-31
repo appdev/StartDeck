@@ -5,6 +5,9 @@ export type SiteMetadataData = {
   description: string | null;
   backgroundColor: string | null;
   fetchedAt: string | null;
+  fetchStatus?: "ok" | "no_icon" | "blocked" | "error" | string | null;
+  failureKind?: string | null;
+  retryAfter?: string | null;
 };
 
 type SiteMetadataResponse = {
@@ -69,6 +72,9 @@ export const normalizeSiteMetadataPayload = (
     description: normalizeString(data.description),
     backgroundColor: normalizeString(data.backgroundColor),
     fetchedAt: normalizeString(data.fetchedAt),
+    fetchStatus: normalizeString(data.fetchStatus),
+    failureKind: normalizeString(data.failureKind),
+    retryAfter: normalizeString(data.retryAfter),
   };
 };
 

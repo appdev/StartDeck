@@ -173,7 +173,6 @@ export const createDefaultItabNumberUppercaseWidget = (): WidgetConfig => {
     id: ITAB_NUMBER_UPPERCASE_CATALOG_ID,
     type: ITAB_NUMBER_UPPERCASE_WIDGET_TYPE,
     enable: true,
-    isPublic: true,
     colSpan: size.colSpan,
     rowSpan: size.rowSpan,
     w: size.colSpan,

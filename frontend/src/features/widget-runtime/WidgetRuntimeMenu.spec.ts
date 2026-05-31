@@ -29,6 +29,7 @@ describe("WidgetRuntimeMenu", () => {
         widget: targetWidget,
         onClose: () => events.push("close"),
         onRefresh: () => events.push("refresh"),
+        onReload: () => events.push("reload"),
         onEditIcon: () => events.push("edit-icon"),
         onEditHome: () => events.push("edit-home"),
         onDelete: () => events.push("delete"),
@@ -61,6 +62,7 @@ describe("WidgetRuntimeMenu", () => {
     expect(wrapper.find('[role="menu"]').text()).toContain("编辑图标");
     expect(wrapper.find('[role="menu"]').text()).toContain("编辑主页");
     expect(wrapper.find('[role="menu"]').text()).toContain("刷新");
+    expect(wrapper.find('[role="menu"]').text()).toContain("重新加载");
     expect(wrapper.find('[role="menu"]').text()).toContain("删除");
   });
 
@@ -95,13 +97,17 @@ describe("WidgetRuntimeMenu", () => {
     },
   );
 
-  it("closes before refresh edit delete and size side effects", async () => {
+  it("closes before refresh reload edit delete and size side effects", async () => {
     const events: string[] = [];
     const wrapper = mountMenu(events);
 
     await wrapper
       .findAll('[role="menuitem"]')
       .find((item) => item.text() === "刷新")!
+      .trigger("click");
+    await wrapper
+      .findAll('[role="menuitem"]')
+      .find((item) => item.text() === "重新加载")!
       .trigger("click");
     await wrapper
       .findAll('[role="menuitem"]')
@@ -123,6 +129,8 @@ describe("WidgetRuntimeMenu", () => {
     expect(events).toEqual([
       "close",
       "refresh",
+      "close",
+      "reload",
       "close",
       "edit-icon",
       "close",

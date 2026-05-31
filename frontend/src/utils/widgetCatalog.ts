@@ -505,7 +505,6 @@ export const createWidgetFromCatalog = (
     const widget = cloneWidget(defaultWidget);
     widget.id = createId(item.id || item.type);
     widget.enable = true;
-    widget.isPublic = widget.isPublic ?? true;
     widget.colSpan = item.colSpan;
     widget.rowSpan = item.rowSpan;
     widget.w = item.colSpan;
@@ -517,7 +516,6 @@ export const createWidgetFromCatalog = (
     id: createId(item.id || item.type),
     type: item.type,
     enable: true,
-    isPublic: true,
     colSpan: item.colSpan,
     rowSpan: item.rowSpan,
   };

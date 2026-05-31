@@ -15,8 +15,8 @@ IFS=$'\n\t'
 APP_NAME="startdeck"
 APP_USER="startdeck"
 SERVICE_NAME="startdeck"
-ICON_SERVICE_NAME="startdeck-iconserver"
-ICON_SERVICE_BINARY="startdeck-iconserver"
+META_SERVER_NAME="startdeck-metaserver"
+META_SERVER_BINARY="startdeck-metaserver"
 
 # 目录结构 (保持与 deploy.sh 一致)
 INSTALL_DIR="/opt/${APP_NAME}"
@@ -26,15 +26,14 @@ DATA_DIR="${SERVER_DIR}/data"
 PC_DIR="${SERVER_DIR}/PC"
 APP_DIR="${SERVER_DIR}/APP"
 BIN_DIR="${INSTALL_DIR}/bin"
-ICON_SERVICE_DIR="${INSTALL_DIR}/icon-service"
-ICON_DATA_DIR="${ICON_SERVICE_DIR}/data"
-ICON_CONFIG_FILE="${ICON_SERVICE_DIR}/config.json"
+META_SERVER_DIR="${INSTALL_DIR}/meta-service"
+META_DATA_DIR="${META_SERVER_DIR}/data"
 CONFIG_DIR="/etc/${APP_NAME}"
 CONFIG_FILE="${CONFIG_DIR}/${APP_NAME}.env"
 NGINX_CONF="/etc/nginx/sites-available/${APP_NAME}"
 NGINX_LINK="/etc/nginx/sites-enabled/${APP_NAME}"
 SYSTEMD_SERVICE="/etc/systemd/system/${APP_NAME}.service"
-ICON_SYSTEMD_SERVICE="/etc/systemd/system/${ICON_SERVICE_NAME}.service"
+META_SYSTEMD_SERVICE="/etc/systemd/system/${META_SERVER_NAME}.service"
 SSL_DIR="/etc/nginx/ssl/${APP_NAME}"
 
 # 颜色定义
@@ -117,7 +116,7 @@ require_free_port() {
   local name="$2"
   if is_port_in_use "${port}"; then
     # 如果是 Nginx 或 StartDeck 自己占用了，可以接受(因为我们要重启它们)
-    if systemctl is-active --quiet nginx || systemctl is-active --quiet "${SERVICE_NAME}" || systemctl is-active --quiet "${ICON_SERVICE_NAME}"; then
+    if systemctl is-active --quiet nginx || systemctl is-active --quiet "${SERVICE_NAME}" || systemctl is-active --quiet "${META_SERVER_NAME}"; then
        return 0
     fi
     fail_with_tip "${name} 端口 ${port} 已被占用" "请先释放该端口或选择其他端口"
@@ -128,7 +127,7 @@ load_config() {
   # 默认值
   FRONTEND_PORT="9003"
   BACKEND_PORT="9001"
-  ICON_SERVER_PORT="9002"
+  META_SERVER_PORT="9002"
   HTTPS_ENABLED="no"
   SSL_CERT=""
   SSL_KEY=""
@@ -162,7 +161,7 @@ load_config() {
   # 确保变量有值
   FRONTEND_PORT="${FRONTEND_PORT:-9003}"
   BACKEND_PORT="${BACKEND_PORT:-9001}"
-  ICON_SERVER_PORT="${ICON_SERVER_PORT:-9002}"
+  META_SERVER_PORT="${META_SERVER_PORT:-9002}"
   PORT="${BACKEND_PORT}"
 }
 
@@ -177,11 +176,10 @@ APP_DIR=${APP_DIR}
 STARTDECK_DEFAULT_TEMPLATE_FILE=${DATA_DIR}/default.json
 FRONTEND_PORT=${FRONTEND_PORT}
 BACKEND_PORT=${BACKEND_PORT}
-ICON_SERVER_PORT=${ICON_SERVER_PORT}
-ICON_SERVICE_PORT=${ICON_SERVER_PORT}
-ICON_SERVICE_DATA_DIR=${ICON_DATA_DIR}
-ICON_SERVER_BASE_URL=http://127.0.0.1:${ICON_SERVER_PORT}
-ICON_SERVER_TIMEOUT_MS=5000
+META_SERVER_PORT=${META_SERVER_PORT}
+META_SERVER_DATA_DIR=${META_DATA_DIR}
+META_SERVER_BASE_URL=http://127.0.0.1:${META_SERVER_PORT}
+META_SERVER_TIMEOUT_MS=5000
 HTTPS_ENABLED=${HTTPS_ENABLED}
 SSL_CERT=${SSL_CERT}
 SSL_KEY=${SSL_KEY}
@@ -294,8 +292,8 @@ write_systemd_service() {
   cat > "${SYSTEMD_SERVICE}" <<EOF
 [Unit]
 Description=StartDeck Rust Service
-Wants=${ICON_SERVICE_NAME}.service
-After=network.target ${ICON_SERVICE_NAME}.service
+Wants=${META_SERVER_NAME}.service
+After=network.target ${META_SERVER_NAME}.service
 
 [Service]
 Type=simple
@@ -321,54 +319,34 @@ EOF
   systemctl daemon-reload
 }
 
-write_icon_service_config() {
-  mkdir -p "${ICON_SERVICE_DIR}" "${ICON_DATA_DIR}/icons" "${ICON_DATA_DIR}/cache"
-  cat > "${ICON_CONFIG_FILE}" <<EOF
-{
-  "addr": ":${ICON_SERVER_PORT}",
-  "dataDir": "${ICON_DATA_DIR}",
-  "seedIconDir": "${ICON_DATA_DIR}/icons",
-  "cacheIconDir": "${ICON_DATA_DIR}/cache",
-  "cacheFile": "${ICON_DATA_DIR}/cache.json",
-  "seedJSON": "${ICON_DATA_DIR}/seed-data.json",
-  "iconPrefix": "/icons/",
-  "cachePrefix": "/cache/",
-  "publicIconBaseURL": "",
-  "microlinkBaseURL": "https://api.microlink.io/",
-  "microlinkAPIKey": "",
-  "itabFP": "",
-  "itabSignatureKey": "",
-  "itabToken": ""
-}
-EOF
-  chown -R "${APP_USER}:${APP_USER}" "${ICON_SERVICE_DIR}"
-  chmod 644 "${ICON_CONFIG_FILE}"
+ensure_meta_server_data_dirs() {
+  mkdir -p "${META_SERVER_DIR}" "${META_DATA_DIR}/icons" "${META_DATA_DIR}/cache"
+  chown -R "${APP_USER}:${APP_USER}" "${META_SERVER_DIR}"
 }
 
-write_icon_systemd_service() {
-  cat > "${ICON_SYSTEMD_SERVICE}" <<EOF
+write_meta_systemd_service() {
+  cat > "${META_SYSTEMD_SERVICE}" <<EOF
 [Unit]
-Description=StartDeck Icon Service
+Description=StartDeck MetaServer
 After=network.target
 
 [Service]
 Type=simple
 User=${APP_USER}
 Group=${APP_USER}
-WorkingDirectory=${ICON_SERVICE_DIR}
+WorkingDirectory=${META_SERVER_DIR}
 EnvironmentFile=-${CONFIG_FILE}
 Environment=BASE_DIR=${INSTALL_DIR}
-Environment=CONFIG_FILE=${ICON_CONFIG_FILE}
-Environment=ICON_SERVICE_PORT=${ICON_SERVER_PORT}
-Environment=ICON_SERVICE_DATA_DIR=${ICON_DATA_DIR}
-ExecStart=${BIN_DIR}/${ICON_SERVICE_BINARY}
+Environment=META_SERVER_PORT=${META_SERVER_PORT}
+Environment=META_SERVER_DATA_DIR=${META_DATA_DIR}
+ExecStart=${BIN_DIR}/${META_SERVER_BINARY}
 Restart=on-failure
 RestartSec=5
 LimitNOFILE=65535
 
 StandardOutput=journal
 StandardError=journal
-SyslogIdentifier=${ICON_SERVICE_NAME}
+SyslogIdentifier=${META_SERVER_NAME}
 
 [Install]
 WantedBy=multi-user.target
@@ -380,9 +358,9 @@ print_tips() {
   echo ""
   log_info "常用命令:"
   echo "  - 查看服务状态: systemctl status ${SERVICE_NAME}"
-  echo "  - 查看图标服务: systemctl status ${ICON_SERVICE_NAME}"
-  echo "  - 查看应用日志: journalctl -u ${SERVICE_NAME} -u ${ICON_SERVICE_NAME} -n 50 -f"
-  echo "  - 重启应用服务: systemctl restart ${ICON_SERVICE_NAME} ${SERVICE_NAME}"
+  echo "  - 查看元数据服务: systemctl status ${META_SERVER_NAME}"
+  echo "  - 查看应用日志: journalctl -u ${SERVICE_NAME} -u ${META_SERVER_NAME} -n 50 -f"
+  echo "  - 重启应用服务: systemctl restart ${META_SERVER_NAME} ${SERVICE_NAME}"
   echo "  - 重启 Nginx:   systemctl restart nginx"
   echo ""
 }
@@ -403,13 +381,13 @@ change_ports_flow() {
   
   local new_frontend
   local new_backend
-  local new_icon
+  local new_meta
   
-  echo "当前配置: 前端端口=${FRONTEND_PORT}, 后端端口=${BACKEND_PORT}, 图标服务端口=${ICON_SERVER_PORT}"
+  echo "当前配置: 前端端口=${FRONTEND_PORT}, 后端端口=${BACKEND_PORT}, 元数据服务端口=${META_SERVER_PORT}"
   
   new_frontend="$(prompt "输入新前端端口" "${FRONTEND_PORT}")"
   new_backend="$(prompt "输入新后端端口" "${BACKEND_PORT}")"
-  new_icon="$(prompt "输入新图标服务端口" "${ICON_SERVER_PORT}")"
+  new_meta="$(prompt "输入新元数据服务端口" "${META_SERVER_PORT}")"
   
   if ! validate_port "${new_frontend}"; then
     fail_with_tip "前端端口 ${new_frontend} 无效 (范围 1-65535)"
@@ -417,32 +395,32 @@ change_ports_flow() {
   if ! validate_port "${new_backend}"; then
     fail_with_tip "后端端口 ${new_backend} 无效 (范围 1-65535)"
   fi
-  if ! validate_port "${new_icon}"; then
-    fail_with_tip "图标服务端口 ${new_icon} 无效 (范围 1-65535)"
+  if ! validate_port "${new_meta}"; then
+    fail_with_tip "元数据服务端口 ${new_meta} 无效 (范围 1-65535)"
   fi
-  if [ "${new_frontend}" = "${new_backend}" ] || [ "${new_frontend}" = "${new_icon}" ] || [ "${new_backend}" = "${new_icon}" ]; then
-    fail_with_tip "前端、后端和图标服务不能使用相同端口"
+  if [ "${new_frontend}" = "${new_backend}" ] || [ "${new_frontend}" = "${new_meta}" ] || [ "${new_backend}" = "${new_meta}" ]; then
+    fail_with_tip "前端、后端和元数据服务不能使用相同端口"
   fi
   
   require_free_port "${new_frontend}" "前端"
   require_free_port "${new_backend}" "后端"
-  require_free_port "${new_icon}" "图标服务"
+  require_free_port "${new_meta}" "元数据服务"
   
   FRONTEND_PORT="${new_frontend}"
   BACKEND_PORT="${new_backend}"
-  ICON_SERVER_PORT="${new_icon}"
+  META_SERVER_PORT="${new_meta}"
   
   log_info "正在更新配置..."
   save_config
   write_nginx_config
-  write_icon_service_config
-  write_icon_systemd_service
+  ensure_meta_server_data_dirs
+  write_meta_systemd_service
   write_systemd_service
   
   log_info "正在重启服务..."
   nginx -t >/dev/null || fail_with_tip "Nginx 配置生成有误，请检查"
   systemctl restart nginx
-  systemctl restart "${ICON_SERVICE_NAME}"
+  systemctl restart "${META_SERVER_NAME}"
   systemctl restart "${SERVICE_NAME}"
   
   log_info "端口修改成功！"
@@ -493,7 +471,7 @@ status_flow() {
   echo "配置信息:"
   echo "  - 前端端口: ${FRONTEND_PORT}"
   echo "  - 后端端口: ${BACKEND_PORT}"
-  echo "  - 图标服务端口: ${ICON_SERVER_PORT}"
+  echo "  - 元数据服务端口: ${META_SERVER_PORT}"
   echo "  - HTTPS状态: ${HTTPS_ENABLED}"
   echo "  - 静态目录: ${PUBLIC_DIR}"
   echo ""
@@ -504,10 +482,10 @@ status_flow() {
     log_warn "后端服务 (${SERVICE_NAME}): [未运行]"
   fi
 
-  if systemctl is-active --quiet "${ICON_SERVICE_NAME}"; then
-    log_info "图标服务 (${ICON_SERVICE_NAME}): [运行中]"
+  if systemctl is-active --quiet "${META_SERVER_NAME}"; then
+    log_info "元数据服务 (${META_SERVER_NAME}): [运行中]"
   else
-    log_warn "图标服务 (${ICON_SERVICE_NAME}): [未运行]"
+    log_warn "元数据服务 (${META_SERVER_NAME}): [未运行]"
   fi
   
   if systemctl is-active --quiet nginx; then
@@ -518,14 +496,14 @@ status_flow() {
   
   echo ""
   log_info "最近 10 条应用日志:"
-  journalctl -u "${SERVICE_NAME}" -u "${ICON_SERVICE_NAME}" -n 10 --no-pager
+  journalctl -u "${SERVICE_NAME}" -u "${META_SERVER_NAME}" -n 10 --no-pager
   
   print_tips
 }
 
 view_logs_flow() {
     echo "正在查看应用实时日志 (按 Ctrl+C 退出)..."
-    journalctl -u "${SERVICE_NAME}" -u "${ICON_SERVICE_NAME}" -f
+    journalctl -u "${SERVICE_NAME}" -u "${META_SERVER_NAME}" -f
 }
 
 uninstall_flow() {
@@ -540,14 +518,14 @@ uninstall_flow() {
   
   log_info "停止服务..."
   systemctl stop "${SERVICE_NAME}" || true
-  systemctl stop "${ICON_SERVICE_NAME}" || true
+  systemctl stop "${META_SERVER_NAME}" || true
   systemctl stop nginx || true
   systemctl disable "${SERVICE_NAME}" || true
-  systemctl disable "${ICON_SERVICE_NAME}" || true
+  systemctl disable "${META_SERVER_NAME}" || true
   
   log_info "删除服务文件..."
   rm -f "${SYSTEMD_SERVICE}"
-  rm -f "${ICON_SYSTEMD_SERVICE}"
+  rm -f "${META_SYSTEMD_SERVICE}"
   systemctl daemon-reload
   
   log_info "删除 Nginx 配置..."
@@ -595,7 +573,7 @@ main_menu() {
       4) view_logs_flow ;;
       5) 
          systemctl restart nginx
-         systemctl restart "${ICON_SERVICE_NAME}"
+         systemctl restart "${META_SERVER_NAME}"
          systemctl restart "${SERVICE_NAME}"
          log_info "服务已重启"
          ;;

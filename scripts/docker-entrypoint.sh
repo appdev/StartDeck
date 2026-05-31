@@ -1,45 +1,45 @@
 #!/bin/sh
 set -eu
 
-ICON_SERVICE_DIR="${ICON_SERVICE_DIR:-/app/icon-service}"
-ICON_SERVICE_DEFAULTS_DIR="${ICON_SERVICE_DEFAULTS_DIR:-/app/icon-service-defaults}"
+META_SERVER_DIR="${META_SERVER_DIR:-/app/meta-service}"
+META_SERVER_DEFAULTS_DIR="${META_SERVER_DEFAULTS_DIR:-/app/meta-service-defaults}"
 STARTDECK_SERVER_RESOURCE_DIR="${STARTDECK_SERVER_RESOURCE_DIR:-/app/startdeck-server-defaults}"
-ICON_SERVICE_DATA_DIR="${ICON_SERVICE_DATA_DIR:-${ICON_SERVICE_DIR}/data}"
-ICON_SERVICE_RESOURCE_DIR="${ICON_SERVICE_RESOURCE_DIR:-${ICON_SERVICE_DEFAULTS_DIR}/data}"
+META_SERVER_DATA_DIR="${META_SERVER_DATA_DIR:-${META_SERVER_DIR}/data}"
+META_SERVER_RESOURCE_DIR="${META_SERVER_RESOURCE_DIR:-${META_SERVER_DEFAULTS_DIR}/data}"
 
 export PORT="${PORT:-9001}"
-export ICON_SERVICE_PORT="${ICON_SERVICE_PORT:-9002}"
-export ICON_SERVER_BASE_URL="${ICON_SERVER_BASE_URL:-http://127.0.0.1:${ICON_SERVICE_PORT}}"
+export META_SERVER_PORT="${META_SERVER_PORT:-9002}"
+export META_SERVER_BASE_URL="${META_SERVER_BASE_URL:-http://127.0.0.1:${META_SERVER_PORT}}"
 export STARTDECK_SERVER_RESOURCE_DIR
-export ICON_SERVICE_DATA_DIR
-export ICON_SERVICE_RESOURCE_DIR
+export META_SERVER_DATA_DIR
+export META_SERVER_RESOURCE_DIR
 
-mkdir -p "${ICON_SERVICE_DATA_DIR}/cache"
+mkdir -p "${META_SERVER_DATA_DIR}/cache"
 
-"${ICON_SERVICE_DIR}/startdeck-iconserver" &
-icon_pid="$!"
+"${META_SERVER_DIR}/startdeck-metaserver" &
+meta_pid="$!"
 
-wait_for_icon_service() {
-  attempts="${ICON_SERVICE_STARTUP_ATTEMPTS:-30}"
+wait_for_meta_server() {
+  attempts="${META_SERVER_STARTUP_ATTEMPTS:-30}"
   while [ "${attempts}" -gt 0 ]; do
-    if ! kill -0 "${icon_pid}" 2>/dev/null; then
-      wait "${icon_pid}" 2>/dev/null || true
-      echo "startdeck icon service exited before becoming ready" >&2
+    if ! kill -0 "${meta_pid}" 2>/dev/null; then
+      wait "${meta_pid}" 2>/dev/null || true
+      echo "startdeck meta server exited before becoming ready" >&2
       return 1
     fi
-    if wget -q -O /dev/null "http://127.0.0.1:${ICON_SERVICE_PORT}/healthz" 2>/dev/null; then
+    if wget -q -O /dev/null "http://127.0.0.1:${META_SERVER_PORT}/healthz" 2>/dev/null; then
       return 0
     fi
     attempts=$((attempts - 1))
     sleep 1
   done
-  echo "startdeck icon service did not become ready on port ${ICON_SERVICE_PORT}" >&2
+  echo "startdeck meta server did not become ready on port ${META_SERVER_PORT}" >&2
   return 1
 }
 
-if ! wait_for_icon_service; then
-  kill "${icon_pid}" 2>/dev/null || true
-  wait "${icon_pid}" 2>/dev/null || true
+if ! wait_for_meta_server; then
+  kill "${meta_pid}" 2>/dev/null || true
+  wait "${meta_pid}" 2>/dev/null || true
   exit 1
 fi
 
@@ -47,9 +47,9 @@ fi
 backend_pid="$!"
 
 shutdown() {
-  kill "${backend_pid}" "${icon_pid}" 2>/dev/null || true
+  kill "${backend_pid}" "${meta_pid}" 2>/dev/null || true
   wait "${backend_pid}" 2>/dev/null || true
-  wait "${icon_pid}" 2>/dev/null || true
+  wait "${meta_pid}" 2>/dev/null || true
 }
 
 trap shutdown INT TERM
@@ -63,12 +63,12 @@ while :; do
     shutdown
     exit "${status}"
   fi
-  if ! kill -0 "${icon_pid}" 2>/dev/null; then
+  if ! kill -0 "${meta_pid}" 2>/dev/null; then
     set +e
-    wait "${icon_pid}"
+    wait "${meta_pid}"
     status="$?"
     set -e
-    echo "startdeck icon service exited; shutting down backend" >&2
+    echo "startdeck meta server exited; shutting down backend" >&2
     shutdown
     exit "${status}"
   fi

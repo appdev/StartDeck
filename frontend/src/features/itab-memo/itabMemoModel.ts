@@ -103,7 +103,6 @@ export const createDefaultItabMemoWidget = (): WidgetConfig => {
     id: ITAB_MEMO_CATALOG_ID,
     type: ITAB_MEMO_WIDGET_TYPE,
     enable: true,
-    isPublic: true,
     colSpan: size.colSpan,
     rowSpan: size.rowSpan,
     w: size.colSpan,

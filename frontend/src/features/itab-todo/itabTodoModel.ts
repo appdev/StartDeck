@@ -70,7 +70,6 @@ export const createDefaultItabTodoWidget = (): WidgetConfig => {
     id: ITAB_TODO_CATALOG_ID,
     type: ITAB_TODO_WIDGET_TYPE,
     enable: true,
-    isPublic: true,
     colSpan: size.colSpan,
     rowSpan: size.rowSpan,
     w: size.colSpan,

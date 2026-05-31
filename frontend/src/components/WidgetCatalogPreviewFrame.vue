@@ -194,7 +194,6 @@ const previewWidget = computed<WidgetConfig | undefined>(() => {
   const widget = createWidgetFromCatalog(item);
   widget.id = `preview-${item.id}`;
   widget.enable = true;
-  widget.isPublic = true;
   markCatalogPreview(widget);
   applyAiUsagePreviewState(widget);
   applyTapdDefectsPreviewState(widget);

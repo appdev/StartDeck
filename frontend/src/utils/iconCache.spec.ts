@@ -42,7 +42,7 @@ describe("iconCache", () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
-  it("inlines Icon Server image paths before caching so backend localhost blocking is avoided", async () => {
+  it("inlines MetaServer image paths before caching so backend localhost blocking is avoided", async () => {
     class TestFileReader {
       result: string | null = null;
       onload: (() => void) | null = null;
@@ -85,7 +85,7 @@ describe("iconCache", () => {
     );
   });
 
-  it("inlines Icon Server cache paths before writing them into the app-local cache", async () => {
+  it("inlines MetaServer cache paths before writing them into the app-local cache", async () => {
     class TestFileReader {
       result: string | null = null;
       onload: (() => void) | null = null;
@@ -130,14 +130,14 @@ describe("iconCache", () => {
     );
   });
 
-  it("rejects non Icon Server local image paths", async () => {
+  it("rejects non MetaServer local image paths", async () => {
     const fetchMock = vi.fn();
     vi.stubGlobal("fetch", fetchMock);
 
     const result = await cacheIconToLocal("/favicon.svg");
 
     expect(result.path).toBeNull();
-    expect(result.error).toContain("Icon Server 图标路径");
+    expect(result.error).toContain("MetaServer 图标路径");
     expect(fetchMock).not.toHaveBeenCalled();
   });
 

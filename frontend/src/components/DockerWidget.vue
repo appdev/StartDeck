@@ -155,9 +155,6 @@ const autoUpdateEnabled = computed(() =>
 const dockerWidgetEnabled = computed(
   () => dockerWidgetModel.value?.enable !== false,
 );
-const dockerWidgetPublic = computed(
-  () => dockerWidgetModel.value?.isPublic !== false,
-);
 const dockerWidgetMobileVisible = computed(
   () => dockerWidgetModel.value?.hideOnMobile !== true,
 );
@@ -368,13 +365,6 @@ const setDockerWidgetEnabled = (enabled: boolean) => {
   const widget = dockerWidgetModel.value;
   if (!widget) return;
   widget.enable = enabled;
-  store.markDirty();
-};
-const setDockerWidgetPublic = (enabled: boolean) => {
-  if (!requireDockerWidgetMutation()) return;
-  const widget = dockerWidgetModel.value;
-  if (!widget) return;
-  widget.isPublic = enabled;
   store.markDirty();
 };
 const setDockerWidgetMobileVisible = (visible: boolean) => {
@@ -1098,7 +1088,6 @@ const addToHome = (c: DockerContainer) => {
       url: publicUrl,
       lanUrl: lanUrl,
       icon: "", // We can try to fetch icon later or let user set it
-      isPublic: false,
       openInNewTab: true,
       containerId: c.Id,
       containerName: title,
@@ -1375,12 +1364,6 @@ const cancelPublicHost = () => {
             label="显示 Docker 组件"
             hint="关闭后可从添加组件弹窗重新启用。"
             @change="setDockerWidgetEnabled"
-          />
-          <AppSwitch
-            :model-value="dockerWidgetPublic"
-            label="公开显示"
-            hint="允许未登录访问者看到此组件。"
-            @change="setDockerWidgetPublic"
           />
           <AppSwitch
             :model-value="dockerWidgetMobileVisible"

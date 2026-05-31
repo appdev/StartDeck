@@ -107,7 +107,6 @@ export const createDefaultItabIpWidget = (): WidgetConfig => {
     id: ITAB_IP_CATALOG_ID,
     type: ITAB_IP_WIDGET_TYPE,
     enable: true,
-    isPublic: true,
     colSpan: size.colSpan,
     rowSpan: size.rowSpan,
     w: size.colSpan,

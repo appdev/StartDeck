@@ -21,6 +21,10 @@ export interface SmartIconMatchResult {
   backgroundColor?: string;
 }
 
+export interface SmartIconMatchRunOptions {
+  applyFirstCandidate?: boolean;
+}
+
 export interface SmartIconFormState {
   title?: string;
   url?: string;
@@ -197,7 +201,7 @@ export const useSmartIconMatch = ({
     showSmartMatchModal.value = true;
   };
 
-  const smartMatchIcons = async () => {
+  const smartMatchIcons = async (options: SmartIconMatchRunOptions = {}) => {
     const targetUrl = resolveTargetUrl(form.value);
     if (!targetUrl) {
       announce("请先填写链接！");
@@ -251,6 +255,9 @@ export const useSmartIconMatch = ({
 
       if (activeRunId.value !== runId) return;
       smartMatchCandidates.value = candidates;
+      if (options.applyFirstCandidate && candidates[0]) {
+        applySmartMatchCandidate(candidates[0]);
+      }
     } catch (e) {
       console.warn("Site metadata lookup failed", e);
     } finally {

@@ -64,7 +64,6 @@ describe("web layout presentation removal", () => {
     for (const text of [
       "系统信息组件设置",
       "显示系统信息组件",
-      "公开显示",
       "移动端显示",
     ]) {
       expect(systemStatusWidgetSource).toContain(text);

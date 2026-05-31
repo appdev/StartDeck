@@ -1,4 +1,4 @@
-# Icon Service
+# MetaServer
 
 一个用于按 `host` 或 `url` 查询站点图标与 metadata 的 Rust 服务。
 
@@ -14,12 +14,14 @@
     "finalUrl": "https://example.com/page",
     "title": "Example",
     "name": "Example",
-    "icon": ["https://cdn.example.com/icon.png"],
+    "icon": "/api/site/icon?url=https%3A%2F%2Fexample.com%2Fpage",
+    "iconUrl": "/api/site/icon?url=https%3A%2F%2Fexample.com%2Fpage",
     "description": "Example description",
     "backgroundColor": null,
-    "fetchedAt": "2026-04-22T08:11:51Z"
+    "fetchedAt": "2026-04-22T08:11:51Z",
+    "fetchStatus": "ok"
   },
-  "msg": "请求成功"
+  "msg": "ok"
 }
 ```
 
@@ -51,11 +53,13 @@ curl 'http://icons.put.run/api/icon?url=https://apkdv.com/posts/implementing_ios
 
 - `data.name`: 站点名称
 - `data.title`: 站点标题
-- `data.icon`: 图标地址数组，通常使用第一个即可
+- `data.icon`: StartDeck 兼容的图标代理地址字符串，默认形如 `/api/site/icon?url=...`
+- `data.iconUrl`: 与 `data.icon` 相同的图标代理地址字符串
 - `data.description`: 站点描述
 - `data.backgroundColor`: 背景色配置，调用方可自行决定是否参与图标合成
 - `data.fetchedAt`: 当前缓存记录最近一次抓取时间
-- 未命中时会先回源 Microlink，再回源 iTab；Microlink 返回的 `data.title`、`data.logo.url` 和 `data.logo.background_color` 会映射到现有返回结构
+- `PUBLIC_META_BASE_URL` 非空时，`data.icon` / `data.iconUrl` 会带该公开前缀；JSON 不直接暴露 `/icons/*` 或 `/cache/*`
+- 未命中时会先回源 Microlink，再回退到 HTML 与 `/favicon.ico` 解析；Microlink 返回的 `data.title`、`data.logo.url` 会映射到现有返回结构
 
 ### Metadata 接口返回
 
@@ -68,7 +72,8 @@ curl 'http://icons.put.run/api/icon?url=https://apkdv.com/posts/implementing_ios
   "url": "https://example.com",
   "finalUrl": "https://example.com/",
   "title": "Example Domain",
-  "iconUrl": "http://127.0.0.1:9002/cache/example.com.png",
+  "icon": "/api/site/icon?url=https%3A%2F%2Fexample.com%2F",
+  "iconUrl": "/api/site/icon?url=https%3A%2F%2Fexample.com%2F",
   "description": "Example description",
   "fetchedAt": "2026-04-19T08:00:00Z"
 }
@@ -108,31 +113,33 @@ curl 'http://icons.put.run/api/icon?url=https://apkdv.com/posts/implementing_ios
 
 ## 配置
 
-Rust 图标服务默认读取 `rust/crates/startdeck-iconserver/resources/data` 中的只读种子资源，部署时通过 `ICON_SERVICE_DATA_DIR` 指向可写运行期缓存目录，默认监听 `9002`。服务独立运行，不依赖主服务；主服务通过 HTTP 调用它。常用环境变量：
+Rust 元数据服务默认读取 `rust/crates/startdeck-metaserver/resources/data` 中的只读种子资源，部署时通过 `META_SERVER_DATA_DIR` 指向可写运行期缓存目录，默认监听 `9002`。服务独立运行，不依赖主服务；主服务通过 HTTP 调用它。常用环境变量：
 
 - `BASE_DIR`: StartDeck 运行根目录，默认由当前工作目录推断。
-- `ICON_SERVICE_PORT`: 图标服务监听端口，默认 `9002`。
-- `ICON_SERVICE_RESOURCE_DIR`: 图标服务只读种子资源目录，只包含 `seed-data.json` 和默认 `icons/`。Docker 镜像中默认是 `/app/icon-service-defaults/data`。
-- `ICON_SERVICE_DATA_DIR`: 图标服务可写运行期数据目录，用于外部挂载 `cache/` 和迁移来的 `cache.json`。未设置时默认使用运行根目录下的 `icon-service/data`。
+- `META_SERVER_PORT`: 元数据服务监听端口，默认 `9002`。
+- `META_SERVER_RESOURCE_DIR`: 元数据服务只读种子资源目录，只包含 `seed-data.json` 和默认 `icons/`。Docker 镜像中默认是 `/app/meta-service-defaults/data`。
+- `META_SERVER_DATA_DIR`: 元数据服务可写运行期数据目录，用于外部挂载运行期 `cache/`。未设置时默认使用运行根目录下的 `Data/meta-service`。
+- `META_SERVER_MICROLINK_API_URL`: 网站媒体信息接口，默认 `https://api.microlink.io`。设置为空字符串可禁用 Microlink，直接回退到 HTML 与 `/favicon.ico` 解析。
 
-服务不再读取旧版 `config.json`。若缓存未命中，服务会优先使用只读 seed 数据，再使用运行期 cache 数据；外部回源能力由 Rust 服务实现和部署环境决定。
+服务不再读取旧版 `config.json`。若缓存未命中，服务会优先使用只读 seed 数据；seed 也没有命中时先调用 Microlink 获取站点标题、描述和 logo，再将 logo 缓存到运行期 `cache/`。Microlink 不可用或无可用 logo 时，回退到直接解析目标站 HTML 和 `/favicon.ico`。
 
 图标目录分层：
 
-- 默认种子数据图标保存在 `ICON_SERVICE_RESOURCE_DIR/icons`
-- 非默认缓存图标保存在 `ICON_SERVICE_DATA_DIR/cache`
-- 对外返回地址会保留这个分流，例如 `/icons/www.youtube.com.svg` 或 `/cache/apkdv.com.svg`
+- 默认种子数据图标保存在 `META_SERVER_RESOURCE_DIR/icons`
+- 非默认缓存图标保存在 `META_SERVER_DATA_DIR/cache`
+- 数据库存储内部引用时，默认种子图标使用 `icons/<file>`，运行期缓存图标使用 `cache/<file>`，远程兜底保留 `http(s)://...`
+- `/icons/*` 和 `/cache/*` 仍作为静态读取路由可用，分别读取默认图标和运行期缓存；API JSON 返回的 `icon` / `iconUrl` 使用 `/api/site/icon?url=...` 代理地址，不直接返回静态路径
 
 ## 运行
 
 ```bash
-cargo run --bin startdeck-iconserver
+cargo run --bin startdeck-metaserver
 ```
 
 或：
 
 ```bash
-./startdeck-iconserver
+./startdeck-metaserver
 ```
 
 ## API
@@ -185,7 +192,7 @@ curl -X DELETE 'http://127.0.0.1:9002/api/icon/cache?host=apkdv.com'
 ## 构建 Linux x86_64
 
 ```bash
-cargo build --release --locked --bin startdeck-iconserver
+cargo build --release --locked --bin startdeck-metaserver
 ```
 
 ## StartDeck 接入
@@ -195,8 +202,8 @@ StartDeck server 保持前端 BFF，不直接让前端访问本服务。
 在 StartDeck server 环境中配置：
 
 ```bash
-ICON_SERVER_BASE_URL=http://127.0.0.1:9002
-ICON_SERVER_TIMEOUT_MS=5000
+META_SERVER_BASE_URL=http://127.0.0.1:9002
+META_SERVER_TIMEOUT_MS=5000
 ```
 
 这样 StartDeck 后端会继续对前端暴露 `/api/site/metadata` 与 `/api/site/icon`，内部再调用本服务。

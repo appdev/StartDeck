@@ -10,7 +10,6 @@
       "id": "wallpaper-1779726776021-ush28b",
       "type": "itab-wallpaper-16",
       "enable": true,
-      "isPublic": true,
       "data": {
         "runtime": "itab-wallpaper",
         "layoutSystem": "itab-grid/2026-05-22",
@@ -46,7 +45,6 @@
       "id": "itab-number-uppercase-35-1779726789070-6x6arb",
       "type": "itab-number-uppercase-35",
       "enable": true,
-      "isPublic": true,
       "data": {
         "runtime": "itab-number-uppercase",
         "layoutSystem": "itab-grid/2026-05-22",
@@ -67,7 +65,6 @@
       "id": "food-picker-1779726790657-n8iejy",
       "type": "itab-food-picker-15",
       "enable": true,
-      "isPublic": true,
       "data": {
         "runtime": "itab-food-picker",
         "layoutSystem": "itab-grid/2026-05-22",
@@ -95,7 +92,6 @@
       "id": "anniversary-1779875717902-986789",
       "type": "itab-anniversary-03",
       "enable": false,
-      "isPublic": true,
       "data": {
         "runtime": "itab-anniversary",
         "layoutSystem": "itab-grid/2026-05-22",
@@ -122,7 +118,6 @@
       "id": "anniversary-1779876005956-osxyhe",
       "type": "itab-anniversary-03",
       "enable": false,
-      "isPublic": true,
       "data": {
         "runtime": "itab-anniversary",
         "layoutSystem": "itab-grid/2026-05-22",
@@ -149,7 +144,6 @@
       "id": "anniversary-1779879109167-4cnlx5",
       "type": "itab-anniversary-03",
       "enable": false,
-      "isPublic": true,
       "data": {
         "runtime": "itab-anniversary",
         "layoutSystem": "itab-grid/2026-05-22",
@@ -178,7 +172,6 @@
       "id": "wallpaper-1779934603582-snnhww",
       "type": "itab-wallpaper-16",
       "enable": false,
-      "isPublic": true,
       "data": {
         "runtime": "itab-wallpaper",
         "layoutSystem": "itab-grid/2026-05-22",
@@ -207,7 +200,6 @@
       "id": "anniversary-1779934696112-e6m8rv",
       "type": "itab-anniversary-03",
       "enable": true,
-      "isPublic": true,
       "data": {
         "runtime": "itab-anniversary",
         "layoutSystem": "itab-grid/2026-05-22",
@@ -236,7 +228,6 @@
       "id": "anniversary-1779934767440-nuj4vj",
       "type": "itab-anniversary-03",
       "enable": true,
-      "isPublic": true,
       "data": {
         "runtime": "itab-anniversary",
         "layoutSystem": "itab-grid/2026-05-22",
@@ -263,7 +254,6 @@
       "id": "ai-usage-1779967141505-8f72v9",
       "type": "ai-usage",
       "enable": true,
-      "isPublic": true,
       "data": {
         "runtime": "ai-usage",
         "layoutSystem": "itab-grid/2026-05-22",
@@ -295,7 +285,6 @@
       "id": "tapd-defects-1779972974928-u1mjd8",
       "type": "tapd-defects",
       "enable": true,
-      "isPublic": true,
       "data": {
         "runtime": "tapd-defects",
         "layoutSystem": "itab-grid/2026-05-22",
@@ -354,7 +343,6 @@
       "id": "weather",
       "type": "itab-weather-00",
       "enable": true,
-      "isPublic": true,
       "data": {
         "runtime": "itab-weather",
         "layoutSystem": "itab-grid/2026-05-22",
@@ -379,7 +367,6 @@
       "id": "todo",
       "type": "itab-todo-17",
       "enable": true,
-      "isPublic": true,
       "data": {
         "runtime": "itab-todo",
         "layoutSystem": "itab-grid/2026-05-22",
@@ -424,7 +411,6 @@
       "id": "memo",
       "type": "itab-memo-04",
       "enable": true,
-      "isPublic": true,
       "data": {
         "runtime": "itab-memo",
         "layoutSystem": "itab-grid/2026-05-22",
@@ -472,7 +458,6 @@
       "id": "clock",
       "type": "itab-clock-12",
       "enable": true,
-      "isPublic": true,
       "data": {
         "runtime": "itab-clock",
         "layoutSystem": "itab-grid/2026-05-22",
@@ -491,7 +476,6 @@
       "id": "daily-english",
       "type": "itab-daily-english-14",
       "enable": true,
-      "isPublic": true,
       "data": {
         "runtime": "itab-daily-english",
         "layoutSystem": "itab-grid/2026-05-22",
@@ -509,7 +493,6 @@
       "id": "poem",
       "type": "itab-poem-10",
       "enable": true,
-      "isPublic": true,
       "data": {
         "runtime": "itab-poem",
         "layoutSystem": "itab-grid/2026-05-22",
@@ -548,7 +531,6 @@
       "id": "pomodoro",
       "type": "itab-pomodoro-29",
       "enable": true,
-      "isPublic": true,
       "data": {
         "runtime": "itab-pomodoro",
         "layoutSystem": "itab-grid/2026-05-22",
@@ -573,7 +555,6 @@
       "id": "movie-calendar",
       "type": "itab-movie-calendar-05",
       "enable": true,
-      "isPublic": true,
       "data": {
         "runtime": "itab-movie-calendar",
         "layoutSystem": "itab-grid/2026-05-22",
@@ -591,7 +572,6 @@
       "id": "ip",
       "type": "itab-ip-30",
       "enable": true,
-      "isPublic": true,
       "data": {
         "runtime": "itab-ip",
         "layoutSystem": "itab-grid/2026-05-22",
@@ -609,7 +589,6 @@
       "id": "calendar",
       "type": "itab-calendar-01",
       "enable": true,
-      "isPublic": true,
       "data": {
         "runtime": "itab-calendar",
         "layoutSystem": "itab-grid/2026-05-22",
@@ -628,7 +607,6 @@
       "id": "docker",
       "type": "docker",
       "enable": true,
-      "isPublic": true,
       "data": {
         "runtime": "docker",
         "version": 1,
@@ -646,7 +624,6 @@
       "id": "system-status",
       "type": "system-status",
       "enable": true,
-      "isPublic": true,
       "data": {
         "layoutSystem": "itab-grid/2026-05-22",
         "sizeKey": "2x4",
@@ -805,7 +782,6 @@
       "id": "1764563048744",
       "title": "常用",
       "cardTitleColor": "#ffffff",
-      "isPublic": true,
       "autoHideTitle": true,
       "items": [
         {
@@ -814,7 +790,6 @@
           "color": "bg-blue-50 text-blue-600",
           "icon": "/api/site/icon?url=https%3A%2F%2Fwww.doubao.com%2Fchat",
           "id": "1764571934101",
-          "isPublic": true,
           "lanUrl": "",
           "title": "豆包",
           "titleColor": "#ffffff",
@@ -837,7 +812,6 @@
           "icon": "/api/site/icon?url=https%3A%2F%2Fjuejin.cn%2F",
           "iconSize": 100,
           "id": "g1_01",
-          "isPublic": true,
           "lanUrl": "",
           "title": "掘金",
           "url": "https://juejin.cn/",
@@ -858,7 +832,6 @@
           "color": "bg-blue-50 text-blue-600",
           "icon": "/api/site/icon?url=https%3A%2F%2Fwww.youtube.com%2F",
           "id": "g1_02",
-          "isPublic": true,
           "lanUrl": "",
           "title": "YouTube",
           "url": "https://www.youtube.com/",
@@ -878,7 +851,6 @@
           "color": "bg-blue-50 text-blue-600",
           "icon": "/api/site/icon?url=https%3A%2F%2Fwww.douyin.com%2F",
           "id": "g1_04",
-          "isPublic": true,
           "lanUrl": "",
           "title": "抖音",
           "url": "https://www.douyin.com/",
@@ -902,7 +874,6 @@
           "color": "bg-blue-50 text-blue-600",
           "icon": "/api/site/icon?url=https%3A%2F%2Fwww.bilibili.com%2F",
           "id": "g1_05",
-          "isPublic": true,
           "lanUrl": "https://www.bilibili.com/",
           "title": "哔哩哔哩",
           "url": "https://www.bilibili.com/",
@@ -924,7 +895,6 @@
           "color": "bg-blue-50 text-blue-600",
           "icon": "/api/site/icon?url=https%3A%2F%2Fwww.xiaohongshu.com%2F",
           "id": "g1_06",
-          "isPublic": true,
           "lanUrl": "https://www.xiaohongshu.com/",
           "title": "小红书",
           "url": "https://www.xiaohongshu.com/",
@@ -946,7 +916,6 @@
           "color": "bg-blue-50 text-blue-600",
           "icon": "/api/site/icon?url=https%3A%2F%2Fwww.baidu.com",
           "id": "g1_07",
-          "isPublic": true,
           "lanUrl": "",
           "title": "百度天气",
           "url": "https://www.baidu.com",
@@ -968,7 +937,6 @@
           "color": "bg-blue-50 text-blue-600",
           "icon": "/api/site/icon?url=www.taobao.com",
           "id": "g1_10",
-          "isPublic": true,
           "lanUrl": "",
           "title": "淘宝",
           "url": "www.taobao.com",
@@ -989,7 +957,6 @@
           "color": "bg-blue-50 text-blue-600",
           "icon": "/api/site/icon?url=https%3A%2F%2Fwww.iqiyi.com",
           "id": "g1_13",
-          "isPublic": true,
           "lanUrl": "",
           "title": "爱奇艺",
           "url": "https://www.iqiyi.com",
@@ -1012,7 +979,6 @@
           "color": "bg-blue-50 text-blue-600",
           "icon": "/api/site/icon?url=https%3A%2F%2Fwww.tmall.com%2F",
           "id": "g1_15",
-          "isPublic": true,
           "lanUrl": "https://www.tmall.com/",
           "title": "天猫精选",
           "url": "https://www.tmall.com/",
@@ -1033,7 +999,6 @@
           "backgroundMask": 0.3,
           "icon": "/api/site/icon?url=https%3A%2F%2Fwww.zhihu.com",
           "id": "test_item_1764900093080_3",
-          "isPublic": true,
           "lanUrl": "https://www.zhihu.com",
           "title": "知乎",
           "url": "https://www.zhihu.com",
@@ -1054,7 +1019,6 @@
           "backgroundMask": 0.3,
           "icon": "/api/site/icon?url=https%3A%2F%2Fgithub.com",
           "id": "test_item_1764900093080_18",
-          "isPublic": true,
           "lanUrl": "https://github.com",
           "title": "GitHub",
           "url": "https://github.com",
@@ -1077,7 +1041,6 @@
           "icon": "/api/site/icon?url=https%3A%2F%2Ffnnas.com%2F",
           "iconSize": 100,
           "id": "1771336650299",
-          "isPublic": true,
           "lanUrl": "https://fnnas.com/",
           "title": "飞牛 fnOS",
           "url": "https://fnnas.com/",
@@ -1097,7 +1060,6 @@
     {
       "id": "1764569721787",
       "title": "收藏夹",
-      "isPublic": true,
       "cardTitleColor": "#ffffff",
       "items": [
         {
@@ -1107,7 +1069,6 @@
           "icon": "/api/site/icon?url=https%3A%2F%2Fgitee.com%2F",
           "iconSize": 100,
           "id": "g2_03",
-          "isPublic": true,
           "lanUrl": "https://gitee.com/",
           "title": "码云Gitee",
           "url": "https://gitee.com/",
@@ -1129,7 +1090,6 @@
           "icon": "/api/site/icon?url=https%3A%2F%2Fwww.qq.com%2F",
           "iconSize": 100,
           "id": "g2_08",
-          "isPublic": true,
           "lanUrl": "https://www.qq.com/",
           "title": "腾讯网",
           "url": "https://www.qq.com/",
@@ -1154,7 +1114,6 @@
           "icon": "/api/site/icon?url=https%3A%2F%2Fwww.toutiao.com%2F",
           "iconSize": 100,
           "id": "g2_11",
-          "isPublic": true,
           "lanUrl": "https://www.toutiao.com/",
           "title": "今日头条",
           "url": "https://www.toutiao.com/",
@@ -1172,7 +1131,6 @@
           "color": "bg-blue-50 text-blue-600",
           "icon": "/api/site/icon?url=https%3A%2F%2Fwww.ithome.com%2F",
           "id": "g2_12",
-          "isPublic": true,
           "lanUrl": "https://www.ithome.com/",
           "title": "IT之家",
           "titleColor": "",
@@ -1195,7 +1153,6 @@
           "icon": "/api/site/icon?url=https%3A%2F%2Fwww.163.com%2F",
           "iconSize": 125,
           "id": "g2_14",
-          "isPublic": true,
           "lanUrl": "https://www.163.com/",
           "title": "网易",
           "url": "https://www.163.com/",
@@ -1214,7 +1171,6 @@
           "color": "bg-blue-50 text-blue-600",
           "icon": "/api/site/icon?url=https%3A%2F%2Fwww.ctrip.com%2F",
           "id": "g2_15",
-          "isPublic": true,
           "lanUrl": "https://www.ctrip.com/",
           "title": "携程网",
           "url": "https://www.ctrip.com/",
@@ -1236,7 +1192,6 @@
           "color": "bg-blue-50 text-blue-600",
           "icon": "/api/site/icon?url=https%3A%2F%2Fweread.qq.com%2F",
           "id": "g2_16",
-          "isPublic": true,
           "lanUrl": "https://weread.qq.com/",
           "title": "微信读书",
           "url": "https://weread.qq.com/",

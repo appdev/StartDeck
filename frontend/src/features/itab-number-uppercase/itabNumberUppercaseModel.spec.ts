@@ -15,11 +15,11 @@ import {
 
 describe("itabNumberUppercaseModel", () => {
   it("creates the canonical main-project number uppercase widget", () => {
-    expect(createDefaultItabNumberUppercaseWidget()).toMatchObject({
+    const widget = createDefaultItabNumberUppercaseWidget();
+    expect(widget).toMatchObject({
       id: ITAB_NUMBER_UPPERCASE_CATALOG_ID,
       type: ITAB_NUMBER_UPPERCASE_WIDGET_TYPE,
       enable: true,
-      isPublic: true,
       colSpan: 2,
       rowSpan: 2,
       w: 2,
@@ -34,6 +34,7 @@ describe("itabNumberUppercaseModel", () => {
         formatMode: "currency",
       },
     });
+    expect(widget).not.toHaveProperty("isPublic");
   });
 
   it("normalizes input and computes the source currency uppercase result", () => {

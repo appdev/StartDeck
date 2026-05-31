@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch, computed, shallowRef, onUnmounted, nextTick } from "vue";
+import { ref, watch, computed, shallowRef, onUnmounted } from "vue";
 import type { NavItem } from "@/types";
 import {
   useSmartIconMatch,
@@ -12,13 +12,7 @@ import IconSelectionModal from "./IconSelectionModal.vue";
 import GroupSelector from "./GroupSelector.vue";
 import AppButton from "@/components/base/AppButton.vue";
 import AppModalShell from "@/components/base/AppModalShell.vue";
-import AppSwitch from "@/components/base/AppSwitch.vue";
 import AppWindowControls from "@/components/base/AppWindowControls.vue";
-import ConfirmDialog from "@/components/base/ConfirmDialog.vue";
-import {
-  useDirtyStateGuard,
-  type DirtyCloseReason,
-} from "@/composables/useDirtyStateGuard";
 import { VueCropper } from "vue-cropper";
 import { cacheIconToLocal } from "@/utils/iconCache";
 import { getSiteIconUrl } from "@/utils/siteMetadata";
@@ -93,9 +87,9 @@ const showIconSelection = ref(false);
 const iconCandidates = shallowRef<string[]>([]);
 const searchSource = ref<"local" | "api">("api");
 
+type EditCloseReason = "overlay" | "escape" | "programmatic";
+
 const localGroupId = ref("");
-const initialFormSnapshot = ref("");
-const showDiscardConfirm = ref(false);
 const modalOpenedAt = ref(0);
 
 // 表单数据 (合并管理，比以前分散的 ref 更整洁)
@@ -120,7 +114,6 @@ const createEmptyForm = (): EditForm => ({
   iconCustomBackgroundColor: "",
   color: "bg-gray-100 text-gray-700",
   titleColor: "",
-  isPublic: false,
   backgroundImage: "",
   backgroundBlur: 6,
   backgroundMask: 0.3,
@@ -131,29 +124,9 @@ const form = ref<EditForm>({
   ...createEmptyForm(),
 });
 
-const serializeFormState = () =>
-  JSON.stringify({
-    groupId: localGroupId.value || props.groupId || "",
-    form: form.value,
-  });
-
-const isDirty = computed(() => {
-  if (!props.show || !initialFormSnapshot.value) return false;
-  return serializeFormState() !== initialFormSnapshot.value;
-});
-
 const finalizeClose = () => {
-  showDiscardConfirm.value = false;
   emit("update:show", false);
 };
-
-const { requestClose, handleDismissAttempt } = useDirtyStateGuard({
-  isDirty,
-  onCleanClose: finalizeClose,
-  onDirtyAttempt: () => {
-    showDiscardConfirm.value = true;
-  },
-});
 
 // 选中图标
 const activeGroup = computed(() =>
@@ -217,7 +190,11 @@ const iconCustomColorValue = computed(
     "#111827",
 );
 
-const onIconSelect = (result: SmartIconMatchResult) => {
+const onIconSelect = (result: SmartIconMatchResult | string) => {
+  if (typeof result === "string") {
+    form.value.icon = result;
+    return;
+  }
   form.value.icon = result.icon;
   const backgroundColor = normalizeIconBackgroundColor(result.backgroundColor);
   form.value.iconAutoBackgroundColor = backgroundColor || "";
@@ -314,7 +291,7 @@ const openExtraLinks = () => {
 };
 
 const runSmartMetadataFetch = async () => {
-  await smartMatchIcons();
+  await smartMatchIcons({ applyFirstCandidate: true });
   closeSmartMatchModal();
 };
 
@@ -344,13 +321,13 @@ watch(
   (newVal) => {
     if (newVal) {
       modalOpenedAt.value = Date.now();
-      showDiscardConfirm.value = false;
       localGroupId.value = props.groupId || "";
       resetSmartMatchState();
       if (props.data) {
+        const { isPublic: _legacyIsPublic, ...editableData } = props.data;
         // 编辑模式：回填数据
         form.value = {
-          ...props.data,
+          ...editableData,
           backupUrls: props.data.backupUrls
             ? props.data.backupUrls.map((u) =>
                 typeof u === "string" ? { name: "", url: u } : { ...u },
@@ -379,13 +356,8 @@ watch(
         form.value = createEmptyForm();
       }
       showExtraLinks.value = hasExtraLinks.value;
-      nextTick(() => {
-        initialFormSnapshot.value = serializeFormState();
-      });
     } else {
       modalOpenedAt.value = 0;
-      initialFormSnapshot.value = "";
-      showDiscardConfirm.value = false;
       showExtraLinks.value = false;
       resetSmartMatchState();
       clearSmartMatchToast();
@@ -437,21 +409,10 @@ const focusNextInput = (event: Event) => {
   }
 };
 
-const close = (reason: DirtyCloseReason = "programmatic") => {
+const close = (reason: EditCloseReason = "programmatic") => {
   if (reason === "overlay" && Date.now() - modalOpenedAt.value < 350) {
     return;
   }
-  requestClose(reason);
-};
-
-const handleEditDismissAttempt = (reason: DirtyCloseReason) => {
-  if (reason === "overlay" && Date.now() - modalOpenedAt.value < 350) {
-    return;
-  }
-  handleDismissAttempt(reason);
-};
-
-const discardChanges = () => {
   finalizeClose();
 };
 
@@ -622,7 +583,6 @@ const submit = async () => {
       emit("save", payload);
     }
 
-    initialFormSnapshot.value = serializeFormState();
     finalizeClose();
   } catch (e: unknown) {
     const message = e instanceof Error ? e.message : "";
@@ -641,8 +601,8 @@ const submit = async () => {
   <AppModalShell
     :show="show"
     :z-index="130"
-    :close-on-overlay="!isDirty"
-    :close-on-escape="!isDirty"
+    close-on-overlay
+    close-on-escape
     overlay-class="edit-card-overlay"
     panel-class="edit-card-panel"
     surface-class="edit-card-surface"
@@ -652,7 +612,6 @@ const submit = async () => {
     footer-class="edit-card-footer"
     :show-close="false"
     @close="(reason) => close(reason || 'programmatic')"
-    @dismiss-attempt="handleEditDismissAttempt"
   >
     <template #headerActions>
       <div class="edit-card-header-actions">
@@ -701,18 +660,6 @@ const submit = async () => {
             </div>
             <div class="edit-card-preview-copy">
               <div class="edit-card-preview-name">{{ cardPreviewTitle }}</div>
-              <div class="edit-card-preview-public">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                  <circle cx="12" cy="12" r="9" stroke-width="2" />
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"
-                  />
-                </svg>
-                {{ form.isPublic ? "公开" : "私有" }}
-              </div>
               <div class="edit-card-preview-url">{{ cardPreviewUrl }}</div>
             </div>
           </div>
@@ -1033,23 +980,17 @@ const submit = async () => {
             <span>基础信息</span>
           </div>
 
-          <div class="edit-card-basic-row">
-            <div class="edit-card-field-grid">
-              <label class="sd-label" for="edit-card-title">
-                标题 <span class="text-red-500">*</span>
-              </label>
-              <input
-                id="edit-card-title"
-                v-model="form.title"
-                type="text"
-                class="sd-input"
-                placeholder="例如：我的博客"
-              />
-            </div>
-            <div class="edit-card-public-control">
-              <span>公开</span>
-              <AppSwitch v-model="form.isPublic" />
-            </div>
+          <div class="edit-card-field-grid">
+            <label class="sd-label" for="edit-card-title">
+              标题 <span class="text-red-500">*</span>
+            </label>
+            <input
+              id="edit-card-title"
+              v-model="form.title"
+              type="text"
+              class="sd-input"
+              placeholder="例如：我的博客"
+            />
           </div>
 
           <details
@@ -1315,18 +1256,6 @@ const submit = async () => {
       @cancel-link="showIconSelection = false"
     />
   </AppModalShell>
-
-  <ConfirmDialog
-    v-model:show="showDiscardConfirm"
-    title="放弃未保存的修改？"
-    message="当前表单存在未保存内容。关闭后本次修改将不会保留。"
-    confirm-label="放弃修改"
-    cancel-label="继续编辑"
-    tone="danger"
-    blocking
-    @confirm="discardChanges"
-    @cancel="showDiscardConfirm = false"
-  />
 
   <!-- Icon Cropper Modal -->
   <AppModalShell

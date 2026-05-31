@@ -19,7 +19,6 @@ describe("itabMovieCalendarModel", () => {
       id: ITAB_MOVIE_CALENDAR_CATALOG_ID,
       type: ITAB_MOVIE_CALENDAR_WIDGET_TYPE,
       enable: true,
-      isPublic: true,
       colSpan: 2,
       rowSpan: 2,
       w: 2,
@@ -31,6 +30,7 @@ describe("itabMovieCalendarModel", () => {
         sizeKey: "2x2",
       },
     });
+    expect(widget).not.toHaveProperty("isPublic");
   });
 
   it("normalizes persisted data and applies iTab size keys to grid spans", () => {

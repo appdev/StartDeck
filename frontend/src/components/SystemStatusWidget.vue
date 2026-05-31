@@ -125,9 +125,6 @@ const systemWidgetModel = computed(() => {
 const systemWidgetEnabled = computed(
   () => systemWidgetModel.value?.enable !== false,
 );
-const systemWidgetPublic = computed(
-  () => systemWidgetModel.value?.isPublic !== false,
-);
 const systemWidgetMobileVisible = computed(
   () => systemWidgetModel.value?.hideOnMobile !== true,
 );
@@ -283,13 +280,6 @@ const setSystemWidgetEnabled = (enabled: boolean) => {
   const widget = systemWidgetModel.value;
   if (!widget) return;
   widget.enable = enabled;
-  store.markDirty();
-};
-const setSystemWidgetPublic = (enabled: boolean) => {
-  if (!requireSystemWidgetMutation()) return;
-  const widget = systemWidgetModel.value;
-  if (!widget) return;
-  widget.isPublic = enabled;
   store.markDirty();
 };
 const setSystemWidgetMobileVisible = (visible: boolean) => {
@@ -485,12 +475,6 @@ onUnmounted(() => {
             label="显示系统信息组件"
             hint="关闭后可从添加组件弹窗重新启用。"
             @change="setSystemWidgetEnabled"
-          />
-          <AppSwitch
-            :model-value="systemWidgetPublic"
-            label="公开显示"
-            hint="允许未登录访问者看到此组件。"
-            @change="setSystemWidgetPublic"
           />
           <AppSwitch
             :model-value="systemWidgetMobileVisible"

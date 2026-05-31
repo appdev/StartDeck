@@ -70,7 +70,6 @@ export const createDefaultItabFoodPickerWidget = (): WidgetConfig => {
     id: ITAB_FOOD_PICKER_CATALOG_ID,
     type: ITAB_FOOD_PICKER_WIDGET_TYPE,
     enable: true,
-    isPublic: true,
     colSpan: size.colSpan,
     rowSpan: size.rowSpan,
     w: size.colSpan,

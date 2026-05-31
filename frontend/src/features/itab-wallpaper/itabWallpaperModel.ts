@@ -194,7 +194,6 @@ export const createDefaultItabWallpaperWidget = (): WidgetConfig => {
     id: ITAB_WALLPAPER_CATALOG_ID,
     type: ITAB_WALLPAPER_WIDGET_TYPE,
     enable: true,
-    isPublic: true,
     colSpan: size.colSpan,
     rowSpan: size.rowSpan,
     w: size.colSpan,

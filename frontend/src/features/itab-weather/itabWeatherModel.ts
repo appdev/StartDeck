@@ -116,7 +116,6 @@ export const createDefaultItabWeatherWidget = (): WidgetConfig => {
     id: ITAB_WEATHER_CATALOG_ID,
     type: ITAB_WEATHER_WIDGET_TYPE,
     enable: true,
-    isPublic: true,
     colSpan: size.colSpan,
     rowSpan: size.rowSpan,
     w: size.colSpan,
