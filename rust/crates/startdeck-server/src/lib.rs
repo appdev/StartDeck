@@ -1421,16 +1421,7 @@ async fn normalize_default_template_items_for_startup(
                 managed_icons::canonical_icon_url(&icon.asset.id)
             }
             Ok(None) => String::new(),
-            Err(error)
-                if matches!(
-                    error.status(),
-                    StatusCode::NOT_FOUND
-                        | StatusCode::BAD_GATEWAY
-                        | StatusCode::FORBIDDEN
-                        | StatusCode::UNPROCESSABLE_ENTITY
-                        | StatusCode::UNSUPPORTED_MEDIA_TYPE
-                ) =>
-            {
+            Err(error) if is_droppable_icon_resolution_error(error.status()) => {
                 tracing::warn!(error = %error.message(), "dropping unresolved startup default icon");
                 String::new()
             }
@@ -1718,21 +1709,24 @@ async fn normalize_nav_item_icon(
     {
         Ok(Some(icon)) => Ok(managed_icons::canonical_icon_url(&icon.asset.id)),
         Ok(None) => Ok(String::new()),
-        Err(error)
-            if matches!(
-                error.status(),
-                StatusCode::NOT_FOUND
-                    | StatusCode::BAD_GATEWAY
-                    | StatusCode::FORBIDDEN
-                    | StatusCode::UNPROCESSABLE_ENTITY
-                    | StatusCode::UNSUPPORTED_MEDIA_TYPE
-            ) =>
-        {
+        Err(error) if is_droppable_icon_resolution_error(error.status()) => {
             tracing::warn!(error = %error.message(), "dropping unresolved navigation icon");
             Ok(String::new())
         }
         Err(error) => Err(error),
     }
+}
+
+fn is_droppable_icon_resolution_error(status: StatusCode) -> bool {
+    matches!(
+        status,
+        StatusCode::BAD_REQUEST
+            | StatusCode::NOT_FOUND
+            | StatusCode::BAD_GATEWAY
+            | StatusCode::FORBIDDEN
+            | StatusCode::UNPROCESSABLE_ENTITY
+            | StatusCode::UNSUPPORTED_MEDIA_TYPE
+    )
 }
 
 async fn ignored_stale_save_version(
@@ -1803,16 +1797,7 @@ async fn normalize_template_items(
                 managed_icons::canonical_icon_url(&icon.asset.id)
             }
             Ok(None) => String::new(),
-            Err(error)
-                if matches!(
-                    error.status(),
-                    StatusCode::NOT_FOUND
-                        | StatusCode::BAD_GATEWAY
-                        | StatusCode::FORBIDDEN
-                        | StatusCode::UNPROCESSABLE_ENTITY
-                        | StatusCode::UNSUPPORTED_MEDIA_TYPE
-                ) =>
-            {
+            Err(error) if is_droppable_icon_resolution_error(error.status()) => {
                 tracing::warn!(error = %error.message(), "dropping unresolved default-template icon");
                 String::new()
             }

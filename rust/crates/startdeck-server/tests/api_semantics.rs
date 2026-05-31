@@ -369,6 +369,92 @@ fn read_default_template_json(config: &RuntimeConfig) -> Value {
 }
 
 #[tokio::test]
+async fn startup_icon_migration_drops_invalid_legacy_icon_refs() {
+    let temp = tempfile::tempdir().unwrap();
+    let base = temp.keep();
+    let data_dir = base.join("Data/data");
+    std::fs::create_dir_all(&data_dir).unwrap();
+    std::fs::write(
+        data_dir.join("system.json"),
+        r#"{"authMode":"single","enableDocker":false}"#,
+    )
+    .unwrap();
+    std::fs::write(
+        data_dir.join("data.json"),
+        serde_json::to_vec(&json!({
+            "username": "admin",
+            "password": "secret",
+            "appConfig": {"customTitle": "Legacy Icons"},
+            "groups": [{
+                "id": "legacy-group",
+                "title": "Legacy",
+                "items": [{
+                    "id": "bad-user-icon",
+                    "title": "Bad User Icon",
+                    "url": "https://example.com",
+                    "icon": ""
+                }]
+            }],
+            "widgets": []
+        }))
+        .unwrap(),
+    )
+    .unwrap();
+    std::fs::write(
+        data_dir.join("default.json"),
+        serde_json::to_vec(&json!({
+            "appConfig": {"customTitle": "Guest Legacy"},
+            "groups": [{
+                "id": "guest-legacy-group",
+                "title": "Guest Legacy",
+                "items": [{
+                    "id": "bad-template-icon",
+                    "title": "Bad Template Icon",
+                    "url": "https://example.com",
+                    "icon": "legacy://bad-template-icon"
+                }]
+            }],
+            "widgets": []
+        }))
+        .unwrap(),
+    )
+    .unwrap();
+    let public_dir = base.join("Data/public");
+    std::fs::create_dir_all(&public_dir).unwrap();
+    std::fs::write(public_dir.join("index.html"), "<main>StartDeck</main>").unwrap();
+
+    let config = RuntimeConfig::from_base_dir(base);
+    let pool = connect_sqlite(&config).await.unwrap();
+    import_legacy_app_data(&pool, &config).await.unwrap();
+    sqlx::query("UPDATE nav_items SET icon = ? WHERE id = 'bad-user-icon'")
+        .bind("legacy://bad-user-icon")
+        .execute(&pool)
+        .await
+        .unwrap();
+
+    let state = {
+        let _guard = ENV_LOCK.lock().unwrap();
+        AppState::try_new_with_meta_server_base(
+            config.clone(),
+            pool.clone(),
+            false,
+            "http://127.0.0.1:1",
+        )
+        .unwrap()
+    };
+    state.run_startup_icon_migration().await.unwrap();
+
+    let user_icon: String =
+        sqlx::query_scalar("SELECT icon FROM nav_items WHERE id = 'bad-user-icon'")
+            .fetch_one(&pool)
+            .await
+            .unwrap();
+    assert_eq!(user_icon, "");
+    let default_json = read_default_template_json(&config);
+    assert_eq!(default_json["groups"][0]["items"][0]["icon"], "");
+}
+
+#[tokio::test]
 async fn ai_usage_credentials_are_encrypted_scoped_and_never_echoed() {
     let app = test_app().await;
     let token = login_token(&app).await;
