@@ -197,6 +197,16 @@ async fn test_context_with_widget_cache(include_poem_cache: bool) -> TestContext
     std::fs::create_dir_all(public_dir.join("itab-live-assets/anniversary")).unwrap();
     std::fs::create_dir_all(public_dir.join("itab/weather/icon")).unwrap();
     std::fs::write(
+        public_dir.join("assets/index-current123.js"),
+        b"console.log('current entry')",
+    )
+    .unwrap();
+    std::fs::write(
+        public_dir.join("assets/index-current123.css"),
+        b".current-entry{}",
+    )
+    .unwrap();
+    std::fs::write(
         public_dir.join("assets/ai-usage/providers/openai.svg"),
         r#"<svg id="openai"/>"#,
     )
@@ -1639,6 +1649,69 @@ async fn application_assets_are_served_from_assets_route() {
         );
         let body = to_bytes(response.into_body(), usize::MAX).await.unwrap();
         assert!(!body.is_empty(), "{uri}");
+    }
+}
+
+#[tokio::test]
+async fn stale_entry_assets_fall_back_to_current_entry_bundle() {
+    let app = test_app().await;
+
+    for (uri, expected_body, expected_content_type) in [
+        (
+            "/assets/index-stale456.js",
+            b"console.log('current entry')".as_slice(),
+            "text/javascript",
+        ),
+        (
+            "/assets/index-stale456.css",
+            b".current-entry{}".as_slice(),
+            "text/css",
+        ),
+    ] {
+        let response = app
+            .clone()
+            .oneshot(Request::builder().uri(uri).body(Body::empty()).unwrap())
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::OK, "{uri}");
+        assert_eq!(
+            response
+                .headers()
+                .get("cache-control")
+                .and_then(|value| value.to_str().ok()),
+            Some("no-cache"),
+            "{uri}"
+        );
+        let content_type = response
+            .headers()
+            .get("content-type")
+            .and_then(|value| value.to_str().ok())
+            .unwrap_or_default();
+        assert!(
+            content_type.starts_with(expected_content_type),
+            "{uri} content-type was {content_type:?}"
+        );
+        let body = to_bytes(response.into_body(), usize::MAX).await.unwrap();
+        assert_eq!(body.as_ref(), expected_body, "{uri}");
+    }
+}
+
+#[tokio::test]
+async fn missing_non_entry_assets_still_return_404() {
+    let app = test_app().await;
+
+    for uri in [
+        "/assets/chunk-stale456.js",
+        "/assets/index-short.js",
+        "/assets/index-stale456.map",
+    ] {
+        let response = app
+            .clone()
+            .oneshot(Request::builder().uri(uri).body(Body::empty()).unwrap())
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::NOT_FOUND, "{uri}");
+        assert!(response.headers().get("cache-control").is_none(), "{uri}");
     }
 }
 

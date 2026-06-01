@@ -1,15 +1,15 @@
 use std::collections::HashMap;
 use std::io::{Read, Write};
 use std::net::IpAddr;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
-use std::time::Duration;
+use std::time::{Duration, SystemTime};
 
 use aes_gcm::aead::rand_core::{OsRng, RngCore};
 use axum::body::{Body, Bytes};
 use axum::extract::ws::{Message, WebSocket, WebSocketUpgrade};
 use axum::extract::{DefaultBodyLimit, Multipart, Path as AxumPath, Query, State};
-use axum::http::{HeaderMap, HeaderName, HeaderValue, StatusCode, header};
+use axum::http::{HeaderMap, HeaderName, HeaderValue, Request, StatusCode, header};
 use axum::middleware::map_response;
 use axum::response::{IntoResponse, Response};
 use axum::routing::{MethodRouter, any, delete, get, get_service, post};
@@ -31,7 +31,7 @@ use startdeck_core::{
     RuntimeConfig, app_snapshot, save_snapshot, system_config, user_password_hash,
 };
 use tokio::fs;
-use tower::ServiceBuilder;
+use tower::{ServiceBuilder, service_fn};
 use tower_http::compression::CompressionLayer;
 use tower_http::cors::{Any, CorsLayer};
 use tower_http::services::{ServeDir, ServeFile};
@@ -207,6 +207,7 @@ pub fn app(state: AppState) -> Router {
     let backgrounds_dir = state.config.backgrounds_dir.clone();
     let mobile_dir = state.config.mobile_backgrounds_dir.clone();
     let assets_dir = static_assets::public_subdir(&state.config, "assets");
+    let assets_fallback_dir = assets_dir.clone();
     let itab_live_assets_dir = static_assets::public_subdir(&state.config, "itab-live-assets");
     let itab_assets_dir = static_assets::public_subdir(&state.config, "itab");
     let intro_assets_dir = static_assets::public_subdir(&state.config, "intro-assets");
@@ -347,7 +348,16 @@ pub fn app(state: AppState) -> Router {
             "/assets",
             ServiceBuilder::new()
                 .layer(map_response(insert_immutable_static_cache))
-                .service(ServeDir::new(assets_dir)),
+                .service(ServeDir::new(assets_dir).fallback(service_fn(
+                    move |request: Request<Body>| {
+                        let assets_dir = assets_fallback_dir.clone();
+                        async move {
+                            Ok::<_, std::convert::Infallible>(
+                                stale_entry_asset_fallback(assets_dir, request).await,
+                            )
+                        }
+                    },
+                ))),
         )
         .nest_service(
             "/itab-live-assets",
@@ -423,12 +433,89 @@ async fn insert_html_cache<B>(mut response: Response<B>) -> Response<B> {
     response
 }
 
+async fn stale_entry_asset_fallback(assets_dir: PathBuf, request: Request<Body>) -> Response {
+    let Some(extension) = stale_entry_asset_extension(request.uri().path()) else {
+        return StatusCode::NOT_FOUND.into_response();
+    };
+    let Some(path) = current_entry_asset_path(&assets_dir, extension).await else {
+        return StatusCode::NOT_FOUND.into_response();
+    };
+    match fs::read(path).await {
+        Ok(bytes) => {
+            let mut response = Response::new(Body::from(bytes));
+            response.headers_mut().insert(
+                header::CONTENT_TYPE,
+                HeaderValue::from_static(entry_asset_content_type(extension)),
+            );
+            response.headers_mut().insert(
+                header::CACHE_CONTROL,
+                HeaderValue::from_static(HTML_CACHE_CONTROL),
+            );
+            response
+        }
+        Err(_) => StatusCode::NOT_FOUND.into_response(),
+    }
+}
+
+fn stale_entry_asset_extension(path: &str) -> Option<&'static str> {
+    let file_name = path.rsplit('/').next()?;
+    let (name, extension) = file_name.rsplit_once('.')?;
+    if !name.starts_with("index-") {
+        return None;
+    }
+    let hash = name.strip_prefix("index-")?;
+    if hash.len() < 6
+        || !hash
+            .chars()
+            .all(|ch| ch.is_ascii_alphanumeric() || ch == '-' || ch == '_')
+    {
+        return None;
+    }
+    match extension {
+        "js" => Some("js"),
+        "css" => Some("css"),
+        _ => None,
+    }
+}
+
+async fn current_entry_asset_path(assets_dir: &Path, extension: &str) -> Option<PathBuf> {
+    let mut dir = fs::read_dir(assets_dir).await.ok()?;
+    let mut selected: Option<(SystemTime, PathBuf)> = None;
+    while let Some(entry) = dir.next_entry().await.ok()? {
+        let file_name = entry.file_name();
+        let Some(file_name) = file_name.to_str() else {
+            continue;
+        };
+        if !file_name.starts_with("index-") || !file_name.ends_with(&format!(".{extension}")) {
+            continue;
+        }
+        let modified = entry
+            .metadata()
+            .await
+            .ok()
+            .and_then(|metadata| metadata.modified().ok())
+            .unwrap_or(SystemTime::UNIX_EPOCH);
+        match &selected {
+            Some((current_modified, _)) if *current_modified >= modified => {}
+            _ => selected = Some((modified, entry.path())),
+        }
+    }
+    selected.map(|(_, path)| path)
+}
+
+fn entry_asset_content_type(extension: &str) -> &'static str {
+    match extension {
+        "css" => "text/css; charset=utf-8",
+        _ => "text/javascript; charset=utf-8",
+    }
+}
+
 fn insert_cache_control_if_success(
     headers: &mut HeaderMap,
     status: StatusCode,
     value: &'static str,
 ) {
-    if status.is_success() {
+    if status.is_success() && !headers.contains_key(header::CACHE_CONTROL) {
         headers.insert(header::CACHE_CONTROL, HeaderValue::from_static(value));
     }
 }
