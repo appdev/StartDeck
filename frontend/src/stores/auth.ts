@@ -1,5 +1,6 @@
 import { computed, ref } from "vue";
 import { defineStore } from "pinia";
+import { notifySessionExpired } from "@/utils/sessionExpiredFeedback";
 
 type SessionResponse = {
   success?: boolean;
@@ -66,6 +67,9 @@ export const useAuthStore = defineStore("auth", () => {
         applySession(data);
       } else {
         clearLocalSession();
+        if (res.status === 401 && data.error === "invalid_token") {
+          notifySessionExpired();
+        }
       }
     } catch (e) {
       console.warn("[Auth] Session bootstrap failed", e);

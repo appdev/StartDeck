@@ -1,13 +1,23 @@
 // @vitest-environment jsdom
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createPinia, setActivePinia } from "pinia";
 import { useAuthStore } from "./auth";
+import { useUiFeedbackStore } from "./uiFeedback";
+import {
+  SESSION_EXPIRED_TOAST_MESSAGE,
+  SESSION_EXPIRED_TOAST_TITLE,
+} from "@/utils/sessionExpiredFeedback";
 
 describe("auth store cookie session model", () => {
   beforeEach(() => {
     setActivePinia(createPinia());
     localStorage.clear();
     vi.restoreAllMocks();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.unstubAllGlobals();
   });
 
   it("bootstraps authenticated cookie sessions without reading bearer tokens", async () => {
@@ -63,5 +73,33 @@ describe("auth store cookie session model", () => {
         credentials: "same-origin",
       }),
     );
+  });
+
+  it("shows a login-expired toast when session bootstrap rejects an invalid cookie", async () => {
+    vi.useFakeTimers();
+    const fetchMock = vi.fn(
+      async () =>
+        new Response(
+          JSON.stringify({ success: false, error: "invalid_token" }),
+          {
+            status: 401,
+            headers: { "Content-Type": "application/json" },
+          },
+        ),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const auth = useAuthStore();
+    const uiFeedback = useUiFeedbackStore();
+    await auth.bootstrapSession();
+
+    expect(auth.sessionReady).toBe(true);
+    expect(auth.isLogged).toBe(false);
+    expect(uiFeedback.toasts).toHaveLength(1);
+    expect(uiFeedback.toasts[0]).toMatchObject({
+      title: SESSION_EXPIRED_TOAST_TITLE,
+      message: SESSION_EXPIRED_TOAST_MESSAGE,
+      tone: "warning",
+    });
   });
 });

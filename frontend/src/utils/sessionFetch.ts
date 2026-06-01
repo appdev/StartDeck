@@ -1,4 +1,5 @@
 import { useAuthStore } from "@/stores/auth";
+import { notifySessionExpired } from "@/utils/sessionExpiredFeedback";
 
 const LEGACY_TOKEN_KEY = "start-deck-token";
 const SESSION_INVALID_EVENT = "startdeck:session-invalid";
@@ -41,6 +42,7 @@ export const invalidateStartDeckSession = async () => {
     const auth = useAuthStore();
     auth.clearLocalSession();
     deleteLegacySessionToken();
+    notifySessionExpired();
     await fetch("/api/logout", {
       method: "POST",
       credentials: "same-origin",

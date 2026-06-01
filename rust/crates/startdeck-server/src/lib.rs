@@ -638,9 +638,10 @@ async fn session(State(state): State<AppState>, headers: HeaderMap) -> Response 
 async fn logout(headers: HeaderMap) -> Response {
     let mut response = Json(json!({"success": true, "authenticated": false})).into_response();
     insert_no_store(response.headers_mut());
-    insert_set_cookie(
+    insert_expired_session_cookies(
         response.headers_mut(),
-        expired_session_cookie(should_mark_session_cookie_secure(&headers)),
+        &headers,
+        should_mark_session_cookie_secure(&headers),
     );
     response
 }
@@ -698,17 +699,27 @@ async fn upload_license(
     Ok(Json(json!({"success": true})))
 }
 
-async fn get_data(
-    State(state): State<AppState>,
-    headers: HeaderMap,
-) -> Result<Json<Value>, ApiError> {
-    let Some(username) = optional_username_from_headers(&headers, &state)? else {
-        return Ok(Json(
-            default_template_to_api_value(state.config.as_ref()).await?,
-        ));
-    };
-    let snapshot = app_snapshot(&state.pool, &username).await?;
-    Ok(Json(snapshot_to_api_value(snapshot)))
+async fn get_data(State(state): State<AppState>, headers: HeaderMap) -> Result<Response, ApiError> {
+    match session_cookie_auth(&headers, &state) {
+        SessionCookieAuth::Valid(session) => {
+            let snapshot = app_snapshot(&state.pool, &session.username).await?;
+            Ok(Json(snapshot_to_api_value(snapshot)).into_response())
+        }
+        SessionCookieAuth::Missing => {
+            Ok(Json(default_template_to_api_value(state.config.as_ref()).await?).into_response())
+        }
+        SessionCookieAuth::Invalid => {
+            let mut response =
+                Json(default_template_to_api_value(state.config.as_ref()).await?).into_response();
+            insert_no_store(response.headers_mut());
+            insert_expired_session_cookies(
+                response.headers_mut(),
+                &headers,
+                should_mark_session_cookie_secure(&headers),
+            );
+            Ok(response)
+        }
+    }
 }
 
 async fn save_data(
@@ -808,15 +819,26 @@ async fn reset_data(
     })))
 }
 
-async fn version(
-    State(state): State<AppState>,
-    headers: HeaderMap,
-) -> Result<Json<Value>, ApiError> {
-    let Some(username) = optional_username_from_headers(&headers, &state)? else {
-        return Ok(Json(json!({"version": 0, "isGuest": true})));
-    };
-    let snapshot = app_snapshot(&state.pool, &username).await?;
-    Ok(Json(json!({"version": snapshot.version})))
+async fn version(State(state): State<AppState>, headers: HeaderMap) -> Result<Response, ApiError> {
+    match session_cookie_auth(&headers, &state) {
+        SessionCookieAuth::Valid(session) => {
+            let snapshot = app_snapshot(&state.pool, &session.username).await?;
+            Ok(Json(json!({"version": snapshot.version})).into_response())
+        }
+        SessionCookieAuth::Missing => {
+            Ok(Json(json!({"version": 0, "isGuest": true})).into_response())
+        }
+        SessionCookieAuth::Invalid => {
+            let mut response = Json(json!({"version": 0, "isGuest": true})).into_response();
+            insert_no_store(response.headers_mut());
+            insert_expired_session_cookies(
+                response.headers_mut(),
+                &headers,
+                should_mark_session_cookie_secure(&headers),
+            );
+            Ok(response)
+        }
+    }
 }
 
 async fn app_version_check(State(state): State<AppState>) -> Result<Json<Value>, ApiError> {
@@ -2434,6 +2456,55 @@ fn expired_session_cookie(secure: bool) -> String {
     cookie
 }
 
+fn expired_session_cookie_for_domain(secure: bool, domain: &str) -> String {
+    let mut cookie = expired_session_cookie(secure);
+    cookie.push_str("; Domain=");
+    cookie.push_str(domain);
+    cookie
+}
+
+fn session_cookie_clear_domains(headers: &HeaderMap) -> Vec<String> {
+    let Some(host) = headers
+        .get(header::HOST)
+        .and_then(|value| value.to_str().ok())
+        .map(|value| value.trim().trim_end_matches('.'))
+        .filter(|value| !value.is_empty())
+    else {
+        return Vec::new();
+    };
+    if host.starts_with('[') {
+        return Vec::new();
+    }
+    let host = host.split_once(':').map_or(host, |(host, _)| host);
+    if host.eq_ignore_ascii_case("localhost") || host.parse::<std::net::IpAddr>().is_ok() {
+        return Vec::new();
+    }
+
+    let mut domains = vec![host.to_ascii_lowercase()];
+    let labels = host.split('.').collect::<Vec<_>>();
+    if labels.len() > 2 {
+        let parent = labels[labels.len() - 2..].join(".").to_ascii_lowercase();
+        if !domains.iter().any(|domain| domain == &parent) {
+            domains.push(parent);
+        }
+    }
+    domains
+}
+
+fn insert_expired_session_cookies(
+    response_headers: &mut HeaderMap,
+    request_headers: &HeaderMap,
+    secure: bool,
+) {
+    insert_set_cookie(response_headers, expired_session_cookie(secure));
+    for domain in session_cookie_clear_domains(request_headers) {
+        insert_set_cookie(
+            response_headers,
+            expired_session_cookie_for_domain(secure, &domain),
+        );
+    }
+}
+
 fn insert_no_store(headers: &mut HeaderMap) {
     headers.insert(header::CACHE_CONTROL, HeaderValue::from_static("no-store"));
 }
@@ -2659,6 +2730,7 @@ pub struct ApiError {
     message: String,
     clear_session_cookie: bool,
     secure_session_cookie: bool,
+    session_cookie_clear_domains: Vec<String>,
     no_store: bool,
 }
 
@@ -2669,6 +2741,7 @@ impl ApiError {
             message: message.into(),
             clear_session_cookie: false,
             secure_session_cookie: false,
+            session_cookie_clear_domains: Vec::new(),
             no_store: false,
         }
     }
@@ -2685,6 +2758,7 @@ impl ApiError {
         Self {
             clear_session_cookie: true,
             secure_session_cookie: should_mark_session_cookie_secure(headers),
+            session_cookie_clear_domains: session_cookie_clear_domains(headers),
             ..Self::unauthorized("invalid_token")
         }
     }
@@ -2742,6 +2816,12 @@ impl IntoResponse for ApiError {
                 response.headers_mut(),
                 expired_session_cookie(self.secure_session_cookie),
             );
+            for domain in self.session_cookie_clear_domains {
+                insert_set_cookie(
+                    response.headers_mut(),
+                    expired_session_cookie_for_domain(self.secure_session_cookie, &domain),
+                );
+            }
         }
         response
     }

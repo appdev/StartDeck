@@ -6,7 +6,12 @@ import { useAuthStore } from "./auth";
 import { useCacheStore } from "./cache";
 import { useWidgetsStore } from "./widgets";
 import { useGroupsStore } from "./groups";
+import { useUiFeedbackStore } from "./uiFeedback";
 import type { WidgetConfig } from "@/types";
+import {
+  SESSION_EXPIRED_TOAST_MESSAGE,
+  SESSION_EXPIRED_TOAST_TITLE,
+} from "@/utils/sessionExpiredFeedback";
 
 const privateWidget: WidgetConfig = {
   id: "private-todo",
@@ -27,6 +32,7 @@ describe("cache store auth scope", () => {
   });
 
   afterEach(() => {
+    vi.useRealTimers();
     vi.unstubAllGlobals();
   });
 
@@ -121,23 +127,21 @@ describe("cache store auth scope", () => {
       localStorage.getItem("start-deck-data-cache:guest") || "{}",
     );
     expect(raw.groups[0].items[0].icon).toBe("");
-    expect(raw.groups[0].items[1].icon).toBe(
-      "/api/icons/icn_valid_1",
-    );
+    expect(raw.groups[0].items[1].icon).toBe("/api/icons/icn_valid_1");
 
     groups.groups = [];
     const version = ref(0);
     expect(cache.loadFromCache(version)).toBe(true);
     expect(groups.groups[0].items[0].icon).toBe("");
-    expect(groups.groups[0].items[1].icon).toBe(
-      "/api/icons/icn_valid_1",
-    );
+    expect(groups.groups[0].items[1].icon).toBe("/api/icons/icn_valid_1");
   });
 
   it("clears stale authenticated state when the server rejects the stored token", async () => {
+    vi.useFakeTimers();
     const auth = useAuthStore();
     const cache = useCacheStore();
     const widgets = useWidgetsStore();
+    const uiFeedback = useUiFeedbackStore();
     const version = ref(0);
 
     auth.sessionReady = true;
@@ -166,6 +170,12 @@ describe("cache store auth scope", () => {
     expect(auth.isLogged).toBe(false);
     expect(auth.username).toBe("");
     expect(localStorage.getItem("start-deck-username")).toBeNull();
+    expect(uiFeedback.toasts).toHaveLength(1);
+    expect(uiFeedback.toasts[0]).toMatchObject({
+      title: SESSION_EXPIRED_TOAST_TITLE,
+      message: SESSION_EXPIRED_TOAST_MESSAGE,
+      tone: "warning",
+    });
     expect(version.value).toBe(0);
   });
 });

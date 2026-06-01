@@ -389,6 +389,16 @@ fn response_header(response: &axum::response::Response, name: &str) -> String {
         .to_string()
 }
 
+fn response_headers(response: &axum::response::Response, name: &str) -> Vec<String> {
+    response
+        .headers()
+        .get_all(name)
+        .iter()
+        .filter_map(|value| value.to_str().ok())
+        .map(ToOwned::to_owned)
+        .collect()
+}
+
 async fn seed_stale_default_runtime_cache(pool: &sqlx::SqlitePool, value: Value) {
     sqlx::query(
         r#"INSERT OR REPLACE INTO runtime_cache(kind, cache_key, value_json, expires_at, source_status, updated_at)
@@ -817,12 +827,30 @@ async fn login_and_read_data_snapshot() {
             Request::builder()
                 .uri("/api/data")
                 .header("cookie", "startdeck_session=invalid-token")
+                .header("host", "start.put.run")
                 .body(Body::empty())
                 .unwrap(),
         )
         .await
         .unwrap();
-    assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
+    assert_eq!(response.status(), StatusCode::OK);
+    let set_cookies = response_headers(&response, "set-cookie");
+    assert!(set_cookies.iter().any(|value| value.contains("Max-Age=0")));
+    assert!(
+        set_cookies
+            .iter()
+            .any(|value| value.contains("Domain=start.put.run"))
+    );
+    assert!(
+        set_cookies
+            .iter()
+            .any(|value| value.contains("Domain=put.run"))
+    );
+    let body: Value =
+        serde_json::from_slice(&to_bytes(response.into_body(), usize::MAX).await.unwrap()).unwrap();
+    assert_eq!(body["isGuest"], true);
+    assert_eq!(body["username"], "__guest__");
+    assert_eq!(body["widgets"].as_array().unwrap().len(), 2);
 
     let response = app
         .clone()
@@ -956,6 +984,8 @@ async fn session_and_logout_use_no_store_and_expire_invalid_cookie() {
             Request::builder()
                 .uri("/api/session")
                 .header("cookie", "startdeck_session=invalid")
+                .header("host", "start.put.run")
+                .header("x-forwarded-proto", "https")
                 .body(Body::empty())
                 .unwrap(),
         )
@@ -967,6 +997,18 @@ async fn session_and_logout_use_no_store_and_expire_invalid_cookie() {
     assert!(expired.contains("startdeck_session="));
     assert!(expired.contains("Max-Age=0"));
     assert!(expired.contains("Expires=Thu, 01 Jan 1970 00:00:00 GMT"));
+    assert!(expired.contains("Secure"));
+    let set_cookies = response_headers(&response, "set-cookie");
+    assert!(
+        set_cookies
+            .iter()
+            .any(|value| value.contains("Domain=start.put.run"))
+    );
+    assert!(
+        set_cookies
+            .iter()
+            .any(|value| value.contains("Domain=put.run"))
+    );
 
     let response = app
         .clone()
@@ -1012,8 +1054,10 @@ async fn startdeck_authorization_bearer_no_longer_authenticates_sessions() {
         None,
     )
     .await;
-    assert_eq!(status, StatusCode::UNAUTHORIZED);
-    assert_eq!(body["error"], "invalid_token");
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(body["isGuest"], true);
+    assert_eq!(body["username"], "__guest__");
+    assert_eq!(body["appConfig"]["customTitle"], "Guest Default");
 }
 
 #[tokio::test]
@@ -1848,6 +1892,29 @@ async fn route_surface_smoke_covers_auth_and_runtime_semantics() {
     let (status, body) = json_call(&app, "GET", "/api/version", None, None).await;
     assert_eq!(status, StatusCode::OK);
     assert!(body["version"].as_i64().is_some());
+
+    let response = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .uri("/api/version")
+                .header("cookie", "startdeck_session=invalid-token")
+                .header("host", "start.put.run")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
+    assert!(
+        response_headers(&response, "set-cookie")
+            .iter()
+            .any(|value| value.contains("Max-Age=0"))
+    );
+    let body: Value =
+        serde_json::from_slice(&to_bytes(response.into_body(), usize::MAX).await.unwrap()).unwrap();
+    assert_eq!(body["version"], 0);
+    assert_eq!(body["isGuest"], true);
 
     let (status, body) = json_call(&app, "GET", "/api/system-config", None, None).await;
     assert_eq!(status, StatusCode::OK);
