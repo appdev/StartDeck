@@ -16,6 +16,7 @@ import AppWindowControls from "@/components/base/AppWindowControls.vue";
 import { VueCropper } from "vue-cropper";
 import {
   materializeIconInput,
+  sanitizeNavigationIcon,
   type ManagedIconCandidate,
 } from "@/utils/iconAssets";
 import {
@@ -430,7 +431,7 @@ const processIconError = () => {
   const val = form.value.icon;
   if (
     val &&
-    (val.startsWith("/api/assets/icons/") ||
+    (sanitizeNavigationIcon(val) ||
       val.startsWith("http://") ||
       val.startsWith("https://") ||
       val.startsWith("data:"))

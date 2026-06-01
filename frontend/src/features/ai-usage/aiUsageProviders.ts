@@ -3,7 +3,7 @@ import type {
   AiUsageProviderId,
 } from "./aiUsageTypes";
 
-export const AI_USAGE_PROVIDER_ICON_BASE = "/ai-usage/providers";
+export const AI_USAGE_PROVIDER_ICON_BASE = "/assets/ai-usage/providers";
 
 export const AI_USAGE_PROVIDERS: AiUsageProviderDefinition[] = [
   {

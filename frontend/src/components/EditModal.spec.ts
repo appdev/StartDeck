@@ -77,9 +77,9 @@ const mountEditModal = (data: NavItem, onSave = vi.fn(async () => undefined)) =>
 describe("EditModal", () => {
   let wrapper: VueWrapper | null = null;
   const managedIcon = {
-    id: "icn_example",
-    assetId: "icn_example",
-    url: "/api/assets/icons/icn_example",
+    id: "mta_aHR0cHM6Ly9leGFtcGxlLmNvbS8",
+    assetId: "mta_aHR0cHM6Ly9leGFtcGxlLmNvbS8",
+    url: "/api/icons/mta_aHR0cHM6Ly9leGFtcGxlLmNvbS8",
     source: "metadata",
     label: "Example",
     backgroundColor: "#111827",
@@ -159,7 +159,7 @@ describe("EditModal", () => {
       id: "link-1",
       title: "Doubao",
       url: "https://www.doubao.com/chat",
-      icon: "/api/assets/icons/icn_doubao",
+      icon: "/api/icons/icn_doubao",
       iconSize: 100,
       iconBackgroundMode: "custom",
       iconCustomBackgroundColor: "#f3f4f6",
@@ -171,7 +171,7 @@ describe("EditModal", () => {
       ".edit-card-preview-card .edit-card-preview-icon [data-testid='icon-shape']",
     );
 
-    expect(previewIcon?.dataset.icon).toBe("/api/assets/icons/icn_doubao");
+    expect(previewIcon?.dataset.icon).toBe("/api/icons/icn_doubao");
     expect(previewIcon?.dataset.size).toBe("78");
     expect(previewIcon?.dataset.imgScale).toBe("100");
     expect(previewIcon?.dataset.bgClass).toBe("#f3f4f6");
@@ -208,8 +208,8 @@ describe("EditModal", () => {
       ".edit-card-preview-card .edit-card-preview-icon [data-testid='icon-shape']",
     );
 
-    expect(iconInput?.value).toBe("/api/assets/icons/icn_example");
-    expect(previewIcon?.dataset.icon).toBe("/api/assets/icons/icn_example");
+    expect(iconInput?.value).toBe("/api/icons/mta_aHR0cHM6Ly9leGFtcGxlLmNvbS8");
+    expect(previewIcon?.dataset.icon).toBe("/api/icons/mta_aHR0cHM6Ly9leGFtcGxlLmNvbS8");
   });
 
   it("automatically applies the first fetched icon and title from metadata", async () => {
@@ -256,7 +256,7 @@ describe("EditModal", () => {
       );
       expect(titleInput?.value).toBe("Fetched Example");
       expect(iconInput?.value).toBe(
-        "/api/assets/icons/icn_example",
+        "/api/icons/mta_aHR0cHM6Ly9leGFtcGxlLmNvbS8",
       );
     });
 
@@ -264,7 +264,7 @@ describe("EditModal", () => {
       ".edit-card-preview-card .edit-card-preview-icon [data-testid='icon-shape']",
     );
     expect(previewIcon?.dataset.icon).toBe(
-      "/api/assets/icons/icn_example",
+      "/api/icons/mta_aHR0cHM6Ly9leGFtcGxlLmNvbS8",
     );
     expect(document.body.textContent).toContain("已获取标题、图标、描述");
   });

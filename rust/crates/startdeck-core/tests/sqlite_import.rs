@@ -143,12 +143,12 @@ async fn stored_primary_icon(pool: &SqlitePool, host: &str) -> Option<String> {
 }
 
 #[tokio::test]
-async fn fresh_sqlite_db_records_schema_version_7() {
+async fn fresh_sqlite_db_records_schema_version_8() {
     let temp = tempfile::tempdir().unwrap();
     let config = RuntimeConfig::from_base_dir(temp.path().to_path_buf());
     let pool = connect_sqlite(&config).await.unwrap();
 
-    assert_eq!(schema_versions(&pool).await, vec![7]);
+    assert_eq!(schema_versions(&pool).await, vec![8]);
 
     let icon_asset_columns = sqlx::query("PRAGMA table_info(icon_assets)")
         .fetch_all(&pool)
@@ -199,6 +199,117 @@ async fn fresh_sqlite_db_records_schema_version_7() {
         .collect::<Vec<_>>();
     for column in ["id", "sha256", "content_type", "byte_size", "storage_path"] {
         assert!(managed_blob_columns.iter().any(|item| item == column));
+    }
+}
+
+#[tokio::test]
+async fn v8_migration_rewrites_legacy_managed_icon_prefixes() {
+    let temp = tempfile::tempdir().unwrap();
+    let config = RuntimeConfig::from_base_dir(temp.path().to_path_buf());
+    let pool = raw_sqlite_pool(&config).await;
+    sqlx::query(
+        r#"CREATE TABLE schema_migrations (
+            version INTEGER PRIMARY KEY,
+            applied_at INTEGER NOT NULL
+        )"#,
+    )
+    .execute(&pool)
+    .await
+    .unwrap();
+    sqlx::query("INSERT INTO schema_migrations(version, applied_at) VALUES (7, 1)")
+        .execute(&pool)
+        .await
+        .unwrap();
+    sqlx::query(
+        r#"CREATE TABLE nav_items (
+            id TEXT NOT NULL,
+            group_id TEXT NOT NULL,
+            username TEXT NOT NULL,
+            title TEXT NOT NULL,
+            url TEXT NOT NULL,
+            icon TEXT NOT NULL,
+            is_public INTEGER NOT NULL,
+            sort_order INTEGER NOT NULL,
+            metadata_json TEXT NOT NULL,
+            PRIMARY KEY(username, id)
+        )"#,
+    )
+    .execute(&pool)
+    .await
+    .unwrap();
+    sqlx::query(
+        r#"INSERT INTO nav_items(id, group_id, username, title, url, icon, is_public, sort_order, metadata_json)
+           VALUES ('item-1', 'group-1', 'admin', 'Old', 'https://example.com', '/api/assets/icons/icn_old', 0, 0, '{"icon":"/api/assets/icons/icn_old"}')"#,
+    )
+    .execute(&pool)
+    .await
+    .unwrap();
+    sqlx::query(
+        r#"CREATE TABLE runtime_cache (
+            kind TEXT NOT NULL,
+            cache_key TEXT NOT NULL,
+            value_json TEXT NOT NULL,
+            expires_at INTEGER,
+            source_status TEXT NOT NULL,
+            updated_at INTEGER NOT NULL,
+            PRIMARY KEY(kind, cache_key)
+        )"#,
+    )
+    .execute(&pool)
+    .await
+    .unwrap();
+    sqlx::query(
+        r#"INSERT INTO runtime_cache(kind, cache_key, value_json, expires_at, source_status, updated_at)
+           VALUES ('data', 'admin', '{"icon":"/api/assets/icons/icn_cache"}', NULL, 'ok', 1)"#,
+    )
+    .execute(&pool)
+    .await
+    .unwrap();
+    sqlx::query(
+        r#"CREATE TABLE config_versions (
+            id TEXT PRIMARY KEY,
+            username TEXT NOT NULL,
+            label TEXT NOT NULL,
+            snapshot_json TEXT NOT NULL,
+            created_at INTEGER NOT NULL
+        )"#,
+    )
+    .execute(&pool)
+    .await
+    .unwrap();
+    sqlx::query(
+        r#"INSERT INTO config_versions(id, username, label, snapshot_json, created_at)
+           VALUES ('version-1', 'admin', 'Old', '{"icon":"/api/assets/icons/icn_version"}', 1)"#,
+    )
+    .execute(&pool)
+    .await
+    .unwrap();
+    pool.close().await;
+
+    let migrated = connect_sqlite(&config).await.unwrap();
+    assert_eq!(max_schema_version(&migrated).await, 8);
+    let icon: String = sqlx::query_scalar("SELECT icon FROM nav_items WHERE id = 'item-1'")
+        .fetch_one(&migrated)
+        .await
+        .unwrap();
+    let metadata_json: String =
+        sqlx::query_scalar("SELECT metadata_json FROM nav_items WHERE id = 'item-1'")
+            .fetch_one(&migrated)
+            .await
+            .unwrap();
+    let runtime_cache: String =
+        sqlx::query_scalar("SELECT value_json FROM runtime_cache WHERE kind = 'data'")
+            .fetch_one(&migrated)
+            .await
+            .unwrap();
+    let snapshot_json: String =
+        sqlx::query_scalar("SELECT snapshot_json FROM config_versions WHERE id = 'version-1'")
+            .fetch_one(&migrated)
+            .await
+            .unwrap();
+    for value in [icon, metadata_json, runtime_cache, snapshot_json] {
+        assert!(value.contains("/api/icons/icn_"), "{value}");
+        assert!(!value.contains("/api/assets/icons/"), "{value}");
     }
 }
 
@@ -363,7 +474,7 @@ async fn migrates_v3_icon_records_to_fetch_status_schema_without_losing_assets()
     assert_eq!(record.retry_after, 0);
     assert_eq!(record.last_error, "");
 
-    assert_eq!(schema_versions(&pool).await, vec![3, 4, 5, 6, 7]);
+    assert_eq!(schema_versions(&pool).await, vec![3, 4, 5, 6, 7, 8]);
 }
 
 #[tokio::test]
@@ -703,7 +814,7 @@ async fn incompatible_legacy_schema_is_rebuilt_destructively() {
         .unwrap();
     assert_eq!(stale_count, 0);
 
-    assert_eq!(max_schema_version(&pool).await, 7);
+    assert_eq!(max_schema_version(&pool).await, 8);
 
     let snapshot = app_snapshot(&pool, "admin").await.unwrap();
     assert!(snapshot.system_config.enable_docker);
@@ -793,7 +904,7 @@ async fn migrates_v4_icon_assets_to_v5_without_rerunning_older_migrations() {
 
     let pool = connect_sqlite(&config).await.unwrap();
 
-    assert_eq!(schema_versions(&pool).await, vec![4, 5, 6, 7]);
+    assert_eq!(schema_versions(&pool).await, vec![4, 5, 6, 7, 8]);
     assert_eq!(
         icon_record(&pool, "v4.example.com")
             .await
@@ -991,7 +1102,7 @@ async fn v4_main_service_data_survives_v5_migration_and_restart_import() {
     let migrated_pool = connect_sqlite(&config).await.unwrap();
     import_legacy_data(&migrated_pool, &config).await.unwrap();
 
-    assert_eq!(max_schema_version(&migrated_pool).await, 7);
+    assert_eq!(max_schema_version(&migrated_pool).await, 8);
     let after = app_snapshot(&migrated_pool, "admin").await.unwrap();
     assert_eq!(
         after.user.app_config["customTitle"],

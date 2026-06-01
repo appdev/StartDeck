@@ -16,7 +16,7 @@ use crate::models::{
     WidgetRecord,
 };
 
-const CURRENT_SCHEMA_VERSION: i64 = 7;
+const CURRENT_SCHEMA_VERSION: i64 = 8;
 
 pub async fn connect_sqlite(config: &RuntimeConfig) -> Result<SqlitePool> {
     config.ensure_dirs().context("create runtime directories")?;
@@ -243,7 +243,7 @@ pub async fn ensure_schema(pool: &SqlitePool) -> Result<()> {
         r#"CREATE INDEX IF NOT EXISTS idx_managed_icon_assets_blob
            ON managed_icon_assets(blob_id)"#,
         r#"INSERT OR IGNORE INTO schema_migrations(version, applied_at)
-           VALUES (7, CAST(strftime('%s','now') AS INTEGER) * 1000)"#,
+           VALUES (8, CAST(strftime('%s','now') AS INTEGER) * 1000)"#,
     ];
     for statement in statements {
         sqlx::query(statement).execute(pool).await?;
@@ -286,8 +286,11 @@ async fn migrate_schema(pool: &SqlitePool) -> Result<()> {
     if version < 6 {
         migrate_to_schema_6(pool).await?;
     }
-    if version < CURRENT_SCHEMA_VERSION {
+    if version < 7 {
         migrate_to_schema_7(pool).await?;
+    }
+    if version < CURRENT_SCHEMA_VERSION {
+        migrate_to_schema_8(pool).await?;
     }
     Ok(())
 }
@@ -500,6 +503,63 @@ async fn migrate_to_schema_7(pool: &SqlitePool) -> Result<()> {
         .bind(now_ms())
         .execute(pool)
         .await?;
+    Ok(())
+}
+
+async fn migrate_to_schema_8(pool: &SqlitePool) -> Result<()> {
+    rewrite_legacy_managed_icon_prefixes(pool).await?;
+    sqlx::query("INSERT OR IGNORE INTO schema_migrations(version, applied_at) VALUES (8, ?)")
+        .bind(now_ms())
+        .execute(pool)
+        .await?;
+    Ok(())
+}
+
+async fn rewrite_legacy_managed_icon_prefixes(pool: &SqlitePool) -> Result<()> {
+    const OLD_PREFIX: &str = "/api/assets/icons/";
+    const NEW_PREFIX: &str = "/api/icons/";
+    if table_exists(pool, "nav_items").await? {
+        sqlx::query(
+            r#"UPDATE nav_items
+               SET icon = replace(icon, ?, ?)
+               WHERE icon LIKE '%/api/assets/icons/%'"#,
+        )
+        .bind(OLD_PREFIX)
+        .bind(NEW_PREFIX)
+        .execute(pool)
+        .await?;
+        sqlx::query(
+            r#"UPDATE nav_items
+               SET metadata_json = replace(metadata_json, ?, ?)
+               WHERE metadata_json LIKE '%/api/assets/icons/%'"#,
+        )
+        .bind(OLD_PREFIX)
+        .bind(NEW_PREFIX)
+        .execute(pool)
+        .await?;
+    }
+    if table_exists(pool, "runtime_cache").await? {
+        sqlx::query(
+            r#"UPDATE runtime_cache
+               SET value_json = replace(value_json, ?, ?)
+               WHERE value_json LIKE '%/api/assets/icons/%'"#,
+        )
+        .bind(OLD_PREFIX)
+        .bind(NEW_PREFIX)
+        .execute(pool)
+        .await?;
+    }
+    if table_exists(pool, "config_versions").await? {
+        sqlx::query(
+            r#"UPDATE config_versions
+               SET snapshot_json = replace(snapshot_json, ?, ?)
+               WHERE snapshot_json LIKE '%/api/assets/icons/%'"#,
+        )
+        .bind(OLD_PREFIX)
+        .bind(NEW_PREFIX)
+        .execute(pool)
+        .await?;
+    }
     Ok(())
 }
 

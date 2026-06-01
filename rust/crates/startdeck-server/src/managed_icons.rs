@@ -1,3 +1,4 @@
+use std::collections::BTreeSet;
 use std::path::PathBuf;
 
 use axum::Json;
@@ -5,6 +6,8 @@ use axum::body::Body;
 use axum::extract::{Path as AxumPath, Query, State};
 use axum::http::{HeaderMap, HeaderValue, StatusCode, header};
 use axum::response::Response;
+use base64::Engine;
+use base64::engine::general_purpose::URL_SAFE_NO_PAD;
 use chrono::Utc;
 use reqwest::Url;
 use serde::Deserialize;
@@ -20,8 +23,11 @@ use crate::{
 };
 
 const MAX_ICON_BYTES: usize = 5 * 1024 * 1024;
-const CANONICAL_ICON_PREFIX: &str = "/api/assets/icons/";
+const CANONICAL_ICON_PREFIX: &str = "/api/icons/";
+const LEGACY_CANONICAL_ICON_PREFIX: &str = "/api/assets/icons/";
+const SEED_ICON_PREFIX: &str = "/assets/seed-icons/nav/";
 const ICON_ASSET_PREFIX: &str = "icn_";
+const META_ICON_PREFIX: &str = "mta_";
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum IconVisibility<'a> {
@@ -99,14 +105,93 @@ pub(crate) fn canonical_icon_url(id: &str) -> String {
     format!("{CANONICAL_ICON_PREFIX}{id}")
 }
 
+pub(crate) fn meta_icon_id(site_url: &str) -> Result<String, ApiError> {
+    let normalized = normalize_site_url(site_url)?;
+    Ok(format!(
+        "{META_ICON_PREFIX}{}",
+        URL_SAFE_NO_PAD.encode(normalized.as_bytes())
+    ))
+}
+
 pub(crate) fn is_canonical_icon_url(value: &str) -> bool {
     extract_asset_id(value).is_some()
 }
 
+pub(crate) fn is_seed_icon_url(value: &str) -> bool {
+    let trimmed = value.trim();
+    let Some(name) = trimmed.strip_prefix(SEED_ICON_PREFIX) else {
+        return false;
+    };
+    if name.is_empty() || name.contains('/') || !safe_file_name(name) {
+        return false;
+    }
+    matches!(
+        name.rsplit('.')
+            .next()
+            .map(str::to_ascii_lowercase)
+            .as_deref(),
+        Some("svg" | "png" | "webp" | "ico")
+    ) && safe_relative_resource_path(trimmed)
+}
+
+pub(crate) fn is_meta_icon_url(value: &str) -> bool {
+    extract_meta_icon_id(value).is_some()
+}
+
+pub(crate) fn normalize_icon_url(value: &str) -> Option<String> {
+    let trimmed = value.trim();
+    if trimmed.is_empty() {
+        return Some(String::new());
+    }
+    if let Some(id) = extract_asset_id(trimmed) {
+        return Some(canonical_icon_url(id));
+    }
+    if extract_meta_icon_id(trimmed).is_some() {
+        return Some(trimmed.to_string());
+    }
+    if is_seed_icon_url(trimmed) {
+        return Some(trimmed.to_string());
+    }
+    None
+}
+
+pub(crate) fn seed_icon_resource_path(value: &str) -> Option<String> {
+    let trimmed = value.trim();
+    if is_seed_icon_url(trimmed) {
+        Some(trimmed.trim_start_matches('/').to_string())
+    } else {
+        None
+    }
+}
+
+pub(crate) async fn validate_meta_icon_ref(value: &str) -> Result<(), ApiError> {
+    let Some(id) = extract_meta_icon_id(value) else {
+        return Err(ApiError::bad_request("invalid_meta_icon_id"));
+    };
+    let site_url = decode_meta_icon_id(id)?;
+    let parsed = validate_remote_url(&site_url).await?;
+    if is_blocked_host(parsed.host_str().unwrap_or_default()).await? {
+        return Err(ApiError::forbidden("blocked_host"));
+    }
+    Ok(())
+}
+
 pub(crate) fn extract_asset_id(value: &str) -> Option<&str> {
     let trimmed = value.trim();
-    let id = trimmed.strip_prefix(CANONICAL_ICON_PREFIX)?;
+    let id = trimmed
+        .strip_prefix(CANONICAL_ICON_PREFIX)
+        .or_else(|| trimmed.strip_prefix(LEGACY_CANONICAL_ICON_PREFIX))?;
     if is_valid_asset_id(id) {
+        Some(id)
+    } else {
+        None
+    }
+}
+
+fn extract_meta_icon_id(value: &str) -> Option<&str> {
+    let trimmed = value.trim();
+    let id = trimmed.strip_prefix(CANONICAL_ICON_PREFIX)?;
+    if is_valid_meta_icon_id(id) {
         Some(id)
     } else {
         None
@@ -121,12 +206,20 @@ fn is_valid_asset_id(id: &str) -> bool {
             .all(|ch| ch.is_ascii_alphanumeric() || ch == '_' || ch == '-')
 }
 
+fn is_valid_meta_icon_id(id: &str) -> bool {
+    id.starts_with(META_ICON_PREFIX)
+        && id.len() > META_ICON_PREFIX.len()
+        && id[META_ICON_PREFIX.len()..]
+            .chars()
+            .all(|ch| ch.is_ascii_alphanumeric() || ch == '_' || ch == '-')
+}
+
 pub(crate) async fn resolve_site(
     State(state): State<AppState>,
     headers: HeaderMap,
     Query(query): Query<ResolveSiteQuery>,
 ) -> Result<Json<Value>, ApiError> {
-    let username = require_username(&headers, &state)?;
+    require_username(&headers, &state)?;
     let normalized_url = normalize_site_url(&query.url)?;
     let metadata = fetch_site_metadata(&state, &normalized_url).await?;
     let title = string_field(&metadata, "title").unwrap_or_default();
@@ -139,51 +232,19 @@ pub(crate) async fn resolve_site(
     };
 
     let mut candidates = Vec::new();
-    let mut refs = Vec::new();
-    if let Some(icon) = string_field(&metadata, "icon") {
-        refs.push(icon);
-    }
-    refs.push(metaserver_site_icon_ref(&normalized_url));
-
-    for icon_ref in refs {
-        match materialize_icon_value(
-            &state,
-            IconVisibility::Private(&username),
-            &icon_ref,
-            None,
-            IconNormalizationMode::PreserveEmpty,
-            "metaserver",
-        )
-        .await
-        {
-            Ok(Some(materialized)) => {
-                if candidates
-                    .iter()
-                    .any(|item: &ManagedIconCandidate| item.id == materialized.asset.id)
-                {
-                    continue;
-                }
-                candidates.push(ManagedIconCandidate {
-                    id: materialized.asset.id.clone(),
-                    url: canonical_icon_url(&materialized.asset.id),
-                    source: "metaserver".to_string(),
-                    label: label.clone(),
-                    content_type: materialized.asset.content_type,
-                    background_color: background_color.clone(),
-                    width: None,
-                    height: None,
-                    reused: materialized.reused,
-                });
-            }
-            Err(error) if error.status() == StatusCode::BAD_GATEWAY => {
-                tracing::warn!(error = %error.message(), "site icon candidate materialization failed");
-            }
-            Err(error) if error.status() == StatusCode::NOT_FOUND => {}
-            Err(error) if error.status() == StatusCode::FORBIDDEN => {}
-            Err(error) if error.status() == StatusCode::UNPROCESSABLE_ENTITY => {}
-            Err(error) => return Err(error),
-            Ok(None) => {}
-        }
+    if string_field(&metadata, "icon").is_some() {
+        let id = meta_icon_id(&normalized_url)?;
+        candidates.push(ManagedIconCandidate {
+            id: id.clone(),
+            url: canonical_icon_url(&id),
+            source: "metaserver".to_string(),
+            label,
+            content_type: String::new(),
+            background_color: background_color.clone(),
+            width: None,
+            height: None,
+            reused: true,
+        });
     }
 
     let selected = candidates.first().cloned();
@@ -249,7 +310,7 @@ pub(crate) async fn get_icon_asset(
     headers: HeaderMap,
     AxumPath(id): AxumPath<String>,
 ) -> Result<Response, ApiError> {
-    stream_icon_asset(&state, &headers, &id, false).await
+    stream_icon(&state, &headers, &id, false).await
 }
 
 pub(crate) async fn head_icon_asset(
@@ -257,7 +318,7 @@ pub(crate) async fn head_icon_asset(
     headers: HeaderMap,
     AxumPath(id): AxumPath<String>,
 ) -> Result<Response, ApiError> {
-    stream_icon_asset(&state, &headers, &id, true).await
+    stream_icon(&state, &headers, &id, true).await
 }
 
 pub(crate) async fn materialize_icon_value(
@@ -339,6 +400,95 @@ pub(crate) async fn cleanup_failed_assets(state: &AppState) -> Result<(), ApiErr
     Ok(())
 }
 
+pub(crate) async fn cleanup_unreferenced_private_icons(
+    state: &AppState,
+    username: &str,
+) -> Result<(), ApiError> {
+    let asset_rows = sqlx::query(
+        r#"SELECT id
+           FROM managed_icon_assets
+           WHERE visibility = 'private'
+             AND owner_username = ?
+             AND lifecycle = 'active'"#,
+    )
+    .bind(username)
+    .fetch_all(&state.pool)
+    .await?;
+    if asset_rows.is_empty() {
+        return Ok(());
+    }
+
+    let mut referenced = BTreeSet::new();
+    let nav_rows = sqlx::query(
+        r#"SELECT icon, metadata_json
+           FROM nav_items
+           WHERE username = ?"#,
+    )
+    .bind(username)
+    .fetch_all(&state.pool)
+    .await?;
+    for row in nav_rows {
+        collect_icon_asset_id_from_string(&row.get::<String, _>("icon"), &mut referenced);
+        collect_icon_asset_ids_from_json_text(
+            &row.get::<String, _>("metadata_json"),
+            &mut referenced,
+        );
+    }
+
+    let version_rows = sqlx::query(
+        r#"SELECT snapshot_json
+           FROM config_versions
+           WHERE username = ?"#,
+    )
+    .bind(username)
+    .fetch_all(&state.pool)
+    .await?;
+    for row in version_rows {
+        collect_icon_asset_ids_from_json_text(
+            &row.get::<String, _>("snapshot_json"),
+            &mut referenced,
+        );
+    }
+
+    let now = Utc::now().timestamp_millis();
+    for row in asset_rows {
+        let id = row.get::<String, _>("id");
+        if referenced.contains(&id) {
+            continue;
+        }
+        sqlx::query(
+            r#"UPDATE managed_icon_assets
+               SET lifecycle = 'deleted', updated_at = ?
+               WHERE id = ?
+                 AND visibility = 'private'
+                 AND owner_username = ?"#,
+        )
+        .bind(now)
+        .bind(id)
+        .bind(username)
+        .execute(&state.pool)
+        .await?;
+    }
+
+    remove_inactive_blob_files(state).await?;
+    Ok(())
+}
+
+async fn stream_icon(
+    state: &AppState,
+    headers: &HeaderMap,
+    id: &str,
+    head_only: bool,
+) -> Result<Response, ApiError> {
+    if is_valid_asset_id(id) {
+        return stream_icon_asset(state, headers, id, head_only).await;
+    }
+    if is_valid_meta_icon_id(id) {
+        return stream_meta_icon(state, headers, id, head_only).await;
+    }
+    Err(ApiError::bad_request("invalid_icon_id"))
+}
+
 async fn stream_icon_asset(
     state: &AppState,
     headers: &HeaderMap,
@@ -385,11 +535,55 @@ async fn stream_icon_asset(
         HeaderValue::from_str(&blob.content_type)
             .unwrap_or_else(|_| HeaderValue::from_static("application/octet-stream")),
     );
+    let cache_control = if asset.visibility == "template" {
+        "public, max-age=86400"
+    } else {
+        "private, max-age=86400"
+    };
     response.headers_mut().insert(
         header::CACHE_CONTROL,
-        HeaderValue::from_static("private, max-age=86400"),
+        HeaderValue::from_static(cache_control),
     );
     if let Ok(value) = HeaderValue::from_str(&blob.byte_size.to_string()) {
+        response.headers_mut().insert(header::CONTENT_LENGTH, value);
+    }
+    Ok(response)
+}
+
+async fn stream_meta_icon(
+    state: &AppState,
+    headers: &HeaderMap,
+    id: &str,
+    head_only: bool,
+) -> Result<Response, ApiError> {
+    if !hotlink_allowed(headers) {
+        return Err(ApiError::forbidden("hotlink_denied"));
+    }
+    let site_url = decode_meta_icon_id(id)?;
+    let parsed = validate_remote_url(&site_url).await?;
+    if is_blocked_host(parsed.host_str().unwrap_or_default()).await? {
+        return Err(ApiError::forbidden("blocked_host"));
+    }
+    let icon_url = Url::parse(state.meta_server_base.as_str())
+        .and_then(|base| base.join(&metaserver_site_icon_ref(parsed.as_str())))
+        .map_err(|_| ApiError::bad_gateway("metaserver_unavailable"))?;
+    let icon = fetch_icon_bytes(state, icon_url).await?;
+    let byte_size = icon.bytes.len();
+    let mut response = Response::new(if head_only {
+        Body::empty()
+    } else {
+        Body::from(icon.bytes)
+    });
+    response.headers_mut().insert(
+        header::CONTENT_TYPE,
+        HeaderValue::from_str(&icon.content_type)
+            .unwrap_or_else(|_| HeaderValue::from_static("application/octet-stream")),
+    );
+    response.headers_mut().insert(
+        header::CACHE_CONTROL,
+        HeaderValue::from_static("public, max-age=86400, stale-while-revalidate=604800"),
+    );
+    if let Ok(value) = HeaderValue::from_str(&byte_size.to_string()) {
         response.headers_mut().insert(header::CONTENT_LENGTH, value);
     }
     Ok(response)
@@ -796,7 +990,9 @@ fn normalize_site_url(raw: &str) -> Result<String, ApiError> {
     if !matches!(parsed.scheme(), "http" | "https") || parsed.host_str().is_none() {
         return Err(ApiError::bad_request("invalid_url"));
     }
-    Ok(parsed.to_string())
+    let mut normalized = parsed;
+    normalized.set_fragment(None);
+    Ok(normalized.to_string())
 }
 
 fn metaserver_site_icon_ref(site_url: &str) -> String {
@@ -804,6 +1000,19 @@ fn metaserver_site_icon_ref(site_url: &str) -> String {
         Url::parse_with_params("http://startdeck.local/api/site/icon", [("url", site_url)])
             .expect("static metaserver icon route");
     format!("/api/site/icon?{}", parsed.query().unwrap_or_default())
+}
+
+fn decode_meta_icon_id(id: &str) -> Result<String, ApiError> {
+    if !is_valid_meta_icon_id(id) {
+        return Err(ApiError::bad_request("invalid_meta_icon_id"));
+    }
+    let encoded = &id[META_ICON_PREFIX.len()..];
+    let bytes = URL_SAFE_NO_PAD
+        .decode(encoded)
+        .map_err(|_| ApiError::bad_request("invalid_meta_icon_id"))?;
+    let decoded =
+        String::from_utf8(bytes).map_err(|_| ApiError::bad_request("invalid_meta_icon_id"))?;
+    normalize_site_url(&decoded)
 }
 
 fn host_label(site_url: &str) -> String {
@@ -865,6 +1074,36 @@ fn svg_has_active_content(bytes: &[u8]) -> bool {
         || lower.contains("xlink:href='http")
 }
 
+fn collect_icon_asset_id_from_string(value: &str, out: &mut BTreeSet<String>) {
+    if let Some(id) = extract_asset_id(value) {
+        out.insert(id.to_string());
+    }
+}
+
+fn collect_icon_asset_ids_from_json_text(value: &str, out: &mut BTreeSet<String>) {
+    let Ok(json) = serde_json::from_str::<Value>(value) else {
+        return;
+    };
+    collect_icon_asset_ids_from_value(&json, out);
+}
+
+fn collect_icon_asset_ids_from_value(value: &Value, out: &mut BTreeSet<String>) {
+    match value {
+        Value::String(text) => collect_icon_asset_id_from_string(text, out),
+        Value::Array(values) => {
+            for value in values {
+                collect_icon_asset_ids_from_value(value, out);
+            }
+        }
+        Value::Object(map) => {
+            for value in map.values() {
+                collect_icon_asset_ids_from_value(value, out);
+            }
+        }
+        _ => {}
+    }
+}
+
 fn safe_file_name(name: &str) -> bool {
     !name.is_empty()
         && !name.contains('/')
@@ -873,8 +1112,55 @@ fn safe_file_name(name: &str) -> bool {
         && !name.contains("..")
 }
 
+fn safe_relative_resource_path(path: &str) -> bool {
+    let path = path.trim();
+    path.starts_with('/')
+        && !path.contains('\\')
+        && !path.contains(':')
+        && !path.split('/').any(|part| part == "..")
+}
+
 fn blob_path(state: &AppState, storage_path: &str) -> PathBuf {
     state.config.data_dir.join(storage_path)
+}
+
+async fn remove_inactive_blob_files(state: &AppState) -> Result<(), ApiError> {
+    let rows = sqlx::query(
+        r#"SELECT storage_path
+           FROM managed_icon_blobs b
+           WHERE NOT EXISTS (
+             SELECT 1
+             FROM managed_icon_assets a
+             WHERE a.blob_id = b.id
+               AND a.lifecycle = 'active'
+           )"#,
+    )
+    .fetch_all(&state.pool)
+    .await?;
+    for row in rows {
+        let storage_path = row.get::<String, _>("storage_path");
+        if !safe_relative_storage_path(&storage_path) {
+            continue;
+        }
+        let path = blob_path(state, &storage_path);
+        if path.is_file() {
+            match tokio::fs::remove_file(&path).await {
+                Ok(()) => {}
+                Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
+                Err(error) => return Err(error.into()),
+            }
+        }
+    }
+    Ok(())
+}
+
+fn safe_relative_storage_path(path: &str) -> bool {
+    let path = path.trim();
+    !path.is_empty()
+        && !path.starts_with('/')
+        && !path.contains('\\')
+        && !path.contains(':')
+        && !path.split('/').any(|part| part.is_empty() || part == "..")
 }
 
 fn new_asset_id() -> String {

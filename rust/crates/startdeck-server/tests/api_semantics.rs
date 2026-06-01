@@ -186,6 +186,18 @@ async fn test_context_with_widget_cache(include_poem_cache: bool) -> TestContext
         r#"<svg xmlns="http://www.w3.org/2000/svg" id="startdeck"/>"#,
     )
     .unwrap();
+    std::fs::create_dir_all(public_dir.join("assets/ai-usage/providers")).unwrap();
+    std::fs::create_dir_all(public_dir.join("assets/seed-icons/nav")).unwrap();
+    std::fs::write(
+        public_dir.join("assets/ai-usage/providers/openai.svg"),
+        r#"<svg id="openai"/>"#,
+    )
+    .unwrap();
+    std::fs::write(
+        public_dir.join("assets/seed-icons/nav/github.svg"),
+        r#"<svg id="github"/>"#,
+    )
+    .unwrap();
     let config = RuntimeConfig::from_base_dir(base);
     let pool = connect_sqlite(&config).await.unwrap();
     import_legacy_app_data(&pool, &config).await.unwrap();
@@ -1527,6 +1539,25 @@ async fn intro_html_is_served_from_public_assets() {
 }
 
 #[tokio::test]
+async fn application_assets_are_served_from_assets_route() {
+    let app = test_app().await;
+
+    for uri in [
+        "/assets/ai-usage/providers/openai.svg",
+        "/assets/seed-icons/nav/github.svg",
+    ] {
+        let response = app
+            .clone()
+            .oneshot(Request::builder().uri(uri).body(Body::empty()).unwrap())
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::OK, "{uri}");
+        let body = to_bytes(response.into_body(), usize::MAX).await.unwrap();
+        assert!(!body.is_empty(), "{uri}");
+    }
+}
+
+#[tokio::test]
 async fn save_updates_relational_snapshot() {
     let app = test_app().await;
     let token = login_token(&app).await;
@@ -1771,7 +1802,7 @@ async fn route_surface_smoke_covers_auth_and_runtime_semantics() {
     let (status, body) = json_call(
         &app,
         "POST",
-        "/api/assets/icons",
+        "/api/icons",
         None,
         Some(json!({"source": {"type": "dataUrl", "value": "data:image/svg+xml;base64,PHN2Zy8+"}})),
     )
@@ -1782,7 +1813,7 @@ async fn route_surface_smoke_covers_auth_and_runtime_semantics() {
     let (status, body) = json_call(
         &app,
         "POST",
-        "/api/assets/icons",
+        "/api/icons",
         Some(&token),
         Some(json!({"source": {"type": "dataUrl", "value": "data:image/svg+xml;base64,PHN2Zy8+"}})),
     )
@@ -1792,14 +1823,14 @@ async fn route_surface_smoke_covers_auth_and_runtime_semantics() {
         body["data"]["url"]
             .as_str()
             .unwrap()
-            .starts_with("/api/assets/icons/icn_")
+            .starts_with("/api/icons/icn_")
     );
     assert_eq!(body["data"]["assetId"], body["data"]["id"]);
 
     let (status, body) = json_call(
         &app,
         "POST",
-        "/api/assets/icons",
+        "/api/icons",
         Some(&token),
         Some(json!({"source": {"type": "remoteUrl", "value": "http://127.0.0.1:9/icon.svg"}})),
     )
@@ -2163,11 +2194,15 @@ async fn spawn_mock_meta_server() -> (String, tokio::task::JoinHandle<()>) {
 }
 
 #[tokio::test]
-async fn site_resolve_materializes_private_icon_assets_and_enforces_access() {
+async fn site_resolve_returns_public_meta_icon_proxy_without_managed_asset() {
     let (meta_server_base, meta_server) = spawn_mock_meta_server().await;
     let ctx = test_context_with_meta_server_base(meta_server_base).await;
     let TestContext { app, pool, .. } = ctx;
     let admin_token = login_token(&app).await;
+    let asset_count_before: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM managed_icon_assets")
+        .fetch_one(&pool)
+        .await
+        .unwrap();
 
     let (status, body) =
         json_call(&app, "GET", "/api/site/resolve?url=example.com", None, None).await;
@@ -2187,8 +2222,13 @@ async fn site_resolve_materializes_private_icon_assets_and_enforces_access() {
     assert_eq!(body["data"]["title"], "Example Metadata");
     assert_eq!(body["data"]["description"], "Resolved from mock MetaServer");
     let icon_url = body["data"]["selectedIcon"]["url"].as_str().unwrap();
-    assert!(icon_url.starts_with("/api/assets/icons/icn_"));
+    assert!(icon_url.starts_with("/api/icons/mta_"));
     assert_eq!(body["data"]["iconCandidates"].as_array().unwrap().len(), 1);
+    let asset_count_after: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM managed_icon_assets")
+        .fetch_one(&pool)
+        .await
+        .unwrap();
+    assert_eq!(asset_count_after, asset_count_before);
 
     let (status, _) = json_call(
         &app,
@@ -2199,7 +2239,6 @@ async fn site_resolve_materializes_private_icon_assets_and_enforces_access() {
     )
     .await;
     assert_eq!(status, StatusCode::OK);
-    let alice_token = login_token_for(&app, "alice", "secret").await;
 
     let response = app
         .clone()
@@ -2211,27 +2250,13 @@ async fn site_resolve_materializes_private_icon_assets_and_enforces_access() {
         )
         .await
         .unwrap();
-    assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
+    assert_eq!(response.status(), StatusCode::OK);
 
     let response = app
         .clone()
         .oneshot(
             Request::builder()
                 .uri(icon_url)
-                .header("cookie", &alice_token)
-                .body(Body::empty())
-                .unwrap(),
-        )
-        .await
-        .unwrap();
-    assert_eq!(response.status(), StatusCode::FORBIDDEN);
-
-    let response = app
-        .clone()
-        .oneshot(
-            Request::builder()
-                .uri(icon_url)
-                .header("cookie", &admin_token)
                 .header("host", "startdeck.local")
                 .header("origin", "https://evil.example")
                 .body(Body::empty())
@@ -2247,7 +2272,6 @@ async fn site_resolve_materializes_private_icon_assets_and_enforces_access() {
             Request::builder()
                 .method("HEAD")
                 .uri(icon_url)
-                .header("cookie", &admin_token)
                 .body(Body::empty())
                 .unwrap(),
         )
@@ -2267,7 +2291,6 @@ async fn site_resolve_materializes_private_icon_assets_and_enforces_access() {
         .oneshot(
             Request::builder()
                 .uri(icon_url)
-                .header("cookie", &admin_token)
                 .body(Body::empty())
                 .unwrap(),
         )
@@ -2305,7 +2328,7 @@ async fn site_resolve_materializes_private_icon_assets_and_enforces_access() {
     let imported_icon = body["data"]["groups"][0]["items"][0]["icon"]
         .as_str()
         .unwrap();
-    assert!(imported_icon.starts_with("/api/assets/icons/icn_"));
+    assert!(imported_icon.starts_with("/api/icons/mta_"));
     let stored_icon: String =
         sqlx::query_scalar("SELECT icon FROM nav_items WHERE id = 'example-import'")
             .fetch_one(&pool)

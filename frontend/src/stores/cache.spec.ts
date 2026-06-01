@@ -106,7 +106,7 @@ describe("cache store auth scope", () => {
               id: "managed",
               title: "Managed",
               url: "https://managed.example",
-              icon: "/api/assets/icons/icn_valid_1",
+              icon: "/api/icons/icn_valid_1",
             },
           ],
         },
@@ -122,7 +122,7 @@ describe("cache store auth scope", () => {
     );
     expect(raw.groups[0].items[0].icon).toBe("");
     expect(raw.groups[0].items[1].icon).toBe(
-      "/api/assets/icons/icn_valid_1",
+      "/api/icons/icn_valid_1",
     );
 
     groups.groups = [];
@@ -130,7 +130,7 @@ describe("cache store auth scope", () => {
     expect(cache.loadFromCache(version)).toBe(true);
     expect(groups.groups[0].items[0].icon).toBe("");
     expect(groups.groups[0].items[1].icon).toBe(
-      "/api/assets/icons/icn_valid_1",
+      "/api/icons/icn_valid_1",
     );
   });
 

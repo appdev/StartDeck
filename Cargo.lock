@@ -3008,7 +3008,7 @@ dependencies = [
 
 [[package]]
 name = "startdeck-server"
-version = "1.2.5"
+version = "1.2.6"
 dependencies = [
  "aes-gcm",
  "anyhow",

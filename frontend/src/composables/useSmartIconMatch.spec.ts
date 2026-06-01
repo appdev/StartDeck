@@ -42,9 +42,9 @@ class FakeImage {
 
 describe("useSmartIconMatch", () => {
   const managedIcon = {
-    id: "icn_example",
-    assetId: "icn_example",
-    url: "/api/assets/icons/icn_example",
+    id: "mta_aHR0cHM6Ly9leGFtcGxlLmNvbS8",
+    assetId: "mta_aHR0cHM6Ly9leGFtcGxlLmNvbS8",
+    url: "/api/icons/mta_aHR0cHM6Ly9leGFtcGxlLmNvbS8",
     source: "metadata",
     label: "Example",
     backgroundColor: "#111827",
@@ -133,9 +133,9 @@ describe("useSmartIconMatch", () => {
     expect(smartIconMatch.isSmartMatching.value).toBe(false);
     expect(smartIconMatch.smartMatchCandidates.value).toEqual([
       {
-        id: "icn_example",
-        assetId: "icn_example",
-        url: "/api/assets/icons/icn_example",
+        id: "mta_aHR0cHM6Ly9leGFtcGxlLmNvbS8",
+        assetId: "mta_aHR0cHM6Ly9leGFtcGxlLmNvbS8",
+        url: "/api/icons/mta_aHR0cHM6Ly9leGFtcGxlLmNvbS8",
         source: "site",
         label: "Example",
         backgroundColor: "#111827",
@@ -218,10 +218,10 @@ describe("useSmartIconMatch", () => {
 
     expect(form.value.title).toBe("Example");
     expect(smartIconMatch.selectedSmartMatchCandidateUrl.value).toBe(
-      "/api/assets/icons/icn_example",
+      "/api/icons/mta_aHR0cHM6Ly9leGFtcGxlLmNvbS8",
     );
     expect(onSelect).toHaveBeenCalledWith({
-      icon: "/api/assets/icons/icn_example",
+      icon: "/api/icons/mta_aHR0cHM6Ly9leGFtcGxlLmNvbS8",
       source: "site",
       label: "Example",
       backgroundColor: "#111827",
@@ -237,20 +237,20 @@ describe("useSmartIconMatch", () => {
     });
 
     smartIconMatch.selectSmartMatchCandidate({
-      id: "icn_example",
-      assetId: "icn_example",
-      url: "/api/assets/icons/icn_example",
+      id: "mta_aHR0cHM6Ly9leGFtcGxlLmNvbS8",
+      assetId: "mta_aHR0cHM6Ly9leGFtcGxlLmNvbS8",
+      url: "/api/icons/mta_aHR0cHM6Ly9leGFtcGxlLmNvbS8",
       source: "site",
       label: "Example",
       backgroundColor: "#111827",
     });
     expect(smartIconMatch.selectedSmartMatchCandidateUrl.value).toBe(
-      "/api/assets/icons/icn_example",
+      "/api/icons/mta_aHR0cHM6Ly9leGFtcGxlLmNvbS8",
     );
     expect(smartIconMatch.showSmartMatchModal.value).toBe(true);
 
     expect(onSelect).toHaveBeenCalledWith({
-      icon: "/api/assets/icons/icn_example",
+      icon: "/api/icons/mta_aHR0cHM6Ly9leGFtcGxlLmNvbS8",
       source: "site",
       label: "Example",
       backgroundColor: "#111827",

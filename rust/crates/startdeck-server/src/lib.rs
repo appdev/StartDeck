@@ -201,6 +201,7 @@ pub fn app(state: AppState) -> Router {
     let public_dir = state.config.public_dir.clone();
     let backgrounds_dir = state.config.backgrounds_dir.clone();
     let mobile_dir = state.config.mobile_backgrounds_dir.clone();
+    let assets_dir = static_assets::public_subdir(&state.config, "assets");
     let itab_live_assets_dir = static_assets::public_subdir(&state.config, "itab-live-assets");
     let itab_assets_dir = static_assets::public_subdir(&state.config, "itab");
     let intro_assets_dir = static_assets::public_subdir(&state.config, "intro-assets");
@@ -249,9 +250,9 @@ pub fn app(state: AppState) -> Router {
             get(get_custom_scripts).post(save_custom_scripts),
         )
         .route("/api/site/resolve", get(managed_icons::resolve_site))
-        .route("/api/assets/icons", post(managed_icons::create_icon_asset))
+        .route("/api/icons", post(managed_icons::create_icon_asset))
         .route(
-            "/api/assets/icons/{id}",
+            "/api/icons/{id}",
             get(managed_icons::get_icon_asset).head(managed_icons::head_icon_asset),
         )
         .route("/api/ip/history", get(ip_lookup::user_ip_history))
@@ -325,10 +326,7 @@ pub fn app(state: AppState) -> Router {
             "/intro.html",
             get_service(ServeFile::new(public_dir.join("intro.html"))),
         )
-        .nest_service(
-            "/assets",
-            get_service(ServeDir::new(public_dir.join("assets"))),
-        )
+        .nest_service("/assets", get_service(ServeDir::new(assets_dir)))
         .nest_service(
             "/itab-live-assets",
             get_service(ServeDir::new(itab_live_assets_dir)),
@@ -517,9 +515,10 @@ async fn delete_user(
         return Err(ApiError::bad_request("invalid_username"));
     }
     sqlx::query("DELETE FROM users WHERE username = ?")
-        .bind(username)
+        .bind(&username)
         .execute(&state.pool)
         .await?;
+    managed_icons::cleanup_unreferenced_private_icons(&state, &username).await?;
     Ok(Json(json!({"success": true})))
 }
 
@@ -571,6 +570,7 @@ async fn save_data(
     )
     .await?;
     save_snapshot(&state.pool, &snapshot).await?;
+    managed_icons::cleanup_unreferenced_private_icons(&state, &snapshot.username).await?;
     let snapshot = app_snapshot(&state.pool, &snapshot.username).await?;
     Ok(Json(json!({
         "success": true,
@@ -593,6 +593,7 @@ async fn import_data(
     )
     .await?;
     save_snapshot(&state.pool, &snapshot).await?;
+    managed_icons::cleanup_unreferenced_private_icons(&state, &snapshot.username).await?;
     let snapshot = app_snapshot(&state.pool, &snapshot.username).await?;
     Ok(Json(json!({
         "success": true,
@@ -633,6 +634,7 @@ async fn reset_data(
     )
     .await?;
     save_snapshot(&state.pool, &snapshot).await?;
+    managed_icons::cleanup_unreferenced_private_icons(&state, &snapshot.username).await?;
     let snapshot = app_snapshot(&state.pool, &snapshot.username).await?;
     Ok(Json(json!({
         "success": true,
@@ -1020,6 +1022,7 @@ async fn restore_config_version(
     )
     .await?;
     save_snapshot(&state.pool, &snapshot).await?;
+    managed_icons::cleanup_unreferenced_private_icons(&state, &username).await?;
     let snapshot = app_snapshot(&state.pool, &username).await?;
     Ok(Json(json!({
         "success": true,
@@ -1403,30 +1406,8 @@ async fn normalize_default_template_items_for_startup(
     let mut out = Vec::with_capacity(items.len());
     for mut item in items {
         let raw_icon = string_value(&item, "icon").unwrap_or_default();
-        let fallback_url = string_value(&item, "url");
-        let icon = match managed_icons::materialize_icon_value(
-            state,
-            managed_icons::IconVisibility::Template,
-            &raw_icon,
-            fallback_url.as_deref(),
-            managed_icons::IconNormalizationMode::FillMissingFromUrl,
-            "startup",
-        )
-        .await
-        {
-            Ok(Some(icon)) => {
-                if !icon.reused {
-                    created_assets.push(icon.asset.id.clone());
-                }
-                managed_icons::canonical_icon_url(&icon.asset.id)
-            }
-            Ok(None) => String::new(),
-            Err(error) if is_droppable_icon_resolution_error(error.status()) => {
-                tracing::warn!(error = %error.message(), "dropping unresolved startup default icon");
-                String::new()
-            }
-            Err(error) => return Err(error),
-        };
+        let icon =
+            normalize_template_icon_value(state, &raw_icon, created_assets, "startup").await?;
         if let Some(object) = item.as_object_mut() {
             object.insert("icon".to_string(), json!(icon));
         }
@@ -1477,8 +1458,13 @@ fn normalize_default_template_item_icon(item: &mut Value) {
     let Some(icon) = object.get("icon").and_then(Value::as_str) else {
         return;
     };
-    if !managed_icons::is_canonical_icon_url(icon) {
-        object.insert("icon".to_string(), Value::String(String::new()));
+    match managed_icons::normalize_icon_url(icon) {
+        Some(normalized) => {
+            object.insert("icon".to_string(), Value::String(normalized));
+        }
+        None => {
+            object.insert("icon".to_string(), Value::String(String::new()));
+        }
     }
 }
 
@@ -1697,6 +1683,46 @@ async fn normalize_nav_item_icon(
     fallback_url: Option<&str>,
     icon_mode: managed_icons::IconNormalizationMode,
 ) -> Result<String, ApiError> {
+    if raw_icon.trim().is_empty()
+        && matches!(
+            icon_mode,
+            managed_icons::IconNormalizationMode::FillMissingFromUrl
+        )
+        && let Some(site_url) = fallback_url
+    {
+        match managed_icons::meta_icon_id(site_url) {
+            Ok(id) => {
+                let icon = managed_icons::canonical_icon_url(&id);
+                if let Err(error) = managed_icons::validate_meta_icon_ref(&icon).await {
+                    if is_droppable_icon_resolution_error(error.status()) {
+                        tracing::warn!(error = %error.message(), "dropping unresolved navigation meta icon");
+                        return Ok(String::new());
+                    }
+                    return Err(error);
+                }
+                return Ok(icon);
+            }
+            Err(error) if is_droppable_icon_resolution_error(error.status()) => {
+                tracing::warn!(error = %error.message(), "dropping unresolved navigation meta icon");
+                return Ok(String::new());
+            }
+            Err(error) => return Err(error),
+        }
+    }
+    if let Some(normalized) = managed_icons::normalize_icon_url(raw_icon) {
+        if !normalized.is_empty() {
+            if managed_icons::is_meta_icon_url(&normalized) {
+                if let Err(error) = managed_icons::validate_meta_icon_ref(&normalized).await {
+                    if is_droppable_icon_resolution_error(error.status()) {
+                        tracing::warn!(error = %error.message(), "dropping invalid meta navigation icon");
+                        return Ok(String::new());
+                    }
+                    return Err(error);
+                }
+            }
+            return Ok(normalized);
+        }
+    }
     match managed_icons::materialize_icon_value(
         state,
         managed_icons::IconVisibility::Private(username),
@@ -1780,35 +1806,62 @@ async fn normalize_template_items(
     let mut out = Vec::with_capacity(items.len());
     for mut item in items {
         let raw_icon = string_value(&item, "icon").unwrap_or_default();
-        let normalized = match managed_icons::materialize_icon_value(
-            state,
-            managed_icons::IconVisibility::Template,
-            &raw_icon,
-            None,
-            managed_icons::IconNormalizationMode::PreserveEmpty,
-            "template",
-        )
-        .await
-        {
-            Ok(Some(icon)) => {
-                if !icon.reused {
-                    created_assets.push(icon.asset.id.clone());
-                }
-                managed_icons::canonical_icon_url(&icon.asset.id)
-            }
-            Ok(None) => String::new(),
-            Err(error) if is_droppable_icon_resolution_error(error.status()) => {
-                tracing::warn!(error = %error.message(), "dropping unresolved default-template icon");
-                String::new()
-            }
-            Err(error) => return Err(error),
-        };
+        let normalized =
+            normalize_template_icon_value(state, &raw_icon, created_assets, "template").await?;
         if let Some(object) = item.as_object_mut() {
             object.insert("icon".to_string(), json!(normalized));
         }
         out.push(item);
     }
     Ok(Value::Array(out))
+}
+
+async fn normalize_template_icon_value(
+    state: &AppState,
+    raw_icon: &str,
+    created_assets: &mut Vec<String>,
+    source_hint: &str,
+) -> Result<String, ApiError> {
+    if let Some(normalized) = managed_icons::normalize_icon_url(raw_icon) {
+        if normalized.is_empty()
+            || managed_icons::is_seed_icon_url(&normalized)
+            || managed_icons::is_meta_icon_url(&normalized)
+        {
+            if managed_icons::is_meta_icon_url(&normalized) {
+                if let Err(error) = managed_icons::validate_meta_icon_ref(&normalized).await {
+                    if is_droppable_icon_resolution_error(error.status()) {
+                        tracing::warn!(error = %error.message(), "dropping invalid default-template meta icon");
+                        return Ok(String::new());
+                    }
+                    return Err(error);
+                }
+            }
+            return Ok(normalized);
+        }
+    }
+    match managed_icons::materialize_icon_value(
+        state,
+        managed_icons::IconVisibility::Template,
+        raw_icon,
+        None,
+        managed_icons::IconNormalizationMode::PreserveEmpty,
+        source_hint,
+    )
+    .await
+    {
+        Ok(Some(icon)) => {
+            if !icon.reused {
+                created_assets.push(icon.asset.id.clone());
+            }
+            Ok(managed_icons::canonical_icon_url(&icon.asset.id))
+        }
+        Ok(None) => Ok(String::new()),
+        Err(error) if is_droppable_icon_resolution_error(error.status()) => {
+            tracing::warn!(error = %error.message(), "dropping unresolved default-template icon");
+            Ok(String::new())
+        }
+        Err(error) => Err(error),
+    }
 }
 
 async fn verify_template_icon_assets(state: &AppState, template: &Value) -> Result<(), ApiError> {
@@ -1823,10 +1876,26 @@ async fn verify_template_icon_assets(state: &AppState, template: &Value) -> Resu
             let Some(icon) = item.get("icon").and_then(Value::as_str) else {
                 continue;
             };
-            let Some(asset_id) = managed_icons::extract_asset_id(icon) else {
-                if icon.trim().is_empty() {
+            if icon.trim().is_empty() {
+                continue;
+            }
+            if let Some(resource_path) = managed_icons::seed_icon_resource_path(icon) {
+                let public_path = state.config.public_dir.join(&resource_path);
+                let fallback_path = state
+                    .config
+                    .server_resource_dir
+                    .join("public")
+                    .join(resource_path);
+                if public_path.is_file() || fallback_path.is_file() {
                     continue;
                 }
+                return Err(ApiError::internal("default_template_seed_icon_missing"));
+            }
+            if managed_icons::is_meta_icon_url(icon) {
+                managed_icons::validate_meta_icon_ref(icon).await?;
+                continue;
+            }
+            let Some(asset_id) = managed_icons::extract_asset_id(icon) else {
                 return Err(ApiError::internal("default_template_noncanonical_icon"));
             };
             let row = sqlx::query(

@@ -1,7 +1,11 @@
-import { sessionFetch } from "@/utils/sessionFetch";
 import type { NavGroup, NavItem } from "@/types";
+import { sessionFetch } from "@/utils/sessionFetch";
 
-const CANONICAL_ICON_RE = /^\/api\/assets\/icons\/icn_[A-Za-z0-9_-]+$/;
+const USER_ICON_RE = /^\/api\/icons\/icn_[A-Za-z0-9_-]+$/;
+const LEGACY_USER_ICON_RE = /^\/api\/assets\/icons\/(icn_[A-Za-z0-9_-]+)$/;
+const META_ICON_RE = /^\/api\/icons\/mta_[A-Za-z0-9_-]+$/;
+const SEED_ICON_RE =
+  /^\/assets\/seed-icons\/nav\/[A-Za-z0-9][A-Za-z0-9._-]*\.(?:svg|png|webp|ico)$/i;
 
 export type ManagedIconCandidate = {
   id: string;
@@ -43,10 +47,19 @@ type CreateIconResponse = {
 };
 
 export const isCanonicalIconUrl = (value: unknown): value is string =>
-  typeof value === "string" && CANONICAL_ICON_RE.test(value.trim());
+  typeof value === "string" && sanitizeNavigationIcon(value) !== "";
 
-export const sanitizeNavigationIcon = (value: unknown): string =>
-  isCanonicalIconUrl(value) ? value.trim() : "";
+export const sanitizeNavigationIcon = (value: unknown): string => {
+  if (typeof value !== "string") return "";
+  const raw = value.trim();
+  if (!raw) return "";
+  const legacy = raw.match(LEGACY_USER_ICON_RE);
+  if (legacy) return `/api/icons/${legacy[1]}`;
+  if (USER_ICON_RE.test(raw) || META_ICON_RE.test(raw) || SEED_ICON_RE.test(raw)) {
+    return raw;
+  }
+  return "";
+};
 
 export const sanitizeNavItemIcon = <T extends Partial<NavItem>>(item: T): T => ({
   ...item,
@@ -137,8 +150,9 @@ export const materializeIconSource = async (
 ): Promise<string> => {
   const raw = value.trim();
   if (!raw) return "";
-  if (isCanonicalIconUrl(raw) && type !== "assetId") return raw;
-  const res = await sessionFetch("/api/assets/icons", {
+  const normalized = sanitizeNavigationIcon(raw);
+  if (normalized && type !== "assetId") return normalized;
+  const res = await sessionFetch("/api/icons", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ source: { type, value: raw } }),
@@ -157,7 +171,8 @@ export const materializeIconSource = async (
 export const materializeIconInput = async (value: string): Promise<string> => {
   const raw = value.trim();
   if (!raw) return "";
-  if (isCanonicalIconUrl(raw)) return raw;
+  const normalized = sanitizeNavigationIcon(raw);
+  if (normalized) return normalized;
   if (String(raw).startsWith("data:"))
     return materializeIconSource("dataUrl", raw);
   if (/^https?:\/\//i.test(raw)) return materializeIconSource("remoteUrl", raw);

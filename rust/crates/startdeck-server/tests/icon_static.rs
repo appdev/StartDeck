@@ -60,6 +60,7 @@ async fn old_icon_routes_are_not_exposed_by_main_backend() {
     for uri in [
         "/api/site/metadata?url=https%3A%2F%2Fexample.com",
         "/api/site/icon?url=https%3A%2F%2Fexample.com",
+        "/api/assets/icons/icn_missing",
         "/api/icon-cache",
         "/icon-cache/missing.svg",
         "/icons/main-public.svg",

@@ -24,7 +24,7 @@ const selectIcon = (icon: ManagedIconCandidate) => {
 const getIconName = (candidate: ManagedIconCandidate) => {
   const url = candidate.label || candidate.url;
   // Extract name from URL or path
-  // e.g., "/api/assets/icons/icn_github" -> "github"
+  // e.g., "/api/icons/icn_github" -> "github"
   // e.g., "https://cdn.simpleicons.org/github" -> "github"
   try {
     if (!url) return "";

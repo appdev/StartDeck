@@ -13,13 +13,13 @@ describe("aiUsageProviders", () => {
       "deepseek",
     ]);
     expect(getAiUsageProvider("openai").iconUrl).toBe(
-      "/ai-usage/providers/openai.svg",
+      "/assets/ai-usage/providers/openai.svg",
     );
     expect(getAiUsageProvider("claude").iconUrl).toBe(
-      "/ai-usage/providers/claude-color.svg",
+      "/assets/ai-usage/providers/claude-color.svg",
     );
     expect(getAiUsageProvider("deepseek").iconUrl).toBe(
-      "/ai-usage/providers/deepseek-color.svg",
+      "/assets/ai-usage/providers/deepseek-color.svg",
     );
     expect(isAiUsageProviderQueryAvailable("openai")).toBe(true);
     expect(isAiUsageProviderQueryAvailable("claude")).toBe(false);

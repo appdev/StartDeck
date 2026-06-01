@@ -9,6 +9,7 @@ on:
       - "frontend/public/intro.html"
       - "frontend/public/favicon.ico"
       - "frontend/public/favicon.svg"
+      - "frontend/public/ICON.PNG"
       - "frontend/public/intro-assets/**"
   workflow_dispatch:
 
@@ -45,6 +46,7 @@ jobs:
           cp frontend/public/intro.html _site/intro.html
           cp frontend/public/favicon.ico _site/favicon.ico
           cp frontend/public/favicon.svg _site/favicon.svg
+          cp frontend/public/ICON.PNG _site/ICON.PNG
           cp -R frontend/public/intro-assets _site/intro-assets
           touch _site/.nojekyll
 
