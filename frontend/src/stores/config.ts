@@ -18,6 +18,37 @@ type AppVersionCheckResponse = {
   hasUpdate?: unknown;
 };
 
+const STABLE_ASSET_PREFIXES = [
+  "/assets/",
+  "/itab-live-assets/",
+  "/itab/",
+  "/api/icons/",
+];
+const STABLE_ASSET_PATHS = [
+  "/favicon.ico",
+  "/favicon.svg",
+  "/default-wallpaper.svg",
+  "/ICON.PNG",
+];
+const VERSIONED_RESOURCE_PREFIXES = ["/backgrounds/", "/mobile_backgrounds/"];
+
+const pathFromResourceUrl = (url: string) => {
+  try {
+    return new URL(url, window.location.origin).pathname;
+  } catch {
+    return url.split(/[?#]/, 1)[0] || "";
+  }
+};
+
+const shouldAppendResourceVersion = (url: string) => {
+  const path = pathFromResourceUrl(url);
+  if (STABLE_ASSET_PATHS.includes(path)) return false;
+  if (STABLE_ASSET_PREFIXES.some((prefix) => path.startsWith(prefix))) {
+    return false;
+  }
+  return VERSIONED_RESOURCE_PREFIXES.some((prefix) => path.startsWith(prefix));
+};
+
 export const useConfigStore = defineStore("config", () => {
   // Pure client-only states (NOT synced to server)
   const forceNetworkMode = useStorage<"auto" | "lan" | "wan" | "latency">(
@@ -55,6 +86,12 @@ export const useConfigStore = defineStore("config", () => {
     if (!url) return "";
     if (url.startsWith("data:") || url.startsWith("blob:")) return url;
     const resolved = resolveManagedUrl(url);
+    if (
+      !shouldAppendResourceVersion(url) &&
+      !shouldAppendResourceVersion(resolved)
+    ) {
+      return resolved;
+    }
     const connector = resolved.includes("?") ? "&" : "?";
     return `${resolved}${connector}t=${resourceVersion.value}`;
   };

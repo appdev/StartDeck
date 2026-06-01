@@ -158,6 +158,91 @@ async fn spawn_blocked_site() -> (String, Arc<AtomicUsize>, tokio::task::JoinHan
     (format!("http://{addr}"), hits, handle)
 }
 
+async fn spawn_blocked_site_with_public_favicon()
+-> (String, Arc<AtomicUsize>, tokio::task::JoinHandle<()>) {
+    let hits = Arc::new(AtomicUsize::new(0));
+    let favicon = png_bytes(64, 64, b"blocked-root-public-favicon");
+    let router = Router::new()
+        .route(
+            "/",
+            get(|State(hits): State<Arc<AtomicUsize>>| async move {
+                hits.fetch_add(1, Ordering::SeqCst);
+                (
+                    StatusCode::SERVICE_UNAVAILABLE,
+                    [("cf-ray", "test-ray"), ("server", "cloudflare")],
+                    "<html><title>Just a moment...</title><script src=\"/cdn-cgi/challenge-platform/h/b/orchestrate\"></script></html>",
+                )
+            }),
+        )
+        .route(
+            "/favicon.ico",
+            get({
+                let favicon = favicon.clone();
+                move |State(hits): State<Arc<AtomicUsize>>| {
+                    let favicon = favicon.clone();
+                    async move {
+                        hits.fetch_add(1, Ordering::SeqCst);
+                        ([("content-type", "image/png")], favicon)
+                    }
+                }
+            }),
+        )
+        .with_state(hits.clone());
+    let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let addr = listener.local_addr().unwrap();
+    let handle = tokio::spawn(async move {
+        axum::serve(listener, router).await.unwrap();
+    });
+    (format!("http://{addr}"), hits, handle)
+}
+
+async fn spawn_favicon_directory_site() -> (String, tokio::task::JoinHandle<()>) {
+    let favicon = png_bytes(128, 128, b"favicon-directory-image");
+    let router = Router::new()
+        .route(
+            "/",
+            get(|| async {
+                Html(r#"<html><head><title>Directory Favicon Site</title></head></html>"#)
+            }),
+        )
+        .route(
+            "/favicon.ico",
+            get(|| async {
+                (
+                    StatusCode::MOVED_PERMANENTLY,
+                    [("location", "/favicon.ico/")],
+                    "",
+                )
+            }),
+        )
+        .route(
+            "/favicon.ico/",
+            get(|| async {
+                Html(
+                    r#"<!doctype html>
+                    <meta name="viewport" content="width=device-width">
+                    <pre><a href="favicon.png">favicon.png</a></pre>"#,
+                )
+            }),
+        )
+        .route(
+            "/favicon.ico/favicon.png",
+            get({
+                let favicon = favicon.clone();
+                move || {
+                    let favicon = favicon.clone();
+                    async move { ([("content-type", "image/png")], favicon) }
+                }
+            }),
+        );
+    let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let addr = listener.local_addr().unwrap();
+    let handle = tokio::spawn(async move {
+        axum::serve(listener, router).await.unwrap();
+    });
+    (format!("http://{addr}"), handle)
+}
+
 async fn spawn_error_site() -> (String, Arc<AtomicUsize>, tokio::task::JoinHandle<()>) {
     let hits = Arc::new(AtomicUsize::new(0));
     let router = Router::new()
@@ -547,6 +632,76 @@ async fn spawn_high_quality_html_icon_site()
     (format!("http://{addr}"), hits, handle)
 }
 
+#[derive(Clone)]
+struct CanonicalPathFixtureState {
+    root_hits: Arc<AtomicUsize>,
+    private_hits: Arc<AtomicUsize>,
+    site_png: Vec<u8>,
+}
+
+async fn spawn_private_path_canonical_site_fixture() -> (
+    String,
+    Arc<AtomicUsize>,
+    Arc<AtomicUsize>,
+    tokio::task::JoinHandle<()>,
+) {
+    let root_hits = Arc::new(AtomicUsize::new(0));
+    let private_hits = Arc::new(AtomicUsize::new(0));
+    let state = CanonicalPathFixtureState {
+        root_hits: root_hits.clone(),
+        private_hits: private_hits.clone(),
+        site_png: png_bytes(96, 96, b"canonical-site-icon"),
+    };
+    let router = Router::new()
+        .route(
+            "/",
+            get(
+                |State(state): State<CanonicalPathFixtureState>| async move {
+                    state.root_hits.fetch_add(1, Ordering::SeqCst);
+                    Html(
+                        r#"<html><head>
+                        <title>Canonical Root Site</title>
+                        <link rel="icon" type="image/png" sizes="96x96" href="/site.png">
+                    </head><body></body></html>"#,
+                    )
+                },
+            ),
+        )
+        .route(
+            "/document/edit",
+            get(
+                |State(state): State<CanonicalPathFixtureState>| async move {
+                    state.private_hits.fetch_add(1, Ordering::SeqCst);
+                    Html(
+                        r#"<html><head>
+                        <title>Private Login Page</title>
+                        <link rel="icon" type="image/x-icon" href="/login.ico">
+                    </head><body></body></html>"#,
+                    )
+                },
+            ),
+        )
+        .route(
+            "/site.png",
+            get(
+                |State(state): State<CanonicalPathFixtureState>| async move {
+                    ([("content-type", "image/png")], state.site_png)
+                },
+            ),
+        )
+        .route(
+            "/login.ico",
+            get(|| async { ([("content-type", "image/x-icon")], "login-icon") }),
+        )
+        .with_state(state);
+    let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let addr = listener.local_addr().unwrap();
+    let handle = tokio::spawn(async move {
+        axum::serve(listener, router).await.unwrap();
+    });
+    (format!("http://{addr}"), root_hits, private_hits, handle)
+}
+
 async fn spawn_refresh_failure_site() -> (String, Arc<AtomicUsize>, tokio::task::JoinHandle<()>) {
     let hits = Arc::new(AtomicUsize::new(0));
     let router = Router::new()
@@ -568,8 +723,12 @@ async fn spawn_refresh_failure_site() -> (String, Arc<AtomicUsize>, tokio::task:
 
 fn encode_url_param(value: &str) -> String {
     value
+        .replace('%', "%25")
         .replace(':', "%3A")
         .replace('/', "%2F")
+        .replace('?', "%3F")
+        .replace('&', "%26")
+        .replace('=', "%3D")
         .replace('#', "%23")
 }
 
@@ -1036,6 +1195,65 @@ async fn new_fetch_persists_selected_icon_quality_fields() {
 }
 
 #[tokio::test]
+async fn private_path_fetch_uses_canonical_site_root_for_host_record() {
+    let (site_url, root_hits, private_hits, site_handle) =
+        spawn_private_path_canonical_site_fixture().await;
+    let context = test_app_context_with_microlink_api("").await;
+    let private_url = format!("{site_url}/document/edit?docKey=secret&type=d");
+    let encoded_private_url = encode_url_param(&private_url);
+
+    let (status, body) = json_call(
+        &context.app,
+        &format!("/api/site/metadata?url={encoded_private_url}"),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(body["data"]["fetchStatus"], "ok");
+    assert_eq!(body["data"]["url"], format!("{site_url}/"));
+    assert_eq!(body["data"]["finalUrl"], format!("{site_url}/"));
+    assert_eq!(body["data"]["title"], "Canonical Root Site");
+    assert_eq!(root_hits.load(Ordering::SeqCst), 1);
+    assert_eq!(private_hits.load(Ordering::SeqCst), 0);
+
+    let stored = icon_record(&context.pool, &host_key(&site_url))
+        .await
+        .unwrap()
+        .unwrap();
+    assert_eq!(stored.url, format!("{site_url}/"));
+    assert_eq!(stored.final_url, format!("{site_url}/"));
+    assert_eq!(stored.title, "Canonical Root Site");
+
+    let icon_path = body["data"]["icon"].as_str().unwrap();
+    let response = context
+        .app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .uri(icon_path)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
+    let bytes = to_bytes(response.into_body(), usize::MAX).await.unwrap();
+    assert!(bytes.starts_with(b"\x89PNG\r\n\x1a\n"));
+
+    let encoded_root_url = encode_url_param(&site_url);
+    let (status, body) = json_call(
+        &context.app,
+        &format!("/api/site/metadata?url={encoded_root_url}"),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(body["data"]["title"], "Canonical Root Site");
+    assert_eq!(root_hits.load(Ordering::SeqCst), 1);
+    assert_eq!(private_hits.load(Ordering::SeqCst), 0);
+
+    site_handle.abort();
+}
+
+#[tokio::test]
 async fn old_low_quality_cache_backfills_then_refreshes_to_high_quality_icon() {
     let (site_url, hits, site_handle) = spawn_high_quality_html_icon_site().await;
     let context = test_app_context_with_microlink_api("").await;
@@ -1292,6 +1510,65 @@ async fn blocked_result_is_terminal_until_manual_refresh() {
         serde_json::from_slice(&to_bytes(response.into_body(), usize::MAX).await.unwrap()).unwrap();
     assert_eq!(body["data"]["fetchStatus"], "blocked");
     assert_eq!(hits.load(Ordering::SeqCst), 2);
+
+    site_handle.abort();
+}
+
+#[tokio::test]
+async fn blocked_page_can_still_use_public_root_favicon() {
+    let TestMetaApp { app, .. } = test_app_context_with_microlink_api("").await;
+    let (site_url, hits, site_handle) = spawn_blocked_site_with_public_favicon().await;
+    let encoded_site_url = encode_url_param(&site_url);
+
+    let (status, body) =
+        json_call(&app, &format!("/api/site/metadata?url={encoded_site_url}")).await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(body["data"]["fetchStatus"], "ok");
+    assert_eq!(body["data"]["failureKind"], Value::Null);
+    assert_public_icon_proxy(&body["data"]["icon"]);
+    assert_eq!(hits.load(Ordering::SeqCst), 2);
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri(format!("/api/site/icon?url={encoded_site_url}"))
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
+    let bytes = to_bytes(response.into_body(), usize::MAX).await.unwrap();
+    assert!(bytes.starts_with(b"\x89PNG\r\n\x1a\n"));
+
+    site_handle.abort();
+}
+
+#[tokio::test]
+async fn favicon_directory_listing_is_used_as_fallback() {
+    let TestMetaApp { app, .. } = test_app_context_with_microlink_api("").await;
+    let (site_url, site_handle) = spawn_favicon_directory_site().await;
+    let encoded_site_url = encode_url_param(&site_url);
+
+    let (status, body) =
+        json_call(&app, &format!("/api/site/metadata?url={encoded_site_url}")).await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(body["data"]["fetchStatus"], "ok");
+    assert_eq!(body["data"]["title"], "Directory Favicon Site");
+    assert_public_icon_proxy(&body["data"]["icon"]);
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri(format!("/api/site/icon?url={encoded_site_url}"))
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
+    let bytes = to_bytes(response.into_body(), usize::MAX).await.unwrap();
+    assert!(bytes.starts_with(b"\x89PNG\r\n\x1a\n"));
 
     site_handle.abort();
 }

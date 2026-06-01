@@ -212,7 +212,7 @@ describe("EditModal", () => {
     expect(previewIcon?.dataset.icon).toBe("/api/icons/mta_aHR0cHM6Ly9leGFtcGxlLmNvbS8");
   });
 
-  it("automatically applies the first fetched icon and title from metadata", async () => {
+  it("automatically applies the first fetched icon without replacing an existing title", async () => {
     vi.stubGlobal("Image", FakeImage);
     vi.stubGlobal(
       "fetch",
@@ -254,7 +254,7 @@ describe("EditModal", () => {
       const iconInput = document.body.querySelector<HTMLInputElement>(
         ".edit-card-icon-url-input",
       );
-      expect(titleInput?.value).toBe("Fetched Example");
+      expect(titleInput?.value).toBe("Old title");
       expect(iconInput?.value).toBe(
         "/api/icons/mta_aHR0cHM6Ly9leGFtcGxlLmNvbS8",
       );
@@ -267,6 +267,50 @@ describe("EditModal", () => {
       "/api/icons/mta_aHR0cHM6Ly9leGFtcGxlLmNvbS8",
     );
     expect(document.body.textContent).toContain("已获取标题、图标、描述");
+  });
+
+  it("shows protected site metadata status from the backend", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => ({
+        ok: true,
+        json: async () => ({
+          success: true,
+          data: {
+            inputUrl: "https://example.com/document/edit",
+            normalizedUrl: "https://example.com/document/edit",
+            url: "https://example.com/document/edit",
+            title: null,
+            selectedIcon: null,
+            iconCandidates: [],
+            description: null,
+            backgroundColor: null,
+            fetchStatus: "blocked",
+            failureKind: "site_blocked",
+            retryAfter: null,
+          },
+        }),
+      })),
+    );
+    wrapper = mountEditModal({
+      id: "link-1",
+      title: "Protected",
+      url: "https://example.com/document/edit",
+      icon: "",
+      isPublic: true,
+    });
+    await wrapper.vm.$nextTick();
+
+    const autoButton = Array.from(
+      document.body.querySelectorAll<HTMLButtonElement>("button"),
+    ).find((button) => button.textContent?.includes("自动获取"));
+    autoButton?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+
+    await vi.waitFor(() => {
+      expect(document.body.textContent).toContain(
+        "站点需要登录，无法获取完整信息",
+      );
+    });
   });
 
   it("places links before base info and keeps extra addresses collapsed by default", async () => {

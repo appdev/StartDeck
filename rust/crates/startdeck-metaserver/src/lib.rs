@@ -23,6 +23,14 @@ use tower_http::cors::{Any, CorsLayer};
 use tower_http::services::ServeDir;
 use tower_http::trace::TraceLayer;
 
+struct IconHttpResponse {
+    status: StatusCode,
+    headers: reqwest::header::HeaderMap,
+    final_url: Url,
+    raw_content_type: String,
+    bytes: Vec<u8>,
+}
+
 #[derive(Clone)]
 pub struct MetaState {
     config: Arc<RuntimeConfig>,
@@ -91,7 +99,8 @@ pub fn meta_addr_from_env() -> String {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 struct NormalizedSiteTarget {
-    url: Url,
+    input_url: Url,
+    site_url: Url,
     host: String,
 }
 
@@ -390,21 +399,22 @@ async fn fetch_remote_record(
     previous: Option<&IconRecord>,
 ) -> Result<IconRecord, IconError> {
     let mut discovery_failure = None::<FetchFailure>;
-    let microlink = match fetch_microlink_metadata(state, &target.url, &target.host, false).await {
-        Ok(metadata) => Some(metadata),
-        Err(err) => {
-            tracing::debug!(
-            host = %target.host,
-            status = %err.status,
-            error = %err.message,
-                "microlink metadata lookup failed"
-            );
-            if err.kind != "microlink_disabled" {
-                discovery_failure = Some(select_stronger_failure(discovery_failure, err));
+    let microlink =
+        match fetch_microlink_metadata(state, &target.site_url, &target.host, false).await {
+            Ok(metadata) => Some(metadata),
+            Err(err) => {
+                tracing::debug!(
+                host = %target.host,
+                status = %err.status,
+                error = %err.message,
+                    "microlink metadata lookup failed"
+                );
+                if err.kind != "microlink_disabled" {
+                    discovery_failure = Some(select_stronger_failure(discovery_failure, err));
+                }
+                None
             }
-            None
-        }
-    };
+        };
     let html = match fetch_html_metadata(state, target).await {
         Ok(metadata) => Some(metadata),
         Err(err) => {
@@ -426,12 +436,13 @@ async fn fetch_remote_record(
     if let Some(metadata) = html.as_ref() {
         extend_icon_candidates(&mut candidates, metadata.candidates.iter().cloned());
     }
+    extend_icon_candidates(&mut candidates, root_favicon_candidates(&target.site_url));
 
     let mut evaluation = evaluate_icon_candidates(state, candidates).await;
     if evaluation.best.as_ref().is_some_and(is_low_quality_icon)
         && microlink.is_some()
         && let Ok(force_metadata) =
-            fetch_microlink_metadata(state, &target.url, &target.host, true).await
+            fetch_microlink_metadata(state, &target.site_url, &target.host, true).await
     {
         let force_evaluation = evaluate_icon_candidates(state, force_metadata.candidates).await;
         evaluation = choose_better_evaluation(evaluation, force_evaluation);
@@ -461,7 +472,7 @@ async fn fetch_remote_record(
         return Ok(ok_record(
             &target.host,
             metadata.title,
-            target.url.to_string(),
+            target.site_url.to_string(),
             metadata.final_url,
             metadata.description,
             source,
@@ -564,7 +575,7 @@ async fn fetch_html_metadata(
 ) -> Result<RemoteMetadata, FetchFailure> {
     let response = state
         .http
-        .get(target.url.clone())
+        .get(target.site_url.clone())
         .send()
         .await
         .map_err(|err| FetchFailure::temporary("site_fetch_failed", err.to_string()))?;
@@ -611,7 +622,7 @@ fn combined_metadata(
         final_url: primary
             .map(|metadata| metadata.final_url.clone())
             .filter(|url| !url.trim().is_empty())
-            .unwrap_or_else(|| target.url.to_string()),
+            .unwrap_or_else(|| target.site_url.to_string()),
         description: primary
             .map(|metadata| metadata.description.clone())
             .filter(|description| !description.trim().is_empty())
@@ -735,14 +746,39 @@ async fn fetch_icon_candidate(
 ) -> Result<DownloadedIconCandidate, FetchFailure> {
     let icon_url = parse_http_url(&candidate.url)
         .ok_or_else(|| FetchFailure::no_icon("icon_not_found", "invalid icon url"))?;
+    let response = fetch_icon_http_response(&state, icon_url).await?;
+    if response.status.is_success() && is_text_html_content_type(&response.raw_content_type) {
+        let body = String::from_utf8_lossy(&response.bytes);
+        if !is_blocked_response(response.status, &response.headers, &body)
+            && let Some(directory_candidate) =
+                fallback_directory_icon_candidate(&candidate, &response.final_url, &body)
+        {
+            let directory_url = parse_http_url(&directory_candidate.url).ok_or_else(|| {
+                FetchFailure::no_icon("icon_not_found", "invalid directory icon url")
+            })?;
+            let directory_response = fetch_icon_http_response(&state, directory_url).await?;
+            return downloaded_icon_candidate_from_response(
+                directory_candidate,
+                directory_response,
+            );
+        }
+    }
+    downloaded_icon_candidate_from_response(candidate, response)
+}
+
+async fn fetch_icon_http_response(
+    state: &MetaState,
+    icon_url: Url,
+) -> Result<IconHttpResponse, FetchFailure> {
     let response = state
         .http
-        .get(icon_url.clone())
+        .get(icon_url)
         .send()
         .await
         .map_err(|err| FetchFailure::temporary("remote_icon_fetch_failed", err.to_string()))?;
     let status = response.status();
     let headers = response.headers().clone();
+    let final_url = response.url().clone();
     let raw_content_type = response
         .headers()
         .get(header::CONTENT_TYPE)
@@ -752,19 +788,33 @@ async fn fetch_icon_candidate(
     let bytes = response
         .bytes()
         .await
-        .map_err(|err| FetchFailure::temporary("remote_icon_body_read_failed", err.to_string()))?;
-    if !status.is_success() {
-        let body = String::from_utf8_lossy(&bytes);
+        .map_err(|err| FetchFailure::temporary("remote_icon_body_read_failed", err.to_string()))?
+        .to_vec();
+    Ok(IconHttpResponse {
+        status,
+        headers,
+        final_url,
+        raw_content_type,
+        bytes,
+    })
+}
+
+fn downloaded_icon_candidate_from_response(
+    candidate: IconCandidate,
+    response: IconHttpResponse,
+) -> Result<DownloadedIconCandidate, FetchFailure> {
+    if !response.status.is_success() {
+        let body = String::from_utf8_lossy(&response.bytes);
         return Err(classify_http_response(
             "remote_icon",
-            status,
-            &headers,
+            response.status,
+            &response.headers,
             &body,
         ));
     }
-    if is_text_html_content_type(&raw_content_type) {
-        let body = String::from_utf8_lossy(&bytes);
-        if is_blocked_response(status, &headers, &body) {
+    if is_text_html_content_type(&response.raw_content_type) {
+        let body = String::from_utf8_lossy(&response.bytes);
+        if is_blocked_response(response.status, &response.headers, &body) {
             return Err(FetchFailure::blocked(
                 "remote_icon_blocked",
                 "icon blocked by anti-bot challenge",
@@ -775,12 +825,11 @@ async fn fetch_icon_candidate(
             "icon candidate returned html",
         ));
     }
-    let bytes = bytes.to_vec();
     let content_type = normalize_downloaded_icon_content_type(
-        &raw_content_type,
-        icon_url.path(),
+        &response.raw_content_type,
+        response.final_url.path(),
         &candidate.declared_type,
-        &bytes,
+        &response.bytes,
     );
     if !is_supported_icon_content_type(&content_type) {
         return Err(FetchFailure::no_icon(
@@ -788,18 +837,18 @@ async fn fetch_icon_candidate(
             "icon candidate returned unsupported content type",
         ));
     }
-    let (detected_width, detected_height) = detect_icon_dimensions(&content_type, &bytes);
+    let (detected_width, detected_height) = detect_icon_dimensions(&content_type, &response.bytes);
     let quality_score = downloaded_icon_score(
         &candidate,
         &content_type,
         detected_width,
         detected_height,
-        bytes.len(),
+        response.bytes.len(),
     );
     Ok(DownloadedIconCandidate {
         candidate,
         content_type,
-        bytes,
+        bytes: response.bytes,
         detected_width,
         detected_height,
         quality_score,
@@ -900,7 +949,7 @@ fn failure_record(
     IconRecord {
         host: target.host.clone(),
         title,
-        url: target.url.to_string(),
+        url: target.site_url.to_string(),
         final_url,
         description,
         background_color: String::new(),
@@ -1560,7 +1609,7 @@ fn normalize_site_target(raw: &str) -> Option<NormalizedSiteTarget> {
         return None;
     }
 
-    let mut url = parse_http_url(raw).or_else(|| {
+    let mut input_url = parse_http_url(raw).or_else(|| {
         if let Ok(parsed) = Url::parse(raw) {
             let scheme = parsed.scheme().to_ascii_lowercase();
             if raw.contains("://")
@@ -1579,9 +1628,17 @@ fn normalize_site_target(raw: &str) -> Option<NormalizedSiteTarget> {
         };
         parse_http_url(&candidate)
     })?;
-    url.set_fragment(None);
-    let host = url.host_str()?.to_ascii_lowercase();
-    Some(NormalizedSiteTarget { url, host })
+    input_url.set_fragment(None);
+    let host = input_url.host_str()?.to_ascii_lowercase();
+    let mut site_url = input_url.clone();
+    site_url.set_path("/");
+    site_url.set_query(None);
+    site_url.set_fragment(None);
+    Some(NormalizedSiteTarget {
+        input_url,
+        site_url,
+        host,
+    })
 }
 
 fn parse_http_url(raw: &str) -> Option<Url> {
@@ -1676,25 +1733,94 @@ fn select_icon_candidates(page: &Html, final_url: &str) -> Vec<IconCandidate> {
             );
         }
     }
-    if let Ok(url) = base.join("/favicon.ico")
-        && parse_http_url(url.as_str()).is_some()
-    {
-        let sort_order = candidates.len();
-        push_unique_icon_candidate(
-            &mut candidates,
-            IconCandidate {
-                url: url.to_string(),
-                source: "fallback",
-                rel: "icon".to_string(),
-                declared_type: "image/x-icon".to_string(),
-                declared_width: None,
-                declared_height: None,
-                sizes: String::new(),
-                sort_order,
-            },
-        );
-    }
+    extend_icon_candidates(&mut candidates, root_favicon_candidates(&base));
     candidates
+}
+
+fn root_favicon_candidates(base: &Url) -> Vec<IconCandidate> {
+    let Some(url) = base
+        .join("/favicon.ico")
+        .ok()
+        .filter(|url| parse_http_url(url.as_str()).is_some())
+    else {
+        return Vec::new();
+    };
+    vec![IconCandidate {
+        url: url.to_string(),
+        source: "fallback",
+        rel: "icon".to_string(),
+        declared_type: "image/x-icon".to_string(),
+        declared_width: None,
+        declared_height: None,
+        sizes: String::new(),
+        sort_order: 0,
+    }]
+}
+
+fn fallback_directory_icon_candidate(
+    candidate: &IconCandidate,
+    final_url: &Url,
+    body: &str,
+) -> Option<IconCandidate> {
+    if candidate.source != "fallback" {
+        return None;
+    }
+    let original_path = parse_http_url(&candidate.url)?
+        .path()
+        .trim_end_matches('/')
+        .to_string();
+    if !original_path.ends_with("/favicon.ico")
+        || final_url.path().trim_end_matches('/') != original_path
+    {
+        return None;
+    }
+    let page = Html::parse_document(body);
+    let selector = Selector::parse("a[href]").ok()?;
+    for node in page.select(&selector) {
+        let Some(href) = node.value().attr("href").map(str::trim) else {
+            continue;
+        };
+        let Some(declared_type) = declared_icon_type_from_href(href) else {
+            continue;
+        };
+        let Ok(url) = final_url.join(href) else {
+            continue;
+        };
+        if parse_http_url(url.as_str()).is_none() {
+            continue;
+        }
+        return Some(IconCandidate {
+            url: url.to_string(),
+            source: "fallback",
+            rel: "icon".to_string(),
+            declared_type: declared_type.to_string(),
+            declared_width: None,
+            declared_height: None,
+            sizes: String::new(),
+            sort_order: candidate.sort_order,
+        });
+    }
+    None
+}
+
+fn declared_icon_type_from_href(href: &str) -> Option<&'static str> {
+    let path = href
+        .split(['?', '#'])
+        .next()
+        .unwrap_or_default()
+        .to_ascii_lowercase();
+    match Path::new(&path)
+        .extension()
+        .and_then(|value| value.to_str())
+    {
+        Some("ico") => Some("image/x-icon"),
+        Some("png") => Some("image/png"),
+        Some("svg") => Some("image/svg+xml"),
+        Some("webp") => Some("image/webp"),
+        Some("jpg" | "jpeg") => Some("image/jpeg"),
+        Some("gif") => Some("image/gif"),
+        _ => None,
+    }
 }
 
 fn push_unique_icon_candidate(candidates: &mut Vec<IconCandidate>, candidate: IconCandidate) {
@@ -1739,7 +1865,7 @@ fn public_site_icon_url(state: &MetaState, record: &IconRecord) -> Option<String
     record.icon.as_deref()?;
     let site_url = normalize_site_target(&record.url)
         .or_else(|| normalize_site_target(&record.host))?
-        .url
+        .site_url
         .to_string();
     let parsed =
         Url::parse_with_params("http://startdeck.local/api/site/icon", [("url", site_url)]).ok()?;
@@ -2090,15 +2216,32 @@ mod tests {
     fn site_target_normalization_uses_one_url_and_host_contract() {
         let full = normalize_site_target(" https://EIXEIX.com/#/dashboard ").unwrap();
         assert_eq!(full.host, "eixeix.com");
-        assert_eq!(full.url.as_str(), "https://eixeix.com/");
+        assert_eq!(full.input_url.as_str(), "https://eixeix.com/");
+        assert_eq!(full.site_url.as_str(), "https://eixeix.com/");
 
         let host_with_path = normalize_site_target("Example.com/docs?q=1#top").unwrap();
         assert_eq!(host_with_path.host, "example.com");
-        assert_eq!(host_with_path.url.as_str(), "https://example.com/docs?q=1");
+        assert_eq!(
+            host_with_path.input_url.as_str(),
+            "https://example.com/docs?q=1"
+        );
+        assert_eq!(host_with_path.site_url.as_str(), "https://example.com/");
 
         let protocol_relative = normalize_site_target("//Example.com/icon").unwrap();
         assert_eq!(protocol_relative.host, "example.com");
-        assert_eq!(protocol_relative.url.as_str(), "https://example.com/icon");
+        assert_eq!(
+            protocol_relative.input_url.as_str(),
+            "https://example.com/icon"
+        );
+        assert_eq!(protocol_relative.site_url.as_str(), "https://example.com/");
+
+        let local_with_port = normalize_site_target("http://127.0.0.1:31591/path?q=1").unwrap();
+        assert_eq!(local_with_port.host, "127.0.0.1");
+        assert_eq!(
+            local_with_port.input_url.as_str(),
+            "http://127.0.0.1:31591/path?q=1"
+        );
+        assert_eq!(local_with_port.site_url.as_str(), "http://127.0.0.1:31591/");
 
         assert!(normalize_site_target("mailto:test@example.com").is_none());
         assert!(normalize_site_target("about:blank").is_none());

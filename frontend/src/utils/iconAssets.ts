@@ -27,6 +27,9 @@ export type ResolvedSiteMetadata = {
   title: string | null;
   description: string | null;
   backgroundColor: string | null;
+  fetchStatus?: "ok" | "no_icon" | "blocked" | "error" | string | null;
+  failureKind?: string | null;
+  retryAfter?: string | null;
   selectedIcon: ManagedIconCandidate | null;
   iconCandidates: ManagedIconCandidate[];
 };
@@ -138,6 +141,18 @@ export const resolveSiteMetadata = async (
     backgroundColor:
       typeof data.backgroundColor === "string" && data.backgroundColor.trim()
         ? data.backgroundColor.trim()
+        : null,
+    fetchStatus:
+      typeof data.fetchStatus === "string" && data.fetchStatus.trim()
+        ? data.fetchStatus.trim()
+        : null,
+    failureKind:
+      typeof data.failureKind === "string" && data.failureKind.trim()
+        ? data.failureKind.trim()
+        : null,
+    retryAfter:
+      typeof data.retryAfter === "string" && data.retryAfter.trim()
+        ? data.retryAfter.trim()
         : null,
     selectedIcon: normalizeCandidate(data.selectedIcon),
     iconCandidates: candidates as ManagedIconCandidate[],

@@ -84,7 +84,7 @@ describe("useSmartIconMatch", () => {
     ).resolves.toBe(true);
   });
 
-  it("uses site metadata for title and candidates without replacing the current icon", async () => {
+  it("uses site metadata for candidates without replacing existing title or icon", async () => {
     vi.stubGlobal(
       "fetch",
       vi.fn(async (input: string | URL | Request) => {
@@ -126,7 +126,7 @@ describe("useSmartIconMatch", () => {
 
     await smartIconMatch.smartMatchIcons();
 
-    expect(form.value.title).toBe("Example");
+    expect(form.value.title).toBe("Old title");
     expect(form.value.icon).toBe("icons/current.svg");
     expect("description1" in form.value).toBe(false);
     expect(smartIconMatch.lastSiteMetadata.value?.description).toBe("Demo");
@@ -216,7 +216,7 @@ describe("useSmartIconMatch", () => {
 
     await smartIconMatch.smartMatchIcons({ applyFirstCandidate: true });
 
-    expect(form.value.title).toBe("Example");
+    expect(form.value.title).toBe("Old title");
     expect(smartIconMatch.selectedSmartMatchCandidateUrl.value).toBe(
       "/api/icons/mta_aHR0cHM6Ly9leGFtcGxlLmNvbS8",
     );

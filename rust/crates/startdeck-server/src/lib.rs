@@ -10,8 +10,9 @@ use axum::body::{Body, Bytes};
 use axum::extract::ws::{Message, WebSocket, WebSocketUpgrade};
 use axum::extract::{DefaultBodyLimit, Multipart, Path as AxumPath, Query, State};
 use axum::http::{HeaderMap, HeaderName, HeaderValue, StatusCode, header};
+use axum::middleware::map_response;
 use axum::response::{IntoResponse, Response};
-use axum::routing::{any, delete, get, get_service, post};
+use axum::routing::{MethodRouter, any, delete, get, get_service, post};
 use axum::{Json, Router};
 use base64::Engine;
 use base64::engine::general_purpose::STANDARD;
@@ -30,6 +31,7 @@ use startdeck_core::{
     RuntimeConfig, app_snapshot, save_snapshot, system_config, user_password_hash,
 };
 use tokio::fs;
+use tower::ServiceBuilder;
 use tower_http::compression::CompressionLayer;
 use tower_http::cors::{Any, CorsLayer};
 use tower_http::services::{ServeDir, ServeFile};
@@ -55,6 +57,9 @@ const SESSION_COOKIE_NAME: &str = "startdeck_session";
 const SESSION_MAX_AGE_SECONDS: i64 = 30 * 24 * 60 * 60;
 const SESSION_SIGNING_KEY_BYTES: usize = 32;
 const SESSION_KEY_RELATIVE_PATH: &[&str] = &["secrets", "session-signing.key"];
+const IMMUTABLE_STATIC_CACHE_CONTROL: &str = "public, max-age=31536000, immutable";
+const MUTABLE_STATIC_CACHE_CONTROL: &str = "public, max-age=86400, stale-while-revalidate=604800";
+const HTML_CACHE_CONTROL: &str = "no-cache";
 
 #[derive(Clone)]
 pub struct AppState {
@@ -316,30 +321,63 @@ pub fn app(state: AppState) -> Router {
         .route("/cache/{*path}", any(removed_icon_route))
         .route(
             "/favicon.ico",
-            get_service(ServeFile::new(public_dir.join("favicon.ico"))),
+            immutable_file_service(public_dir.join("favicon.ico")),
         )
         .route(
             "/favicon.svg",
-            get_service(ServeFile::new(public_dir.join("favicon.svg"))),
+            immutable_file_service(public_dir.join("favicon.svg")),
+        )
+        .route(
+            "/default-wallpaper.svg",
+            immutable_file_service(public_dir.join("default-wallpaper.svg")),
+        )
+        .route(
+            "/ICON.PNG",
+            immutable_file_service(public_dir.join("ICON.PNG")),
         )
         .route(
             "/intro.html",
-            get_service(ServeFile::new(public_dir.join("intro.html"))),
+            html_file_service(public_dir.join("intro.html")),
         )
-        .nest_service("/assets", get_service(ServeDir::new(assets_dir)))
+        .route(
+            "/index.html",
+            html_file_service(public_dir.join("index.html")),
+        )
+        .nest_service(
+            "/assets",
+            ServiceBuilder::new()
+                .layer(map_response(insert_immutable_static_cache))
+                .service(ServeDir::new(assets_dir)),
+        )
         .nest_service(
             "/itab-live-assets",
-            get_service(ServeDir::new(itab_live_assets_dir)),
+            ServiceBuilder::new()
+                .layer(map_response(insert_immutable_static_cache))
+                .service(ServeDir::new(itab_live_assets_dir)),
         )
-        .nest_service("/itab", get_service(ServeDir::new(itab_assets_dir)))
+        .nest_service(
+            "/itab",
+            ServiceBuilder::new()
+                .layer(map_response(insert_immutable_static_cache))
+                .service(ServeDir::new(itab_assets_dir)),
+        )
         .nest_service(
             "/intro-assets",
-            get_service(ServeDir::new(intro_assets_dir)),
+            ServiceBuilder::new()
+                .layer(map_response(insert_immutable_static_cache))
+                .service(ServeDir::new(intro_assets_dir)),
         )
-        .nest_service("/backgrounds", get_service(ServeDir::new(backgrounds_dir)))
+        .nest_service(
+            "/backgrounds",
+            ServiceBuilder::new()
+                .layer(map_response(insert_mutable_static_cache))
+                .service(ServeDir::new(backgrounds_dir)),
+        )
         .nest_service(
             "/mobile_backgrounds",
-            get_service(ServeDir::new(mobile_dir)),
+            ServiceBuilder::new()
+                .layer(map_response(insert_mutable_static_cache))
+                .service(ServeDir::new(mobile_dir)),
         )
         .nest_service("/public", get_service(ServeDir::new(public_dir.clone())))
         .fallback(spa_or_404)
@@ -353,6 +391,46 @@ pub fn app(state: AppState) -> Router {
                 .allow_headers(Any),
         )
         .with_state(state)
+}
+
+fn immutable_file_service(path: impl Into<std::path::PathBuf>) -> MethodRouter<AppState> {
+    get_service(ServeFile::new(path.into())).layer(map_response(insert_immutable_static_cache))
+}
+
+fn html_file_service(path: impl Into<std::path::PathBuf>) -> MethodRouter<AppState> {
+    get_service(ServeFile::new(path.into())).layer(map_response(insert_html_cache))
+}
+
+async fn insert_immutable_static_cache<B>(mut response: Response<B>) -> Response<B> {
+    let status = response.status();
+    insert_cache_control_if_success(
+        response.headers_mut(),
+        status,
+        IMMUTABLE_STATIC_CACHE_CONTROL,
+    );
+    response
+}
+
+async fn insert_mutable_static_cache<B>(mut response: Response<B>) -> Response<B> {
+    let status = response.status();
+    insert_cache_control_if_success(response.headers_mut(), status, MUTABLE_STATIC_CACHE_CONTROL);
+    response
+}
+
+async fn insert_html_cache<B>(mut response: Response<B>) -> Response<B> {
+    let status = response.status();
+    insert_cache_control_if_success(response.headers_mut(), status, HTML_CACHE_CONTROL);
+    response
+}
+
+fn insert_cache_control_if_success(
+    headers: &mut HeaderMap,
+    status: StatusCode,
+    value: &'static str,
+) {
+    if status.is_success() {
+        headers.insert(header::CACHE_CONTROL, HeaderValue::from_static(value));
+    }
 }
 
 #[derive(Debug, Deserialize)]
@@ -1300,6 +1378,9 @@ async fn spa_or_404(State(state): State<AppState>, uri: axum::http::Uri) -> Resp
     if uri.path().starts_with("/api/") || uri.path().starts_with("/ws") {
         return StatusCode::NOT_FOUND.into_response();
     }
+    if is_explicit_file_path(uri.path()) {
+        return StatusCode::NOT_FOUND.into_response();
+    }
     let path = state.config.public_dir.join("index.html");
     match fs::read(path).await {
         Ok(bytes) => {
@@ -1308,10 +1389,21 @@ async fn spa_or_404(State(state): State<AppState>, uri: axum::http::Uri) -> Resp
                 header::CONTENT_TYPE,
                 HeaderValue::from_static("text/html; charset=utf-8"),
             );
+            response.headers_mut().insert(
+                header::CACHE_CONTROL,
+                HeaderValue::from_static(HTML_CACHE_CONTROL),
+            );
             response
         }
         Err(_) => StatusCode::NOT_FOUND.into_response(),
     }
+}
+
+fn is_explicit_file_path(path: &str) -> bool {
+    path.rsplit('/')
+        .next()
+        .filter(|segment| !segment.is_empty())
+        .is_some_and(|segment| segment.contains('.'))
 }
 
 fn snapshot_to_api_value(snapshot: AppSnapshot) -> Value {

@@ -225,6 +225,9 @@ pub(crate) async fn resolve_site(
     let title = string_field(&metadata, "title").unwrap_or_default();
     let description = string_field(&metadata, "description").unwrap_or_default();
     let background_color = string_field(&metadata, "backgroundColor").unwrap_or_default();
+    let fetch_status = metadata.get("fetchStatus").cloned().unwrap_or(Value::Null);
+    let failure_kind = metadata.get("failureKind").cloned().unwrap_or(Value::Null);
+    let retry_after = metadata.get("retryAfter").cloned().unwrap_or(Value::Null);
     let label = if title.is_empty() {
         host_label(&normalized_url)
     } else {
@@ -264,6 +267,9 @@ pub(crate) async fn resolve_site(
             "title": title,
             "description": description,
             "backgroundColor": background_color,
+            "fetchStatus": fetch_status,
+            "failureKind": failure_kind,
+            "retryAfter": retry_after,
             "selectedIcon": selected.as_ref().map(candidate_to_value),
             "iconCandidates": candidates.iter().map(candidate_to_value).collect::<Vec<_>>(),
         }

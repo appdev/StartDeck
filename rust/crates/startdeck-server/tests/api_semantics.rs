@@ -186,8 +186,16 @@ async fn test_context_with_widget_cache(include_poem_cache: bool) -> TestContext
         r#"<svg xmlns="http://www.w3.org/2000/svg" id="startdeck"/>"#,
     )
     .unwrap();
+    std::fs::write(
+        public_dir.join("default-wallpaper.svg"),
+        r#"<svg xmlns="http://www.w3.org/2000/svg" id="wallpaper"/>"#,
+    )
+    .unwrap();
+    std::fs::write(public_dir.join("ICON.PNG"), b"png-bytes").unwrap();
     std::fs::create_dir_all(public_dir.join("assets/ai-usage/providers")).unwrap();
     std::fs::create_dir_all(public_dir.join("assets/seed-icons/nav")).unwrap();
+    std::fs::create_dir_all(public_dir.join("itab-live-assets/anniversary")).unwrap();
+    std::fs::create_dir_all(public_dir.join("itab/weather/icon")).unwrap();
     std::fs::write(
         public_dir.join("assets/ai-usage/providers/openai.svg"),
         r#"<svg id="openai"/>"#,
@@ -198,6 +206,22 @@ async fn test_context_with_widget_cache(include_poem_cache: bool) -> TestContext
         r#"<svg id="github"/>"#,
     )
     .unwrap();
+    std::fs::write(
+        public_dir.join("itab-live-assets/anniversary/yiyan-2.webp"),
+        b"webp-bytes",
+    )
+    .unwrap();
+    std::fs::write(
+        public_dir.join("itab/weather/icon/104-fill.svg"),
+        r#"<svg id="weather"/>"#,
+    )
+    .unwrap();
+    let pc_dir = base.join("Data/PC");
+    let mobile_dir = base.join("Data/APP");
+    std::fs::create_dir_all(&pc_dir).unwrap();
+    std::fs::create_dir_all(&mobile_dir).unwrap();
+    std::fs::write(pc_dir.join("desk.jpg"), b"pc-background").unwrap();
+    std::fs::write(mobile_dir.join("phone.jpg"), b"mobile-background").unwrap();
     let config = RuntimeConfig::from_base_dir(base);
     let pool = connect_sqlite(&config).await.unwrap();
     import_legacy_app_data(&pool, &config).await.unwrap();
@@ -1493,6 +1517,12 @@ async fn root_favicon_assets_are_served_as_static_files() {
             r#"<svg xmlns="http://www.w3.org/2000/svg" id="startdeck"/>"#.as_bytes(),
             "image/svg+xml",
         ),
+        (
+            "/default-wallpaper.svg",
+            r#"<svg xmlns="http://www.w3.org/2000/svg" id="wallpaper"/>"#.as_bytes(),
+            "image/svg+xml",
+        ),
+        ("/ICON.PNG", b"png-bytes".as_slice(), "image/png"),
     ] {
         let response = app
             .clone()
@@ -1500,6 +1530,14 @@ async fn root_favicon_assets_are_served_as_static_files() {
             .await
             .unwrap();
         assert_eq!(response.status(), StatusCode::OK, "{uri}");
+        assert_eq!(
+            response
+                .headers()
+                .get("cache-control")
+                .and_then(|value| value.to_str().ok()),
+            Some("public, max-age=31536000, immutable"),
+            "{uri}"
+        );
         let content_type = response
             .headers()
             .get("content-type")
@@ -1511,6 +1549,37 @@ async fn root_favicon_assets_are_served_as_static_files() {
         );
         let body = to_bytes(response.into_body(), usize::MAX).await.unwrap();
         assert_eq!(body.as_ref(), expected_body, "{uri}");
+    }
+}
+
+#[tokio::test]
+async fn html_entry_points_are_no_cache() {
+    let app = test_app().await;
+
+    for uri in ["/", "/index.html", "/intro.html", "/dashboard"] {
+        let response = app
+            .clone()
+            .oneshot(Request::builder().uri(uri).body(Body::empty()).unwrap())
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::OK, "{uri}");
+        assert_eq!(
+            response
+                .headers()
+                .get("cache-control")
+                .and_then(|value| value.to_str().ok()),
+            Some("no-cache"),
+            "{uri}"
+        );
+        let content_type = response
+            .headers()
+            .get("content-type")
+            .and_then(|value| value.to_str().ok())
+            .unwrap_or_default();
+        assert!(
+            content_type.starts_with("text/html"),
+            "{uri} content-type was {content_type:?}"
+        );
     }
 }
 
@@ -1545,16 +1614,70 @@ async fn application_assets_are_served_from_assets_route() {
     for uri in [
         "/assets/ai-usage/providers/openai.svg",
         "/assets/seed-icons/nav/github.svg",
+        "/itab-live-assets/anniversary/yiyan-2.webp",
+        "/itab/weather/icon/104-fill.svg",
+        "/intro-assets/missing-but-route-checked-later.svg",
     ] {
         let response = app
             .clone()
             .oneshot(Request::builder().uri(uri).body(Body::empty()).unwrap())
             .await
             .unwrap();
+        if uri.contains("missing-but-route") {
+            assert_eq!(response.status(), StatusCode::NOT_FOUND, "{uri}");
+            assert!(response.headers().get("cache-control").is_none(), "{uri}");
+            continue;
+        }
         assert_eq!(response.status(), StatusCode::OK, "{uri}");
+        assert_eq!(
+            response
+                .headers()
+                .get("cache-control")
+                .and_then(|value| value.to_str().ok()),
+            Some("public, max-age=31536000, immutable"),
+            "{uri}"
+        );
         let body = to_bytes(response.into_body(), usize::MAX).await.unwrap();
         assert!(!body.is_empty(), "{uri}");
     }
+}
+
+#[tokio::test]
+async fn mutable_background_assets_are_cacheable_but_not_immutable() {
+    let app = test_app().await;
+
+    for uri in ["/backgrounds/desk.jpg", "/mobile_backgrounds/phone.jpg"] {
+        let response = app
+            .clone()
+            .oneshot(Request::builder().uri(uri).body(Body::empty()).unwrap())
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::OK, "{uri}");
+        assert_eq!(
+            response
+                .headers()
+                .get("cache-control")
+                .and_then(|value| value.to_str().ok()),
+            Some("public, max-age=86400, stale-while-revalidate=604800"),
+            "{uri}"
+        );
+    }
+}
+
+#[tokio::test]
+async fn missing_file_like_paths_do_not_fall_back_to_spa_html() {
+    let app = test_app().await;
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/missing-image.svg")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::NOT_FOUND);
 }
 
 #[tokio::test]
@@ -2169,7 +2292,10 @@ async fn spawn_mock_meta_server() -> (String, tokio::task::JoinHandle<()>) {
                 "title": "Example Metadata",
                 "description": "Resolved from mock MetaServer",
                 "icon": "/cache/example.svg",
-                "backgroundColor": "#123456"
+                "backgroundColor": "#123456",
+                "fetchStatus": "blocked",
+                "failureKind": "remote_icon_blocked",
+                "retryAfter": "2026-06-01T10:00:00Z"
             }
         }))
     }
@@ -2221,6 +2347,9 @@ async fn site_resolve_returns_public_meta_icon_proxy_without_managed_asset() {
     assert_eq!(body["success"], true);
     assert_eq!(body["data"]["title"], "Example Metadata");
     assert_eq!(body["data"]["description"], "Resolved from mock MetaServer");
+    assert_eq!(body["data"]["fetchStatus"], "blocked");
+    assert_eq!(body["data"]["failureKind"], "remote_icon_blocked");
+    assert_eq!(body["data"]["retryAfter"], "2026-06-01T10:00:00Z");
     let icon_url = body["data"]["selectedIcon"]["url"].as_str().unwrap();
     assert!(icon_url.starts_with("/api/icons/mta_"));
     assert_eq!(body["data"]["iconCandidates"].as_array().unwrap().len(), 1);

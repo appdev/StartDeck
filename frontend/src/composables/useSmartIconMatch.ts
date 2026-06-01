@@ -223,7 +223,7 @@ export const useSmartIconMatch = ({
       lastSiteMetadata.value = metadata;
 
       const metadataTitle = metadata?.title?.trim();
-      if (metadataTitle) {
+      if (metadataTitle && !form.value.title?.trim()) {
         form.value.title = metadataTitle;
       }
 

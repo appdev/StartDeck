@@ -68,13 +68,7 @@ export const useSyncStore = defineStore("sync", () => {
       networkStore.markFresh();
     },
     onDisconnected: () => {
-      wsContinuousFailures++;
-      if (wsContinuousFailures > 6) {
-        console.warn(
-          `[WS] ${wsContinuousFailures} consecutive disconnections, scheduling immediate sync`,
-        );
-        void fetchAndProcessData();
-      }
+      networkStore.markStale();
     },
   });
 
@@ -122,6 +116,7 @@ export const useSyncStore = defineStore("sync", () => {
   };
 
   const isConnected = computed(() => status.value === "OPEN");
+  const getWsStatus = () => status.value;
 
   // ---- Data state ----
   const dataVersion = ref(0);
@@ -138,6 +133,10 @@ export const useSyncStore = defineStore("sync", () => {
   let isApplyingServerData = false;
   const initCompleted = ref(false);
   const WS_FALLBACK_THRESHOLD = 5;
+  const WS_FALLBACK_SYNC_MIN_INTERVAL_MS = 30000;
+  let wsFallbackSyncTimer: ReturnType<typeof setTimeout> | null = null;
+  let wsFallbackSyncInProgress = false;
+  let lastWsFallbackSyncAt = 0;
   let isHttpPollingActive = false;
   const isHttpPollingActiveRef = computed(() => isHttpPollingActive);
   let httpPollTimer: ReturnType<typeof setInterval> | null = null;
@@ -416,6 +415,45 @@ export const useSyncStore = defineStore("sync", () => {
     }
   };
 
+  const clearWsFallbackSyncSchedule = (resetTimestamp = false) => {
+    if (wsFallbackSyncTimer) {
+      clearTimeout(wsFallbackSyncTimer);
+      wsFallbackSyncTimer = null;
+    }
+    if (resetTimestamp) lastWsFallbackSyncAt = 0;
+  };
+
+  const scheduleWsFallbackSync = () => {
+    if (!auth.sessionReady || !auth.isLogged) return;
+    if (getWsStatus() === "OPEN") return;
+    if (wsFallbackSyncTimer || wsFallbackSyncInProgress) return;
+
+    const now = Date.now();
+    const delay = Math.max(
+      0,
+      WS_FALLBACK_SYNC_MIN_INTERVAL_MS - (now - lastWsFallbackSyncAt),
+    );
+    console.warn(
+      `[WS] ${wsContinuousFailures} consecutive disconnections, using HTTP fallback sync`,
+    );
+    wsFallbackSyncTimer = setTimeout(async () => {
+      wsFallbackSyncTimer = null;
+      if (!auth.sessionReady || !auth.isLogged || getWsStatus() === "OPEN")
+        return;
+      wsFallbackSyncInProgress = true;
+      lastWsFallbackSyncAt = Date.now();
+      try {
+        const serverVersion = await fetchVersionOnly();
+        if (getWsStatus() !== "OPEN" && serverVersion > dataVersion.value)
+          await fetchAndProcessData();
+      } catch (e) {
+        console.warn("[WS] HTTP fallback sync failed", e);
+      } finally {
+        wsFallbackSyncInProgress = false;
+      }
+    }, delay);
+  };
+
   const OFFLINE_QUEUE_REPLAY_INTERVAL_MS = 30000;
   let offlineQueueReplayTimer: ReturnType<typeof setInterval> | null = null;
   let offlineQueueReplayInProgress = false;
@@ -466,6 +504,7 @@ export const useSyncStore = defineStore("sync", () => {
   watch(status, async (newStatus) => {
     if (newStatus === "OPEN") {
       stopHttpPolling();
+      clearWsFallbackSyncSchedule(true);
       wsContinuousFailures = 0;
       const isReconnect = wsWasConnectedBefore;
       if (!isReconnect) isFirstConnect = false;
@@ -508,9 +547,7 @@ export const useSyncStore = defineStore("sync", () => {
       }
       await networkStore.fetchSystemConfig();
     } else if (newStatus === "CLOSED") {
-      if (newStatus === "CLOSED") {
-        wsContinuousFailures++;
-      }
+      wsContinuousFailures++;
       networkStore.stopNetworkHeartbeat();
       if (auth.sessionReady && auth.isLogged) {
         void revalidateSession();
@@ -519,10 +556,14 @@ export const useSyncStore = defineStore("sync", () => {
       if (
         auth.sessionReady &&
         auth.isLogged &&
-        wsContinuousFailures >= WS_FALLBACK_THRESHOLD &&
-        !isHttpPollingActive
-      )
-        startHttpPolling();
+        wsContinuousFailures >= WS_FALLBACK_THRESHOLD
+      ) {
+        const shouldStartHttpPolling = !isHttpPollingActive;
+        if (shouldStartHttpPolling) {
+          startHttpPolling();
+          scheduleWsFallbackSync();
+        }
+      }
     }
   });
 
@@ -709,6 +750,7 @@ export const useSyncStore = defineStore("sync", () => {
       if (status.value === "OPEN") wsClose();
       networkStore.stopNetworkHeartbeat();
       stopHttpPolling();
+      clearWsFallbackSyncSchedule(true);
       stopPingCheck();
       cacheStore.removeCacheForCurrentUser();
       await auth.logout();
@@ -814,6 +856,7 @@ export const useSyncStore = defineStore("sync", () => {
         stopOfflineQueueReplayTimer();
         if (status.value === "OPEN") wsClose();
         stopHttpPolling();
+        clearWsFallbackSyncSchedule(true);
         stopPingCheck();
         if (!logoutInProgress) {
           resetActiveStateForGuest();

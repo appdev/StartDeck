@@ -63,8 +63,8 @@ export const fetchSiteMetadata = async (
     backgroundColor: data.backgroundColor,
     fetchedAt: null,
     iconCandidates: data.iconCandidates,
-    fetchStatus: data.selectedIcon || data.iconCandidates.length > 0 ? "ok" : "no_icon",
-    failureKind: null,
-    retryAfter: null,
+    fetchStatus: data.fetchStatus || "no_icon",
+    failureKind: data.failureKind || null,
+    retryAfter: data.retryAfter || null,
   };
 };

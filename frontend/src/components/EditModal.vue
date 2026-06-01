@@ -255,6 +255,14 @@ const metadataFetchParts = computed(() => {
 
 const metadataFetchSummary = computed(() => {
   if (isSmartMatching.value) return "正在获取站点信息...";
+  const metadata = lastSiteMetadata.value;
+  if (metadata?.fetchStatus === "blocked") {
+    if (metadata.failureKind === "remote_icon_blocked") {
+      return "站点阻止自动获取，已尽量使用公开站点图标";
+    }
+    return "站点需要登录，无法获取完整信息";
+  }
+  if (metadata?.fetchStatus === "error") return "站点信息获取失败，请稍后重试";
   const parts = metadataFetchParts.value;
   if (parts.length > 0) return `已获取${parts.join("、")}`;
   if (lastSiteMetadata.value) return "未获取到可用站点信息";
