@@ -53,39 +53,39 @@ import {
   type RuntimeWidgetSizeKey,
 } from "@/features/widget-runtime/widgetRuntimeSizes";
 import {
-  toItabWidgetSizeKey,
-  type ItabWidgetSizeKey,
-} from "@/features/itab-widgets/itabSizePresets";
+  toSdWidgetSizeKey,
+  type SdWidgetSizeKey,
+} from "@/features/sd-widgets/sdSizePresets";
 import {
-  ITAB_GRID_GAP,
-  ITAB_GRID_MAX_COLUMNS,
-  ITAB_GRID_PITCH,
-  resolveItabGridColumns,
-  resolveItabGridContainerWidth,
-  resolveItabGridTrackColumns,
-  withItabGridData,
-} from "@/features/itab-widgets/itabGrid";
-import { ITAB_TODO_WIDGET_TYPE } from "@/features/itab-todo/itabTodoTypes";
+  SD_GRID_GAP,
+  SD_GRID_MAX_COLUMNS,
+  SD_GRID_PITCH,
+  resolveSdGridColumns,
+  resolveSdGridContainerWidth,
+  resolveSdGridTrackColumns,
+  withSdGridData,
+} from "@/features/sd-widgets/sdGrid";
+import { SD_TODO_WIDGET_TYPE } from "@/features/sd-todo/sdTodoTypes";
 import {
-  ITAB_MEMO_CATALOG_ID,
-  ITAB_MEMO_WIDGET_TYPE,
-} from "@/features/itab-memo/itabMemoTypes";
-import { ITAB_CLOCK_WIDGET_TYPE } from "@/features/itab-clock/itabClockTypes";
-import { ITAB_DAILY_ENGLISH_WIDGET_TYPE } from "@/features/itab-daily-english/itabDailyEnglishTypes";
-import { ITAB_POEM_WIDGET_TYPE } from "@/features/itab-poem/itabPoemTypes";
-import { ITAB_POMODORO_WIDGET_TYPE } from "@/features/itab-pomodoro/itabPomodoroTypes";
+  SD_MEMO_CATALOG_ID,
+  SD_MEMO_WIDGET_TYPE,
+} from "@/features/sd-memo/sdMemoTypes";
+import { SD_CLOCK_WIDGET_TYPE } from "@/features/sd-clock/sdClockTypes";
+import { SD_DAILY_ENGLISH_WIDGET_TYPE } from "@/features/sd-daily-english/sdDailyEnglishTypes";
+import { SD_POEM_WIDGET_TYPE } from "@/features/sd-poem/sdPoemTypes";
+import { SD_POMODORO_WIDGET_TYPE } from "@/features/sd-pomodoro/sdPomodoroTypes";
 import {
-  ITAB_ANNIVERSARY_CATALOG_ID,
-  ITAB_ANNIVERSARY_WIDGET_TYPE,
-} from "@/features/itab-anniversary/itabAnniversaryTypes";
-import { ITAB_WALLPAPER_WIDGET_TYPE } from "@/features/itab-wallpaper/itabWallpaperTypes";
-import { ITAB_MOVIE_CALENDAR_WIDGET_TYPE } from "@/features/itab-movie-calendar/itabMovieCalendarTypes";
-import { ITAB_CALENDAR_WIDGET_TYPE } from "@/features/itab-calendar/itabCalendarTypes";
-import { ITAB_IP_WIDGET_TYPE } from "@/features/itab-ip/itabIpTypes";
-import { useItabIpRuntime } from "@/features/itab-ip/useItabIpRuntime";
-import { ITAB_FOOD_PICKER_WIDGET_TYPE } from "@/features/itab-food-picker/itabFoodPickerTypes";
-import { ITAB_NUMBER_UPPERCASE_WIDGET_TYPE } from "@/features/itab-number-uppercase/itabNumberUppercaseTypes";
-import { createDefaultItabAnniversaryWidget } from "@/features/itab-anniversary/itabAnniversaryModel";
+  SD_ANNIVERSARY_CATALOG_ID,
+  SD_ANNIVERSARY_WIDGET_TYPE,
+} from "@/features/sd-anniversary/sdAnniversaryTypes";
+import { SD_WALLPAPER_WIDGET_TYPE } from "@/features/sd-wallpaper/sdWallpaperTypes";
+import { SD_MOVIE_CALENDAR_WIDGET_TYPE } from "@/features/sd-movie-calendar/sdMovieCalendarTypes";
+import { SD_CALENDAR_WIDGET_TYPE } from "@/features/sd-calendar/sdCalendarTypes";
+import { SD_IP_WIDGET_TYPE } from "@/features/sd-ip/sdIpTypes";
+import { useSdIpRuntime } from "@/features/sd-ip/useSdIpRuntime";
+import { SD_FOOD_PICKER_WIDGET_TYPE } from "@/features/sd-food-picker/sdFoodPickerTypes";
+import { SD_NUMBER_UPPERCASE_WIDGET_TYPE } from "@/features/sd-number-uppercase/sdNumberUppercaseTypes";
+import { createDefaultSdAnniversaryWidget } from "@/features/sd-anniversary/sdAnniversaryModel";
 import {
   AI_USAGE_CATALOG_ID,
   AI_USAGE_WIDGET_TYPE,
@@ -96,7 +96,7 @@ import {
   TAPD_DEFECTS_WIDGET_TYPE,
 } from "@/features/tapd-defects/tapdDefectTypes";
 import { createDefaultTapdDefectWidget } from "@/features/tapd-defects/tapdDefectModel";
-import ItabMemoFixedLayer from "@/features/itab-memo/ItabMemoFixedLayer.vue";
+import SdMemoFixedLayer from "@/features/sd-memo/SdMemoFixedLayer.vue";
 import { useUiFeedbackStore } from "@/stores/uiFeedback";
 import {
   isInternalNetwork,
@@ -180,20 +180,20 @@ const { deviceKey, isMobile } = useDevice(toRef(store.appConfig, "deviceMode"));
 const { width } = useWindowSize();
 const isHeaderRowLayout = computed(() => width.value >= 1280);
 const gridWidgetTypes = new Set([
-  ITAB_CLOCK_WIDGET_TYPE,
-  "itab-weather-00",
-  ITAB_TODO_WIDGET_TYPE,
-  ITAB_MEMO_WIDGET_TYPE,
-  ITAB_POEM_WIDGET_TYPE,
-  ITAB_DAILY_ENGLISH_WIDGET_TYPE,
-  ITAB_POMODORO_WIDGET_TYPE,
-  ITAB_ANNIVERSARY_WIDGET_TYPE,
-  ITAB_WALLPAPER_WIDGET_TYPE,
-  ITAB_MOVIE_CALENDAR_WIDGET_TYPE,
-  ITAB_CALENDAR_WIDGET_TYPE,
-  ITAB_IP_WIDGET_TYPE,
-  ITAB_NUMBER_UPPERCASE_WIDGET_TYPE,
-  ITAB_FOOD_PICKER_WIDGET_TYPE,
+  SD_CLOCK_WIDGET_TYPE,
+  "sd-weather-00",
+  SD_TODO_WIDGET_TYPE,
+  SD_MEMO_WIDGET_TYPE,
+  SD_POEM_WIDGET_TYPE,
+  SD_DAILY_ENGLISH_WIDGET_TYPE,
+  SD_POMODORO_WIDGET_TYPE,
+  SD_ANNIVERSARY_WIDGET_TYPE,
+  SD_WALLPAPER_WIDGET_TYPE,
+  SD_MOVIE_CALENDAR_WIDGET_TYPE,
+  SD_CALENDAR_WIDGET_TYPE,
+  SD_IP_WIDGET_TYPE,
+  SD_NUMBER_UPPERCASE_WIDGET_TYPE,
+  SD_FOOD_PICKER_WIDGET_TYPE,
   AI_USAGE_WIDGET_TYPE,
   TAPD_DEFECTS_WIDGET_TYPE,
   "docker",
@@ -247,7 +247,7 @@ const homeWidgetDragIgnoreFrom = [
   "[data-grid-drag-ignore]",
   ".widget-resize-grip",
   ".widget-size-strip",
-  "[data-itab-inner-control]",
+  "[data-sd-inner-control]",
   "[data-context-menu]",
   "[data-grid-context-menu]",
   "[data-runtime-context-menu]",
@@ -374,7 +374,7 @@ const toggleEditMode = async () => {
   }
 };
 
-const isEditableKeyboardTarget = (target: EventTarget | null) => {
+const isTextInputKeyboardTarget = (target: EventTarget | null) => {
   if (!(target instanceof HTMLElement)) return false;
   if (target.isContentEditable) return true;
   return ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName);
@@ -385,7 +385,7 @@ const hasActiveOverlayMotion = () =>
 
 const onGlobalHomeKeydown = (event: KeyboardEvent) => {
   if (event.key !== "Escape" || !isEditMode.value) return;
-  if (hasActiveOverlayMotion() || isEditableKeyboardTarget(event.target))
+  if (hasActiveOverlayMotion() || isTextInputKeyboardTarget(event.target))
     return;
   event.preventDefault();
   event.stopPropagation();
@@ -450,7 +450,7 @@ const isGridAlive = ref(true);
 const isLanMode = ref(false);
 const latency = ref(0);
 const isChecking = ref(false);
-const ipRuntime = useItabIpRuntime();
+const ipRuntime = useSdIpRuntime();
 const networkConfig = computed(() =>
   getNetworkConfig(store.appConfig, store.forceNetworkMode),
 );
@@ -719,7 +719,7 @@ const isWideLayout = computed(
 const mainContentMaxWidthPx = computed(() => {
   if (deviceKey.value !== "desktop") {
     return Math.max(
-      resolveItabGridContainerWidth(1),
+      resolveSdGridContainerWidth(1),
       Math.round(width.value - 32),
     );
   }
@@ -776,25 +776,25 @@ const headerTitleFontSize = computed(() => {
 const widgetColNum = computed(() => {
   const resolveColumns =
     deviceKey.value === "desktop"
-      ? resolveItabGridTrackColumns
-      : resolveItabGridColumns;
+      ? resolveSdGridTrackColumns
+      : resolveSdGridColumns;
   return Math.max(
     4,
-    resolveColumns(mainContentMaxWidthPx.value, ITAB_GRID_MAX_COLUMNS),
+    resolveColumns(mainContentMaxWidthPx.value, SD_GRID_MAX_COLUMNS),
   );
 });
-const itabGridLayoutWidth = computed(
-  () => widgetColNum.value * ITAB_GRID_PITCH,
+const sdGridLayoutWidth = computed(
+  () => widgetColNum.value * SD_GRID_PITCH,
 );
 const widgetAreaContainerWidth = computed(() =>
   deviceKey.value === "desktop"
     ? mainContentMaxWidth.value
-    : `${itabGridLayoutWidth.value}px`,
+    : `${sdGridLayoutWidth.value}px`,
 );
 const lastDeviceKey = ref(deviceKey.value);
 const lastWidgetColNum = ref(widgetColNum.value);
 const lastAuthState = ref(store.isLogged);
-const resizeStepHeight = computed(() => ITAB_GRID_PITCH);
+const resizeStepHeight = computed(() => SD_GRID_PITCH);
 
 const compactVertical = (layout: GridLayoutItem[]) => {
   const step = 1;
@@ -820,7 +820,7 @@ const compactVertical = (layout: GridLayoutItem[]) => {
 
     // 1. Try to move UP to fill gaps (vertical compaction)
     let found = false;
-    // 使用 iTab 单元步进检查，确保布局吸附到固定网格。
+    // 使用固定网格单元步进检查，确保布局吸附到固定网格。
     for (let y = 0; y < originalY; y += step) {
       const candidate = { ...next, y };
       if (canPlace(candidate, placed)) {
@@ -904,7 +904,7 @@ watch(
     const widgetsToLayout = visibleWidgets.map((w) => {
       const newW: WidgetConfig = { ...w };
       if (deviceKey.value === "mobile") {
-        // iTab 网格不读取旧 layouts；移动端重新按当前可见顺序自动排布。
+        // 运行时网格不读取旧 layouts；移动端重新按当前可见顺序自动排布。
         newW.x = undefined;
         newW.y = undefined;
       }
@@ -1034,7 +1034,7 @@ const gridStackOptions = (): GridStackOptions => ({
   auto: false,
   column: widgetColNum.value,
   cellHeight: resizeStepHeight.value,
-  margin: ITAB_GRID_GAP / 2,
+  margin: SD_GRID_GAP / 2,
   float: false,
   animate: false,
   disableResize: true,
@@ -1174,7 +1174,7 @@ watch(
     const grid = gridStackRef.value;
     grid.column(widgetColNum.value, "move");
     grid.cellHeight(resizeStepHeight.value);
-    grid.margin(ITAB_GRID_GAP / 2);
+    grid.margin(SD_GRID_GAP / 2);
     await syncGridStackWidgets();
   },
   { deep: true },
@@ -1195,7 +1195,7 @@ watch(isEditMode, (val) => {
 });
 
 const isEmpireCloudWidget = (type: string) => {
-  return [ITAB_TODO_WIDGET_TYPE].includes(type);
+  return [SD_TODO_WIDGET_TYPE].includes(type);
 };
 
 const fetchWithTimeout = (
@@ -1371,9 +1371,9 @@ const syncCatalogWidgetLayout = (widget: WidgetConfig) => {
   } else {
     Object.assign(
       widget,
-      withItabGridData(
+      withSdGridData(
         { ...widget },
-        toItabWidgetSizeKey({ colSpan: width, rowSpan: height }),
+        toSdWidgetSizeKey({ colSpan: width, rowSpan: height }),
       ),
     );
   }
@@ -1445,7 +1445,7 @@ const applyWidgetSizeFromPayload = (
   widget.rowSpan = target.rowSpan;
   Object.assign(
     widget,
-    withItabGridData(widget, target.key as ItabWidgetSizeKey),
+    withSdGridData(widget, target.key as SdWidgetSizeKey),
   );
 };
 
@@ -2348,8 +2348,8 @@ const runtimeMemoWidget = computed(
   () =>
     store.widgets.find(
       (widget) =>
-        widget.id === ITAB_MEMO_CATALOG_ID &&
-        widget.type === ITAB_MEMO_WIDGET_TYPE &&
+        widget.id === SD_MEMO_CATALOG_ID &&
+        widget.type === SD_MEMO_WIDGET_TYPE &&
         widget.enable !== false,
     ) || null,
 );
@@ -2458,9 +2458,9 @@ const updateRuntimeWidgetData = (
   store.markDirty();
   if (store.isLogged && storeWidget) {
     void store.saveData(
-      widget.type !== ITAB_TODO_WIDGET_TYPE &&
-        widget.type !== ITAB_MEMO_WIDGET_TYPE &&
-        widget.type !== ITAB_POMODORO_WIDGET_TYPE,
+      widget.type !== SD_TODO_WIDGET_TYPE &&
+        widget.type !== SD_MEMO_WIDGET_TYPE &&
+        widget.type !== SD_POMODORO_WIDGET_TYPE,
     );
   }
 };
@@ -2476,8 +2476,8 @@ const addRuntimeWidgetData = (
   const normalized = normalizeWidgetRuntimeData(widget.type, data);
   if (!normalized) return;
   const newWidget =
-    widget.type === ITAB_ANNIVERSARY_WIDGET_TYPE
-      ? createDefaultItabAnniversaryWidget()
+    widget.type === SD_ANNIVERSARY_WIDGET_TYPE
+      ? createDefaultSdAnniversaryWidget()
       : widget.type === AI_USAGE_WIDGET_TYPE
         ? createDefaultAiUsageWidget()
         : widget.type === TAPD_DEFECTS_WIDGET_TYPE
@@ -2489,7 +2489,7 @@ const addRuntimeWidgetData = (
       ? AI_USAGE_CATALOG_ID
       : widget.type === TAPD_DEFECTS_WIDGET_TYPE
         ? TAPD_DEFECTS_CATALOG_ID
-        : ITAB_ANNIVERSARY_CATALOG_ID,
+        : SD_ANNIVERSARY_CATALOG_ID,
   );
   newWidget.data = normalized;
   applyRuntimeWidgetSize(newWidget, normalized.sizeKey);
@@ -2595,7 +2595,7 @@ const blankContextRows: {
   disabled?: () => boolean;
   testId?: string;
 }[] = [
-  { action: "add", label: "添加图标", testId: "itab-add-context-row-add" },
+  { action: "add", label: "添加图标", testId: "sd-add-context-row-add" },
   { action: "wallpaper", label: "换壁纸" },
   { action: "backup", label: "立即备份" },
   { action: "settings", label: "设置" },
@@ -2649,7 +2649,7 @@ const onDocPointerDownCapture = (e: PointerEvent) => {
   const target = e.target as HTMLElement | null;
   if (target?.closest?.("[data-grid-context-menu]")) return;
   if (target?.closest?.("[data-runtime-context-menu]")) return;
-  if (target?.closest?.("[data-testid='itab-add-context-menu']")) return;
+  if (target?.closest?.("[data-testid='sd-add-context-menu']")) return;
   closeContextMenu();
   closeBlankContextMenu();
   closeRuntimeContextMenu();
@@ -3151,7 +3151,7 @@ onUnmounted(() => {
 
         <section
           v-if="showHomeTopTime || showHomeTopSearch"
-          class="sd-itab-home-top"
+          class="sd-home-top"
           data-home-source-top
           :class="{
             'has-time': showHomeTopTime,
@@ -3160,7 +3160,7 @@ onUnmounted(() => {
         >
           <header
             v-if="showHomeTopTime"
-            class="sd-itab-home-clock"
+            class="sd-home-clock"
             :style="{
               color: store.appConfig.titleColor,
               textShadow: store.appConfig.background
@@ -3168,7 +3168,7 @@ onUnmounted(() => {
                 : 'var(--sd-home-card-search-shadow-default)',
             }"
           >
-            <div class="sd-itab-home-clock-digits">
+            <div class="sd-home-clock-digits">
               <time>{{ homeTopHourText }}</time>
               <span>:</span>
               <time>{{ homeTopMinuteText }}</time>
@@ -3176,15 +3176,15 @@ onUnmounted(() => {
             <p>{{ homeTopDateText }}</p>
           </header>
 
-          <div v-if="showHomeTopSearch" class="sd-itab-home-search-wrap">
+          <div v-if="showHomeTopSearch" class="sd-home-search-wrap">
             <form
-              class="sd-itab-home-search"
+              class="sd-home-search"
               role="search"
               action="."
               @submit.prevent="submitHomeSearch"
             >
               <button
-                class="sd-itab-home-search-icon"
+                class="sd-home-search-icon"
                 type="button"
                 :title="activeHomeSearchEngine?.label || '搜索引擎'"
                 @click="homeSearchInputRef?.focus()"
@@ -3203,7 +3203,7 @@ onUnmounted(() => {
                 placeholder="输入搜索内容"
               />
               <button
-                class="sd-itab-home-search-submit"
+                class="sd-home-search-submit"
                 type="submit"
                 aria-label="搜索"
               >
@@ -3214,7 +3214,7 @@ onUnmounted(() => {
               </button>
             </form>
 
-            <nav class="sd-itab-home-search-engines" aria-label="搜索引擎">
+            <nav class="sd-home-search-engines" aria-label="搜索引擎">
               <button
                 v-for="engine in homeSearchEngines"
                 :key="engine.key"
@@ -3253,7 +3253,7 @@ onUnmounted(() => {
             v-if="isGridAlive"
             ref="gridLayoutRootRef"
             :style="{
-              width: itabGridLayoutWidth + 'px',
+              width: sdGridLayoutWidth + 'px',
               maxWidth: 'none',
               marginLeft: 'auto',
               marginRight: 'auto',
@@ -4065,7 +4065,7 @@ onUnmounted(() => {
       @update-data="updateRuntimeWidgetData"
     />
 
-    <ItabMemoFixedLayer
+    <SdMemoFixedLayer
       :widget="runtimeMemoWidget"
       @update-data="updateRuntimeWidgetData"
     />
@@ -4075,7 +4075,7 @@ onUnmounted(() => {
       :z-index="50"
       overlay-class="sd-runtime-menu-overlay"
       panel-class="sd-runtime-menu-panel"
-      surface-class="sd-runtime-menu-surface itab-add-blank-context-surface"
+      surface-class="sd-runtime-menu-surface sd-add-blank-context-surface"
       scheme="dark"
       :panel-style="{
         top: blankContextMenuPosition.y + 'px',
@@ -4085,10 +4085,10 @@ onUnmounted(() => {
       @update:show="showBlankContextMenu = $event"
     >
       <div
-        data-testid="itab-add-context-menu"
+        data-testid="sd-add-context-menu"
         data-grid-context-menu
         role="menu"
-        class="itab-add-blank-context-list"
+        class="sd-add-blank-context-list"
         tabindex="-1"
         @keydown="onBlankContextMenuKeydown"
       >
@@ -4096,7 +4096,7 @@ onUnmounted(() => {
           v-for="(row, index) in blankContextRows"
           :key="row.action"
           type="button"
-          class="itab-add-blank-context-row"
+          class="sd-add-blank-context-row"
           :class="{ 'is-active': blankContextActiveIndex === index }"
           role="menuitem"
           :tabindex="blankContextActiveIndex === index ? 0 : -1"
@@ -4105,7 +4105,7 @@ onUnmounted(() => {
           @click="handleBlankContextAction(row.action)"
         >
           <span>{{ row.label }}</span>
-          <span v-if="row.shortcut" class="itab-add-blank-context-shortcut">
+          <span v-if="row.shortcut" class="sd-add-blank-context-shortcut">
             {{ row.shortcut }}
           </span>
         </button>
@@ -4442,23 +4442,23 @@ onUnmounted(() => {
   text-shadow: 0 2px 4px var(--sd-theme-grid-panel-shadow-01);
 }
 
-.sd-itab-home-top {
+.sd-home-top {
   display: grid;
   justify-items: center;
   gap: 18px;
   margin: 4px auto 28px;
 }
 
-.sd-itab-home-top.has-time.has-search {
+.sd-home-top.has-time.has-search {
   margin-top: -2px;
 }
 
-.sd-itab-home-clock {
+.sd-home-clock {
   width: min(330px, 100%);
   text-align: center;
 }
 
-.sd-itab-home-clock-digits {
+.sd-home-clock-digits {
   display: flex;
   justify-content: center;
   font-family:
@@ -4474,7 +4474,7 @@ onUnmounted(() => {
   letter-spacing: 0;
 }
 
-.sd-itab-home-clock p {
+.sd-home-clock p {
   margin: 4px 0 0;
   color: color-mix(in srgb, currentColor 86%, transparent);
   font-size: 14px;
@@ -4483,40 +4483,40 @@ onUnmounted(() => {
   letter-spacing: 0;
 }
 
-.sd-itab-home-search-wrap {
+.sd-home-search-wrap {
   display: grid;
   width: min(600px, calc(100vw - 88px));
   justify-items: center;
   gap: 8px;
-  --sd-itab-home-search-engine-selected-bg: color-mix(
+  --sd-home-search-engine-selected-bg: color-mix(
     in srgb,
     var(--sd-theme-grid-panel-surface-02) 42%,
     transparent
   );
-  --sd-itab-home-search-engine-selected-border: color-mix(
+  --sd-home-search-engine-selected-border: color-mix(
     in srgb,
     var(--sd-theme-grid-panel-border-02) 48%,
     transparent
   );
-  --sd-itab-home-search-engine-text: color-mix(
+  --sd-home-search-engine-text: color-mix(
     in srgb,
     var(--sd-theme-grid-panel-text-06) 90%,
     transparent
   );
-  --sd-itab-home-search-engine-muted-text: color-mix(
+  --sd-home-search-engine-muted-text: color-mix(
     in srgb,
     var(--sd-theme-grid-panel-text-06) 72%,
     transparent
   );
-  --sd-itab-home-search-engine-selected-text: var(
-    --sd-itab-home-search-engine-text
+  --sd-home-search-engine-selected-text: var(
+    --sd-home-search-engine-text
   );
-  --sd-itab-home-search-engine-text-shadow:
+  --sd-home-search-engine-text-shadow:
     0 1px 8px var(--sd-theme-grid-panel-shadow-03),
     0 0 2px var(--sd-theme-grid-panel-shadow-03);
 }
 
-.sd-itab-home-search {
+.sd-home-search {
   display: flex;
   width: 100%;
   height: 46px;
@@ -4530,8 +4530,8 @@ onUnmounted(() => {
   backdrop-filter: blur(18px) saturate(130%);
 }
 
-.sd-itab-home-search-icon,
-.sd-itab-home-search-submit {
+.sd-home-search-icon,
+.sd-home-search-submit {
   display: grid;
   width: 50px;
   height: 46px;
@@ -4543,8 +4543,8 @@ onUnmounted(() => {
   cursor: pointer;
 }
 
-.sd-itab-home-search-icon svg,
-.sd-itab-home-search-submit svg {
+.sd-home-search-icon svg,
+.sd-home-search-submit svg {
   width: 20px;
   height: 20px;
   fill: none;
@@ -4554,7 +4554,7 @@ onUnmounted(() => {
   stroke-width: 2;
 }
 
-.sd-itab-home-search input {
+.sd-home-search input {
   min-width: 0;
   height: 100%;
   flex: 1;
@@ -4566,11 +4566,11 @@ onUnmounted(() => {
   line-height: 20px;
 }
 
-.sd-itab-home-search input::placeholder {
+.sd-home-search input::placeholder {
   color: var(--sd-theme-grid-panel-text-03);
 }
 
-.sd-itab-home-search-engines {
+.sd-home-search-engines {
   display: flex;
   max-width: 100%;
   min-height: 24px;
@@ -4581,11 +4581,11 @@ onUnmounted(() => {
   scrollbar-width: none;
 }
 
-.sd-itab-home-search-engines::-webkit-scrollbar {
+.sd-home-search-engines::-webkit-scrollbar {
   display: none;
 }
 
-.sd-itab-home-search-engines button {
+.sd-home-search-engines button {
   width: 64px;
   height: 24px;
   flex: 0 0 auto;
@@ -4594,51 +4594,51 @@ onUnmounted(() => {
   border: 1px solid transparent;
   border-radius: 999px;
   background: transparent;
-  color: var(--sd-itab-home-search-engine-text);
+  color: var(--sd-home-search-engine-text);
   font-size: 12px;
   font-weight: 700;
   line-height: 22px;
   text-align: center;
   text-overflow: ellipsis;
   white-space: nowrap;
-  text-shadow: var(--sd-itab-home-search-engine-text-shadow);
+  text-shadow: var(--sd-home-search-engine-text-shadow);
   cursor: pointer;
 }
 
-.sd-itab-home-search-engines button:hover,
-.sd-itab-home-search-engines button:focus-visible {
+.sd-home-search-engines button:hover,
+.sd-home-search-engines button:focus-visible {
   outline: none;
 }
 
-.sd-itab-home-search-engines button.is-active {
-  border-color: var(--sd-itab-home-search-engine-selected-border);
-  background: var(--sd-itab-home-search-engine-selected-bg);
-  color: var(--sd-itab-home-search-engine-selected-text);
+.sd-home-search-engines button.is-active {
+  border-color: var(--sd-home-search-engine-selected-border);
+  background: var(--sd-home-search-engine-selected-bg);
+  color: var(--sd-home-search-engine-selected-text);
 }
 
-.sd-itab-home-search-engines button.is-add {
-  color: var(--sd-itab-home-search-engine-muted-text);
+.sd-home-search-engines button.is-add {
+  color: var(--sd-home-search-engine-muted-text);
 }
 
 @media (max-width: 767px) {
-  .sd-itab-home-top {
+  .sd-home-top {
     gap: 14px;
     margin-bottom: 20px;
   }
 
-  .sd-itab-home-clock-digits {
+  .sd-home-clock-digits {
     font-size: 48px;
   }
 
-  .sd-itab-home-search-wrap {
+  .sd-home-search-wrap {
     width: min(100%, calc(100vw - 40px));
   }
 
-  .sd-itab-home-search-engines {
+  .sd-home-search-engines {
     justify-content: flex-start;
   }
 }
-.itab-add-blank-context-list {
+.sd-add-blank-context-list {
   display: grid;
   width: 140px;
   min-height: 184px;
@@ -4648,7 +4648,7 @@ onUnmounted(() => {
   color: var(--sd-theme-grid-panel-text-06);
 }
 
-.itab-add-blank-context-row {
+.sd-add-blank-context-row {
   display: flex;
   width: 130px;
   height: 30px;
@@ -4665,14 +4665,14 @@ onUnmounted(() => {
   text-align: left;
 }
 
-.itab-add-blank-context-row:hover,
-.itab-add-blank-context-row:focus-visible,
-.itab-add-blank-context-row.is-active {
+.sd-add-blank-context-row:hover,
+.sd-add-blank-context-row:focus-visible,
+.sd-add-blank-context-row.is-active {
   background: var(--sd-theme-grid-panel-surface-05);
   outline: none;
 }
 
-.itab-add-blank-context-shortcut {
+.sd-add-blank-context-shortcut {
   color: var(--sd-theme-grid-panel-text-07);
   font-size: 11px;
 }

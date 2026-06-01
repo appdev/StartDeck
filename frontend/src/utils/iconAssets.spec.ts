@@ -29,7 +29,7 @@ describe("iconAssets", () => {
     expect(sanitizeNavigationIcon("/assets/ai-usage/providers/openai.svg")).toBe(
       "",
     );
-    expect(sanitizeNavigationIcon("/itab-live-assets/icon.svg")).toBe("");
+    expect(sanitizeNavigationIcon("/sd-live-assets/icon.svg")).toBe("");
     expect(sanitizeNavigationIcon("/api/site/icon?url=https%3A%2F%2Fexample.com")).toBe(
       "",
     );

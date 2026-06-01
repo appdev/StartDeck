@@ -8,8 +8,8 @@ use serde::de::DeserializeOwned;
 use serde_json::{Value, json};
 
 use crate::is_blocked_ip;
+use crate::upstream_allowlist::CODELIFE_BASE_URL;
 
-const CODELIFE_BASE_URL: &str = "https://base.itab.link";
 const CODELIFE_USER_AGENT: &str = "StartDeck/0.1 (+https://startdeck.local)";
 
 #[derive(Debug, Deserialize)]

@@ -5,11 +5,11 @@ import {
   type CatalogWidgetSizeKey,
 } from "@/utils/widgetSizePresets";
 import type { WidgetCatalogSizePreset } from "@/utils/widgetCatalog";
-import { ITAB_WEATHER_WIDGET_TYPE } from "@/features/itab-weather/itabWeatherTypes";
-import { ITAB_TODO_WIDGET_TYPE } from "@/features/itab-todo/itabTodoTypes";
-import { ITAB_CLOCK_WIDGET_TYPE } from "@/features/itab-clock/itabClockTypes";
-import { ITAB_POMODORO_WIDGET_TYPE } from "@/features/itab-pomodoro/itabPomodoroTypes";
-import { ITAB_ANNIVERSARY_WIDGET_TYPE } from "@/features/itab-anniversary/itabAnniversaryTypes";
+import { SD_WEATHER_WIDGET_TYPE } from "@/features/sd-weather/sdWeatherTypes";
+import { SD_TODO_WIDGET_TYPE } from "@/features/sd-todo/sdTodoTypes";
+import { SD_CLOCK_WIDGET_TYPE } from "@/features/sd-clock/sdClockTypes";
+import { SD_POMODORO_WIDGET_TYPE } from "@/features/sd-pomodoro/sdPomodoroTypes";
+import { SD_ANNIVERSARY_WIDGET_TYPE } from "@/features/sd-anniversary/sdAnniversaryTypes";
 
 const props = defineProps<{
   type: string;
@@ -23,7 +23,7 @@ const props = defineProps<{
 
 const sizeClass = computed(() => `is-size-${props.size.key.replace(".", "_")}`);
 const functionalFace = computed(() =>
-  props.type === ITAB_WEATHER_WIDGET_TYPE
+  props.type === SD_WEATHER_WIDGET_TYPE
     ? undefined
     : resolveWidgetFunctionalFace(
         props.type,
@@ -31,12 +31,12 @@ const functionalFace = computed(() =>
       ),
 );
 const previewMode = computed(() => {
-  if (props.type === ITAB_CLOCK_WIDGET_TYPE) return "clock";
-  if (props.type === ITAB_WEATHER_WIDGET_TYPE) return "weather";
+  if (props.type === SD_CLOCK_WIDGET_TYPE) return "clock";
+  if (props.type === SD_WEATHER_WIDGET_TYPE) return "weather";
   if (props.type === "custom-css") return "code";
-  if (props.type === ITAB_ANNIVERSARY_WIDGET_TYPE) return "timer";
-  if (props.type === ITAB_POMODORO_WIDGET_TYPE) return "timer";
-  if (props.type === ITAB_TODO_WIDGET_TYPE) return "checklist";
+  if (props.type === SD_ANNIVERSARY_WIDGET_TYPE) return "timer";
+  if (props.type === SD_POMODORO_WIDGET_TYPE) return "timer";
+  if (props.type === SD_TODO_WIDGET_TYPE) return "checklist";
   if (props.type === "docker") return "status-list";
   if (props.type === "system-status") return "metrics";
   return "card";
@@ -62,11 +62,11 @@ const contentRows = computed(() => {
   if (face && rowsByFace[face]) return rowsByFace[face];
 
   const baseRows: Record<string, string[]> = {
-    [ITAB_CLOCK_WIDGET_TYPE]: ["08:12", "周二"],
-    [ITAB_WEATHER_WIDGET_TYPE]: ["27° 阴", "深圳 龙华", "7日预报"],
-    [ITAB_TODO_WIDGET_TYPE]: ["评审 UI", "补充 QA", "发布"],
-    [ITAB_POMODORO_WIDGET_TYPE]: ["番茄时钟", "25:00", "海浪"],
-    [ITAB_ANNIVERSARY_WIDGET_TYPE]: ["你在世界已经", "10461 天", "1997-10-1"],
+    [SD_CLOCK_WIDGET_TYPE]: ["08:12", "周二"],
+    [SD_WEATHER_WIDGET_TYPE]: ["27° 阴", "深圳 龙华", "7日预报"],
+    [SD_TODO_WIDGET_TYPE]: ["评审 UI", "补充 QA", "发布"],
+    [SD_POMODORO_WIDGET_TYPE]: ["番茄时钟", "25:00", "海浪"],
+    [SD_ANNIVERSARY_WIDGET_TYPE]: ["你在世界已经", "10461 天", "1997-10-1"],
     "custom-css": ["自定义 HTML", "CSS 生效", "预览"],
     docker: ["41 Running", "CPU 12%", "内存 2.4G"],
     "system-status": ["CPU 28%", "内存 62%", "磁盘 41%"],

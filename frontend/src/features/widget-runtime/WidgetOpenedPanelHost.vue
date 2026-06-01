@@ -105,7 +105,7 @@ const openedPanelClass = computed(() => {
   backdrop-filter: var(--sd-shell-overlay-filter);
 }
 
-:global(.sd-widget-opened-overlay.sd-widget-opened-overlay--itab-weather) {
+:global(.sd-widget-opened-overlay.sd-widget-opened-overlay--sd-weather) {
   background: var(--sd-theme-runtime-widget-opened-panel-host-surface-03);
   backdrop-filter: none;
 }
@@ -128,7 +128,7 @@ const openedPanelClass = computed(() => {
   backdrop-filter: var(--sd-shell-surface-filter);
 }
 
-.sd-widget-opened-window.opened-itab-todo {
+.sd-widget-opened-window.opened-sd-todo {
   border: 1px solid var(--sd-component-border);
   background: var(--sd-component-surface);
   color: var(--sd-component-text-primary);
@@ -138,7 +138,7 @@ const openedPanelClass = computed(() => {
   backdrop-filter: none;
 }
 
-.sd-widget-opened-window.opened-itab-memo {
+.sd-widget-opened-window.opened-sd-memo {
   border: 1px solid var(--sd-component-border);
   background: var(--sd-component-surface);
   color: var(--sd-component-text-primary);
@@ -148,7 +148,7 @@ const openedPanelClass = computed(() => {
   backdrop-filter: none;
 }
 
-.sd-widget-opened-window.opened-itab-weather {
+.sd-widget-opened-window.opened-sd-weather {
   border: 1px solid var(--sd-theme-runtime-widget-opened-panel-host-border-03);
   background: transparent;
   color: var(--sd-theme-runtime-widget-opened-panel-host-text-01);
@@ -157,7 +157,7 @@ const openedPanelClass = computed(() => {
   backdrop-filter: none;
 }
 
-.sd-widget-opened-window.opened-itab-clock {
+.sd-widget-opened-window.opened-sd-clock {
   overflow: auto;
   border: 1px solid var(--sd-component-border);
   background: transparent;
@@ -166,7 +166,7 @@ const openedPanelClass = computed(() => {
   backdrop-filter: none;
 }
 
-.sd-widget-opened-window.opened-itab-daily-english {
+.sd-widget-opened-window.opened-sd-daily-english {
   border: 0;
   background: transparent;
   color: var(--sd-theme-runtime-widget-opened-panel-host-text-01);
@@ -175,7 +175,7 @@ const openedPanelClass = computed(() => {
   backdrop-filter: none;
 }
 
-.sd-widget-opened-window.opened-itab-poem {
+.sd-widget-opened-window.opened-sd-poem {
   border: 1px solid var(--sd-theme-runtime-widget-opened-panel-host-border-01);
   background: var(--sd-theme-runtime-widget-opened-panel-host-surface-01);
   color: var(--sd-theme-runtime-widget-opened-panel-host-text-02);
@@ -185,7 +185,7 @@ const openedPanelClass = computed(() => {
   overflow: auto;
 }
 
-.sd-widget-opened-window.opened-itab-pomodoro {
+.sd-widget-opened-window.opened-sd-pomodoro {
   border: 1px solid var(--sd-theme-runtime-widget-opened-panel-host-border-02);
   background: transparent;
   color: var(--sd-theme-runtime-widget-opened-panel-host-text-01);
@@ -194,7 +194,7 @@ const openedPanelClass = computed(() => {
   backdrop-filter: none;
 }
 
-.sd-widget-opened-window.opened-itab-anniversary {
+.sd-widget-opened-window.opened-sd-anniversary {
   border: 1px solid var(--sd-theme-runtime-widget-opened-panel-host-border-01);
   background: var(--sd-theme-runtime-widget-opened-panel-host-surface-02);
   color: var(--sd-theme-runtime-widget-opened-panel-host-text-01);
@@ -203,7 +203,7 @@ const openedPanelClass = computed(() => {
   backdrop-filter: none;
 }
 
-.sd-widget-opened-window.opened-itab-wallpaper {
+.sd-widget-opened-window.opened-sd-wallpaper {
   border: 1px solid var(--sd-component-border);
   background: var(--sd-component-surface-raised);
   color: var(--sd-component-text-primary);
@@ -211,7 +211,7 @@ const openedPanelClass = computed(() => {
   backdrop-filter: none;
 }
 
-.sd-widget-opened-window.opened-itab-movie-calendar {
+.sd-widget-opened-window.opened-sd-movie-calendar {
   border: 1px solid var(--sd-theme-runtime-widget-opened-panel-host-border-01);
   background: transparent;
   color: var(--sd-theme-runtime-widget-opened-panel-host-accent-text-01);
@@ -220,7 +220,7 @@ const openedPanelClass = computed(() => {
   backdrop-filter: none;
 }
 
-.sd-widget-opened-window.opened-itab-ip {
+.sd-widget-opened-window.opened-sd-ip {
   border: 1px solid var(--sd-component-border);
   background: var(--sd-component-surface);
   color: var(--sd-component-text-primary);
@@ -230,7 +230,7 @@ const openedPanelClass = computed(() => {
   backdrop-filter: none;
 }
 
-.sd-widget-opened-window.opened-itab-calendar {
+.sd-widget-opened-window.opened-sd-calendar {
   border: 1px solid var(--sd-component-border);
   background: var(--sd-component-surface);
   color: var(--sd-component-text-primary);
@@ -240,7 +240,7 @@ const openedPanelClass = computed(() => {
   backdrop-filter: none;
 }
 
-.sd-widget-opened-window.opened-itab-number-uppercase {
+.sd-widget-opened-window.opened-sd-number-uppercase {
   border: 0;
   border-radius: 15px;
   background: transparent;
@@ -250,7 +250,7 @@ const openedPanelClass = computed(() => {
   backdrop-filter: none;
 }
 
-.sd-widget-opened-window.opened-itab-number-uppercase
+.sd-widget-opened-window.opened-sd-number-uppercase
   .sd-widget-opened-traffic {
   top: 15px;
   right: 15px;
@@ -258,7 +258,7 @@ const openedPanelClass = computed(() => {
   gap: 10px;
 }
 
-.sd-widget-opened-window.opened-itab-number-uppercase
+.sd-widget-opened-window.opened-sd-number-uppercase
   .sd-widget-opened-traffic
   .sd-window-control-dot {
   display: block;
@@ -266,7 +266,7 @@ const openedPanelClass = computed(() => {
   height: 17px;
 }
 
-.sd-widget-opened-window.opened-itab-food-picker {
+.sd-widget-opened-window.opened-sd-food-picker {
   border: 1px solid var(--sd-component-border);
   background: var(--sd-component-surface);
   color: var(--sd-component-text-primary);

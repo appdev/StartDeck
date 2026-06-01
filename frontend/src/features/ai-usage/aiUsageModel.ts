@@ -1,11 +1,11 @@
 import type { WidgetConfig } from "@/types";
 import {
-  ITAB_WIDGET_SIZE_BY_KEY,
-  resolveItabWidgetSize,
-  toItabWidgetSizeKey,
-  type ItabWidgetSizeKey,
-} from "@/features/itab-widgets/itabSizePresets";
-import { ITAB_GRID_SCHEMA_VERSION } from "@/features/itab-widgets/itabGrid";
+  SD_WIDGET_SIZE_BY_KEY,
+  resolveSdWidgetSize,
+  toSdWidgetSizeKey,
+  type SdWidgetSizeKey,
+} from "@/features/sd-widgets/sdSizePresets";
+import { SD_GRID_SCHEMA_VERSION } from "@/features/sd-widgets/sdGrid";
 import {
   AI_USAGE_CATALOG_ID,
   AI_USAGE_DATA_VERSION,
@@ -22,9 +22,9 @@ import { getAiUsageProvider } from "./aiUsageProviders";
 const isObject = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
 
-export const isAiUsageSizeKey = (value: unknown): value is ItabWidgetSizeKey =>
+export const isAiUsageSizeKey = (value: unknown): value is SdWidgetSizeKey =>
   typeof value === "string" &&
-  ITAB_WIDGET_SIZE_BY_KEY.has(value as ItabWidgetSizeKey);
+  SD_WIDGET_SIZE_BY_KEY.has(value as SdWidgetSizeKey);
 
 const normalizeText = (value: unknown, fallback: string) => {
   if (typeof value !== "string") return fallback;
@@ -93,7 +93,7 @@ export const normalizeAiUsageWidgetData = (raw: unknown): AiUsageWidgetData => {
 
   return {
     runtime: AI_USAGE_RUNTIME,
-    layoutSystem: ITAB_GRID_SCHEMA_VERSION,
+    layoutSystem: SD_GRID_SCHEMA_VERSION,
     version: AI_USAGE_DATA_VERSION,
     sizeKey,
     providerId: provider.id,
@@ -115,7 +115,7 @@ export const normalizeAiUsageWidgetData = (raw: unknown): AiUsageWidgetData => {
 export const createDefaultAiUsageWidget = (
   providerId = "openai",
 ): WidgetConfig => {
-  const size = resolveItabWidgetSize(AI_USAGE_DEFAULT_SIZE);
+  const size = resolveSdWidgetSize(AI_USAGE_DEFAULT_SIZE);
   return {
     id: AI_USAGE_CATALOG_ID,
     type: AI_USAGE_WIDGET_TYPE,
@@ -130,14 +130,14 @@ export const createDefaultAiUsageWidget = (
 
 export const applyAiUsageSizeToWidget = (
   widget: WidgetConfig,
-  sizeKey: ItabWidgetSizeKey,
+  sizeKey: SdWidgetSizeKey,
 ) => {
-  const size = resolveItabWidgetSize(sizeKey);
+  const size = resolveSdWidgetSize(sizeKey);
   const data = normalizeAiUsageWidgetData(widget.data);
   widget.type = AI_USAGE_WIDGET_TYPE;
   widget.data = {
     ...data,
-    layoutSystem: ITAB_GRID_SCHEMA_VERSION,
+    layoutSystem: SD_GRID_SCHEMA_VERSION,
     sizeKey,
   } satisfies AiUsageWidgetData;
   widget.colSpan = size.colSpan;
@@ -147,7 +147,7 @@ export const applyAiUsageSizeToWidget = (
 };
 
 export const syncAiUsageSizeFromWidgetSpans = (widget: WidgetConfig) => {
-  const sizeKey = toItabWidgetSizeKey({
+  const sizeKey = toSdWidgetSizeKey({
     colSpan: widget.w ?? widget.colSpan,
     rowSpan: widget.h ?? widget.rowSpan,
   });

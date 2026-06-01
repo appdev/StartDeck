@@ -42,11 +42,11 @@ describe("config store release checks", () => {
     expect(store.getAssetUrl("/assets/ai-usage/providers/openai.svg")).toBe(
       "/assets/ai-usage/providers/openai.svg",
     );
-    expect(store.getAssetUrl("/itab-live-assets/anniversary/yiyan-2.webp")).toBe(
-      "/itab-live-assets/anniversary/yiyan-2.webp",
+    expect(store.getAssetUrl("/sd-live-assets/anniversary/yiyan-2.webp")).toBe(
+      "/sd-live-assets/anniversary/yiyan-2.webp",
     );
-    expect(store.getAssetUrl("/itab/weather/icon/104-fill.svg")).toBe(
-      "/itab/weather/icon/104-fill.svg",
+    expect(store.getAssetUrl("/sd/weather/icon/104-fill.svg")).toBe(
+      "/sd/weather/icon/104-fill.svg",
     );
     expect(store.getAssetUrl("/api/icons/mta_aHR0cHM6Ly9leGFtcGxlLmNvbS8")).toBe(
       "/api/icons/mta_aHR0cHM6Ly9leGFtcGxlLmNvbS8",

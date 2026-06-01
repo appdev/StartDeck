@@ -24,9 +24,9 @@ import {
   type DirtyCloseReason,
 } from "@/composables/useDirtyStateGuard";
 import { normalizeThemeMode } from "@/composables/useThemeMode";
-import { fetchItabIpHistory } from "@/features/itab-ip/itabIpApi";
-import type { ItabIpHistoryEntry } from "@/features/itab-ip/itabIpTypes";
-import { useItabIpRuntime } from "@/features/itab-ip/useItabIpRuntime";
+import { fetchSdIpHistory } from "@/features/sd-ip/sdIpApi";
+import type { SdIpHistoryEntry } from "@/features/sd-ip/sdIpTypes";
+import { useSdIpRuntime } from "@/features/sd-ip/useSdIpRuntime";
 import { useUiFeedbackStore } from "@/stores/uiFeedback";
 import type {
   NetworkLocationAddress,
@@ -51,7 +51,7 @@ const props = defineProps<{ show: boolean }>();
 const emit = defineEmits(["update:show"]);
 const store = useMainStore();
 const uiFeedback = useUiFeedbackStore();
-const ipRuntime = useItabIpRuntime();
+const ipRuntime = useSdIpRuntime();
 
 const sessionJsonHeaders = (): Record<string, string> => ({
   "Content-Type": "application/json",
@@ -219,7 +219,7 @@ interface NetworkLocationHistoryRow {
 
 const ipHistoryLoading = ref(false);
 const ipHistoryError = ref("");
-const ipHistoryEntries = ref<ItabIpHistoryEntry[]>([]);
+const ipHistoryEntries = ref<SdIpHistoryEntry[]>([]);
 const currentNetworkLocation = computed(() =>
   normalizeNetworkLocationAddress(ipRuntime.result.value),
 );
@@ -309,7 +309,7 @@ const refreshIpLocationHistory = async () => {
   ipHistoryError.value = "";
   try {
     await ipRuntime.ensureResult().catch(() => null);
-    ipHistoryEntries.value = await fetchItabIpHistory();
+    ipHistoryEntries.value = await fetchSdIpHistory();
   } catch (error) {
     ipHistoryError.value =
       error instanceof Error ? error.message : "地址历史加载失败";
@@ -507,8 +507,8 @@ const { width: viewportWidth, height: viewportHeight } = useWindowSize();
 const settingsIsMobile = computed(() => viewportWidth.value < 768);
 const settingsShellSurfaceClass = computed(() =>
   settingsIsMobile.value
-    ? "settings-shell-window settings-shell-itab is-mobile"
-    : "settings-shell-window settings-shell-itab",
+    ? "settings-shell-window settings-shell-sd is-mobile"
+    : "settings-shell-window settings-shell-sd",
 );
 const settingsOverlayClass = computed(() => "settings-shell-overlay");
 const showSettingsInspector = computed(() => viewportWidth.value >= 1440);
@@ -1948,7 +1948,7 @@ watch(activeTab, (val) => {
 
                 <AppFieldRow
                   label="源站顶部"
-                  hint="控制 iTab 风格时间和搜索框是否显示。"
+                  hint="控制主页时间和搜索框是否显示。"
                 >
                   <template #control>
                     <div class="settings-top-switch-grid">
@@ -3098,7 +3098,7 @@ watch(activeTab, (val) => {
   backdrop-filter: var(--sd-shell-overlay-filter);
 }
 
-:global(.settings-shell-itab) {
+:global(.settings-shell-sd) {
   overflow: hidden;
   border: 1px solid var(--sd-shell-border);
   border-radius: 20px;
@@ -3108,20 +3108,20 @@ watch(activeTab, (val) => {
   backdrop-filter: var(--sd-shell-surface-filter);
 }
 
-:global(.settings-shell-itab > .sd-window-bar) {
+:global(.settings-shell-sd > .sd-window-bar) {
   border-bottom-color: var(--sd-shell-border);
   background: var(--sd-shell-surface-muted);
 }
 
-:global(.settings-shell-itab > .sd-window-bar .sd-window-traffic) {
+:global(.settings-shell-sd > .sd-window-bar .sd-window-traffic) {
   display: none;
 }
 
-:global(.settings-shell-itab .sd-window-title) {
+:global(.settings-shell-sd .sd-window-title) {
   color: var(--sd-shell-text-primary);
 }
 
-:global(.settings-shell-itab .sd-window-subtitle) {
+:global(.settings-shell-sd .sd-window-subtitle) {
   color: var(--sd-theme-settings-modal-text-01);
 }
 

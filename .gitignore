@@ -209,7 +209,7 @@ LOG.md
 /current-page.png
 /gridstack-*.png
 /home-*.png
-/itab-*.png
+/sd-*.png
 /qa-*.png
 /shell-*.png
 /*weather*.txt
@@ -220,7 +220,7 @@ LOG.md
 /cache-after-*.json
 /console-*.json
 /eval-*.json
-/itab-weather-*.json
+/sd-weather-*.json
 /localstorage-*.json
 /network-*.json
 /page-fetch-*.json

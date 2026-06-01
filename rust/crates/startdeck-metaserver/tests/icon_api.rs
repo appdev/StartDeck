@@ -969,7 +969,7 @@ fn seed_data_guard_keeps_item_count_and_canonical_icon_urls() {
     let text = std::fs::read_to_string(seed_path).unwrap();
     let data: Value = serde_json::from_str(&text).unwrap();
     let items = data["items"].as_array().unwrap();
-    assert_eq!(items.len(), 4362);
+    assert_eq!(items.len(), 4348);
     assert_eq!(
         items
             .iter()
@@ -988,7 +988,7 @@ fn seed_data_guard_keeps_item_count_and_canonical_icon_urls() {
                 .unwrap_or_default()
                 .starts_with("icons/"))
             .count(),
-        4362
+        4348
     );
 
     let mut item_key_sequences = Vec::new();
@@ -1013,7 +1013,7 @@ fn seed_data_guard_keeps_item_count_and_canonical_icon_urls() {
             item_key_sequences.push(std::mem::take(&mut current_keys));
         }
     }
-    assert_eq!(item_key_sequences.len(), 4362);
+    assert_eq!(item_key_sequences.len(), 4348);
     assert!(item_key_sequences.iter().all(|keys| {
         keys == &[
             "title".to_string(),

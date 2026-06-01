@@ -143,12 +143,12 @@ async fn stored_primary_icon(pool: &SqlitePool, host: &str) -> Option<String> {
 }
 
 #[tokio::test]
-async fn fresh_sqlite_db_records_schema_version_8() {
+async fn fresh_sqlite_db_records_schema_version_9() {
     let temp = tempfile::tempdir().unwrap();
     let config = RuntimeConfig::from_base_dir(temp.path().to_path_buf());
     let pool = connect_sqlite(&config).await.unwrap();
 
-    assert_eq!(schema_versions(&pool).await, vec![8]);
+    assert_eq!(schema_versions(&pool).await, vec![9]);
 
     let icon_asset_columns = sqlx::query("PRAGMA table_info(icon_assets)")
         .fetch_all(&pool)
@@ -287,7 +287,7 @@ async fn v8_migration_rewrites_legacy_managed_icon_prefixes() {
     pool.close().await;
 
     let migrated = connect_sqlite(&config).await.unwrap();
-    assert_eq!(max_schema_version(&migrated).await, 8);
+    assert_eq!(max_schema_version(&migrated).await, 9);
     let icon: String = sqlx::query_scalar("SELECT icon FROM nav_items WHERE id = 'item-1'")
         .fetch_one(&migrated)
         .await
@@ -311,6 +311,171 @@ async fn v8_migration_rewrites_legacy_managed_icon_prefixes() {
         assert!(value.contains("/api/icons/icn_"), "{value}");
         assert!(!value.contains("/api/assets/icons/"), "{value}");
     }
+}
+
+#[tokio::test]
+async fn v9_migration_rewrites_legacy_widget_identifiers() {
+    let temp = tempfile::tempdir().unwrap();
+    let config = RuntimeConfig::from_base_dir(temp.path().to_path_buf());
+    let pool = raw_sqlite_pool(&config).await;
+    create_schema_migrations(&pool, 8).await;
+    sqlx::query(
+        r#"CREATE TABLE widgets (
+            id TEXT NOT NULL,
+            username TEXT NOT NULL,
+            widget_type TEXT NOT NULL,
+            enabled INTEGER NOT NULL,
+            is_public INTEGER NOT NULL,
+            data_json TEXT NOT NULL,
+            layout_json TEXT NOT NULL,
+            sort_order INTEGER NOT NULL,
+            PRIMARY KEY(username, id)
+        )"#,
+    )
+    .execute(&pool)
+    .await
+    .unwrap();
+    sqlx::query(
+        r#"INSERT INTO widgets(
+            id, username, widget_type, enabled, is_public, data_json, layout_json, sort_order
+        ) VALUES (?, 'admin', ?, 1, 0, ?, '{}', 0)"#,
+    )
+    .bind("itab-weather-00-custom")
+    .bind("itab-weather-00")
+    .bind(
+        json!({
+            "runtime": "itab-weather",
+            "layoutSystem": "itab-grid/2026-05-22",
+            "itab": {
+                "namespace": "itab",
+                "catalogId": "itab-weather-00",
+                "localStateKey": "itab.weather.00"
+            },
+            "iconUrl": "/itab/weather/icon/104-fill.svg",
+            "backgroundImage": "/itab-live-assets/anniversary/yiyan-2.webp",
+            "sourceUrl": "https://api.codelife.cc/itab/todayMovie"
+        })
+        .to_string(),
+    )
+    .execute(&pool)
+    .await
+    .unwrap();
+    sqlx::query(
+        r#"CREATE TABLE memos (
+            widget_id TEXT NOT NULL,
+            username TEXT NOT NULL,
+            content TEXT NOT NULL,
+            mode TEXT NOT NULL,
+            server_ts INTEGER NOT NULL,
+            PRIMARY KEY(widget_id, username)
+        )"#,
+    )
+    .execute(&pool)
+    .await
+    .unwrap();
+    sqlx::query(
+        "INSERT INTO memos(widget_id, username, content, mode, server_ts) VALUES ('itab-weather-00-custom', 'admin', 'memo', 'plain', 1)",
+    )
+    .execute(&pool)
+    .await
+    .unwrap();
+    sqlx::query(
+        r#"CREATE TABLE runtime_cache (
+            kind TEXT NOT NULL,
+            cache_key TEXT NOT NULL,
+            value_json TEXT NOT NULL,
+            expires_at INTEGER,
+            source_status TEXT NOT NULL,
+            updated_at INTEGER NOT NULL,
+            PRIMARY KEY(kind, cache_key)
+        )"#,
+    )
+    .execute(&pool)
+    .await
+    .unwrap();
+    sqlx::query(
+        r#"INSERT INTO runtime_cache(kind, cache_key, value_json, expires_at, source_status, updated_at)
+           VALUES ('itab_weather', 'itab-weather-00', '{"runtime":"itab-weather"}', NULL, 'ok', 1)"#,
+    )
+    .execute(&pool)
+    .await
+    .unwrap();
+    sqlx::query(
+        r#"CREATE TABLE config_versions (
+            id TEXT PRIMARY KEY,
+            username TEXT NOT NULL,
+            label TEXT NOT NULL,
+            snapshot_json TEXT NOT NULL,
+            created_at INTEGER NOT NULL
+        )"#,
+    )
+    .execute(&pool)
+    .await
+    .unwrap();
+    sqlx::query(
+        r#"INSERT INTO config_versions(id, username, label, snapshot_json, created_at)
+           VALUES ('version-1', 'admin', 'Old', '{"widgets":[{"type":"itab-clock-12","data":{"layoutSystem":"itab-grid/2026-05-22"}}]}', 1)"#,
+    )
+    .execute(&pool)
+    .await
+    .unwrap();
+    pool.close().await;
+
+    let migrated = connect_sqlite(&config).await.unwrap();
+    assert_eq!(max_schema_version(&migrated).await, 9);
+
+    let widget = sqlx::query("SELECT id, widget_type, data_json FROM widgets")
+        .fetch_one(&migrated)
+        .await
+        .unwrap();
+    assert_eq!(widget.get::<String, _>("id"), "sd-weather-00-custom");
+    assert_eq!(widget.get::<String, _>("widget_type"), "sd-weather-00");
+    let data_json = widget.get::<String, _>("data_json");
+    assert!(
+        data_json.contains("\"runtime\":\"sd-weather\""),
+        "{data_json}"
+    );
+    assert!(
+        data_json.contains("\"layoutSystem\":\"sd-grid/2026-05-22\""),
+        "{data_json}"
+    );
+    assert!(data_json.contains("\"sd\""), "{data_json}");
+    assert!(
+        data_json.contains("/sd/weather/icon/104-fill.svg"),
+        "{data_json}"
+    );
+    assert!(
+        data_json.contains("https://api.codelife.cc/itab/todayMovie"),
+        "{data_json}"
+    );
+
+    let memo_widget_id: String = sqlx::query_scalar("SELECT widget_id FROM memos")
+        .fetch_one(&migrated)
+        .await
+        .unwrap();
+    assert_eq!(memo_widget_id, "sd-weather-00-custom");
+
+    let runtime_cache = sqlx::query("SELECT kind, cache_key, value_json FROM runtime_cache")
+        .fetch_one(&migrated)
+        .await
+        .unwrap();
+    assert_eq!(runtime_cache.get::<String, _>("kind"), "sd_weather");
+    assert_eq!(runtime_cache.get::<String, _>("cache_key"), "sd-weather-00");
+    assert_eq!(
+        runtime_cache.get::<String, _>("value_json"),
+        "{\"runtime\":\"sd-weather\"}"
+    );
+
+    let snapshot_json: String =
+        sqlx::query_scalar("SELECT snapshot_json FROM config_versions WHERE id = 'version-1'")
+            .fetch_one(&migrated)
+            .await
+            .unwrap();
+    assert!(snapshot_json.contains("sd-clock-12"), "{snapshot_json}");
+    assert!(
+        snapshot_json.contains("sd-grid/2026-05-22"),
+        "{snapshot_json}"
+    );
 }
 
 #[tokio::test]
@@ -474,7 +639,7 @@ async fn migrates_v3_icon_records_to_fetch_status_schema_without_losing_assets()
     assert_eq!(record.retry_after, 0);
     assert_eq!(record.last_error, "");
 
-    assert_eq!(schema_versions(&pool).await, vec![3, 4, 5, 6, 7, 8]);
+    assert_eq!(schema_versions(&pool).await, vec![3, 4, 5, 6, 7, 8, 9]);
 }
 
 #[tokio::test]
@@ -657,7 +822,7 @@ async fn imports_admin_from_default_template_when_legacy_data_json_is_missing() 
         serde_json::to_vec(&json!({
             "appConfig": {"customTitle": "Default Template"},
             "groups": [{"id": "g1", "title": "Template Group", "items": []}],
-            "widgets": [{"id": "calendar", "type": "itab-calendar-01", "enable": true, "isPublic": true, "data": {"runtime": "itab-calendar"}}]
+            "widgets": [{"id": "calendar", "type": "sd-calendar-01", "enable": true, "isPublic": true, "data": {"runtime": "sd-calendar"}}]
         }))
         .unwrap(),
     )
@@ -671,7 +836,7 @@ async fn imports_admin_from_default_template_when_legacy_data_json_is_missing() 
     assert_eq!(snapshot.user.app_config["customTitle"], "Default Template");
     assert_eq!(snapshot.groups[0].title, "Template Group");
     assert_eq!(snapshot.widgets[0].id, "calendar");
-    assert_eq!(snapshot.widgets[0].widget_type, "itab-calendar-01");
+    assert_eq!(snapshot.widgets[0].widget_type, "sd-calendar-01");
 }
 
 #[tokio::test]
@@ -814,7 +979,7 @@ async fn incompatible_legacy_schema_is_rebuilt_destructively() {
         .unwrap();
     assert_eq!(stale_count, 0);
 
-    assert_eq!(max_schema_version(&pool).await, 8);
+    assert_eq!(max_schema_version(&pool).await, 9);
 
     let snapshot = app_snapshot(&pool, "admin").await.unwrap();
     assert!(snapshot.system_config.enable_docker);
@@ -904,7 +1069,7 @@ async fn migrates_v4_icon_assets_to_v5_without_rerunning_older_migrations() {
 
     let pool = connect_sqlite(&config).await.unwrap();
 
-    assert_eq!(schema_versions(&pool).await, vec![4, 5, 6, 7, 8]);
+    assert_eq!(schema_versions(&pool).await, vec![4, 5, 6, 7, 8, 9]);
     assert_eq!(
         icon_record(&pool, "v4.example.com")
             .await
@@ -1102,7 +1267,7 @@ async fn v4_main_service_data_survives_v5_migration_and_restart_import() {
     let migrated_pool = connect_sqlite(&config).await.unwrap();
     import_legacy_data(&migrated_pool, &config).await.unwrap();
 
-    assert_eq!(max_schema_version(&migrated_pool).await, 8);
+    assert_eq!(max_schema_version(&migrated_pool).await, 9);
     let after = app_snapshot(&migrated_pool, "admin").await.unwrap();
     assert_eq!(
         after.user.app_config["customTitle"],

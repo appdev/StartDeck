@@ -40,7 +40,7 @@ describe("siteShortcutCatalog", () => {
     );
   });
 
-  it("filters by category and query without using captured iTab data", () => {
+  it("filters by category and query without using captured source data", () => {
     const ai = filterAndSortSiteShortcuts(STARTDECK_SITE_SHORTCUT_CATALOG, {
       category: "ai",
     });

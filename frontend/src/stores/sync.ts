@@ -141,6 +141,7 @@ export const useSyncStore = defineStore("sync", () => {
   const isHttpPollingActiveRef = computed(() => isHttpPollingActive);
   let httpPollTimer: ReturnType<typeof setInterval> | null = null;
   let activePollAbortController: AbortController | null = null;
+  let hadAuthenticatedSession = false;
 
   let logoutInProgress = false;
 
@@ -841,6 +842,7 @@ export const useSyncStore = defineStore("sync", () => {
     async ([ready, logged], previous) => {
       const previousGeneration = previous?.[2] || "";
       if (ready && logged) {
+        hadAuthenticatedSession = true;
         if (typeof window !== "undefined" && status.value !== "OPEN") wsOpen();
         stopHttpPolling();
         startOfflineQueueReplayTimer();
@@ -858,9 +860,14 @@ export const useSyncStore = defineStore("sync", () => {
         stopHttpPolling();
         clearWsFallbackSyncSchedule(true);
         stopPingCheck();
-        if (!logoutInProgress) {
+        const shouldResetAuthenticatedState =
+          ready && hadAuthenticatedSession && !logoutInProgress;
+        if (ready) {
+          hadAuthenticatedSession = false;
+        }
+        if (shouldResetAuthenticatedState) {
           resetActiveStateForGuest();
-          if (ready) void init();
+          void init();
         }
       }
     },

@@ -9,12 +9,12 @@ import { useMainStore } from "../../stores/main";
 import { useAuthStore } from "../../stores/auth";
 import { useUiFeedbackStore } from "../../stores/uiFeedback";
 import type { AddComponentPayload } from "../../utils/addComponentTypes";
-import { ITAB_WALLPAPER_WIDGET_TYPE } from "../../features/itab-wallpaper/itabWallpaperTypes";
-import { ITAB_CALENDAR_WIDGET_TYPE } from "../../features/itab-calendar/itabCalendarTypes";
-import { ITAB_FOOD_PICKER_WIDGET_TYPE } from "../../features/itab-food-picker/itabFoodPickerTypes";
-import { ITAB_NUMBER_UPPERCASE_WIDGET_TYPE } from "../../features/itab-number-uppercase/itabNumberUppercaseTypes";
-import { ITAB_TODO_WIDGET_TYPE } from "../../features/itab-todo/itabTodoTypes";
-import { ITAB_MEMO_WIDGET_TYPE } from "../../features/itab-memo/itabMemoTypes";
+import { SD_WALLPAPER_WIDGET_TYPE } from "../../features/sd-wallpaper/sdWallpaperTypes";
+import { SD_CALENDAR_WIDGET_TYPE } from "../../features/sd-calendar/sdCalendarTypes";
+import { SD_FOOD_PICKER_WIDGET_TYPE } from "../../features/sd-food-picker/sdFoodPickerTypes";
+import { SD_NUMBER_UPPERCASE_WIDGET_TYPE } from "../../features/sd-number-uppercase/sdNumberUppercaseTypes";
+import { SD_TODO_WIDGET_TYPE } from "../../features/sd-todo/sdTodoTypes";
+import { SD_MEMO_WIDGET_TYPE } from "../../features/sd-memo/sdMemoTypes";
 import type { WidgetConfig } from "../../types";
 
 const gridPanelSource = readFileSync("src/components/GridPanel.vue", "utf8");
@@ -260,7 +260,7 @@ describe("GridPanel Context Menu", () => {
           },
           AddWidgetModal: {
             props: ["show"],
-            template: '<div v-if="show" data-testid="itab-add-modal"></div>',
+            template: '<div v-if="show" data-testid="sd-add-modal"></div>',
           },
           LoginModal: true,
           transition: false,
@@ -300,7 +300,7 @@ describe("GridPanel Context Menu", () => {
     expect(options.draggable?.handle).toBe(".grid-stack-item-content");
     expect(options.draggable?.cancel).toContain("button");
     expect(options.draggable?.cancel).toContain("[data-grid-drag-ignore]");
-    expect(options.draggable?.cancel).toContain("[data-itab-inner-control]");
+    expect(options.draggable?.cancel).toContain("[data-sd-inner-control]");
     expect(options.draggable).not.toHaveProperty("pause");
   });
 
@@ -440,8 +440,8 @@ describe("GridPanel Context Menu", () => {
       )?.[0];
 
     expect(gridWidgetTypesBlock).toBeTruthy();
-    expect(gridWidgetTypesBlock).toContain("ITAB_NUMBER_UPPERCASE_WIDGET_TYPE");
-    expect(ITAB_NUMBER_UPPERCASE_WIDGET_TYPE).toBe("itab-number-uppercase-35");
+    expect(gridWidgetTypesBlock).toContain("SD_NUMBER_UPPERCASE_WIDGET_TYPE");
+    expect(SD_NUMBER_UPPERCASE_WIDGET_TYPE).toBe("sd-number-uppercase-35");
   });
 
   it("lets GridStack own drag start without custom long-press interception", () => {
@@ -533,7 +533,7 @@ describe("GridPanel Context Menu", () => {
     expect(store.saveData).not.toHaveBeenCalled();
   });
 
-  it("opens the iTab blank-area context menu", async () => {
+  it("opens the blank-area widget context menu", async () => {
     const homeSurface = wrapper.find(".flex-1");
     expect(homeSurface.exists()).toBe(true);
 
@@ -541,7 +541,7 @@ describe("GridPanel Context Menu", () => {
     await wrapper.vm.$nextTick();
 
     const blankMenu = document.body.querySelector(
-      '[data-testid="itab-add-context-menu"]',
+      '[data-testid="sd-add-context-menu"]',
     );
     expect(blankMenu).not.toBeNull();
     expect(blankMenu?.textContent).toContain("添加图标");
@@ -553,7 +553,7 @@ describe("GridPanel Context Menu", () => {
   it("reuses the runtime widget menu surface for blank-area menu glass", () => {
     const listStyle =
       gridPanelSource.match(
-        /\.itab-add-blank-context-list\s*\{[\s\S]*?\n\}/,
+        /\.sd-add-blank-context-list\s*\{[\s\S]*?\n\}/,
       )?.[0] ?? "";
 
     expect(gridPanelSource).toContain(
@@ -561,11 +561,11 @@ describe("GridPanel Context Menu", () => {
     );
     expect(gridPanelSource).toContain('panel-class="sd-runtime-menu-panel"');
     expect(gridPanelSource).toContain(
-      'surface-class="sd-runtime-menu-surface itab-add-blank-context-surface"',
+      'surface-class="sd-runtime-menu-surface sd-add-blank-context-surface"',
     );
     expect(gridPanelSource).toContain('scheme="dark"');
     expect(gridPanelSource).not.toMatch(
-      /:global\(\.itab-add-blank-context-surface\)\s*\{/,
+      /:global\(\.sd-add-blank-context-surface\)\s*\{/,
     );
     expect(listStyle).not.toContain("backdrop-filter");
     expect(listStyle).not.toContain("background:");
@@ -581,7 +581,7 @@ describe("GridPanel Context Menu", () => {
     await wrapper.vm.$nextTick();
 
     expect(
-      document.body.querySelector('[data-testid="itab-add-context-menu"]'),
+      document.body.querySelector('[data-testid="sd-add-context-menu"]'),
     ).toBeNull();
   });
 
@@ -749,32 +749,32 @@ describe("GridPanel Context Menu", () => {
     expect(store.markDirty).toHaveBeenCalled();
   });
 
-  it("accepts the migrated iTab weather alias through the add payload", async () => {
+  it("accepts the migrated weather alias through the add payload", async () => {
     const vm = wrapper.vm as unknown as {
       addComponent: (payload: AddComponentPayload) => Promise<unknown>;
     };
 
     const result = await vm.addComponent({
       kind: "widget",
-      catalogItemId: "itab-weather-00",
+      catalogItemId: "sd-weather-00",
       destinationGroupId: "home",
       saveMode: "dirty",
       sizeKey: "2x1",
     });
 
     const widget = store.widgets.find(
-      (item) => item.type === "itab-weather-00",
+      (item) => item.type === "sd-weather-00",
     );
     expect(result).toMatchObject({ status: "success", id: "weather" });
     expect(widget).toMatchObject({
       id: "weather",
-      type: "itab-weather-00",
+      type: "sd-weather-00",
       w: 1,
       h: 2,
       colSpan: 1,
       rowSpan: 2,
       data: expect.objectContaining({
-        runtime: "itab-weather",
+        runtime: "sd-weather",
         version: 1,
         sizeKey: "2x1",
       }),
@@ -799,7 +799,7 @@ describe("GridPanel Context Menu", () => {
     await wrapper.vm.$nextTick();
 
     const todo = store.widgets.find(
-      (item) => item.type === ITAB_TODO_WIDGET_TYPE,
+      (item) => item.type === SD_TODO_WIDGET_TYPE,
     );
     if (!todo) throw new Error("Todo widget not found");
 
@@ -822,10 +822,10 @@ describe("GridPanel Context Menu", () => {
   });
 
   it.each([
-    ["Todo", "todo", ITAB_TODO_WIDGET_TYPE],
-    ["Memo", "memo", ITAB_MEMO_WIDGET_TYPE],
+    ["Todo", "todo", SD_TODO_WIDGET_TYPE],
+    ["Memo", "memo", SD_MEMO_WIDGET_TYPE],
   ])(
-    "adds %s directly as 4x4 without falling back to an iTab base size",
+    "adds %s directly as 4x4 without falling back to a source base size",
     async (_label, catalogItemId, type) => {
       const vm = wrapper.vm as unknown as {
         addComponent: (payload: AddComponentPayload) => Promise<unknown>;
@@ -878,7 +878,7 @@ describe("GridPanel Context Menu", () => {
     await wrapper.vm.$nextTick();
 
     const todo = store.widgets.find(
-      (item) => item.type === ITAB_TODO_WIDGET_TYPE,
+      (item) => item.type === SD_TODO_WIDGET_TYPE,
     );
     if (!todo) throw new Error("Todo widget not found");
     const layoutTodo = vm.layoutData.find((item) => item.i === todo.id);
@@ -920,7 +920,7 @@ describe("GridPanel Context Menu", () => {
     await wrapper.vm.$nextTick();
 
     const todo = store.widgets.find(
-      (item) => item.type === ITAB_TODO_WIDGET_TYPE,
+      (item) => item.type === SD_TODO_WIDGET_TYPE,
     );
     if (!todo) throw new Error("Todo widget not found");
     vm.selectRuntimeWidgetSize(todo, "4x4");
@@ -968,14 +968,14 @@ describe("GridPanel Context Menu", () => {
     await wrapper.vm.$nextTick();
 
     const todo = store.widgets.find(
-      (item) => item.type === ITAB_TODO_WIDGET_TYPE,
+      (item) => item.type === SD_TODO_WIDGET_TYPE,
     );
     if (!todo) throw new Error("Todo widget not found");
     vm.selectRuntimeWidgetSize(todo, "4x4");
     vi.mocked(store.saveData).mockClear();
 
     vm.updateRuntimeWidgetData(todo, {
-      runtime: "itab-todo",
+      runtime: "sd-todo",
       version: 1,
       sizeKey: "2x2",
       tasks: [{ id: "remote", text: "远端更新", done: false }],
@@ -1012,7 +1012,7 @@ describe("GridPanel Context Menu", () => {
     await wrapper.vm.$nextTick();
 
     const memo = store.widgets.find(
-      (item) => item.type === ITAB_MEMO_WIDGET_TYPE,
+      (item) => item.type === SD_MEMO_WIDGET_TYPE,
     );
     if (!memo) throw new Error("Memo widget not found");
 
@@ -1034,7 +1034,7 @@ describe("GridPanel Context Menu", () => {
     vi.mocked(store.saveData).mockClear();
 
     vm.updateRuntimeWidgetData(memo, {
-      runtime: "itab-memo",
+      runtime: "sd-memo",
       version: 1,
       sizeKey: "2x2",
       notes: [
@@ -1073,7 +1073,7 @@ describe("GridPanel Context Menu", () => {
     ).toBeLessThan(closeRuntimeWidgetBlock!.indexOf("openedRuntimeWidgetId"));
   });
 
-  it("places the migrated iTab wallpaper widget into the home grid", async () => {
+  it("places the migrated wallpaper widget into the home grid", async () => {
     const vm = wrapper.vm as unknown as {
       addComponent: (payload: AddComponentPayload) => Promise<unknown>;
       layoutData: Array<{ i: string; w: number; h: number }>;
@@ -1088,20 +1088,20 @@ describe("GridPanel Context Menu", () => {
     });
 
     const widget = store.widgets.find(
-      (item) => item.type === ITAB_WALLPAPER_WIDGET_TYPE,
+      (item) => item.type === SD_WALLPAPER_WIDGET_TYPE,
     );
     expect(result).toMatchObject({ status: "success" });
     expect(widget).toMatchObject({
-      type: ITAB_WALLPAPER_WIDGET_TYPE,
+      type: SD_WALLPAPER_WIDGET_TYPE,
       w: 2,
       h: 2,
       colSpan: 2,
       rowSpan: 2,
       data: expect.objectContaining({
         sizeKey: "2x2",
-        itab: expect.objectContaining({
+        sd: expect.objectContaining({
           adapterKind: "wallpaper",
-          catalogId: ITAB_WALLPAPER_WIDGET_TYPE,
+          catalogId: SD_WALLPAPER_WIDGET_TYPE,
           captureIndex: 16,
         }),
       }),
@@ -1109,7 +1109,7 @@ describe("GridPanel Context Menu", () => {
     expect(vm.layoutData.some((item) => item.i === widget?.id)).toBe(true);
   });
 
-  it("places the migrated iTab calendar widget into the home grid", async () => {
+  it("places the migrated calendar widget into the home grid", async () => {
     const vm = wrapper.vm as unknown as {
       addComponent: (payload: AddComponentPayload) => Promise<unknown>;
       layoutData: Array<{ i: string; w: number; h: number }>;
@@ -1124,27 +1124,27 @@ describe("GridPanel Context Menu", () => {
     });
 
     const widget = store.widgets.find(
-      (item) => item.type === ITAB_CALENDAR_WIDGET_TYPE,
+      (item) => item.type === SD_CALENDAR_WIDGET_TYPE,
     );
     expect(result).toMatchObject({ status: "success" });
     expect(widget).toMatchObject({
       id: "calendar",
-      type: ITAB_CALENDAR_WIDGET_TYPE,
+      type: SD_CALENDAR_WIDGET_TYPE,
       w: 2,
       h: 2,
       colSpan: 2,
       rowSpan: 2,
       data: expect.objectContaining({
-        runtime: "itab-calendar",
+        runtime: "sd-calendar",
         version: 1,
         sizeKey: "2x2",
       }),
     });
     expect(vm.layoutData.some((item) => item.i === widget?.id)).toBe(true);
-    expect(gridPanelSource).toContain("ITAB_CALENDAR_WIDGET_TYPE");
+    expect(gridPanelSource).toContain("SD_CALENDAR_WIDGET_TYPE");
   });
 
-  it("places the migrated iTab food picker widget into the home grid", async () => {
+  it("places the migrated food picker widget into the home grid", async () => {
     const vm = wrapper.vm as unknown as {
       addComponent: (payload: AddComponentPayload) => Promise<unknown>;
       layoutData: Array<{ i: string; w: number; h: number }>;
@@ -1159,23 +1159,23 @@ describe("GridPanel Context Menu", () => {
     });
 
     const widget = store.widgets.find(
-      (item) => item.type === ITAB_FOOD_PICKER_WIDGET_TYPE,
+      (item) => item.type === SD_FOOD_PICKER_WIDGET_TYPE,
     );
     expect(result).toMatchObject({ status: "success" });
     expect(widget).toMatchObject({
-      type: ITAB_FOOD_PICKER_WIDGET_TYPE,
+      type: SD_FOOD_PICKER_WIDGET_TYPE,
       w: 2,
       h: 2,
       colSpan: 2,
       rowSpan: 2,
       data: expect.objectContaining({
-        runtime: "itab-food-picker",
+        runtime: "sd-food-picker",
         version: 1,
         sizeKey: "2x2",
       }),
     });
     expect(vm.layoutData.some((item) => item.i === widget?.id)).toBe(true);
-    expect(gridPanelSource).toContain("ITAB_FOOD_PICKER_WIDGET_TYPE");
+    expect(gridPanelSource).toContain("SD_FOOD_PICKER_WIDGET_TYPE");
   });
 
   it("does not create duplicate singleton runtime widgets", async () => {
@@ -1184,7 +1184,7 @@ describe("GridPanel Context Menu", () => {
     };
     store.widgets.push({
       id: "calendar",
-      type: ITAB_CALENDAR_WIDGET_TYPE,
+      type: SD_CALENDAR_WIDGET_TYPE,
       enable: true,
       isPublic: true,
       w: 2,
@@ -1203,7 +1203,7 @@ describe("GridPanel Context Menu", () => {
 
     expect(result).toMatchObject({ status: "duplicate", id: "calendar" });
     expect(
-      store.widgets.filter((item) => item.type === ITAB_CALENDAR_WIDGET_TYPE),
+      store.widgets.filter((item) => item.type === SD_CALENDAR_WIDGET_TYPE),
     ).toHaveLength(1);
   });
 
@@ -1569,7 +1569,7 @@ describe("GridPanel Context Menu", () => {
     await flushPromises();
     await wrapper.vm.$nextTick();
 
-    expect(wrapper.find('[data-testid="itab-add-modal"]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid="sd-add-modal"]').exists()).toBe(true);
     expect(wrapper.find('[data-testid="home-action-bar"]').exists()).toBe(
       false,
     );

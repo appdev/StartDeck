@@ -322,7 +322,7 @@ mod tests {
     }
 
     #[test]
-    fn maps_qweather_weather_payloads_to_itab_weather_bundle() {
+    fn maps_qweather_weather_payloads_to_sd_weather_bundle() {
         let bundle = weather_bundle_from_qweather(
             QWeatherNowEnvelope {
                 code: "200".to_string(),

@@ -17,8 +17,8 @@ import AppSegmentedControl from "@/components/base/AppSegmentedControl.vue";
 import AppSwitch from "@/components/base/AppSwitch.vue";
 import ConfirmDialog from "@/components/base/ConfirmDialog.vue";
 import StatusBanner from "@/components/base/StatusBanner.vue";
-import { fetchItabBingWallpapers } from "@/features/itab-wallpaper/itabWallpaperApi";
-import type { ItabWallpaperEntry } from "@/features/itab-wallpaper/itabWallpaperTypes";
+import { fetchSdBingWallpapers } from "@/features/sd-wallpaper/sdWallpaperApi";
+import type { SdWallpaperEntry } from "@/features/sd-wallpaper/sdWallpaperTypes";
 import { useUiFeedbackStore } from "@/stores/uiFeedback";
 import { sessionFetch } from "@/utils/sessionFetch";
 
@@ -461,7 +461,7 @@ const lockButtonLabel = computed(() =>
 
 const applyingApi = ref(false);
 const apiApplyingTarget = ref("");
-const apiWallpapers = ref<ItabWallpaperEntry[]>([]);
+const apiWallpapers = ref<SdWallpaperEntry[]>([]);
 const apiPage = ref(1);
 const apiTotalPages = ref(1);
 const apiLoading = ref(false);
@@ -490,8 +490,8 @@ const apiSourceSummary = computed(() => {
 });
 
 const mergeApiWallpapers = (
-  previous: ItabWallpaperEntry[],
-  incoming: ItabWallpaperEntry[],
+  previous: SdWallpaperEntry[],
+  incoming: SdWallpaperEntry[],
 ) => {
   const seen = new Set(previous.map((entry) => entry.id));
   const merged = [...previous];
@@ -508,7 +508,7 @@ const loadBingApiWallpapers = async (refresh = false, page = 1) => {
   apiLoading.value = true;
   apiError.value = "";
   try {
-    const result = await fetchItabBingWallpapers(
+    const result = await fetchSdBingWallpapers(
       apiPageSize,
       refresh,
       undefined,
@@ -664,7 +664,7 @@ const wallpaperStatusBanner = computed(() => {
   return null;
 });
 
-const normalizeApiWallpaperFilename = (entry: ItabWallpaperEntry) =>
+const normalizeApiWallpaperFilename = (entry: SdWallpaperEntry) =>
   entry.id.replace(/[^a-z0-9-]+/gi, "-").replace(/^-+|-+$/g, "") ||
   "bing-wallpaper";
 
@@ -688,7 +688,7 @@ const fetchRemoteWallpaperBlob = async (
 };
 
 const applyBingApiWallpaper = async (
-  entry: ItabWallpaperEntry,
+  entry: SdWallpaperEntry,
   type: "pc" | "mobile",
   apply: boolean = true,
 ) => {

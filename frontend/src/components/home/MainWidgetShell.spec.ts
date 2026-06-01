@@ -27,7 +27,7 @@ describe("MainWidgetShell", () => {
     );
     expect(root.dataset.widgetType).toBe("weather");
     expect(root.dataset.widgetSize).toBe("2x2");
-    expect(root.dataset.widgetSizeCapability).toBe("itab-default");
+    expect(root.dataset.widgetSizeCapability).toBe("sd-default");
     expect(wrapper.find("[data-main-widget-shell-card]").exists()).toBe(true);
     expect(wrapper.find("[data-main-widget-shell-content]").exists()).toBe(
       true,
@@ -37,7 +37,7 @@ describe("MainWidgetShell", () => {
   it("keeps exactly one canonical data-widget-size inside a migrated widget shell", () => {
     const wrapper = mount(MainWidgetShell, {
       props: {
-        widgetType: "itab-weather-00",
+        widgetType: "sd-weather-00",
         widgetSize: "2x4",
         validateContract: false,
       },
@@ -55,7 +55,7 @@ describe("MainWidgetShell", () => {
   it("renders the source-style shell title outside the clipped card", () => {
     const wrapper = mount(MainWidgetShell, {
       props: {
-        widgetType: "itab-todo-17",
+        widgetType: "sd-todo-17",
         widgetSize: "1x1",
         title: "待办事项",
         validateContract: false,
@@ -77,7 +77,7 @@ describe("MainWidgetShell", () => {
   it("exposes the large-board size capability for adapted runtime widgets", () => {
     const wrapper = mount(MainWidgetShell, {
       props: {
-        widgetType: "itab-memo-04",
+        widgetType: "sd-memo-04",
         widgetSize: "4x4",
         widgetSizeCapability: "large-board",
         validateContract: false,

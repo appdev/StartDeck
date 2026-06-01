@@ -11,38 +11,38 @@ import {
   WIDGET_SIZE_FAMILY_TYPES,
   resolveWidgetSizeFamily,
 } from "./widgetSizePresets";
-import { resolveItabWidgetSize } from "@/features/itab-widgets/itabSizePresets";
-import { ITAB_TODO_WIDGET_TYPE } from "@/features/itab-todo/itabTodoTypes";
-import { ITAB_MEMO_WIDGET_TYPE } from "@/features/itab-memo/itabMemoTypes";
-import { ITAB_CLOCK_WIDGET_TYPE } from "@/features/itab-clock/itabClockTypes";
-import { ITAB_POEM_WIDGET_TYPE } from "@/features/itab-poem/itabPoemTypes";
-import { ITAB_DAILY_ENGLISH_WIDGET_TYPE } from "@/features/itab-daily-english/itabDailyEnglishTypes";
-import { ITAB_POMODORO_WIDGET_TYPE } from "@/features/itab-pomodoro/itabPomodoroTypes";
-import { ITAB_ANNIVERSARY_WIDGET_TYPE } from "@/features/itab-anniversary/itabAnniversaryTypes";
+import { resolveSdWidgetSize } from "@/features/sd-widgets/sdSizePresets";
+import { SD_TODO_WIDGET_TYPE } from "@/features/sd-todo/sdTodoTypes";
+import { SD_MEMO_WIDGET_TYPE } from "@/features/sd-memo/sdMemoTypes";
+import { SD_CLOCK_WIDGET_TYPE } from "@/features/sd-clock/sdClockTypes";
+import { SD_POEM_WIDGET_TYPE } from "@/features/sd-poem/sdPoemTypes";
+import { SD_DAILY_ENGLISH_WIDGET_TYPE } from "@/features/sd-daily-english/sdDailyEnglishTypes";
+import { SD_POMODORO_WIDGET_TYPE } from "@/features/sd-pomodoro/sdPomodoroTypes";
+import { SD_ANNIVERSARY_WIDGET_TYPE } from "@/features/sd-anniversary/sdAnniversaryTypes";
 import {
-  ITAB_WALLPAPER_CATALOG_ID,
-  ITAB_WALLPAPER_WIDGET_TYPE,
-} from "@/features/itab-wallpaper/itabWallpaperTypes";
+  SD_WALLPAPER_CATALOG_ID,
+  SD_WALLPAPER_WIDGET_TYPE,
+} from "@/features/sd-wallpaper/sdWallpaperTypes";
 import {
-  ITAB_MOVIE_CALENDAR_CATALOG_ID,
-  ITAB_MOVIE_CALENDAR_WIDGET_TYPE,
-} from "@/features/itab-movie-calendar/itabMovieCalendarTypes";
+  SD_MOVIE_CALENDAR_CATALOG_ID,
+  SD_MOVIE_CALENDAR_WIDGET_TYPE,
+} from "@/features/sd-movie-calendar/sdMovieCalendarTypes";
 import {
-  ITAB_IP_CATALOG_ID,
-  ITAB_IP_WIDGET_TYPE,
-} from "@/features/itab-ip/itabIpTypes";
+  SD_IP_CATALOG_ID,
+  SD_IP_WIDGET_TYPE,
+} from "@/features/sd-ip/sdIpTypes";
 import {
-  ITAB_CALENDAR_CATALOG_ID,
-  ITAB_CALENDAR_WIDGET_TYPE,
-} from "@/features/itab-calendar/itabCalendarTypes";
+  SD_CALENDAR_CATALOG_ID,
+  SD_CALENDAR_WIDGET_TYPE,
+} from "@/features/sd-calendar/sdCalendarTypes";
 import {
-  ITAB_NUMBER_UPPERCASE_CATALOG_ID,
-  ITAB_NUMBER_UPPERCASE_WIDGET_TYPE,
-} from "@/features/itab-number-uppercase/itabNumberUppercaseTypes";
+  SD_NUMBER_UPPERCASE_CATALOG_ID,
+  SD_NUMBER_UPPERCASE_WIDGET_TYPE,
+} from "@/features/sd-number-uppercase/sdNumberUppercaseTypes";
 import {
-  ITAB_FOOD_PICKER_CATALOG_ID,
-  ITAB_FOOD_PICKER_WIDGET_TYPE,
-} from "@/features/itab-food-picker/itabFoodPickerTypes";
+  SD_FOOD_PICKER_CATALOG_ID,
+  SD_FOOD_PICKER_WIDGET_TYPE,
+} from "@/features/sd-food-picker/sdFoodPickerTypes";
 import {
   AI_USAGE_CATALOG_ID,
   AI_USAGE_WIDGET_TYPE,
@@ -56,40 +56,40 @@ const runtimeTypes = [
   "docker",
   "system-status",
   "custom-css",
-  "itab-weather-00",
-  ITAB_MEMO_WIDGET_TYPE,
-  ITAB_TODO_WIDGET_TYPE,
-  ITAB_CLOCK_WIDGET_TYPE,
-  ITAB_POEM_WIDGET_TYPE,
-  ITAB_DAILY_ENGLISH_WIDGET_TYPE,
-  ITAB_POMODORO_WIDGET_TYPE,
-  ITAB_ANNIVERSARY_WIDGET_TYPE,
-  ITAB_WALLPAPER_WIDGET_TYPE,
-  ITAB_MOVIE_CALENDAR_WIDGET_TYPE,
-  ITAB_IP_WIDGET_TYPE,
-  ITAB_CALENDAR_WIDGET_TYPE,
-  ITAB_NUMBER_UPPERCASE_WIDGET_TYPE,
-  ITAB_FOOD_PICKER_WIDGET_TYPE,
+  "sd-weather-00",
+  SD_MEMO_WIDGET_TYPE,
+  SD_TODO_WIDGET_TYPE,
+  SD_CLOCK_WIDGET_TYPE,
+  SD_POEM_WIDGET_TYPE,
+  SD_DAILY_ENGLISH_WIDGET_TYPE,
+  SD_POMODORO_WIDGET_TYPE,
+  SD_ANNIVERSARY_WIDGET_TYPE,
+  SD_WALLPAPER_WIDGET_TYPE,
+  SD_MOVIE_CALENDAR_WIDGET_TYPE,
+  SD_IP_WIDGET_TYPE,
+  SD_CALENDAR_WIDGET_TYPE,
+  SD_NUMBER_UPPERCASE_WIDGET_TYPE,
+  SD_FOOD_PICKER_WIDGET_TYPE,
   AI_USAGE_WIDGET_TYPE,
   TAPD_DEFECTS_WIDGET_TYPE,
 ];
-const catalogItabTypes = [
+const catalogSdTypes = [
   ...new Set([...WIDGET_SIZE_FAMILY_TYPES, ...runtimeTypes]),
 ];
 
 describe("widgetCatalog", () => {
-  it("exposes approved main-project catalog entries from iTab size metadata", () => {
-    expect(WIDGET_CATALOG).toHaveLength(catalogItabTypes.length);
+  it("exposes approved main-project catalog entries from scoped size metadata", () => {
+    expect(WIDGET_CATALOG).toHaveLength(catalogSdTypes.length);
     expect(WIDGET_CATALOG.map((item) => item.type)).not.toContain("music");
     expect(WIDGET_CATALOG.map((item) => item.type)).not.toContain("player");
     expect(
-      WIDGET_CATALOG.filter((item) => item.sizeScope === "itab")
+      WIDGET_CATALOG.filter((item) => item.sizeScope === "sd")
         .map((item) => item.type)
         .sort(),
-    ).toEqual([...catalogItabTypes].sort());
+    ).toEqual([...catalogSdTypes].sort());
 
     for (const item of WIDGET_CATALOG.filter(
-      (candidate) => candidate.sizeScope === "itab",
+      (candidate) => candidate.sizeScope === "sd",
     )) {
       if (runtimeTypes.includes(item.type)) continue;
       const family = resolveWidgetSizeFamily(item.type);
@@ -101,17 +101,17 @@ describe("widgetCatalog", () => {
     }
   });
 
-  it("exposes iTab weather as canonical weather catalog item with scoped sizes", () => {
+  it("exposes weather as canonical weather catalog item with scoped sizes", () => {
     const weather = getWidgetCatalogItem("weather");
     expect(weather).toBeTruthy();
     expect(weather).toMatchObject({
       id: "weather",
-      type: "itab-weather-00",
+      type: "sd-weather-00",
       title: "天气",
       mode: "singleton",
-      sizeScope: "itab",
+      sizeScope: "sd",
     });
-    expect(getWidgetCatalogItem("itab-weather-00")?.id).toBe("weather");
+    expect(getWidgetCatalogItem("sd-weather-00")?.id).toBe("weather");
     expect(weather?.supportedSizes.map((size) => size.key)).toEqual([
       "1x1",
       "1x2",
@@ -119,11 +119,11 @@ describe("widgetCatalog", () => {
       "2x2",
       "2x4",
     ]);
-    expect(resolveItabWidgetSize("1x2")).toMatchObject({
+    expect(resolveSdWidgetSize("1x2")).toMatchObject({
       colSpan: 2,
       rowSpan: 1,
     });
-    expect(resolveItabWidgetSize("2x1")).toMatchObject({
+    expect(resolveSdWidgetSize("2x1")).toMatchObject({
       colSpan: 1,
       rowSpan: 2,
     });
@@ -147,7 +147,7 @@ describe("widgetCatalog", () => {
     expect(first.data).toEqual(
       expect.objectContaining({
         runtime: "custom-css",
-        layoutSystem: "itab-grid/2026-05-22",
+        layoutSystem: "sd-grid/2026-05-22",
         title: "",
         html: "",
         css: "",
@@ -190,17 +190,17 @@ describe("widgetCatalog", () => {
     ).toBe("enable");
   });
 
-  it("exposes iTab clock as canonical clock catalog item with scoped sizes", () => {
+  it("exposes clock as canonical clock catalog item with scoped sizes", () => {
     const clock = getWidgetCatalogItem("clock");
     expect(clock).toBeTruthy();
     expect(clock).toMatchObject({
       id: "clock",
-      type: ITAB_CLOCK_WIDGET_TYPE,
+      type: SD_CLOCK_WIDGET_TYPE,
       title: "时钟",
       mode: "singleton",
-      sizeScope: "itab",
+      sizeScope: "sd",
     });
-    expect(getWidgetCatalogItem(ITAB_CLOCK_WIDGET_TYPE)?.id).toBe("clock");
+    expect(getWidgetCatalogItem(SD_CLOCK_WIDGET_TYPE)?.id).toBe("clock");
     expect(clock?.supportedSizes.map((size) => size.key)).toEqual([
       "1x1",
       "1x2",
@@ -210,15 +210,15 @@ describe("widgetCatalog", () => {
     ]);
   });
 
-  it("reports weather singleton state through normal id and iTab recommendation alias", () => {
-    const item = getWidgetCatalogItem("itab-weather-00");
+  it("reports weather singleton state through normal id and legacy recommendation alias", () => {
+    const item = getWidgetCatalogItem("sd-weather-00");
     expect(item).toBeTruthy();
 
     const disabled: WidgetConfig[] = [
-      { id: "weather", type: "itab-weather-00", enable: false, isPublic: true },
+      { id: "weather", type: "sd-weather-00", enable: false, isPublic: true },
     ];
     const enabled: WidgetConfig[] = [
-      { id: "weather", type: "itab-weather-00", enable: true, isPublic: true },
+      { id: "weather", type: "sd-weather-00", enable: true, isPublic: true },
     ];
     const oldWeather: WidgetConfig[] = [
       { id: "weather", type: "weather", enable: true, isPublic: true },
@@ -230,17 +230,17 @@ describe("widgetCatalog", () => {
     expect(getWidgetCatalogAction(oldWeather, item!)).toBe("enabled");
   });
 
-  it("exposes iTab Todo as canonical Todo catalog item with scoped sizes", () => {
+  it("exposes Todo as canonical Todo catalog item with scoped sizes", () => {
     const todo = getWidgetCatalogItem("todo");
     expect(todo).toBeTruthy();
     expect(todo).toMatchObject({
       id: "todo",
-      type: ITAB_TODO_WIDGET_TYPE,
+      type: SD_TODO_WIDGET_TYPE,
       title: "待办",
       mode: "singleton",
-      sizeScope: "itab",
+      sizeScope: "sd",
     });
-    expect(getWidgetCatalogItem(ITAB_TODO_WIDGET_TYPE)?.id).toBe("todo");
+    expect(getWidgetCatalogItem(SD_TODO_WIDGET_TYPE)?.id).toBe("todo");
     expect(todo?.supportedSizes.map((size) => size.key)).toEqual([
       "1x1",
       "1x2",
@@ -251,20 +251,20 @@ describe("widgetCatalog", () => {
     ]);
   });
 
-  it("reports Todo singleton state through normal id and iTab recommendation alias", () => {
-    const item = getWidgetCatalogItem(ITAB_TODO_WIDGET_TYPE);
+  it("reports Todo singleton state through normal id and legacy recommendation alias", () => {
+    const item = getWidgetCatalogItem(SD_TODO_WIDGET_TYPE);
     expect(item).toBeTruthy();
 
     const disabled: WidgetConfig[] = [
       {
         id: "todo",
-        type: ITAB_TODO_WIDGET_TYPE,
+        type: SD_TODO_WIDGET_TYPE,
         enable: false,
         isPublic: true,
       },
     ];
     const enabled: WidgetConfig[] = [
-      { id: "todo", type: ITAB_TODO_WIDGET_TYPE, enable: true, isPublic: true },
+      { id: "todo", type: SD_TODO_WIDGET_TYPE, enable: true, isPublic: true },
     ];
     const oldTodo: WidgetConfig[] = [
       { id: "todo", type: "todo", enable: true, isPublic: true },
@@ -276,17 +276,17 @@ describe("widgetCatalog", () => {
     expect(getWidgetCatalogAction(oldTodo, item!)).toBe("enabled");
   });
 
-  it("exposes iTab Memo as canonical Memo catalog item with scoped sizes", () => {
+  it("exposes Memo as canonical Memo catalog item with scoped sizes", () => {
     const memo = getWidgetCatalogItem("memo");
     expect(memo).toBeTruthy();
     expect(memo).toMatchObject({
       id: "memo",
-      type: ITAB_MEMO_WIDGET_TYPE,
+      type: SD_MEMO_WIDGET_TYPE,
       title: "备忘录",
       mode: "singleton",
-      sizeScope: "itab",
+      sizeScope: "sd",
     });
-    expect(getWidgetCatalogItem(ITAB_MEMO_WIDGET_TYPE)?.id).toBe("memo");
+    expect(getWidgetCatalogItem(SD_MEMO_WIDGET_TYPE)?.id).toBe("memo");
     expect(memo?.supportedSizes.map((size) => size.key)).toEqual([
       "1x1",
       "1x2",
@@ -297,17 +297,17 @@ describe("widgetCatalog", () => {
     ]);
   });
 
-  it("exposes iTab poem as canonical poem catalog item with scoped sizes", () => {
+  it("exposes poem as canonical poem catalog item with scoped sizes", () => {
     const poem = getWidgetCatalogItem("poem");
     expect(poem).toBeTruthy();
     expect(poem).toMatchObject({
       id: "poem",
-      type: ITAB_POEM_WIDGET_TYPE,
+      type: SD_POEM_WIDGET_TYPE,
       title: "今日诗词",
       mode: "singleton",
-      sizeScope: "itab",
+      sizeScope: "sd",
     });
-    expect(getWidgetCatalogItem(ITAB_POEM_WIDGET_TYPE)?.id).toBe("poem");
+    expect(getWidgetCatalogItem(SD_POEM_WIDGET_TYPE)?.id).toBe("poem");
     expect(poem?.supportedSizes.map((size) => size.key)).toEqual([
       "1x1",
       "1x2",
@@ -317,17 +317,17 @@ describe("widgetCatalog", () => {
     ]);
   });
 
-  it("exposes iTab daily English as canonical catalog item with scoped sizes", () => {
+  it("exposes daily English as canonical catalog item with scoped sizes", () => {
     const dailyEnglish = getWidgetCatalogItem("daily-english");
     expect(dailyEnglish).toBeTruthy();
     expect(dailyEnglish).toMatchObject({
       id: "daily-english",
-      type: ITAB_DAILY_ENGLISH_WIDGET_TYPE,
+      type: SD_DAILY_ENGLISH_WIDGET_TYPE,
       title: "今日英语",
       mode: "singleton",
-      sizeScope: "itab",
+      sizeScope: "sd",
     });
-    expect(getWidgetCatalogItem(ITAB_DAILY_ENGLISH_WIDGET_TYPE)?.id).toBe(
+    expect(getWidgetCatalogItem(SD_DAILY_ENGLISH_WIDGET_TYPE)?.id).toBe(
       "daily-english",
     );
     expect(dailyEnglish?.supportedSizes.map((size) => size.key)).toEqual([
@@ -339,18 +339,18 @@ describe("widgetCatalog", () => {
     ]);
   });
 
-  it("exposes iTab movie calendar as canonical catalog item with scoped sizes", () => {
-    const movieCalendar = getWidgetCatalogItem(ITAB_MOVIE_CALENDAR_CATALOG_ID);
+  it("exposes movie calendar as canonical catalog item with scoped sizes", () => {
+    const movieCalendar = getWidgetCatalogItem(SD_MOVIE_CALENDAR_CATALOG_ID);
     expect(movieCalendar).toBeTruthy();
     expect(movieCalendar).toMatchObject({
-      id: ITAB_MOVIE_CALENDAR_CATALOG_ID,
-      type: ITAB_MOVIE_CALENDAR_WIDGET_TYPE,
+      id: SD_MOVIE_CALENDAR_CATALOG_ID,
+      type: SD_MOVIE_CALENDAR_WIDGET_TYPE,
       title: "电影日历",
       mode: "singleton",
-      sizeScope: "itab",
+      sizeScope: "sd",
     });
-    expect(getWidgetCatalogItem(ITAB_MOVIE_CALENDAR_WIDGET_TYPE)?.id).toBe(
-      ITAB_MOVIE_CALENDAR_CATALOG_ID,
+    expect(getWidgetCatalogItem(SD_MOVIE_CALENDAR_WIDGET_TYPE)?.id).toBe(
+      SD_MOVIE_CALENDAR_CATALOG_ID,
     );
     expect(movieCalendar?.supportedSizes.map((size) => size.key)).toEqual([
       "1x1",
@@ -361,18 +361,18 @@ describe("widgetCatalog", () => {
     ]);
   });
 
-  it("exposes iTab IP as canonical catalog item with scoped sizes", () => {
-    const ip = getWidgetCatalogItem(ITAB_IP_CATALOG_ID);
+  it("exposes IP as canonical catalog item with scoped sizes", () => {
+    const ip = getWidgetCatalogItem(SD_IP_CATALOG_ID);
     expect(ip).toBeTruthy();
     expect(ip).toMatchObject({
-      id: ITAB_IP_CATALOG_ID,
-      type: ITAB_IP_WIDGET_TYPE,
+      id: SD_IP_CATALOG_ID,
+      type: SD_IP_WIDGET_TYPE,
       title: "本机IP",
       mode: "singleton",
-      sizeScope: "itab",
+      sizeScope: "sd",
     });
-    expect(getWidgetCatalogItem(ITAB_IP_WIDGET_TYPE)?.id).toBe(
-      ITAB_IP_CATALOG_ID,
+    expect(getWidgetCatalogItem(SD_IP_WIDGET_TYPE)?.id).toBe(
+      SD_IP_CATALOG_ID,
     );
     expect(ip?.supportedSizes.map((size) => size.key)).toEqual([
       "1x1",
@@ -383,18 +383,18 @@ describe("widgetCatalog", () => {
     ]);
   });
 
-  it("exposes iTab calendar as canonical catalog item with scoped sizes", () => {
-    const calendar = getWidgetCatalogItem(ITAB_CALENDAR_CATALOG_ID);
+  it("exposes calendar as canonical catalog item with scoped sizes", () => {
+    const calendar = getWidgetCatalogItem(SD_CALENDAR_CATALOG_ID);
     expect(calendar).toBeTruthy();
     expect(calendar).toMatchObject({
-      id: ITAB_CALENDAR_CATALOG_ID,
-      type: ITAB_CALENDAR_WIDGET_TYPE,
+      id: SD_CALENDAR_CATALOG_ID,
+      type: SD_CALENDAR_WIDGET_TYPE,
       title: "日历",
       mode: "singleton",
-      sizeScope: "itab",
+      sizeScope: "sd",
     });
-    expect(getWidgetCatalogItem(ITAB_CALENDAR_WIDGET_TYPE)?.id).toBe(
-      ITAB_CALENDAR_CATALOG_ID,
+    expect(getWidgetCatalogItem(SD_CALENDAR_WIDGET_TYPE)?.id).toBe(
+      SD_CALENDAR_CATALOG_ID,
     );
     expect(calendar?.supportedSizes.map((size) => size.key)).toEqual([
       "1x1",
@@ -405,18 +405,18 @@ describe("widgetCatalog", () => {
     ]);
   });
 
-  it("exposes iTab food picker as a multi-instance catalog item with scoped sizes", () => {
-    const foodPicker = getWidgetCatalogItem(ITAB_FOOD_PICKER_CATALOG_ID);
+  it("exposes food picker as a multi-instance catalog item with scoped sizes", () => {
+    const foodPicker = getWidgetCatalogItem(SD_FOOD_PICKER_CATALOG_ID);
     expect(foodPicker).toBeTruthy();
     expect(foodPicker).toMatchObject({
-      id: ITAB_FOOD_PICKER_CATALOG_ID,
-      type: ITAB_FOOD_PICKER_WIDGET_TYPE,
+      id: SD_FOOD_PICKER_CATALOG_ID,
+      type: SD_FOOD_PICKER_WIDGET_TYPE,
       title: "今天吃什么",
       mode: "multi",
-      sizeScope: "itab",
+      sizeScope: "sd",
     });
-    expect(getWidgetCatalogItem(ITAB_FOOD_PICKER_WIDGET_TYPE)?.id).toBe(
-      ITAB_FOOD_PICKER_CATALOG_ID,
+    expect(getWidgetCatalogItem(SD_FOOD_PICKER_WIDGET_TYPE)?.id).toBe(
+      SD_FOOD_PICKER_CATALOG_ID,
     );
     expect(foodPicker?.supportedSizes.map((size) => size.key)).toEqual([
       "1x1",
@@ -427,20 +427,20 @@ describe("widgetCatalog", () => {
     ]);
   });
 
-  it("exposes iTab number uppercase as a migrated tool catalog item", () => {
+  it("exposes number uppercase as a migrated tool catalog item", () => {
     const numberUppercase = getWidgetCatalogItem(
-      ITAB_NUMBER_UPPERCASE_CATALOG_ID,
+      SD_NUMBER_UPPERCASE_CATALOG_ID,
     );
     expect(numberUppercase).toBeTruthy();
     expect(numberUppercase).toMatchObject({
-      id: ITAB_NUMBER_UPPERCASE_CATALOG_ID,
-      type: ITAB_NUMBER_UPPERCASE_WIDGET_TYPE,
+      id: SD_NUMBER_UPPERCASE_CATALOG_ID,
+      type: SD_NUMBER_UPPERCASE_WIDGET_TYPE,
       title: "金额换算",
       mode: "multi",
-      sizeScope: "itab",
+      sizeScope: "sd",
     });
-    expect(getWidgetCatalogItem(ITAB_NUMBER_UPPERCASE_WIDGET_TYPE)?.id).toBe(
-      ITAB_NUMBER_UPPERCASE_CATALOG_ID,
+    expect(getWidgetCatalogItem(SD_NUMBER_UPPERCASE_WIDGET_TYPE)?.id).toBe(
+      SD_NUMBER_UPPERCASE_CATALOG_ID,
     );
     expect(numberUppercase?.supportedSizes.map((size) => size.key)).toEqual([
       "1x1",
@@ -451,17 +451,17 @@ describe("widgetCatalog", () => {
     ]);
   });
 
-  it("exposes iTab Pomodoro as canonical Pomodoro catalog item with scoped sizes", () => {
+  it("exposes Pomodoro as canonical Pomodoro catalog item with scoped sizes", () => {
     const pomodoro = getWidgetCatalogItem("pomodoro");
     expect(pomodoro).toBeTruthy();
     expect(pomodoro).toMatchObject({
       id: "pomodoro",
-      type: ITAB_POMODORO_WIDGET_TYPE,
+      type: SD_POMODORO_WIDGET_TYPE,
       title: "番茄时钟",
       mode: "singleton",
-      sizeScope: "itab",
+      sizeScope: "sd",
     });
-    expect(getWidgetCatalogItem(ITAB_POMODORO_WIDGET_TYPE)?.id).toBe(
+    expect(getWidgetCatalogItem(SD_POMODORO_WIDGET_TYPE)?.id).toBe(
       "pomodoro",
     );
     expect(pomodoro?.supportedSizes.map((size) => size.key)).toEqual([
@@ -474,19 +474,19 @@ describe("widgetCatalog", () => {
   });
 
   it("reports Memo singleton state through canonical ids and aliases", () => {
-    const item = getWidgetCatalogItem(ITAB_MEMO_WIDGET_TYPE);
+    const item = getWidgetCatalogItem(SD_MEMO_WIDGET_TYPE);
     expect(item).toBeTruthy();
 
     const disabled: WidgetConfig[] = [
       {
         id: "memo",
-        type: ITAB_MEMO_WIDGET_TYPE,
+        type: SD_MEMO_WIDGET_TYPE,
         enable: false,
         isPublic: true,
       },
     ];
     const enabled: WidgetConfig[] = [
-      { id: "memo", type: ITAB_MEMO_WIDGET_TYPE, enable: true, isPublic: true },
+      { id: "memo", type: SD_MEMO_WIDGET_TYPE, enable: true, isPublic: true },
     ];
     const oldMemo: WidgetConfig[] = [
       { id: "memo", type: "memo", enable: true, isPublic: true },
@@ -499,13 +499,13 @@ describe("widgetCatalog", () => {
   });
 
   it("reports clock singleton state through canonical ids and aliases", () => {
-    const item = getWidgetCatalogItem(ITAB_CLOCK_WIDGET_TYPE);
+    const item = getWidgetCatalogItem(SD_CLOCK_WIDGET_TYPE);
     expect(item).toBeTruthy();
 
     const disabled: WidgetConfig[] = [
       {
         id: "clock",
-        type: ITAB_CLOCK_WIDGET_TYPE,
+        type: SD_CLOCK_WIDGET_TYPE,
         enable: false,
         isPublic: true,
       },
@@ -513,7 +513,7 @@ describe("widgetCatalog", () => {
     const enabled: WidgetConfig[] = [
       {
         id: "clock",
-        type: ITAB_CLOCK_WIDGET_TYPE,
+        type: SD_CLOCK_WIDGET_TYPE,
         enable: true,
         isPublic: true,
       },
@@ -529,13 +529,13 @@ describe("widgetCatalog", () => {
   });
 
   it("reports poem singleton state through canonical ids and aliases", () => {
-    const item = getWidgetCatalogItem(ITAB_POEM_WIDGET_TYPE);
+    const item = getWidgetCatalogItem(SD_POEM_WIDGET_TYPE);
     expect(item).toBeTruthy();
 
     const disabled: WidgetConfig[] = [
       {
         id: "poem",
-        type: ITAB_POEM_WIDGET_TYPE,
+        type: SD_POEM_WIDGET_TYPE,
         enable: false,
         isPublic: true,
       },
@@ -543,7 +543,7 @@ describe("widgetCatalog", () => {
     const enabled: WidgetConfig[] = [
       {
         id: "poem",
-        type: ITAB_POEM_WIDGET_TYPE,
+        type: SD_POEM_WIDGET_TYPE,
         enable: true,
         isPublic: true,
       },
@@ -558,14 +558,14 @@ describe("widgetCatalog", () => {
     expect(getWidgetCatalogAction(oldPoem, item!)).toBe("enabled");
   });
 
-  it("reports daily English singleton state through the iTab recommendation alias", () => {
-    const item = getWidgetCatalogItem(ITAB_DAILY_ENGLISH_WIDGET_TYPE);
+  it("reports daily English singleton state through the legacy recommendation alias", () => {
+    const item = getWidgetCatalogItem(SD_DAILY_ENGLISH_WIDGET_TYPE);
     expect(item).toBeTruthy();
 
     const disabled: WidgetConfig[] = [
       {
         id: "daily-english",
-        type: ITAB_DAILY_ENGLISH_WIDGET_TYPE,
+        type: SD_DAILY_ENGLISH_WIDGET_TYPE,
         enable: false,
         isPublic: true,
       },
@@ -573,7 +573,7 @@ describe("widgetCatalog", () => {
     const enabled: WidgetConfig[] = [
       {
         id: "daily-english",
-        type: ITAB_DAILY_ENGLISH_WIDGET_TYPE,
+        type: SD_DAILY_ENGLISH_WIDGET_TYPE,
         enable: true,
         isPublic: true,
       },
@@ -584,22 +584,22 @@ describe("widgetCatalog", () => {
     expect(getWidgetCatalogAction(enabled, item!)).toBe("enabled");
   });
 
-  it("reports movie calendar singleton state through the iTab recommendation alias", () => {
-    const item = getWidgetCatalogItem(ITAB_MOVIE_CALENDAR_WIDGET_TYPE);
+  it("reports movie calendar singleton state through the legacy recommendation alias", () => {
+    const item = getWidgetCatalogItem(SD_MOVIE_CALENDAR_WIDGET_TYPE);
     expect(item).toBeTruthy();
 
     const disabled: WidgetConfig[] = [
       {
-        id: ITAB_MOVIE_CALENDAR_CATALOG_ID,
-        type: ITAB_MOVIE_CALENDAR_WIDGET_TYPE,
+        id: SD_MOVIE_CALENDAR_CATALOG_ID,
+        type: SD_MOVIE_CALENDAR_WIDGET_TYPE,
         enable: false,
         isPublic: true,
       },
     ];
     const enabled: WidgetConfig[] = [
       {
-        id: ITAB_MOVIE_CALENDAR_CATALOG_ID,
-        type: ITAB_MOVIE_CALENDAR_WIDGET_TYPE,
+        id: SD_MOVIE_CALENDAR_CATALOG_ID,
+        type: SD_MOVIE_CALENDAR_WIDGET_TYPE,
         enable: true,
         isPublic: true,
       },
@@ -611,21 +611,21 @@ describe("widgetCatalog", () => {
   });
 
   it("reports IP singleton state through canonical ids and aliases", () => {
-    const item = getWidgetCatalogItem(ITAB_IP_WIDGET_TYPE);
+    const item = getWidgetCatalogItem(SD_IP_WIDGET_TYPE);
     expect(item).toBeTruthy();
 
     const disabled: WidgetConfig[] = [
       {
-        id: ITAB_IP_CATALOG_ID,
-        type: ITAB_IP_WIDGET_TYPE,
+        id: SD_IP_CATALOG_ID,
+        type: SD_IP_WIDGET_TYPE,
         enable: false,
         isPublic: true,
       },
     ];
     const enabled: WidgetConfig[] = [
       {
-        id: ITAB_IP_CATALOG_ID,
-        type: ITAB_IP_WIDGET_TYPE,
+        id: SD_IP_CATALOG_ID,
+        type: SD_IP_WIDGET_TYPE,
         enable: true,
         isPublic: true,
       },
@@ -641,13 +641,13 @@ describe("widgetCatalog", () => {
   });
 
   it("reports Pomodoro singleton state through canonical ids and aliases", () => {
-    const item = getWidgetCatalogItem(ITAB_POMODORO_WIDGET_TYPE);
+    const item = getWidgetCatalogItem(SD_POMODORO_WIDGET_TYPE);
     expect(item).toBeTruthy();
 
     const disabled: WidgetConfig[] = [
       {
         id: "pomodoro",
-        type: ITAB_POMODORO_WIDGET_TYPE,
+        type: SD_POMODORO_WIDGET_TYPE,
         enable: false,
         isPublic: true,
       },
@@ -655,7 +655,7 @@ describe("widgetCatalog", () => {
     const enabled: WidgetConfig[] = [
       {
         id: "pomodoro",
-        type: ITAB_POMODORO_WIDGET_TYPE,
+        type: SD_POMODORO_WIDGET_TYPE,
         enable: true,
         isPublic: true,
       },
@@ -686,17 +686,17 @@ describe("widgetCatalog", () => {
     expect(getWidgetCatalogItem("quote")).toBeUndefined();
   });
 
-  it("creates canonical iTab weather widgets from the user-facing weather item", () => {
+  it("creates canonical weather widgets from the user-facing weather item", () => {
     const weather = createWidgetFromCatalog(getWidgetCatalogItem("weather")!);
 
     expect(weather).toMatchObject({
-      type: "itab-weather-00",
+      type: "sd-weather-00",
       colSpan: 2,
       rowSpan: 1,
       w: 2,
       h: 1,
       data: {
-        runtime: "itab-weather",
+        runtime: "sd-weather",
         version: 1,
         sizeKey: "1x2",
       },
@@ -704,17 +704,17 @@ describe("widgetCatalog", () => {
     expect(weather.id).toMatch(/^weather-/);
   });
 
-  it("creates canonical iTab clock widgets from the user-facing clock item", () => {
+  it("creates canonical clock widgets from the user-facing clock item", () => {
     const clock = createWidgetFromCatalog(getWidgetCatalogItem("clock")!);
 
     expect(clock).toMatchObject({
-      type: ITAB_CLOCK_WIDGET_TYPE,
+      type: SD_CLOCK_WIDGET_TYPE,
       colSpan: 2,
       rowSpan: 2,
       w: 2,
       h: 2,
       data: {
-        runtime: "itab-clock",
+        runtime: "sd-clock",
         version: 1,
         sizeKey: "2x2",
         showSeconds: true,
@@ -723,17 +723,17 @@ describe("widgetCatalog", () => {
     expect(clock.id).toMatch(/^clock-/);
   });
 
-  it("creates canonical iTab Todo widgets from the user-facing Todo item", () => {
+  it("creates canonical Todo widgets from the user-facing Todo item", () => {
     const todo = createWidgetFromCatalog(getWidgetCatalogItem("todo")!);
 
     expect(todo).toMatchObject({
-      type: ITAB_TODO_WIDGET_TYPE,
+      type: SD_TODO_WIDGET_TYPE,
       colSpan: 2,
       rowSpan: 2,
       w: 2,
       h: 2,
       data: {
-        runtime: "itab-todo",
+        runtime: "sd-todo",
         version: 1,
         sizeKey: "2x2",
         tasks: [],
@@ -742,17 +742,17 @@ describe("widgetCatalog", () => {
     expect(todo.id).toMatch(/^todo-/);
   });
 
-  it("creates canonical iTab Memo widgets from the user-facing Memo item", () => {
+  it("creates canonical Memo widgets from the user-facing Memo item", () => {
     const memo = createWidgetFromCatalog(getWidgetCatalogItem("memo")!);
 
     expect(memo).toMatchObject({
-      type: ITAB_MEMO_WIDGET_TYPE,
+      type: SD_MEMO_WIDGET_TYPE,
       colSpan: 2,
       rowSpan: 2,
       w: 2,
       h: 2,
       data: {
-        runtime: "itab-memo",
+        runtime: "sd-memo",
         version: 1,
         sizeKey: "2x2",
       },
@@ -761,17 +761,17 @@ describe("widgetCatalog", () => {
     expect(memo.data.notes).toEqual([]);
   });
 
-  it("creates canonical iTab poem widgets from the user-facing poem item", () => {
+  it("creates canonical poem widgets from the user-facing poem item", () => {
     const poem = createWidgetFromCatalog(getWidgetCatalogItem("poem")!);
 
     expect(poem).toMatchObject({
-      type: ITAB_POEM_WIDGET_TYPE,
+      type: SD_POEM_WIDGET_TYPE,
       colSpan: 2,
       rowSpan: 2,
       w: 2,
       h: 2,
       data: {
-        runtime: "itab-poem",
+        runtime: "sd-poem",
         version: 1,
         sizeKey: "2x2",
       },
@@ -779,19 +779,19 @@ describe("widgetCatalog", () => {
     expect(poem.id).toMatch(/^poem-/);
   });
 
-  it("creates canonical iTab daily English widgets from the user-facing item", () => {
+  it("creates canonical daily English widgets from the user-facing item", () => {
     const dailyEnglish = createWidgetFromCatalog(
       getWidgetCatalogItem("daily-english")!,
     );
 
     expect(dailyEnglish).toMatchObject({
-      type: ITAB_DAILY_ENGLISH_WIDGET_TYPE,
+      type: SD_DAILY_ENGLISH_WIDGET_TYPE,
       colSpan: 2,
       rowSpan: 2,
       w: 2,
       h: 2,
       data: {
-        runtime: "itab-daily-english",
+        runtime: "sd-daily-english",
         version: 1,
         sizeKey: "2x2",
       },
@@ -799,19 +799,19 @@ describe("widgetCatalog", () => {
     expect(dailyEnglish.id).toMatch(/^daily-english-/);
   });
 
-  it("creates canonical iTab movie calendar widgets from the user-facing item", () => {
+  it("creates canonical movie calendar widgets from the user-facing item", () => {
     const movieCalendar = createWidgetFromCatalog(
-      getWidgetCatalogItem(ITAB_MOVIE_CALENDAR_CATALOG_ID)!,
+      getWidgetCatalogItem(SD_MOVIE_CALENDAR_CATALOG_ID)!,
     );
 
     expect(movieCalendar).toMatchObject({
-      type: ITAB_MOVIE_CALENDAR_WIDGET_TYPE,
+      type: SD_MOVIE_CALENDAR_WIDGET_TYPE,
       colSpan: 2,
       rowSpan: 2,
       w: 2,
       h: 2,
       data: {
-        runtime: "itab-movie-calendar",
+        runtime: "sd-movie-calendar",
         version: 1,
         sizeKey: "2x2",
       },
@@ -819,19 +819,19 @@ describe("widgetCatalog", () => {
     expect(movieCalendar.id).toMatch(/^movie-calendar-/);
   });
 
-  it("creates canonical iTab IP widgets from the user-facing item", () => {
+  it("creates canonical IP widgets from the user-facing item", () => {
     const ip = createWidgetFromCatalog(
-      getWidgetCatalogItem(ITAB_IP_CATALOG_ID)!,
+      getWidgetCatalogItem(SD_IP_CATALOG_ID)!,
     );
 
     expect(ip).toMatchObject({
-      type: ITAB_IP_WIDGET_TYPE,
+      type: SD_IP_WIDGET_TYPE,
       colSpan: 2,
       rowSpan: 2,
       w: 2,
       h: 2,
       data: {
-        runtime: "itab-ip",
+        runtime: "sd-ip",
         version: 1,
         sizeKey: "2x2",
       },
@@ -839,19 +839,19 @@ describe("widgetCatalog", () => {
     expect(ip.id).toMatch(/^ip-/);
   });
 
-  it("creates canonical iTab calendar widgets from the user-facing item", () => {
+  it("creates canonical calendar widgets from the user-facing item", () => {
     const calendar = createWidgetFromCatalog(
-      getWidgetCatalogItem(ITAB_CALENDAR_CATALOG_ID)!,
+      getWidgetCatalogItem(SD_CALENDAR_CATALOG_ID)!,
     );
 
     expect(calendar).toMatchObject({
-      type: ITAB_CALENDAR_WIDGET_TYPE,
+      type: SD_CALENDAR_WIDGET_TYPE,
       colSpan: 2,
       rowSpan: 2,
       w: 2,
       h: 2,
       data: {
-        runtime: "itab-calendar",
+        runtime: "sd-calendar",
         version: 1,
         sizeKey: "2x2",
       },
@@ -859,19 +859,19 @@ describe("widgetCatalog", () => {
     expect(calendar.id).toMatch(/^calendar-/);
   });
 
-  it("creates canonical iTab number uppercase widgets from the user-facing item", () => {
+  it("creates canonical number uppercase widgets from the user-facing item", () => {
     const numberUppercase = createWidgetFromCatalog(
-      getWidgetCatalogItem(ITAB_NUMBER_UPPERCASE_CATALOG_ID)!,
+      getWidgetCatalogItem(SD_NUMBER_UPPERCASE_CATALOG_ID)!,
     );
 
     expect(numberUppercase).toMatchObject({
-      type: ITAB_NUMBER_UPPERCASE_WIDGET_TYPE,
+      type: SD_NUMBER_UPPERCASE_WIDGET_TYPE,
       colSpan: 2,
       rowSpan: 2,
       w: 2,
       h: 2,
       data: {
-        runtime: "itab-number-uppercase",
+        runtime: "sd-number-uppercase",
         version: 1,
         sizeKey: "2x2",
         inputNumber: "",
@@ -879,22 +879,22 @@ describe("widgetCatalog", () => {
         formatMode: "currency",
       },
     });
-    expect(numberUppercase.id).toMatch(/^itab-number-uppercase-35-/);
+    expect(numberUppercase.id).toMatch(/^sd-number-uppercase-35-/);
   });
 
-  it("creates addable iTab food picker widgets from the user-facing item", () => {
+  it("creates addable food picker widgets from the user-facing item", () => {
     const foodPicker = createWidgetFromCatalog(
-      getWidgetCatalogItem(ITAB_FOOD_PICKER_CATALOG_ID)!,
+      getWidgetCatalogItem(SD_FOOD_PICKER_CATALOG_ID)!,
     );
 
     expect(foodPicker).toMatchObject({
-      type: ITAB_FOOD_PICKER_WIDGET_TYPE,
+      type: SD_FOOD_PICKER_WIDGET_TYPE,
       colSpan: 2,
       rowSpan: 2,
       w: 2,
       h: 2,
       data: {
-        runtime: "itab-food-picker",
+        runtime: "sd-food-picker",
         version: 1,
         sizeKey: "2x2",
         currentItem: "",
@@ -957,17 +957,17 @@ describe("widgetCatalog", () => {
     );
   });
 
-  it("creates canonical iTab Pomodoro widgets from the user-facing Pomodoro item", () => {
+  it("creates canonical Pomodoro widgets from the user-facing Pomodoro item", () => {
     const pomodoro = createWidgetFromCatalog(getWidgetCatalogItem("pomodoro")!);
 
     expect(pomodoro).toMatchObject({
-      type: ITAB_POMODORO_WIDGET_TYPE,
+      type: SD_POMODORO_WIDGET_TYPE,
       colSpan: 2,
       rowSpan: 2,
       w: 2,
       h: 2,
       data: {
-        runtime: "itab-pomodoro",
+        runtime: "sd-pomodoro",
         version: 1,
         sizeKey: "2x2",
         duration: 1500,
@@ -979,22 +979,22 @@ describe("widgetCatalog", () => {
     expect(pomodoro.id).toMatch(/^pomodoro-/);
   });
 
-  it("creates canonical iTab anniversary widgets from the user-facing anniversary item", () => {
+  it("creates canonical anniversary widgets from the user-facing anniversary item", () => {
     const anniversary = createWidgetFromCatalog(
       getWidgetCatalogItem("anniversary")!,
     );
 
-    expect(getWidgetCatalogItem(ITAB_ANNIVERSARY_WIDGET_TYPE)?.id).toBe(
+    expect(getWidgetCatalogItem(SD_ANNIVERSARY_WIDGET_TYPE)?.id).toBe(
       "anniversary",
     );
     expect(anniversary).toMatchObject({
-      type: ITAB_ANNIVERSARY_WIDGET_TYPE,
+      type: SD_ANNIVERSARY_WIDGET_TYPE,
       colSpan: 2,
       rowSpan: 2,
       w: 2,
       h: 2,
       data: {
-        runtime: "itab-anniversary",
+        runtime: "sd-anniversary",
         version: 1,
         sizeKey: "2x2",
         title: "",
@@ -1007,38 +1007,38 @@ describe("widgetCatalog", () => {
     expect(anniversary.id).toMatch(/^anniversary-/);
   });
 
-  it("creates addable iTab wallpaper widgets from the user-facing wallpaper item", () => {
-    const item = getWidgetCatalogItem(ITAB_WALLPAPER_CATALOG_ID);
+  it("creates addable wallpaper widgets from the user-facing wallpaper item", () => {
+    const item = getWidgetCatalogItem(SD_WALLPAPER_CATALOG_ID);
     expect(item).toMatchObject({
-      id: ITAB_WALLPAPER_CATALOG_ID,
-      type: ITAB_WALLPAPER_WIDGET_TYPE,
+      id: SD_WALLPAPER_CATALOG_ID,
+      type: SD_WALLPAPER_WIDGET_TYPE,
       title: "壁纸",
       mode: "multi",
-      sizeScope: "itab",
+      sizeScope: "sd",
     });
 
     const wallpaper = createWidgetFromCatalog(item!);
 
     expect(wallpaper).toMatchObject({
-      type: ITAB_WALLPAPER_WIDGET_TYPE,
+      type: SD_WALLPAPER_WIDGET_TYPE,
       colSpan: 2,
       rowSpan: 2,
       w: 2,
       h: 2,
       data: {
-        runtime: "itab-wallpaper",
+        runtime: "sd-wallpaper",
         version: 1,
-        itab: {
+        sd: {
           captureIndex: 16,
-          catalogId: "itab-wallpaper-16",
+          catalogId: "sd-wallpaper-16",
           adapterKind: "wallpaper",
         },
         sizeKey: "2x2",
       },
     });
     expect(wallpaper.id).toMatch(/^wallpaper-/);
-    expect(getWidgetCatalogItem(ITAB_WALLPAPER_WIDGET_TYPE)?.id).toBe(
-      ITAB_WALLPAPER_CATALOG_ID,
+    expect(getWidgetCatalogItem(SD_WALLPAPER_WIDGET_TYPE)?.id).toBe(
+      SD_WALLPAPER_CATALOG_ID,
     );
   });
 });

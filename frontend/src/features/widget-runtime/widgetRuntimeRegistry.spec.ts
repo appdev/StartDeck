@@ -8,29 +8,29 @@ import {
 } from "./widgetRuntimeRegistry";
 import type { WidgetConfig } from "@/types";
 import {
-  ITAB_WALLPAPER_RUNTIME,
-  ITAB_WALLPAPER_WIDGET_TYPE,
-} from "@/features/itab-wallpaper/itabWallpaperTypes";
+  SD_WALLPAPER_RUNTIME,
+  SD_WALLPAPER_WIDGET_TYPE,
+} from "@/features/sd-wallpaper/sdWallpaperTypes";
 import {
-  ITAB_MOVIE_CALENDAR_RUNTIME,
-  ITAB_MOVIE_CALENDAR_WIDGET_TYPE,
-} from "@/features/itab-movie-calendar/itabMovieCalendarTypes";
+  SD_MOVIE_CALENDAR_RUNTIME,
+  SD_MOVIE_CALENDAR_WIDGET_TYPE,
+} from "@/features/sd-movie-calendar/sdMovieCalendarTypes";
 import {
-  ITAB_IP_RUNTIME,
-  ITAB_IP_WIDGET_TYPE,
-} from "@/features/itab-ip/itabIpTypes";
+  SD_IP_RUNTIME,
+  SD_IP_WIDGET_TYPE,
+} from "@/features/sd-ip/sdIpTypes";
 import {
-  ITAB_CALENDAR_RUNTIME,
-  ITAB_CALENDAR_WIDGET_TYPE,
-} from "@/features/itab-calendar/itabCalendarTypes";
+  SD_CALENDAR_RUNTIME,
+  SD_CALENDAR_WIDGET_TYPE,
+} from "@/features/sd-calendar/sdCalendarTypes";
 import {
-  ITAB_NUMBER_UPPERCASE_RUNTIME,
-  ITAB_NUMBER_UPPERCASE_WIDGET_TYPE,
-} from "@/features/itab-number-uppercase/itabNumberUppercaseTypes";
+  SD_NUMBER_UPPERCASE_RUNTIME,
+  SD_NUMBER_UPPERCASE_WIDGET_TYPE,
+} from "@/features/sd-number-uppercase/sdNumberUppercaseTypes";
 import {
-  ITAB_FOOD_PICKER_RUNTIME,
-  ITAB_FOOD_PICKER_WIDGET_TYPE,
-} from "@/features/itab-food-picker/itabFoodPickerTypes";
+  SD_FOOD_PICKER_RUNTIME,
+  SD_FOOD_PICKER_WIDGET_TYPE,
+} from "@/features/sd-food-picker/sdFoodPickerTypes";
 import {
   AI_USAGE_RUNTIME,
   AI_USAGE_WIDGET_TYPE,
@@ -105,7 +105,7 @@ describe("widgetRuntimeRegistry", () => {
     });
   });
 
-  it("normalizes custom-css runtime data and applies iTab size updates", () => {
+  it("normalizes custom-css runtime data and applies scoped size updates", () => {
     const widget: WidgetConfig = {
       id: "custom-css-1",
       type: "custom-css",
@@ -258,12 +258,12 @@ describe("widgetRuntimeRegistry", () => {
   });
 
   it("registers the migrated wallpaper widget for the main home runtime", () => {
-    const definition = getWidgetRuntimeDefinition(ITAB_WALLPAPER_WIDGET_TYPE);
+    const definition = getWidgetRuntimeDefinition(SD_WALLPAPER_WIDGET_TYPE);
 
-    expect(isRuntimeWidget({ type: ITAB_WALLPAPER_WIDGET_TYPE })).toBe(true);
+    expect(isRuntimeWidget({ type: SD_WALLPAPER_WIDGET_TYPE })).toBe(true);
     expect(definition).toMatchObject({
-      type: ITAB_WALLPAPER_WIDGET_TYPE,
-      runtime: ITAB_WALLPAPER_RUNTIME,
+      type: SD_WALLPAPER_WIDGET_TYPE,
+      runtime: SD_WALLPAPER_RUNTIME,
       title: "壁纸",
       defaultSizeKey: "2x2",
       openedShell: {
@@ -274,10 +274,10 @@ describe("widgetRuntimeRegistry", () => {
     });
   });
 
-  it("normalizes wallpaper runtime data without losing iTab state", () => {
-    const data = normalizeWidgetRuntimeData(ITAB_WALLPAPER_WIDGET_TYPE, {
+  it("normalizes wallpaper runtime data without losing legacy state", () => {
+    const data = normalizeWidgetRuntimeData(SD_WALLPAPER_WIDGET_TYPE, {
       sizeKey: "1x2",
-      itab: {
+      sd: {
         state: {
           selectedWallpaperId: "sichuan-tea",
         },
@@ -285,11 +285,11 @@ describe("widgetRuntimeRegistry", () => {
     });
 
     expect(data).toMatchObject({
-      runtime: ITAB_WALLPAPER_RUNTIME,
+      runtime: SD_WALLPAPER_RUNTIME,
       sizeKey: "1x2",
-      itab: {
+      sd: {
         adapterKind: "wallpaper",
-        catalogId: ITAB_WALLPAPER_WIDGET_TYPE,
+        catalogId: SD_WALLPAPER_WIDGET_TYPE,
         captureIndex: 16,
         state: {
           selectedWallpaperId: "sichuan-tea",
@@ -300,15 +300,15 @@ describe("widgetRuntimeRegistry", () => {
 
   it("registers the migrated movie calendar widget for the main home runtime", () => {
     const definition = getWidgetRuntimeDefinition(
-      ITAB_MOVIE_CALENDAR_WIDGET_TYPE,
+      SD_MOVIE_CALENDAR_WIDGET_TYPE,
     );
 
-    expect(isRuntimeWidget({ type: ITAB_MOVIE_CALENDAR_WIDGET_TYPE })).toBe(
+    expect(isRuntimeWidget({ type: SD_MOVIE_CALENDAR_WIDGET_TYPE })).toBe(
       true,
     );
     expect(definition).toMatchObject({
-      type: ITAB_MOVIE_CALENDAR_WIDGET_TYPE,
-      runtime: ITAB_MOVIE_CALENDAR_RUNTIME,
+      type: SD_MOVIE_CALENDAR_WIDGET_TYPE,
+      runtime: SD_MOVIE_CALENDAR_RUNTIME,
       title: "电影日历",
       defaultSizeKey: "2x2",
       openedShell: {
@@ -321,24 +321,24 @@ describe("widgetRuntimeRegistry", () => {
 
   it("normalizes movie calendar runtime data to canonical persisted state", () => {
     expect(
-      normalizeWidgetRuntimeData(ITAB_MOVIE_CALENDAR_WIDGET_TYPE, {
+      normalizeWidgetRuntimeData(SD_MOVIE_CALENDAR_WIDGET_TYPE, {
         sizeKey: "2x4",
         movieTitle: "红气球之旅",
       }),
     ).toMatchObject({
-      runtime: ITAB_MOVIE_CALENDAR_RUNTIME,
+      runtime: SD_MOVIE_CALENDAR_RUNTIME,
       sizeKey: "2x4",
       version: 1,
     });
   });
 
   it("registers the migrated IP widget for the main home runtime", () => {
-    const definition = getWidgetRuntimeDefinition(ITAB_IP_WIDGET_TYPE);
+    const definition = getWidgetRuntimeDefinition(SD_IP_WIDGET_TYPE);
 
-    expect(isRuntimeWidget({ type: ITAB_IP_WIDGET_TYPE })).toBe(true);
+    expect(isRuntimeWidget({ type: SD_IP_WIDGET_TYPE })).toBe(true);
     expect(definition).toMatchObject({
-      type: ITAB_IP_WIDGET_TYPE,
-      runtime: ITAB_IP_RUNTIME,
+      type: SD_IP_WIDGET_TYPE,
+      runtime: SD_IP_RUNTIME,
       title: "本机IP",
       defaultSizeKey: "2x2",
       openedShell: {
@@ -351,24 +351,24 @@ describe("widgetRuntimeRegistry", () => {
 
   it("normalizes IP runtime data to canonical persisted state", () => {
     expect(
-      normalizeWidgetRuntimeData(ITAB_IP_WIDGET_TYPE, {
+      normalizeWidgetRuntimeData(SD_IP_WIDGET_TYPE, {
         sizeKey: "2x4",
         ip: "127.0.0.1",
       }),
     ).toMatchObject({
-      runtime: ITAB_IP_RUNTIME,
+      runtime: SD_IP_RUNTIME,
       sizeKey: "2x4",
       version: 1,
     });
   });
 
   it("registers the migrated calendar widget for the main home runtime", () => {
-    const definition = getWidgetRuntimeDefinition(ITAB_CALENDAR_WIDGET_TYPE);
+    const definition = getWidgetRuntimeDefinition(SD_CALENDAR_WIDGET_TYPE);
 
-    expect(isRuntimeWidget({ type: ITAB_CALENDAR_WIDGET_TYPE })).toBe(true);
+    expect(isRuntimeWidget({ type: SD_CALENDAR_WIDGET_TYPE })).toBe(true);
     expect(definition).toMatchObject({
-      type: ITAB_CALENDAR_WIDGET_TYPE,
-      runtime: ITAB_CALENDAR_RUNTIME,
+      type: SD_CALENDAR_WIDGET_TYPE,
+      runtime: SD_CALENDAR_RUNTIME,
       title: "日历",
       defaultSizeKey: "2x2",
       openedShell: {
@@ -381,12 +381,12 @@ describe("widgetRuntimeRegistry", () => {
 
   it("normalizes calendar runtime data to canonical persisted state", () => {
     expect(
-      normalizeWidgetRuntimeData(ITAB_CALENDAR_WIDGET_TYPE, {
+      normalizeWidgetRuntimeData(SD_CALENDAR_WIDGET_TYPE, {
         sizeKey: "2x4",
         selectedDate: "2026-05-20",
       }),
     ).toMatchObject({
-      runtime: ITAB_CALENDAR_RUNTIME,
+      runtime: SD_CALENDAR_RUNTIME,
       sizeKey: "2x4",
       version: 1,
     });
@@ -394,15 +394,15 @@ describe("widgetRuntimeRegistry", () => {
 
   it("registers the migrated number uppercase widget for the main home runtime", () => {
     const definition = getWidgetRuntimeDefinition(
-      ITAB_NUMBER_UPPERCASE_WIDGET_TYPE,
+      SD_NUMBER_UPPERCASE_WIDGET_TYPE,
     );
 
-    expect(isRuntimeWidget({ type: ITAB_NUMBER_UPPERCASE_WIDGET_TYPE })).toBe(
+    expect(isRuntimeWidget({ type: SD_NUMBER_UPPERCASE_WIDGET_TYPE })).toBe(
       true,
     );
     expect(definition).toMatchObject({
-      type: ITAB_NUMBER_UPPERCASE_WIDGET_TYPE,
-      runtime: ITAB_NUMBER_UPPERCASE_RUNTIME,
+      type: SD_NUMBER_UPPERCASE_WIDGET_TYPE,
+      runtime: SD_NUMBER_UPPERCASE_RUNTIME,
       title: "金额换算",
       defaultSizeKey: "2x2",
       openedShell: {
@@ -415,13 +415,13 @@ describe("widgetRuntimeRegistry", () => {
 
   it("normalizes number uppercase runtime data to computed persisted state", () => {
     expect(
-      normalizeWidgetRuntimeData(ITAB_NUMBER_UPPERCASE_WIDGET_TYPE, {
+      normalizeWidgetRuntimeData(SD_NUMBER_UPPERCASE_WIDGET_TYPE, {
         sizeKey: "2x4",
         inputNumber: "1024",
         uppercaseResult: "stale",
       }),
     ).toMatchObject({
-      runtime: ITAB_NUMBER_UPPERCASE_RUNTIME,
+      runtime: SD_NUMBER_UPPERCASE_RUNTIME,
       sizeKey: "2x4",
       version: 1,
       inputNumber: "1024",
@@ -431,12 +431,12 @@ describe("widgetRuntimeRegistry", () => {
   });
 
   it("registers the migrated food picker widget for the main home runtime", () => {
-    const definition = getWidgetRuntimeDefinition(ITAB_FOOD_PICKER_WIDGET_TYPE);
+    const definition = getWidgetRuntimeDefinition(SD_FOOD_PICKER_WIDGET_TYPE);
 
-    expect(isRuntimeWidget({ type: ITAB_FOOD_PICKER_WIDGET_TYPE })).toBe(true);
+    expect(isRuntimeWidget({ type: SD_FOOD_PICKER_WIDGET_TYPE })).toBe(true);
     expect(definition).toMatchObject({
-      type: ITAB_FOOD_PICKER_WIDGET_TYPE,
-      runtime: ITAB_FOOD_PICKER_RUNTIME,
+      type: SD_FOOD_PICKER_WIDGET_TYPE,
+      runtime: SD_FOOD_PICKER_RUNTIME,
       title: "今天吃什么",
       defaultSizeKey: "2x2",
       openedShell: {
@@ -449,13 +449,13 @@ describe("widgetRuntimeRegistry", () => {
 
   it("normalizes food picker runtime data to canonical persisted state", () => {
     expect(
-      normalizeWidgetRuntimeData(ITAB_FOOD_PICKER_WIDGET_TYPE, {
+      normalizeWidgetRuntimeData(SD_FOOD_PICKER_WIDGET_TYPE, {
         sizeKey: "2x4",
         menuItems: ["面", "饭", "面"],
         currentItem: "饭",
       }),
     ).toMatchObject({
-      runtime: ITAB_FOOD_PICKER_RUNTIME,
+      runtime: SD_FOOD_PICKER_RUNTIME,
       sizeKey: "2x4",
       version: 1,
       menuItems: ["面", "饭"],

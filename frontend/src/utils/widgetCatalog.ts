@@ -6,61 +6,61 @@ import {
 } from "@/utils/widgetSizePresets";
 import { createDefaultWidgetList } from "@/utils/widgetUtils";
 import {
-  ITAB_WEATHER_CATALOG_ID,
-  ITAB_WEATHER_WIDGET_TYPE,
-} from "@/features/itab-weather/itabWeatherTypes";
+  SD_WEATHER_CATALOG_ID,
+  SD_WEATHER_WIDGET_TYPE,
+} from "@/features/sd-weather/sdWeatherTypes";
 import {
-  ITAB_TODO_CATALOG_ID,
-  ITAB_TODO_WIDGET_TYPE,
-} from "@/features/itab-todo/itabTodoTypes";
+  SD_TODO_CATALOG_ID,
+  SD_TODO_WIDGET_TYPE,
+} from "@/features/sd-todo/sdTodoTypes";
 import {
-  ITAB_MEMO_CATALOG_ID,
-  ITAB_MEMO_WIDGET_TYPE,
-} from "@/features/itab-memo/itabMemoTypes";
+  SD_MEMO_CATALOG_ID,
+  SD_MEMO_WIDGET_TYPE,
+} from "@/features/sd-memo/sdMemoTypes";
 import {
-  ITAB_CLOCK_CATALOG_ID,
-  ITAB_CLOCK_WIDGET_TYPE,
-} from "@/features/itab-clock/itabClockTypes";
+  SD_CLOCK_CATALOG_ID,
+  SD_CLOCK_WIDGET_TYPE,
+} from "@/features/sd-clock/sdClockTypes";
 import {
-  ITAB_DAILY_ENGLISH_CATALOG_ID,
-  ITAB_DAILY_ENGLISH_WIDGET_TYPE,
-} from "@/features/itab-daily-english/itabDailyEnglishTypes";
+  SD_DAILY_ENGLISH_CATALOG_ID,
+  SD_DAILY_ENGLISH_WIDGET_TYPE,
+} from "@/features/sd-daily-english/sdDailyEnglishTypes";
 import {
-  ITAB_POEM_CATALOG_ID,
-  ITAB_POEM_WIDGET_TYPE,
-} from "@/features/itab-poem/itabPoemTypes";
+  SD_POEM_CATALOG_ID,
+  SD_POEM_WIDGET_TYPE,
+} from "@/features/sd-poem/sdPoemTypes";
 import {
-  ITAB_POMODORO_CATALOG_ID,
-  ITAB_POMODORO_WIDGET_TYPE,
-} from "@/features/itab-pomodoro/itabPomodoroTypes";
+  SD_POMODORO_CATALOG_ID,
+  SD_POMODORO_WIDGET_TYPE,
+} from "@/features/sd-pomodoro/sdPomodoroTypes";
 import {
-  ITAB_ANNIVERSARY_CATALOG_ID,
-  ITAB_ANNIVERSARY_WIDGET_TYPE,
-} from "@/features/itab-anniversary/itabAnniversaryTypes";
+  SD_ANNIVERSARY_CATALOG_ID,
+  SD_ANNIVERSARY_WIDGET_TYPE,
+} from "@/features/sd-anniversary/sdAnniversaryTypes";
 import {
-  ITAB_WALLPAPER_CATALOG_ID,
-  ITAB_WALLPAPER_WIDGET_TYPE,
-} from "@/features/itab-wallpaper/itabWallpaperTypes";
+  SD_WALLPAPER_CATALOG_ID,
+  SD_WALLPAPER_WIDGET_TYPE,
+} from "@/features/sd-wallpaper/sdWallpaperTypes";
 import {
-  ITAB_MOVIE_CALENDAR_CATALOG_ID,
-  ITAB_MOVIE_CALENDAR_WIDGET_TYPE,
-} from "@/features/itab-movie-calendar/itabMovieCalendarTypes";
+  SD_MOVIE_CALENDAR_CATALOG_ID,
+  SD_MOVIE_CALENDAR_WIDGET_TYPE,
+} from "@/features/sd-movie-calendar/sdMovieCalendarTypes";
 import {
-  ITAB_IP_CATALOG_ID,
-  ITAB_IP_WIDGET_TYPE,
-} from "@/features/itab-ip/itabIpTypes";
+  SD_IP_CATALOG_ID,
+  SD_IP_WIDGET_TYPE,
+} from "@/features/sd-ip/sdIpTypes";
 import {
-  ITAB_CALENDAR_CATALOG_ID,
-  ITAB_CALENDAR_WIDGET_TYPE,
-} from "@/features/itab-calendar/itabCalendarTypes";
+  SD_CALENDAR_CATALOG_ID,
+  SD_CALENDAR_WIDGET_TYPE,
+} from "@/features/sd-calendar/sdCalendarTypes";
 import {
-  ITAB_NUMBER_UPPERCASE_CATALOG_ID,
-  ITAB_NUMBER_UPPERCASE_WIDGET_TYPE,
-} from "@/features/itab-number-uppercase/itabNumberUppercaseTypes";
+  SD_NUMBER_UPPERCASE_CATALOG_ID,
+  SD_NUMBER_UPPERCASE_WIDGET_TYPE,
+} from "@/features/sd-number-uppercase/sdNumberUppercaseTypes";
 import {
-  ITAB_FOOD_PICKER_CATALOG_ID,
-  ITAB_FOOD_PICKER_WIDGET_TYPE,
-} from "@/features/itab-food-picker/itabFoodPickerTypes";
+  SD_FOOD_PICKER_CATALOG_ID,
+  SD_FOOD_PICKER_WIDGET_TYPE,
+} from "@/features/sd-food-picker/sdFoodPickerTypes";
 import {
   AI_USAGE_CATALOG_ID,
   AI_USAGE_WIDGET_TYPE,
@@ -69,25 +69,25 @@ import {
   TAPD_DEFECTS_CATALOG_ID,
   TAPD_DEFECTS_WIDGET_TYPE,
 } from "@/features/tapd-defects/tapdDefectTypes";
-import { createDefaultItabWeatherWidget } from "@/features/itab-weather/itabWeatherModel";
-import { createDefaultItabTodoWidget } from "@/features/itab-todo/itabTodoModel";
-import { createDefaultItabMemoWidget } from "@/features/itab-memo/itabMemoModel";
-import { createDefaultItabClockWidget } from "@/features/itab-clock/itabClockModel";
-import { createDefaultItabDailyEnglishWidget } from "@/features/itab-daily-english/itabDailyEnglishModel";
-import { createDefaultItabPoemWidget } from "@/features/itab-poem/itabPoemModel";
-import { createDefaultItabPomodoroWidget } from "@/features/itab-pomodoro/itabPomodoroModel";
-import { createDefaultItabAnniversaryWidget } from "@/features/itab-anniversary/itabAnniversaryModel";
-import { createDefaultItabWallpaperWidget } from "@/features/itab-wallpaper/itabWallpaperModel";
-import { createDefaultItabMovieCalendarWidget } from "@/features/itab-movie-calendar/itabMovieCalendarModel";
-import { createDefaultItabIpWidget } from "@/features/itab-ip/itabIpModel";
-import { createDefaultItabCalendarWidget } from "@/features/itab-calendar/itabCalendarModel";
-import { createDefaultItabNumberUppercaseWidget } from "@/features/itab-number-uppercase/itabNumberUppercaseModel";
-import { createDefaultItabFoodPickerWidget } from "@/features/itab-food-picker/itabFoodPickerModel";
+import { createDefaultSdWeatherWidget } from "@/features/sd-weather/sdWeatherModel";
+import { createDefaultSdTodoWidget } from "@/features/sd-todo/sdTodoModel";
+import { createDefaultSdMemoWidget } from "@/features/sd-memo/sdMemoModel";
+import { createDefaultSdClockWidget } from "@/features/sd-clock/sdClockModel";
+import { createDefaultSdDailyEnglishWidget } from "@/features/sd-daily-english/sdDailyEnglishModel";
+import { createDefaultSdPoemWidget } from "@/features/sd-poem/sdPoemModel";
+import { createDefaultSdPomodoroWidget } from "@/features/sd-pomodoro/sdPomodoroModel";
+import { createDefaultSdAnniversaryWidget } from "@/features/sd-anniversary/sdAnniversaryModel";
+import { createDefaultSdWallpaperWidget } from "@/features/sd-wallpaper/sdWallpaperModel";
+import { createDefaultSdMovieCalendarWidget } from "@/features/sd-movie-calendar/sdMovieCalendarModel";
+import { createDefaultSdIpWidget } from "@/features/sd-ip/sdIpModel";
+import { createDefaultSdCalendarWidget } from "@/features/sd-calendar/sdCalendarModel";
+import { createDefaultSdNumberUppercaseWidget } from "@/features/sd-number-uppercase/sdNumberUppercaseModel";
+import { createDefaultSdFoodPickerWidget } from "@/features/sd-food-picker/sdFoodPickerModel";
 import { createDefaultAiUsageWidget } from "@/features/ai-usage/aiUsageModel";
 import { createDefaultTapdDefectWidget } from "@/features/tapd-defects/tapdDefectModel";
-import { buildItabPersistedData } from "@/features/itab-widgets/itabAdapters";
-import { withItabGridData } from "@/features/itab-widgets/itabGrid";
-import { resolveItabWidgetEntry } from "@/features/itab-widgets/itabWidgetRegistry";
+import { buildSdPersistedData } from "@/features/sd-widgets/sdAdapters";
+import { withSdGridData } from "@/features/sd-widgets/sdGrid";
+import { resolveSdWidgetEntry } from "@/features/sd-widgets/sdWidgetRegistry";
 import {
   resolveRuntimeWidgetSizeFamily,
   type RuntimeWidgetSizeFamily,
@@ -104,7 +104,7 @@ export type WidgetCatalogCategory =
   | "custom";
 export type WidgetCatalogMode = "multi" | "singleton";
 export type WidgetCatalogAction = "add" | "enable" | "enabled";
-export type WidgetCatalogSizeScope = "itab";
+export type WidgetCatalogSizeScope = "sd";
 export type WidgetCatalogSizeKey =
   | CatalogWidgetSizePreset["key"]
   | RuntimeWidgetSizeKey;
@@ -154,7 +154,7 @@ const catalogItem = (
     ...input,
     colSpan: sizeFamily.defaultSize.colSpan,
     rowSpan: sizeFamily.defaultSize.rowSpan,
-    sizeScope: sizeFamily.scope || "itab",
+    sizeScope: sizeFamily.scope || "sd",
     sizeFamily,
     supportedSizes: sizeFamily.supported,
   };
@@ -162,17 +162,17 @@ const catalogItem = (
 
 export const WIDGET_CATALOG: WidgetCatalogItem[] = [
   catalogItem({
-    id: ITAB_CLOCK_CATALOG_ID,
-    type: ITAB_CLOCK_WIDGET_TYPE,
+    id: SD_CLOCK_CATALOG_ID,
+    type: SD_CLOCK_WIDGET_TYPE,
     title: "时钟",
-    description: "iTab 翻页时钟、日期和打开态大屏",
+    description: "翻页时钟、日期和打开态大屏",
     category: "common",
     mode: "singleton",
     glyph: "时",
   }),
   catalogItem({
     id: "weather",
-    type: ITAB_WEATHER_WIDGET_TYPE,
+    type: SD_WEATHER_WIDGET_TYPE,
     title: "天气",
     description: "温度、空气质量与预报",
     category: "common",
@@ -180,8 +180,8 @@ export const WIDGET_CATALOG: WidgetCatalogItem[] = [
     glyph: "晴",
   }),
   catalogItem({
-    id: ITAB_ANNIVERSARY_CATALOG_ID,
-    type: ITAB_ANNIVERSARY_WIDGET_TYPE,
+    id: SD_ANNIVERSARY_CATALOG_ID,
+    type: SD_ANNIVERSARY_WIDGET_TYPE,
     title: "纪念日",
     description: "纪念日、倒数日和事件日期模板",
     category: "common",
@@ -189,8 +189,8 @@ export const WIDGET_CATALOG: WidgetCatalogItem[] = [
     glyph: "纪",
   }),
   catalogItem({
-    id: ITAB_CALENDAR_CATALOG_ID,
-    type: ITAB_CALENDAR_WIDGET_TYPE,
+    id: SD_CALENDAR_CATALOG_ID,
+    type: SD_CALENDAR_WIDGET_TYPE,
     title: "日历",
     description: "公历、农历、节气和节假日",
     category: "common",
@@ -198,8 +198,8 @@ export const WIDGET_CATALOG: WidgetCatalogItem[] = [
     glyph: "历",
   }),
   catalogItem({
-    id: ITAB_WALLPAPER_CATALOG_ID,
-    type: ITAB_WALLPAPER_WIDGET_TYPE,
+    id: SD_WALLPAPER_CATALOG_ID,
+    type: SD_WALLPAPER_WIDGET_TYPE,
     title: "壁纸",
     description: "必应壁纸库，打开后可一键应用桌面背景",
     category: "content",
@@ -216,8 +216,8 @@ export const WIDGET_CATALOG: WidgetCatalogItem[] = [
     glyph: "自",
   }),
   catalogItem({
-    id: ITAB_MEMO_CATALOG_ID,
-    type: ITAB_MEMO_WIDGET_TYPE,
+    id: SD_MEMO_CATALOG_ID,
+    type: SD_MEMO_WIDGET_TYPE,
     title: "备忘录",
     description: "记录、搜索和固定便签",
     category: "common",
@@ -225,8 +225,8 @@ export const WIDGET_CATALOG: WidgetCatalogItem[] = [
     glyph: "备",
   }),
   catalogItem({
-    id: ITAB_TODO_CATALOG_ID,
-    type: ITAB_TODO_WIDGET_TYPE,
+    id: SD_TODO_CATALOG_ID,
+    type: SD_TODO_WIDGET_TYPE,
     title: "待办",
     description: "管理简单任务列表",
     category: "common",
@@ -234,8 +234,8 @@ export const WIDGET_CATALOG: WidgetCatalogItem[] = [
     glyph: "办",
   }),
   catalogItem({
-    id: ITAB_POMODORO_CATALOG_ID,
-    type: ITAB_POMODORO_WIDGET_TYPE,
+    id: SD_POMODORO_CATALOG_ID,
+    type: SD_POMODORO_WIDGET_TYPE,
     title: "番茄时钟",
     description: "专注计时、背景音和会话进度",
     category: "common",
@@ -243,8 +243,8 @@ export const WIDGET_CATALOG: WidgetCatalogItem[] = [
     glyph: "番",
   }),
   catalogItem({
-    id: ITAB_POEM_CATALOG_ID,
-    type: ITAB_POEM_WIDGET_TYPE,
+    id: SD_POEM_CATALOG_ID,
+    type: SD_POEM_WIDGET_TYPE,
     title: "今日诗词",
     description: "每日诗词名句、出处和全文释义",
     category: "content",
@@ -252,8 +252,8 @@ export const WIDGET_CATALOG: WidgetCatalogItem[] = [
     glyph: "诗",
   }),
   catalogItem({
-    id: ITAB_DAILY_ENGLISH_CATALOG_ID,
-    type: ITAB_DAILY_ENGLISH_WIDGET_TYPE,
+    id: SD_DAILY_ENGLISH_CATALOG_ID,
+    type: SD_DAILY_ENGLISH_WIDGET_TYPE,
     title: "今日英语",
     description: "每日英语句子、翻译和跟读音频",
     category: "content",
@@ -261,8 +261,8 @@ export const WIDGET_CATALOG: WidgetCatalogItem[] = [
     glyph: "英",
   }),
   catalogItem({
-    id: ITAB_MOVIE_CALENDAR_CATALOG_ID,
-    type: ITAB_MOVIE_CALENDAR_WIDGET_TYPE,
+    id: SD_MOVIE_CALENDAR_CATALOG_ID,
+    type: SD_MOVIE_CALENDAR_WIDGET_TYPE,
     title: "电影日历",
     description: "每日电影推荐、评分和影评短句",
     category: "content",
@@ -270,8 +270,8 @@ export const WIDGET_CATALOG: WidgetCatalogItem[] = [
     glyph: "影",
   }),
   catalogItem({
-    id: ITAB_IP_CATALOG_ID,
-    type: ITAB_IP_WIDGET_TYPE,
+    id: SD_IP_CATALOG_ID,
+    type: SD_IP_WIDGET_TYPE,
     title: "本机IP",
     description: "显示当前 IP 地址、归属地和网络信息",
     category: "tool",
@@ -279,8 +279,8 @@ export const WIDGET_CATALOG: WidgetCatalogItem[] = [
     glyph: "IP",
   }),
   catalogItem({
-    id: ITAB_NUMBER_UPPERCASE_CATALOG_ID,
-    type: ITAB_NUMBER_UPPERCASE_WIDGET_TYPE,
+    id: SD_NUMBER_UPPERCASE_CATALOG_ID,
+    type: SD_NUMBER_UPPERCASE_WIDGET_TYPE,
     title: "金额换算",
     description: "将金额转为大写",
     category: "tool",
@@ -288,8 +288,8 @@ export const WIDGET_CATALOG: WidgetCatalogItem[] = [
     glyph: "¥",
   }),
   catalogItem({
-    id: ITAB_FOOD_PICKER_CATALOG_ID,
-    type: ITAB_FOOD_PICKER_WIDGET_TYPE,
+    id: SD_FOOD_PICKER_CATALOG_ID,
+    type: SD_FOOD_PICKER_WIDGET_TYPE,
     title: "今天吃什么",
     description: "随机抽取用餐候选并维护本地菜单",
     category: "tool",
@@ -350,20 +350,20 @@ const createId = (prefix: string) =>
   `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
 const WIDGET_CATALOG_ALIASES = new Map([
-  [ITAB_CLOCK_WIDGET_TYPE, ITAB_CLOCK_CATALOG_ID],
-  ["itab-weather-00", ITAB_WEATHER_CATALOG_ID],
-  [ITAB_TODO_WIDGET_TYPE, ITAB_TODO_CATALOG_ID],
-  [ITAB_MEMO_WIDGET_TYPE, ITAB_MEMO_CATALOG_ID],
-  [ITAB_DAILY_ENGLISH_WIDGET_TYPE, ITAB_DAILY_ENGLISH_CATALOG_ID],
-  [ITAB_POEM_WIDGET_TYPE, ITAB_POEM_CATALOG_ID],
-  [ITAB_POMODORO_WIDGET_TYPE, ITAB_POMODORO_CATALOG_ID],
-  [ITAB_ANNIVERSARY_WIDGET_TYPE, ITAB_ANNIVERSARY_CATALOG_ID],
-  [ITAB_WALLPAPER_WIDGET_TYPE, ITAB_WALLPAPER_CATALOG_ID],
-  [ITAB_MOVIE_CALENDAR_WIDGET_TYPE, ITAB_MOVIE_CALENDAR_CATALOG_ID],
-  [ITAB_IP_WIDGET_TYPE, ITAB_IP_CATALOG_ID],
-  [ITAB_CALENDAR_WIDGET_TYPE, ITAB_CALENDAR_CATALOG_ID],
-  [ITAB_NUMBER_UPPERCASE_WIDGET_TYPE, ITAB_NUMBER_UPPERCASE_CATALOG_ID],
-  [ITAB_FOOD_PICKER_WIDGET_TYPE, ITAB_FOOD_PICKER_CATALOG_ID],
+  [SD_CLOCK_WIDGET_TYPE, SD_CLOCK_CATALOG_ID],
+  ["sd-weather-00", SD_WEATHER_CATALOG_ID],
+  [SD_TODO_WIDGET_TYPE, SD_TODO_CATALOG_ID],
+  [SD_MEMO_WIDGET_TYPE, SD_MEMO_CATALOG_ID],
+  [SD_DAILY_ENGLISH_WIDGET_TYPE, SD_DAILY_ENGLISH_CATALOG_ID],
+  [SD_POEM_WIDGET_TYPE, SD_POEM_CATALOG_ID],
+  [SD_POMODORO_WIDGET_TYPE, SD_POMODORO_CATALOG_ID],
+  [SD_ANNIVERSARY_WIDGET_TYPE, SD_ANNIVERSARY_CATALOG_ID],
+  [SD_WALLPAPER_WIDGET_TYPE, SD_WALLPAPER_CATALOG_ID],
+  [SD_MOVIE_CALENDAR_WIDGET_TYPE, SD_MOVIE_CALENDAR_CATALOG_ID],
+  [SD_IP_WIDGET_TYPE, SD_IP_CATALOG_ID],
+  [SD_CALENDAR_WIDGET_TYPE, SD_CALENDAR_CATALOG_ID],
+  [SD_NUMBER_UPPERCASE_WIDGET_TYPE, SD_NUMBER_UPPERCASE_CATALOG_ID],
+  [SD_FOOD_PICKER_WIDGET_TYPE, SD_FOOD_PICKER_CATALOG_ID],
   [AI_USAGE_WIDGET_TYPE, AI_USAGE_CATALOG_ID],
   [TAPD_DEFECTS_WIDGET_TYPE, TAPD_DEFECTS_CATALOG_ID],
 ]);
@@ -406,50 +406,50 @@ const assignCatalogInstanceId = (
 export const createWidgetFromCatalog = (
   item: WidgetCatalogItem,
 ): WidgetConfig => {
-  if (item.type === ITAB_WEATHER_WIDGET_TYPE) {
-    const widget = createDefaultItabWeatherWidget();
+  if (item.type === SD_WEATHER_WIDGET_TYPE) {
+    const widget = createDefaultSdWeatherWidget();
     widget.enable = true;
     return assignCatalogInstanceId(widget, item);
   }
-  if (item.type === ITAB_TODO_WIDGET_TYPE) {
-    const widget = createDefaultItabTodoWidget();
+  if (item.type === SD_TODO_WIDGET_TYPE) {
+    const widget = createDefaultSdTodoWidget();
     widget.enable = true;
     return assignCatalogInstanceId(widget, item);
   }
-  if (item.type === ITAB_MEMO_WIDGET_TYPE) {
-    const widget = createDefaultItabMemoWidget();
+  if (item.type === SD_MEMO_WIDGET_TYPE) {
+    const widget = createDefaultSdMemoWidget();
     widget.enable = true;
     return assignCatalogInstanceId(widget, item);
   }
-  if (item.type === ITAB_CLOCK_WIDGET_TYPE) {
-    const widget = createDefaultItabClockWidget();
+  if (item.type === SD_CLOCK_WIDGET_TYPE) {
+    const widget = createDefaultSdClockWidget();
     widget.enable = true;
     return assignCatalogInstanceId(widget, item);
   }
-  if (item.type === ITAB_DAILY_ENGLISH_WIDGET_TYPE) {
-    const widget = createDefaultItabDailyEnglishWidget();
+  if (item.type === SD_DAILY_ENGLISH_WIDGET_TYPE) {
+    const widget = createDefaultSdDailyEnglishWidget();
     widget.enable = true;
     return assignCatalogInstanceId(widget, item);
   }
-  if (item.type === ITAB_POEM_WIDGET_TYPE) {
-    const widget = createDefaultItabPoemWidget();
+  if (item.type === SD_POEM_WIDGET_TYPE) {
+    const widget = createDefaultSdPoemWidget();
     widget.enable = true;
     return assignCatalogInstanceId(widget, item);
   }
-  if (item.type === ITAB_POMODORO_WIDGET_TYPE) {
-    const widget = createDefaultItabPomodoroWidget();
+  if (item.type === SD_POMODORO_WIDGET_TYPE) {
+    const widget = createDefaultSdPomodoroWidget();
     widget.enable = true;
     return assignCatalogInstanceId(widget, item);
   }
-  if (item.type === ITAB_ANNIVERSARY_WIDGET_TYPE) {
-    const widget = createDefaultItabAnniversaryWidget();
+  if (item.type === SD_ANNIVERSARY_WIDGET_TYPE) {
+    const widget = createDefaultSdAnniversaryWidget();
     widget.enable = true;
     return assignCatalogInstanceId(widget, item);
   }
-  if (item.type === ITAB_WALLPAPER_WIDGET_TYPE) {
-    const entry = resolveItabWidgetEntry(ITAB_WALLPAPER_WIDGET_TYPE);
-    const widget = createDefaultItabWallpaperWidget();
-    return withItabGridData({
+  if (item.type === SD_WALLPAPER_WIDGET_TYPE) {
+    const entry = resolveSdWidgetEntry(SD_WALLPAPER_WIDGET_TYPE);
+    const widget = createDefaultSdWallpaperWidget();
+    return withSdGridData({
       ...widget,
       id: createId(item.id),
       enable: true,
@@ -459,32 +459,32 @@ export const createWidgetFromCatalog = (
       h: item.rowSpan,
       data: {
         ...(widget.data || {}),
-        ...(entry ? buildItabPersistedData(entry) : {}),
+        ...(entry ? buildSdPersistedData(entry) : {}),
       },
     });
   }
-  if (item.type === ITAB_MOVIE_CALENDAR_WIDGET_TYPE) {
-    const widget = createDefaultItabMovieCalendarWidget();
+  if (item.type === SD_MOVIE_CALENDAR_WIDGET_TYPE) {
+    const widget = createDefaultSdMovieCalendarWidget();
     widget.enable = true;
     return assignCatalogInstanceId(widget, item);
   }
-  if (item.type === ITAB_IP_WIDGET_TYPE) {
-    const widget = createDefaultItabIpWidget();
+  if (item.type === SD_IP_WIDGET_TYPE) {
+    const widget = createDefaultSdIpWidget();
     widget.enable = true;
     return assignCatalogInstanceId(widget, item);
   }
-  if (item.type === ITAB_CALENDAR_WIDGET_TYPE) {
-    const widget = createDefaultItabCalendarWidget();
+  if (item.type === SD_CALENDAR_WIDGET_TYPE) {
+    const widget = createDefaultSdCalendarWidget();
     widget.enable = true;
     return assignCatalogInstanceId(widget, item);
   }
-  if (item.type === ITAB_NUMBER_UPPERCASE_WIDGET_TYPE) {
-    const widget = createDefaultItabNumberUppercaseWidget();
+  if (item.type === SD_NUMBER_UPPERCASE_WIDGET_TYPE) {
+    const widget = createDefaultSdNumberUppercaseWidget();
     widget.enable = true;
     return assignCatalogInstanceId(widget, item);
   }
-  if (item.type === ITAB_FOOD_PICKER_WIDGET_TYPE) {
-    const widget = createDefaultItabFoodPickerWidget();
+  if (item.type === SD_FOOD_PICKER_WIDGET_TYPE) {
+    const widget = createDefaultSdFoodPickerWidget();
     widget.enable = true;
     return assignCatalogInstanceId(widget, item);
   }
@@ -509,7 +509,7 @@ export const createWidgetFromCatalog = (
     widget.rowSpan = item.rowSpan;
     widget.w = item.colSpan;
     widget.h = item.rowSpan;
-    return withItabGridData(widget);
+    return withSdGridData(widget);
   }
 
   const base: WidgetConfig = {
@@ -522,15 +522,15 @@ export const createWidgetFromCatalog = (
 
   switch (item.type) {
     case "custom-css":
-      return withItabGridData({
+      return withSdGridData({
         ...base,
         data: normalizeCustomCssWidgetData({}),
       });
     case "docker":
-      return withItabGridData(base);
+      return withSdGridData(base);
     case "system-status":
-      return withItabGridData(base);
+      return withSdGridData(base);
     default:
-      return withItabGridData(base);
+      return withSdGridData(base);
   }
 };

@@ -145,9 +145,9 @@
   --sd-settings-window-max-height: 750px;
   --sd-scrollbar-size: 7px;
   --sd-scrollbar-track: transparent;
-  --sd-scrollbar-thumb: var(--sd-theme-itab-todo-todo-opened-panel-surface-03);
+  --sd-scrollbar-thumb: var(--sd-theme-todo-todo-opened-panel-surface-03);
   --sd-scrollbar-thumb-hover: var(
-    --sd-theme-itab-todo-todo-opened-panel-surface-04
+    --sd-theme-todo-todo-opened-panel-surface-04
   );
 }
 
@@ -560,12 +560,12 @@
   --sd-home-live-dot-bg: #22c55e;
   --sd-home-live-dot-shadow: 0 0 8px rgba(34, 197, 94, 0.8);
   --sd-home-offline-dot-bg: #ef4444;
-  --sd-itab-todo-empty-shadow: #e5e7eb;
-  --sd-itab-todo-empty-paper: #f2f3f5;
-  --sd-itab-todo-empty-line: #d5d9e0;
-  --sd-itab-poem-wave-back: #8ec2c6;
-  --sd-itab-poem-wave-middle: #74aaa4;
-  --sd-itab-poem-wave-front: #549087;
+  --sd-todo-empty-shadow: #e5e7eb;
+  --sd-todo-empty-paper: #f2f3f5;
+  --sd-todo-empty-line: #d5d9e0;
+  --sd-poem-wave-back: #8ec2c6;
+  --sd-poem-wave-middle: #74aaa4;
+  --sd-poem-wave-front: #549087;
   --sd-theme-add-widget-modal-accent-surface-01: rgb(24, 144, 255);
   --sd-theme-add-widget-modal-accent-surface-02: rgba(24, 144, 255, 0.1);
   --sd-theme-add-widget-modal-accent-surface-03: rgba(83, 157, 255, 0.38);
@@ -902,959 +902,959 @@
   --sd-theme-home-main-widget-shell-text-02: #fff;
   --sd-theme-icon-shape-fill-01: rgb(243 244 246);
   --sd-theme-icon-shape-fill-02: #ffffff;
-  --sd-theme-itab-anniversary-anniversary-card-accent-surface-01: #db5c76;
-  --sd-theme-itab-anniversary-anniversary-card-accent-text-01: #db5c76;
-  --sd-theme-itab-anniversary-anniversary-card-shadow-01: rgba(0, 0, 0, 0.1);
-  --sd-theme-itab-anniversary-anniversary-card-shadow-02: rgba(0, 0, 0, 0.2);
-  --sd-theme-itab-anniversary-anniversary-card-surface-01: #fff;
-  --sd-theme-itab-anniversary-anniversary-card-text-01: #fff;
-  --sd-theme-itab-anniversary-anniversary-opened-panel-accent-border-01: rgb(
+  --sd-theme-anniversary-anniversary-card-accent-surface-01: #db5c76;
+  --sd-theme-anniversary-anniversary-card-accent-text-01: #db5c76;
+  --sd-theme-anniversary-anniversary-card-shadow-01: rgba(0, 0, 0, 0.1);
+  --sd-theme-anniversary-anniversary-card-shadow-02: rgba(0, 0, 0, 0.2);
+  --sd-theme-anniversary-anniversary-card-surface-01: #fff;
+  --sd-theme-anniversary-anniversary-card-text-01: #fff;
+  --sd-theme-anniversary-anniversary-opened-panel-accent-border-01: rgb(
     33,
     150,
     243
   );
-  --sd-theme-itab-anniversary-anniversary-opened-panel-accent-surface-01: #f04242;
-  --sd-theme-itab-anniversary-anniversary-opened-panel-accent-surface-02: #ffb322;
-  --sd-theme-itab-anniversary-anniversary-opened-panel-accent-surface-03: #77d24b;
-  --sd-theme-itab-anniversary-anniversary-opened-panel-accent-surface-04: #3aa3ff;
-  --sd-theme-itab-anniversary-anniversary-opened-panel-accent-surface-05: #8d4dff;
-  --sd-theme-itab-anniversary-anniversary-opened-panel-accent-surface-06: rgb(
+  --sd-theme-anniversary-anniversary-opened-panel-accent-surface-01: #f04242;
+  --sd-theme-anniversary-anniversary-opened-panel-accent-surface-02: #ffb322;
+  --sd-theme-anniversary-anniversary-opened-panel-accent-surface-03: #77d24b;
+  --sd-theme-anniversary-anniversary-opened-panel-accent-surface-04: #3aa3ff;
+  --sd-theme-anniversary-anniversary-opened-panel-accent-surface-05: #8d4dff;
+  --sd-theme-anniversary-anniversary-opened-panel-accent-surface-06: rgb(
     33,
     150,
     243
   );
-  --sd-theme-itab-anniversary-anniversary-opened-panel-accent-text-01: rgb(
+  --sd-theme-anniversary-anniversary-opened-panel-accent-text-01: rgb(
     33,
     150,
     243
   );
-  --sd-theme-itab-anniversary-anniversary-opened-panel-border-01: rgba(
+  --sd-theme-anniversary-anniversary-opened-panel-border-01: rgba(
     0,
     0,
     0,
     0.18
   );
-  --sd-theme-itab-anniversary-anniversary-opened-panel-border-02: rgba(
+  --sd-theme-anniversary-anniversary-opened-panel-border-02: rgba(
     0,
     0,
     0,
     0.32
   );
-  --sd-theme-itab-anniversary-anniversary-opened-panel-border-03: rgb(
+  --sd-theme-anniversary-anniversary-opened-panel-border-03: rgb(
     228,
     231,
     237
   );
-  --sd-theme-itab-anniversary-anniversary-opened-panel-border-04: rgba(
+  --sd-theme-anniversary-anniversary-opened-panel-border-04: rgba(
     255,
     255,
     255,
     0.02
   );
-  --sd-theme-itab-anniversary-anniversary-opened-panel-border-05: rgb(
+  --sd-theme-anniversary-anniversary-opened-panel-border-05: rgb(
     220,
     223,
     230
   );
-  --sd-theme-itab-anniversary-anniversary-opened-panel-fill-01: rgba(
+  --sd-theme-anniversary-anniversary-opened-panel-fill-01: rgba(
     0,
     0,
     0,
     0.55
   );
-  --sd-theme-itab-anniversary-anniversary-opened-panel-shadow-01: rgb(
+  --sd-theme-anniversary-anniversary-opened-panel-shadow-01: rgb(
     255,
     255,
     255
   );
-  --sd-theme-itab-anniversary-anniversary-opened-panel-shadow-02: rgb(
+  --sd-theme-anniversary-anniversary-opened-panel-shadow-02: rgb(
     24,
     144,
     255
   );
-  --sd-theme-itab-anniversary-anniversary-opened-panel-shadow-03: rgba(
+  --sd-theme-anniversary-anniversary-opened-panel-shadow-03: rgba(
     0,
     0,
     0,
     0.1
   );
-  --sd-theme-itab-anniversary-anniversary-opened-panel-shadow-04: rgba(
+  --sd-theme-anniversary-anniversary-opened-panel-shadow-04: rgba(
     255,
     255,
     255,
     0.15
   );
-  --sd-theme-itab-anniversary-anniversary-opened-panel-shadow-05: rgba(
+  --sd-theme-anniversary-anniversary-opened-panel-shadow-05: rgba(
     0,
     0,
     0,
     0.32
   );
-  --sd-theme-itab-anniversary-anniversary-opened-panel-shadow-06: rgba(
+  --sd-theme-anniversary-anniversary-opened-panel-shadow-06: rgba(
     255,
     255,
     255,
     0.08
   );
-  --sd-theme-itab-anniversary-anniversary-opened-panel-surface-01: rgb(
+  --sd-theme-anniversary-anniversary-opened-panel-surface-01: rgb(
     255,
     255,
     255
   );
-  --sd-theme-itab-anniversary-anniversary-opened-panel-surface-02: rgb(
+  --sd-theme-anniversary-anniversary-opened-panel-surface-02: rgb(
     245,
     245,
     245
   );
-  --sd-theme-itab-anniversary-anniversary-opened-panel-surface-03: rgba(
+  --sd-theme-anniversary-anniversary-opened-panel-surface-03: rgba(
     0,
     0,
     0,
     0.1
   );
-  --sd-theme-itab-anniversary-anniversary-opened-panel-surface-04: rgba(
+  --sd-theme-anniversary-anniversary-opened-panel-surface-04: rgba(
     0,
     0,
     0,
     0.28
   );
-  --sd-theme-itab-anniversary-anniversary-opened-panel-surface-05: rgba(
+  --sd-theme-anniversary-anniversary-opened-panel-surface-05: rgba(
     255,
     255,
     255,
     0.14
   );
-  --sd-theme-itab-anniversary-anniversary-opened-panel-surface-06: rgba(
+  --sd-theme-anniversary-anniversary-opened-panel-surface-06: rgba(
     0,
     0,
     0,
     0.16
   );
-  --sd-theme-itab-anniversary-anniversary-opened-panel-surface-07: rgba(
+  --sd-theme-anniversary-anniversary-opened-panel-surface-07: rgba(
     0,
     0,
     0,
     0.45
   );
-  --sd-theme-itab-anniversary-anniversary-opened-panel-surface-08: rgba(
+  --sd-theme-anniversary-anniversary-opened-panel-surface-08: rgba(
     255,
     255,
     255,
     0.58
   );
-  --sd-theme-itab-anniversary-anniversary-opened-panel-surface-09: rgb(
+  --sd-theme-anniversary-anniversary-opened-panel-surface-09: rgb(
     29,
     30,
     31
   );
-  --sd-theme-itab-anniversary-anniversary-opened-panel-surface-10: rgb(
+  --sd-theme-anniversary-anniversary-opened-panel-surface-10: rgb(
     44,
     44,
     44
   );
-  --sd-theme-itab-anniversary-anniversary-opened-panel-surface-11: rgba(
+  --sd-theme-anniversary-anniversary-opened-panel-surface-11: rgba(
     29,
     30,
     31,
     0.64
   );
-  --sd-theme-itab-anniversary-anniversary-opened-panel-surface-12: rgba(
+  --sd-theme-anniversary-anniversary-opened-panel-surface-12: rgba(
     29,
     30,
     31,
     0
   );
-  --sd-theme-itab-anniversary-anniversary-opened-panel-surface-13: #fff;
-  --sd-theme-itab-anniversary-anniversary-opened-panel-surface-14: rgb(
+  --sd-theme-anniversary-anniversary-opened-panel-surface-13: #fff;
+  --sd-theme-anniversary-anniversary-opened-panel-surface-14: rgb(
     245,
     247,
     250
   );
-  --sd-theme-itab-anniversary-anniversary-opened-panel-surface-15: rgba(
+  --sd-theme-anniversary-anniversary-opened-panel-surface-15: rgba(
     255,
     255,
     255,
     0.06
   );
-  --sd-theme-itab-anniversary-anniversary-opened-panel-surface-16: rgba(
+  --sd-theme-anniversary-anniversary-opened-panel-surface-16: rgba(
     255,
     255,
     255,
     0.12
   );
-  --sd-theme-itab-anniversary-anniversary-opened-panel-surface-17: rgba(
+  --sd-theme-anniversary-anniversary-opened-panel-surface-17: rgba(
     255,
     255,
     255,
     0.86
   );
-  --sd-theme-itab-anniversary-anniversary-opened-panel-surface-18: rgba(
+  --sd-theme-anniversary-anniversary-opened-panel-surface-18: rgba(
     255,
     255,
     255,
     0.16
   );
-  --sd-theme-itab-anniversary-anniversary-opened-panel-text-01: rgb(34, 34, 34);
-  --sd-theme-itab-anniversary-anniversary-opened-panel-text-02: rgba(
+  --sd-theme-anniversary-anniversary-opened-panel-text-01: rgb(34, 34, 34);
+  --sd-theme-anniversary-anniversary-opened-panel-text-02: rgba(
     0,
     0,
     0,
     0.42
   );
-  --sd-theme-itab-anniversary-anniversary-opened-panel-text-03: rgba(
+  --sd-theme-anniversary-anniversary-opened-panel-text-03: rgba(
     0,
     0,
     0,
     0.55
   );
-  --sd-theme-itab-anniversary-anniversary-opened-panel-text-04: rgba(
+  --sd-theme-anniversary-anniversary-opened-panel-text-04: rgba(
     0,
     0,
     0,
     0.6
   );
-  --sd-theme-itab-anniversary-anniversary-opened-panel-text-05: #fff;
-  --sd-theme-itab-anniversary-anniversary-opened-panel-text-06: rgb(
+  --sd-theme-anniversary-anniversary-opened-panel-text-05: #fff;
+  --sd-theme-anniversary-anniversary-opened-panel-text-06: rgb(
     238,
     238,
     238
   );
-  --sd-theme-itab-anniversary-anniversary-opened-panel-text-07: rgba(
+  --sd-theme-anniversary-anniversary-opened-panel-text-07: rgba(
     0,
     0,
     0,
     0.18
   );
-  --sd-theme-itab-anniversary-anniversary-opened-panel-text-08: rgba(
+  --sd-theme-anniversary-anniversary-opened-panel-text-08: rgba(
     0,
     0,
     0,
     0.8
   );
-  --sd-theme-itab-anniversary-anniversary-opened-panel-text-09: rgb(
+  --sd-theme-anniversary-anniversary-opened-panel-text-09: rgb(
     96,
     98,
     102
   );
-  --sd-theme-itab-anniversary-anniversary-opened-panel-text-10: rgba(
+  --sd-theme-anniversary-anniversary-opened-panel-text-10: rgba(
     255,
     255,
     255,
     0.8
   );
-  --sd-theme-itab-anniversary-anniversary-opened-panel-text-11: rgba(
+  --sd-theme-anniversary-anniversary-opened-panel-text-11: rgba(
     0,
     0,
     0,
     0.56
   );
-  --sd-theme-itab-anniversary-anniversary-opened-panel-text-12: #606266;
-  --sd-theme-itab-anniversary-anniversary-opened-panel-text-13: rgb(
+  --sd-theme-anniversary-anniversary-opened-panel-text-12: #606266;
+  --sd-theme-anniversary-anniversary-opened-panel-text-13: rgb(
     206,
     207,
     209
   );
-  --sd-theme-itab-anniversary-anniversary-opened-panel-text-14: rgba(
+  --sd-theme-anniversary-anniversary-opened-panel-text-14: rgba(
     255,
     255,
     255,
     0.66
   );
-  --sd-theme-itab-anniversary-anniversary-opened-panel-text-15: rgba(
+  --sd-theme-anniversary-anniversary-opened-panel-text-15: rgba(
     255,
     255,
     255,
     0.9
   );
-  --sd-theme-itab-anniversary-anniversary-opened-panel-text-16: #888;
-  --sd-theme-itab-anniversary-anniversary-opened-panel-text-17: rgba(
+  --sd-theme-anniversary-anniversary-opened-panel-text-16: #888;
+  --sd-theme-anniversary-anniversary-opened-panel-text-17: rgba(
     0,
     0,
     0,
     0.86
   );
-  --sd-theme-itab-calendar-calendar-opened-panel-accent-surface-01: rgb(
+  --sd-theme-calendar-calendar-opened-panel-accent-surface-01: rgb(
     54,
     125,
     241
   );
-  --sd-theme-itab-calendar-calendar-opened-panel-accent-surface-02: rgba(
+  --sd-theme-calendar-calendar-opened-panel-accent-surface-02: rgba(
     255,
     76,
     91,
     0.07
   );
-  --sd-theme-itab-calendar-calendar-opened-panel-accent-surface-03: #ff4d5f;
-  --sd-theme-itab-calendar-calendar-opened-panel-accent-surface-04: #506176;
-  --sd-theme-itab-calendar-calendar-opened-panel-accent-surface-05: #ef5b71;
-  --sd-theme-itab-calendar-calendar-opened-panel-accent-surface-06: #d85cc8;
-  --sd-theme-itab-calendar-calendar-opened-panel-accent-surface-07: #3d93ef;
-  --sd-theme-itab-calendar-calendar-opened-panel-accent-surface-08: #3fbf75;
-  --sd-theme-itab-calendar-calendar-opened-panel-accent-surface-09: #e25a61;
-  --sd-theme-itab-calendar-calendar-opened-panel-accent-text-01: #d84a58;
-  --sd-theme-itab-calendar-calendar-opened-panel-accent-text-02: rgba(
+  --sd-theme-calendar-calendar-opened-panel-accent-surface-03: #ff4d5f;
+  --sd-theme-calendar-calendar-opened-panel-accent-surface-04: #506176;
+  --sd-theme-calendar-calendar-opened-panel-accent-surface-05: #ef5b71;
+  --sd-theme-calendar-calendar-opened-panel-accent-surface-06: #d85cc8;
+  --sd-theme-calendar-calendar-opened-panel-accent-surface-07: #3d93ef;
+  --sd-theme-calendar-calendar-opened-panel-accent-surface-08: #3fbf75;
+  --sd-theme-calendar-calendar-opened-panel-accent-surface-09: #e25a61;
+  --sd-theme-calendar-calendar-opened-panel-accent-text-01: #d84a58;
+  --sd-theme-calendar-calendar-opened-panel-accent-text-02: rgba(
     216,
     74,
     88,
     0.56
   );
-  --sd-theme-itab-calendar-calendar-opened-panel-accent-text-03: rgb(
+  --sd-theme-calendar-calendar-opened-panel-accent-text-03: rgb(
     54,
     125,
     241
   );
-  --sd-theme-itab-calendar-calendar-opened-panel-border-01: #ddd;
-  --sd-theme-itab-calendar-calendar-opened-panel-shadow-01: rgba(0, 0, 0, 0.16);
-  --sd-theme-itab-calendar-calendar-opened-panel-shadow-02: rgba(0, 0, 0, 0.06);
-  --sd-theme-itab-calendar-calendar-opened-panel-shadow-03: rgba(0, 0, 0, 0.18);
-  --sd-theme-itab-calendar-calendar-opened-panel-shadow-04: rgba(0, 0, 0, 0.2);
-  --sd-theme-itab-calendar-calendar-opened-panel-shadow-05: rgba(0, 0, 0, 0.04);
-  --sd-theme-itab-calendar-calendar-opened-panel-shadow-06: rgba(
+  --sd-theme-calendar-calendar-opened-panel-border-01: #ddd;
+  --sd-theme-calendar-calendar-opened-panel-shadow-01: rgba(0, 0, 0, 0.16);
+  --sd-theme-calendar-calendar-opened-panel-shadow-02: rgba(0, 0, 0, 0.06);
+  --sd-theme-calendar-calendar-opened-panel-shadow-03: rgba(0, 0, 0, 0.18);
+  --sd-theme-calendar-calendar-opened-panel-shadow-04: rgba(0, 0, 0, 0.2);
+  --sd-theme-calendar-calendar-opened-panel-shadow-05: rgba(0, 0, 0, 0.04);
+  --sd-theme-calendar-calendar-opened-panel-shadow-06: rgba(
     54,
     125,
     241,
     0.18
   );
-  --sd-theme-itab-calendar-calendar-opened-panel-shadow-07: rgba(0, 0, 0, 0.08);
-  --sd-theme-itab-calendar-calendar-opened-panel-shadow-08: rgba(0, 0, 0, 0.16);
-  --sd-theme-itab-calendar-calendar-opened-panel-surface-01: #fff;
-  --sd-theme-itab-calendar-calendar-opened-panel-surface-02: rgb(240, 241, 244);
-  --sd-theme-itab-calendar-calendar-opened-panel-surface-03: #e7ebf3;
-  --sd-theme-itab-calendar-calendar-opened-panel-surface-04: rgba(
+  --sd-theme-calendar-calendar-opened-panel-shadow-07: rgba(0, 0, 0, 0.08);
+  --sd-theme-calendar-calendar-opened-panel-shadow-08: rgba(0, 0, 0, 0.16);
+  --sd-theme-calendar-calendar-opened-panel-surface-01: #fff;
+  --sd-theme-calendar-calendar-opened-panel-surface-02: rgb(240, 241, 244);
+  --sd-theme-calendar-calendar-opened-panel-surface-03: #e7ebf3;
+  --sd-theme-calendar-calendar-opened-panel-surface-04: rgba(
     255,
     255,
     255,
     0.98
   );
-  --sd-theme-itab-calendar-calendar-opened-panel-surface-05: #e9e9ec;
-  --sd-theme-itab-calendar-calendar-opened-panel-surface-06: rgba(0, 0, 0, 0.2);
-  --sd-theme-itab-calendar-calendar-opened-panel-surface-07: #e9e9ef;
-  --sd-theme-itab-calendar-calendar-opened-panel-surface-08: rgba(
+  --sd-theme-calendar-calendar-opened-panel-surface-05: #e9e9ec;
+  --sd-theme-calendar-calendar-opened-panel-surface-06: rgba(0, 0, 0, 0.2);
+  --sd-theme-calendar-calendar-opened-panel-surface-07: #e9e9ef;
+  --sd-theme-calendar-calendar-opened-panel-surface-08: rgba(
     0,
     0,
     0,
     0.04
   );
-  --sd-theme-itab-calendar-calendar-opened-panel-surface-09: rgba(
+  --sd-theme-calendar-calendar-opened-panel-surface-09: rgba(
     0,
     0,
     0,
     0.025
   );
-  --sd-theme-itab-calendar-calendar-opened-panel-surface-10: #f5f6f8;
-  --sd-theme-itab-calendar-calendar-opened-panel-surface-11: rgba(
+  --sd-theme-calendar-calendar-opened-panel-surface-10: #f5f6f8;
+  --sd-theme-calendar-calendar-opened-panel-surface-11: rgba(
     48,
     52,
     59,
     0.18
   );
-  --sd-theme-itab-calendar-calendar-opened-panel-surface-12: #eef4ff;
-  --sd-theme-itab-calendar-calendar-opened-panel-surface-13: #f4f4f5;
-  --sd-theme-itab-calendar-calendar-opened-panel-surface-14: rgba(
+  --sd-theme-calendar-calendar-opened-panel-surface-12: #eef4ff;
+  --sd-theme-calendar-calendar-opened-panel-surface-13: #f4f4f5;
+  --sd-theme-calendar-calendar-opened-panel-surface-14: rgba(
     255,
     255,
     255,
     0.85
   );
-  --sd-theme-itab-calendar-calendar-opened-panel-surface-15: #8a8a8a;
-  --sd-theme-itab-calendar-calendar-opened-panel-text-01: #222;
-  --sd-theme-itab-calendar-calendar-opened-panel-text-02: #7b7f88;
-  --sd-theme-itab-calendar-calendar-opened-panel-text-03: #4d5564;
-  --sd-theme-itab-calendar-calendar-opened-panel-text-04: #444b57;
-  --sd-theme-itab-calendar-calendar-opened-panel-text-05: #fff;
-  --sd-theme-itab-calendar-calendar-opened-panel-text-06: #5b6472;
-  --sd-theme-itab-calendar-calendar-opened-panel-text-07: #555;
-  --sd-theme-itab-calendar-calendar-opened-panel-text-08: #8c929c;
-  --sd-theme-itab-calendar-calendar-opened-panel-text-09: rgba(0, 0, 0, 0.04);
-  --sd-theme-itab-calendar-calendar-opened-panel-text-10: rgba(
+  --sd-theme-calendar-calendar-opened-panel-surface-15: #8a8a8a;
+  --sd-theme-calendar-calendar-opened-panel-text-01: #222;
+  --sd-theme-calendar-calendar-opened-panel-text-02: #7b7f88;
+  --sd-theme-calendar-calendar-opened-panel-text-03: #4d5564;
+  --sd-theme-calendar-calendar-opened-panel-text-04: #444b57;
+  --sd-theme-calendar-calendar-opened-panel-text-05: #fff;
+  --sd-theme-calendar-calendar-opened-panel-text-06: #5b6472;
+  --sd-theme-calendar-calendar-opened-panel-text-07: #555;
+  --sd-theme-calendar-calendar-opened-panel-text-08: #8c929c;
+  --sd-theme-calendar-calendar-opened-panel-text-09: rgba(0, 0, 0, 0.04);
+  --sd-theme-calendar-calendar-opened-panel-text-10: rgba(
     34,
     34,
     34,
     0.42
   );
-  --sd-theme-itab-calendar-calendar-opened-panel-text-11: #30343b;
-  --sd-theme-itab-calendar-calendar-opened-panel-text-12: #6c7480;
-  --sd-theme-itab-calendar-calendar-opened-panel-text-13: #777;
-  --sd-theme-itab-calendar-calendar-opened-panel-text-14: #888;
-  --sd-theme-itab-calendar-calendar-widget-accent-surface-01: rgb(255, 90, 93);
-  --sd-theme-itab-calendar-calendar-widget-accent-surface-02: rgb(255, 90, 93);
-  --sd-theme-itab-calendar-calendar-widget-accent-surface-03: rgb(255, 90, 93);
-  --sd-theme-itab-calendar-calendar-widget-accent-text-01: rgb(216, 48, 48);
-  --sd-theme-itab-calendar-calendar-widget-accent-text-02: #d84a58;
-  --sd-theme-itab-calendar-calendar-widget-surface-01: var(
+  --sd-theme-calendar-calendar-opened-panel-text-11: #30343b;
+  --sd-theme-calendar-calendar-opened-panel-text-12: #6c7480;
+  --sd-theme-calendar-calendar-opened-panel-text-13: #777;
+  --sd-theme-calendar-calendar-opened-panel-text-14: #888;
+  --sd-theme-calendar-calendar-widget-accent-surface-01: rgb(255, 90, 93);
+  --sd-theme-calendar-calendar-widget-accent-surface-02: rgb(255, 90, 93);
+  --sd-theme-calendar-calendar-widget-accent-surface-03: rgb(255, 90, 93);
+  --sd-theme-calendar-calendar-widget-accent-text-01: rgb(216, 48, 48);
+  --sd-theme-calendar-calendar-widget-accent-text-02: #d84a58;
+  --sd-theme-calendar-calendar-widget-surface-01: var(
     --sd-component-surface
   );
-  --sd-theme-itab-calendar-calendar-widget-text-01: var(
+  --sd-theme-calendar-calendar-widget-text-01: var(
     --sd-component-text-primary
   );
-  --sd-theme-itab-calendar-calendar-widget-text-02: var(
+  --sd-theme-calendar-calendar-widget-text-02: var(
     --sd-home-resize-badge-text
   );
-  --sd-theme-itab-calendar-calendar-widget-text-03: var(
+  --sd-theme-calendar-calendar-widget-text-03: var(
     --sd-component-text-primary
   );
-  --sd-theme-itab-calendar-calendar-widget-text-04: var(
+  --sd-theme-calendar-calendar-widget-text-04: var(
     --sd-component-text-secondary
   );
-  --sd-theme-itab-calendar-calendar-widget-text-05: var(
+  --sd-theme-calendar-calendar-widget-text-05: var(
     --sd-component-text-secondary
   );
-  --sd-theme-itab-calendar-calendar-widget-text-06: var(
+  --sd-theme-calendar-calendar-widget-text-06: var(
     --sd-component-text-primary
   );
-  --sd-theme-itab-calendar-calendar-widget-text-07: var(
+  --sd-theme-calendar-calendar-widget-text-07: var(
     --sd-component-text-tertiary
   );
-  --sd-theme-itab-clock-clock-opened-panel-accent-border-01: #1890ff;
-  --sd-theme-itab-clock-clock-opened-panel-accent-surface-01: #1890ff;
-  --sd-theme-itab-clock-clock-opened-panel-border-01: rgba(0, 0, 0, 0.62);
-  --sd-theme-itab-clock-clock-opened-panel-border-02: #dcdfe6;
-  --sd-theme-itab-clock-clock-opened-panel-shadow-01: rgba(0, 0, 0, 0.7);
-  --sd-theme-itab-clock-clock-opened-panel-shadow-02: rgba(255, 255, 255, 0.03);
-  --sd-theme-itab-clock-clock-opened-panel-surface-01: #000;
-  --sd-theme-itab-clock-clock-opened-panel-surface-02: #1f1f1f;
-  --sd-theme-itab-clock-clock-opened-panel-surface-03: #181818;
-  --sd-theme-itab-clock-clock-opened-panel-surface-04: #171717;
-  --sd-theme-itab-clock-clock-opened-panel-surface-05: #1d1d1d;
-  --sd-theme-itab-clock-clock-opened-panel-surface-06: rgba(0, 0, 0, 0.76);
-  --sd-theme-itab-clock-clock-opened-panel-surface-07: #dcdfe6;
-  --sd-theme-itab-clock-clock-opened-panel-surface-08: #fff;
-  --sd-theme-itab-clock-clock-opened-panel-text-01: rgba(255, 255, 255, 0.64);
-  --sd-theme-itab-clock-clock-opened-panel-text-02: #222;
-  --sd-theme-itab-clock-clock-opened-panel-text-03: #bdbdbd;
-  --sd-theme-itab-clock-clock-opened-panel-text-04: #ccc;
-  --sd-theme-itab-clock-clock-opened-panel-text-05: rgba(255, 255, 255, 0.28);
-  --sd-theme-itab-clock-clock-opened-panel-text-06: #fff;
-  --sd-theme-itab-clock-clock-widget-surface-01: var(--sd-component-surface);
-  --sd-theme-itab-clock-clock-widget-text-01: var(--sd-component-text-primary);
-  --sd-theme-itab-daily-english-daily-english-opened-panel-surface-01: #000;
-  --sd-theme-itab-daily-english-daily-english-opened-panel-surface-02: rgba(
+  --sd-theme-clock-clock-opened-panel-accent-border-01: #1890ff;
+  --sd-theme-clock-clock-opened-panel-accent-surface-01: #1890ff;
+  --sd-theme-clock-clock-opened-panel-border-01: rgba(0, 0, 0, 0.62);
+  --sd-theme-clock-clock-opened-panel-border-02: #dcdfe6;
+  --sd-theme-clock-clock-opened-panel-shadow-01: rgba(0, 0, 0, 0.7);
+  --sd-theme-clock-clock-opened-panel-shadow-02: rgba(255, 255, 255, 0.03);
+  --sd-theme-clock-clock-opened-panel-surface-01: #000;
+  --sd-theme-clock-clock-opened-panel-surface-02: #1f1f1f;
+  --sd-theme-clock-clock-opened-panel-surface-03: #181818;
+  --sd-theme-clock-clock-opened-panel-surface-04: #171717;
+  --sd-theme-clock-clock-opened-panel-surface-05: #1d1d1d;
+  --sd-theme-clock-clock-opened-panel-surface-06: rgba(0, 0, 0, 0.76);
+  --sd-theme-clock-clock-opened-panel-surface-07: #dcdfe6;
+  --sd-theme-clock-clock-opened-panel-surface-08: #fff;
+  --sd-theme-clock-clock-opened-panel-text-01: rgba(255, 255, 255, 0.64);
+  --sd-theme-clock-clock-opened-panel-text-02: #222;
+  --sd-theme-clock-clock-opened-panel-text-03: #bdbdbd;
+  --sd-theme-clock-clock-opened-panel-text-04: #ccc;
+  --sd-theme-clock-clock-opened-panel-text-05: rgba(255, 255, 255, 0.28);
+  --sd-theme-clock-clock-opened-panel-text-06: #fff;
+  --sd-theme-clock-clock-widget-surface-01: var(--sd-component-surface);
+  --sd-theme-clock-clock-widget-text-01: var(--sd-component-text-primary);
+  --sd-theme-daily-english-daily-english-opened-panel-surface-01: #000;
+  --sd-theme-daily-english-daily-english-opened-panel-surface-02: rgba(
     0,
     0,
     0,
     0
   );
-  --sd-theme-itab-daily-english-daily-english-opened-panel-surface-03: rgb(
+  --sd-theme-daily-english-daily-english-opened-panel-surface-03: rgb(
     51,
     51,
     51
   );
-  --sd-theme-itab-daily-english-daily-english-opened-panel-text-01: #fff;
-  --sd-theme-itab-daily-english-daily-english-opened-panel-text-02: rgba(
+  --sd-theme-daily-english-daily-english-opened-panel-text-01: #fff;
+  --sd-theme-daily-english-daily-english-opened-panel-text-02: rgba(
     255,
     255,
     255,
     0.72
   );
-  --sd-theme-itab-daily-english-daily-english-widget-surface-01: #000;
-  --sd-theme-itab-daily-english-daily-english-widget-text-01: #fff;
-  --sd-theme-itab-daily-english-daily-english-widget-text-02: rgba(
+  --sd-theme-daily-english-daily-english-widget-surface-01: #000;
+  --sd-theme-daily-english-daily-english-widget-text-01: #fff;
+  --sd-theme-daily-english-daily-english-widget-text-02: rgba(
     255,
     255,
     255,
     0.5
   );
-  --sd-theme-itab-daily-english-daily-english-widget-text-03: rgba(
+  --sd-theme-daily-english-daily-english-widget-text-03: rgba(
     255,
     255,
     255,
     0.7
   );
-  --sd-theme-itab-food-picker-food-picker-opened-panel-accent-border-01: rgba(
+  --sd-theme-food-picker-food-picker-opened-panel-accent-border-01: rgba(
     31,
     41,
     55,
     0.16
   );
-  --sd-theme-itab-food-picker-food-picker-opened-panel-accent-border-02: rgba(
+  --sd-theme-food-picker-food-picker-opened-panel-accent-border-02: rgba(
     243,
     155,
     45,
     0.72
   );
-  --sd-theme-itab-food-picker-food-picker-opened-panel-accent-surface-01: rgba(
+  --sd-theme-food-picker-food-picker-opened-panel-accent-surface-01: rgba(
     255,
     225,
     142,
     0.84
   );
-  --sd-theme-itab-food-picker-food-picker-opened-panel-accent-surface-02: #ffbd59;
-  --sd-theme-itab-food-picker-food-picker-opened-panel-accent-surface-03: #ff8d59;
-  --sd-theme-itab-food-picker-food-picker-opened-panel-accent-surface-04: #ffd75e;
-  --sd-theme-itab-food-picker-food-picker-opened-panel-accent-surface-05: #8adf89;
-  --sd-theme-itab-food-picker-food-picker-opened-panel-accent-surface-06: #70c7ff;
-  --sd-theme-itab-food-picker-food-picker-opened-panel-accent-surface-07: #b58cff;
-  --sd-theme-itab-food-picker-food-picker-opened-panel-accent-surface-08: #f39b2d;
-  --sd-theme-itab-food-picker-food-picker-opened-panel-accent-surface-09: rgba(
+  --sd-theme-food-picker-food-picker-opened-panel-accent-surface-02: #ffbd59;
+  --sd-theme-food-picker-food-picker-opened-panel-accent-surface-03: #ff8d59;
+  --sd-theme-food-picker-food-picker-opened-panel-accent-surface-04: #ffd75e;
+  --sd-theme-food-picker-food-picker-opened-panel-accent-surface-05: #8adf89;
+  --sd-theme-food-picker-food-picker-opened-panel-accent-surface-06: #70c7ff;
+  --sd-theme-food-picker-food-picker-opened-panel-accent-surface-07: #b58cff;
+  --sd-theme-food-picker-food-picker-opened-panel-accent-surface-08: #f39b2d;
+  --sd-theme-food-picker-food-picker-opened-panel-accent-surface-09: rgba(
     31,
     41,
     55,
     0.08
   );
-  --sd-theme-itab-food-picker-food-picker-opened-panel-accent-text-01: #1f2937;
-  --sd-theme-itab-food-picker-food-picker-opened-panel-accent-text-02: #111827;
-  --sd-theme-itab-food-picker-food-picker-opened-panel-accent-text-03: rgba(
+  --sd-theme-food-picker-food-picker-opened-panel-accent-text-01: #1f2937;
+  --sd-theme-food-picker-food-picker-opened-panel-accent-text-02: #111827;
+  --sd-theme-food-picker-food-picker-opened-panel-accent-text-03: rgba(
     31,
     41,
     55,
     0.58
   );
-  --sd-theme-itab-food-picker-food-picker-opened-panel-shadow-01: rgba(
+  --sd-theme-food-picker-food-picker-opened-panel-shadow-01: rgba(
     243,
     155,
     45,
     0.16
   );
-  --sd-theme-itab-food-picker-food-picker-opened-panel-surface-01: #fff;
-  --sd-theme-itab-food-picker-food-picker-opened-panel-surface-02: rgba(
+  --sd-theme-food-picker-food-picker-opened-panel-surface-01: #fff;
+  --sd-theme-food-picker-food-picker-opened-panel-surface-02: rgba(
     255,
     255,
     255,
     0.72
   );
-  --sd-theme-itab-food-picker-food-picker-opened-panel-text-01: #fff;
-  --sd-theme-itab-food-picker-food-picker-widget-accent-surface-01: #f39b2d;
-  --sd-theme-itab-food-picker-food-picker-widget-accent-text-01: #1f2937;
-  --sd-theme-itab-food-picker-food-picker-widget-shadow-01: rgb(242, 178, 65);
-  --sd-theme-itab-food-picker-food-picker-widget-surface-01: #fff;
-  --sd-theme-itab-food-picker-food-picker-widget-text-01: #fff;
-  --sd-theme-itab-ip-ip-opened-panel-accent-text-01: #b56b00;
-  --sd-theme-itab-ip-ip-opened-panel-surface-01: #fff;
-  --sd-theme-itab-ip-ip-opened-panel-text-01: #141414;
-  --sd-theme-itab-ip-ip-opened-panel-text-02: #111;
-  --sd-theme-itab-ip-ip-widget-accent-surface-01: rgb(60, 102, 255);
-  --sd-theme-itab-ip-ip-widget-text-01: #fff;
-  --sd-theme-itab-ip-ip-widget-text-02: rgba(255, 255, 255, 0.92);
-  --sd-theme-itab-clock-flip-card-accent-surface-01: #3a3a5a;
-  --sd-theme-itab-clock-flip-card-accent-surface-02: #2a2a4a;
-  --sd-theme-itab-clock-flip-card-border-01: rgba(0, 0, 0, 0.4);
-  --sd-theme-itab-clock-flip-card-shadow-01: rgba(0, 0, 0, 0.3);
-  --sd-theme-itab-clock-flip-card-shadow-02: rgba(255, 255, 255, 0.03);
-  --sd-theme-itab-clock-flip-card-surface-01: rgba(0, 0, 0, 0.65);
-  --sd-theme-itab-clock-flip-card-surface-02: rgba(255, 255, 255, 0.03);
-  --sd-theme-itab-clock-flip-card-surface-03: rgba(0, 0, 0, 0.48);
-  --sd-theme-itab-clock-flip-card-surface-04: rgba(0, 0, 0, 0.56);
-  --sd-theme-itab-clock-flip-card-surface-05: rgba(0, 0, 0, 0);
-  --sd-theme-itab-clock-flip-card-text-01: #fff;
-  --sd-theme-itab-memo-memo-fixed-layer-shadow-01: rgba(0, 0, 0, 0.12);
-  --sd-theme-itab-memo-memo-fixed-layer-surface-01: rgba(255, 255, 255, 0.3);
-  --sd-theme-itab-memo-memo-fixed-layer-text-01: rgba(0, 0, 0, 0.9);
-  --sd-theme-itab-memo-memo-fixed-layer-text-02: rgba(0, 0, 0, 0.36);
-  --sd-theme-itab-memo-memo-opened-panel-accent-border-01: #1890ff;
-  --sd-theme-itab-memo-memo-opened-panel-accent-border-02: rgba(
+  --sd-theme-food-picker-food-picker-opened-panel-text-01: #fff;
+  --sd-theme-food-picker-food-picker-widget-accent-surface-01: #f39b2d;
+  --sd-theme-food-picker-food-picker-widget-accent-text-01: #1f2937;
+  --sd-theme-food-picker-food-picker-widget-shadow-01: rgb(242, 178, 65);
+  --sd-theme-food-picker-food-picker-widget-surface-01: #fff;
+  --sd-theme-food-picker-food-picker-widget-text-01: #fff;
+  --sd-theme-ip-ip-opened-panel-accent-text-01: #b56b00;
+  --sd-theme-ip-ip-opened-panel-surface-01: #fff;
+  --sd-theme-ip-ip-opened-panel-text-01: #141414;
+  --sd-theme-ip-ip-opened-panel-text-02: #111;
+  --sd-theme-ip-ip-widget-accent-surface-01: rgb(60, 102, 255);
+  --sd-theme-ip-ip-widget-text-01: #fff;
+  --sd-theme-ip-ip-widget-text-02: rgba(255, 255, 255, 0.92);
+  --sd-theme-clock-flip-card-accent-surface-01: #3a3a5a;
+  --sd-theme-clock-flip-card-accent-surface-02: #2a2a4a;
+  --sd-theme-clock-flip-card-border-01: rgba(0, 0, 0, 0.4);
+  --sd-theme-clock-flip-card-shadow-01: rgba(0, 0, 0, 0.3);
+  --sd-theme-clock-flip-card-shadow-02: rgba(255, 255, 255, 0.03);
+  --sd-theme-clock-flip-card-surface-01: rgba(0, 0, 0, 0.65);
+  --sd-theme-clock-flip-card-surface-02: rgba(255, 255, 255, 0.03);
+  --sd-theme-clock-flip-card-surface-03: rgba(0, 0, 0, 0.48);
+  --sd-theme-clock-flip-card-surface-04: rgba(0, 0, 0, 0.56);
+  --sd-theme-clock-flip-card-surface-05: rgba(0, 0, 0, 0);
+  --sd-theme-clock-flip-card-text-01: #fff;
+  --sd-theme-memo-memo-fixed-layer-shadow-01: rgba(0, 0, 0, 0.12);
+  --sd-theme-memo-memo-fixed-layer-surface-01: rgba(255, 255, 255, 0.3);
+  --sd-theme-memo-memo-fixed-layer-text-01: rgba(0, 0, 0, 0.9);
+  --sd-theme-memo-memo-fixed-layer-text-02: rgba(0, 0, 0, 0.36);
+  --sd-theme-memo-memo-opened-panel-accent-border-01: #1890ff;
+  --sd-theme-memo-memo-opened-panel-accent-border-02: rgba(
     24,
     144,
     255,
     0.48
   );
-  --sd-theme-itab-memo-memo-opened-panel-accent-surface-01: #1890ff;
-  --sd-theme-itab-memo-memo-opened-panel-accent-text-01: rgb(52, 120, 247);
-  --sd-theme-itab-memo-memo-opened-panel-border-01: #939393;
-  --sd-theme-itab-memo-memo-opened-panel-border-02: #f2f2f2;
-  --sd-theme-itab-memo-memo-opened-panel-shadow-01: rgba(0, 0, 0, 0.12);
-  --sd-theme-itab-memo-memo-opened-panel-surface-01: #fff;
-  --sd-theme-itab-memo-memo-opened-panel-surface-02: rgba(240, 241, 244, 0.72);
-  --sd-theme-itab-memo-memo-opened-panel-surface-03: rgb(240, 241, 244);
-  --sd-theme-itab-memo-memo-opened-panel-text-01: #222;
-  --sd-theme-itab-memo-memo-opened-panel-text-02: rgb(34, 34, 34);
-  --sd-theme-itab-memo-memo-opened-panel-text-03: rgb(147, 147, 147);
-  --sd-theme-itab-memo-memo-opened-panel-text-04: #fff;
-  --sd-theme-itab-memo-memo-widget-accent-surface-01: rgb(29, 101, 240);
-  --sd-theme-itab-memo-memo-widget-accent-surface-02: rgb(26, 209, 252);
-  --sd-theme-itab-memo-memo-widget-accent-surface-03: rgb(255, 201, 39);
-  --sd-theme-itab-memo-memo-widget-accent-surface-04: rgb(255, 164, 3);
-  --sd-theme-itab-memo-memo-widget-border-01: rgba(0, 0, 0, 0.08);
-  --sd-theme-itab-memo-memo-widget-surface-01: var(--sd-component-surface);
-  --sd-theme-itab-memo-memo-widget-text-01: var(--sd-component-text-primary);
-  --sd-theme-itab-memo-memo-widget-text-02: var(--sd-home-resize-badge-text);
-  --sd-theme-itab-movie-calendar-movie-calendar-opened-panel-accent-surface-01: rgba(
+  --sd-theme-memo-memo-opened-panel-accent-surface-01: #1890ff;
+  --sd-theme-memo-memo-opened-panel-accent-text-01: rgb(52, 120, 247);
+  --sd-theme-memo-memo-opened-panel-border-01: #939393;
+  --sd-theme-memo-memo-opened-panel-border-02: #f2f2f2;
+  --sd-theme-memo-memo-opened-panel-shadow-01: rgba(0, 0, 0, 0.12);
+  --sd-theme-memo-memo-opened-panel-surface-01: #fff;
+  --sd-theme-memo-memo-opened-panel-surface-02: rgba(240, 241, 244, 0.72);
+  --sd-theme-memo-memo-opened-panel-surface-03: rgb(240, 241, 244);
+  --sd-theme-memo-memo-opened-panel-text-01: #222;
+  --sd-theme-memo-memo-opened-panel-text-02: rgb(34, 34, 34);
+  --sd-theme-memo-memo-opened-panel-text-03: rgb(147, 147, 147);
+  --sd-theme-memo-memo-opened-panel-text-04: #fff;
+  --sd-theme-memo-memo-widget-accent-surface-01: rgb(29, 101, 240);
+  --sd-theme-memo-memo-widget-accent-surface-02: rgb(26, 209, 252);
+  --sd-theme-memo-memo-widget-accent-surface-03: rgb(255, 201, 39);
+  --sd-theme-memo-memo-widget-accent-surface-04: rgb(255, 164, 3);
+  --sd-theme-memo-memo-widget-border-01: rgba(0, 0, 0, 0.08);
+  --sd-theme-memo-memo-widget-surface-01: var(--sd-component-surface);
+  --sd-theme-memo-memo-widget-text-01: var(--sd-component-text-primary);
+  --sd-theme-memo-memo-widget-text-02: var(--sd-home-resize-badge-text);
+  --sd-theme-movie-calendar-movie-calendar-opened-panel-accent-surface-01: rgba(
     0,
     20,
     0,
     0.4
   );
-  --sd-theme-itab-movie-calendar-movie-calendar-opened-panel-accent-text-01: #f9d5ad;
-  --sd-theme-itab-movie-calendar-movie-calendar-opened-panel-accent-text-02: #f2cca4;
-  --sd-theme-itab-movie-calendar-movie-calendar-opened-panel-surface-01: rgba(
+  --sd-theme-movie-calendar-movie-calendar-opened-panel-accent-text-01: #f9d5ad;
+  --sd-theme-movie-calendar-movie-calendar-opened-panel-accent-text-02: #f2cca4;
+  --sd-theme-movie-calendar-movie-calendar-opened-panel-surface-01: rgba(
     0,
     0,
     0,
     0.5
   );
-  --sd-theme-itab-movie-calendar-movie-calendar-opened-panel-surface-02: #000;
-  --sd-theme-itab-movie-calendar-movie-calendar-opened-panel-surface-03: rgba(
+  --sd-theme-movie-calendar-movie-calendar-opened-panel-surface-02: #000;
+  --sd-theme-movie-calendar-movie-calendar-opened-panel-surface-03: rgba(
     0,
     0,
     0,
     0.38
   );
-  --sd-theme-itab-movie-calendar-movie-calendar-opened-panel-surface-04: rgba(
+  --sd-theme-movie-calendar-movie-calendar-opened-panel-surface-04: rgba(
     255,
     255,
     255,
     0.16
   );
-  --sd-theme-itab-movie-calendar-movie-calendar-opened-panel-surface-05: rgba(
+  --sd-theme-movie-calendar-movie-calendar-opened-panel-surface-05: rgba(
     0,
     0,
     0,
     0.3
   );
-  --sd-theme-itab-movie-calendar-movie-calendar-opened-panel-surface-06: #4c4c3f;
-  --sd-theme-itab-movie-calendar-movie-calendar-opened-panel-text-01: rgba(
+  --sd-theme-movie-calendar-movie-calendar-opened-panel-surface-06: #4c4c3f;
+  --sd-theme-movie-calendar-movie-calendar-opened-panel-text-01: rgba(
     255,
     255,
     255,
     0.9
   );
-  --sd-theme-itab-movie-calendar-movie-calendar-opened-panel-text-02: #fff;
-  --sd-theme-itab-movie-calendar-movie-calendar-opened-panel-text-03: #d1d0d0;
-  --sd-theme-itab-movie-calendar-movie-calendar-widget-accent-surface-01: #ffac2d;
-  --sd-theme-itab-movie-calendar-movie-calendar-widget-accent-text-01: #4f0e03;
-  --sd-theme-itab-movie-calendar-movie-calendar-widget-shadow-01: rgba(
+  --sd-theme-movie-calendar-movie-calendar-opened-panel-text-02: #fff;
+  --sd-theme-movie-calendar-movie-calendar-opened-panel-text-03: #d1d0d0;
+  --sd-theme-movie-calendar-movie-calendar-widget-accent-surface-01: #ffac2d;
+  --sd-theme-movie-calendar-movie-calendar-widget-accent-text-01: #4f0e03;
+  --sd-theme-movie-calendar-movie-calendar-widget-shadow-01: rgba(
     0,
     0,
     0,
     0.1
   );
-  --sd-theme-itab-movie-calendar-movie-calendar-widget-shadow-02: rgba(
+  --sd-theme-movie-calendar-movie-calendar-widget-shadow-02: rgba(
     0,
     0,
     0,
     0.3
   );
-  --sd-theme-itab-movie-calendar-movie-calendar-widget-surface-01: #3a444c;
-  --sd-theme-itab-movie-calendar-movie-calendar-widget-surface-02: rgba(
+  --sd-theme-movie-calendar-movie-calendar-widget-surface-01: #3a444c;
+  --sd-theme-movie-calendar-movie-calendar-widget-surface-02: rgba(
     0,
     0,
     0,
     0
   );
-  --sd-theme-itab-movie-calendar-movie-calendar-widget-surface-03: rgba(
+  --sd-theme-movie-calendar-movie-calendar-widget-surface-03: rgba(
     0,
     0,
     0,
     0.12
   );
-  --sd-theme-itab-movie-calendar-movie-calendar-widget-text-01: #f4f7f9;
-  --sd-theme-itab-movie-calendar-movie-calendar-widget-text-02: #fff;
-  --sd-theme-itab-movie-calendar-movie-calendar-widget-text-03: #333;
-  --sd-theme-itab-number-uppercase-number-uppercase-opened-panel-accent-border-01: var(
+  --sd-theme-movie-calendar-movie-calendar-widget-text-01: #f4f7f9;
+  --sd-theme-movie-calendar-movie-calendar-widget-text-02: #fff;
+  --sd-theme-movie-calendar-movie-calendar-widget-text-03: #333;
+  --sd-theme-number-uppercase-number-uppercase-opened-panel-accent-border-01: var(
     --sd-component-border
   );
-  --sd-theme-itab-number-uppercase-number-uppercase-opened-panel-accent-border-02: var(
+  --sd-theme-number-uppercase-number-uppercase-opened-panel-accent-border-02: var(
     --sd-state-warning
   );
-  --sd-theme-itab-number-uppercase-number-uppercase-opened-panel-accent-surface-01: var(
+  --sd-theme-number-uppercase-number-uppercase-opened-panel-accent-surface-01: var(
     --sd-component-surface
   );
-  --sd-theme-itab-number-uppercase-number-uppercase-opened-panel-accent-surface-02: var(
+  --sd-theme-number-uppercase-number-uppercase-opened-panel-accent-surface-02: var(
     --sd-component-surface-muted
   );
-  --sd-theme-itab-number-uppercase-number-uppercase-opened-panel-accent-surface-03: var(
+  --sd-theme-number-uppercase-number-uppercase-opened-panel-accent-surface-03: var(
     --sd-component-surface-raised
   );
-  --sd-theme-itab-number-uppercase-number-uppercase-opened-panel-accent-surface-04: var(
+  --sd-theme-number-uppercase-number-uppercase-opened-panel-accent-surface-04: var(
     --sd-state-warning-surface
   );
-  --sd-theme-itab-number-uppercase-number-uppercase-opened-panel-accent-surface-05: var(
+  --sd-theme-number-uppercase-number-uppercase-opened-panel-accent-surface-05: var(
     --sd-component-surface-muted
   );
-  --sd-theme-itab-number-uppercase-number-uppercase-opened-panel-accent-surface-06: var(
+  --sd-theme-number-uppercase-number-uppercase-opened-panel-accent-surface-06: var(
     --sd-state-warning
   );
-  --sd-theme-itab-number-uppercase-number-uppercase-opened-panel-accent-text-01: var(
+  --sd-theme-number-uppercase-number-uppercase-opened-panel-accent-text-01: var(
     --sd-state-warning
   );
-  --sd-theme-itab-number-uppercase-number-uppercase-opened-panel-shadow-01: color-mix(
+  --sd-theme-number-uppercase-number-uppercase-opened-panel-shadow-01: color-mix(
     in srgb,
     var(--sd-state-warning) 22%,
     transparent
   );
-  --sd-theme-itab-number-uppercase-number-uppercase-opened-panel-surface-01: var(
+  --sd-theme-number-uppercase-number-uppercase-opened-panel-surface-01: var(
     --sd-component-surface
   );
-  --sd-theme-itab-number-uppercase-number-uppercase-opened-panel-text-01: var(
+  --sd-theme-number-uppercase-number-uppercase-opened-panel-text-01: var(
     --sd-component-text-primary
   );
-  --sd-theme-itab-number-uppercase-number-uppercase-opened-panel-text-02: var(
+  --sd-theme-number-uppercase-number-uppercase-opened-panel-text-02: var(
     --sd-component-text-tertiary
   );
-  --sd-theme-itab-number-uppercase-number-uppercase-opened-panel-text-03: var(
+  --sd-theme-number-uppercase-number-uppercase-opened-panel-text-03: var(
     --sd-component-text-secondary
   );
-  --sd-theme-itab-number-uppercase-number-uppercase-opened-panel-text-04: var(
+  --sd-theme-number-uppercase-number-uppercase-opened-panel-text-04: var(
     --sd-component-text-secondary
   );
-  --sd-theme-itab-number-uppercase-number-uppercase-opened-panel-text-05: var(
+  --sd-theme-number-uppercase-number-uppercase-opened-panel-text-05: var(
     --sd-component-text-primary
   );
-  --sd-theme-itab-number-uppercase-number-uppercase-opened-panel-text-06: var(
+  --sd-theme-number-uppercase-number-uppercase-opened-panel-text-06: var(
     --sd-component-text-tertiary
   );
-  --sd-theme-itab-number-uppercase-number-uppercase-widget-accent-border-01: color-mix(
+  --sd-theme-number-uppercase-number-uppercase-widget-accent-border-01: color-mix(
     in srgb,
     var(--sd-state-warning) 22%,
     transparent
   );
-  --sd-theme-itab-number-uppercase-number-uppercase-widget-accent-border-02: color-mix(
+  --sd-theme-number-uppercase-number-uppercase-widget-accent-border-02: color-mix(
     in srgb,
     var(--sd-state-warning) 34%,
     transparent
   );
-  --sd-theme-itab-number-uppercase-number-uppercase-widget-accent-surface-01: color-mix(
+  --sd-theme-number-uppercase-number-uppercase-widget-accent-surface-01: color-mix(
     in srgb,
     var(--sd-state-warning) 12%,
     transparent
   );
-  --sd-theme-itab-number-uppercase-number-uppercase-widget-accent-surface-02: color-mix(
+  --sd-theme-number-uppercase-number-uppercase-widget-accent-surface-02: color-mix(
     in srgb,
     var(--sd-state-warning) 8%,
     transparent
   );
-  --sd-theme-itab-number-uppercase-number-uppercase-widget-accent-surface-03: var(
+  --sd-theme-number-uppercase-number-uppercase-widget-accent-surface-03: var(
     --sd-component-surface
   );
-  --sd-theme-itab-number-uppercase-number-uppercase-widget-accent-surface-04: var(
+  --sd-theme-number-uppercase-number-uppercase-widget-accent-surface-04: var(
     --sd-state-warning
   );
-  --sd-theme-itab-number-uppercase-number-uppercase-widget-accent-text-01: var(
+  --sd-theme-number-uppercase-number-uppercase-widget-accent-text-01: var(
     --sd-state-warning
   );
-  --sd-theme-itab-number-uppercase-number-uppercase-widget-accent-text-02: color-mix(
+  --sd-theme-number-uppercase-number-uppercase-widget-accent-text-02: color-mix(
     in srgb,
     var(--sd-state-warning) 55%,
     transparent
   );
-  --sd-theme-itab-number-uppercase-number-uppercase-widget-accent-text-03: var(
+  --sd-theme-number-uppercase-number-uppercase-widget-accent-text-03: var(
     --sd-component-text-secondary
   );
-  --sd-theme-itab-poem-poem-opened-panel-border-01: rgba(0, 0, 0, 0.2);
-  --sd-theme-itab-poem-poem-opened-panel-border-02: #ebeef5;
-  --sd-theme-itab-poem-poem-opened-panel-surface-01: #eee;
-  --sd-theme-itab-poem-poem-opened-panel-surface-02: rgba(255, 255, 255, 0.1);
-  --sd-theme-itab-poem-poem-opened-panel-surface-03: rgba(255, 255, 255, 0.18);
-  --sd-theme-itab-poem-poem-opened-panel-surface-04: #fff;
-  --sd-theme-itab-poem-poem-opened-panel-text-01: #333;
-  --sd-theme-itab-poem-poem-opened-panel-text-02: #555;
-  --sd-theme-itab-poem-poem-opened-panel-text-03: #303133;
-  --sd-theme-itab-poem-poem-opened-panel-text-04: #606266;
-  --sd-theme-itab-poem-poem-opened-panel-text-05: #fff;
-  --sd-theme-itab-poem-poem-widget-accent-01: rgb(9, 55, 68);
-  --sd-theme-itab-poem-poem-widget-accent-surface-01: rgb(9, 55, 68);
-  --sd-theme-itab-poem-poem-widget-surface-01: #eee;
-  --sd-theme-itab-poem-poem-widget-text-01: #333;
-  --sd-theme-itab-poem-poem-widget-text-02: #94a3b8;
-  --sd-theme-itab-pomodoro-pomodoro-opened-panel-accent-surface-01: rgba(
+  --sd-theme-poem-poem-opened-panel-border-01: rgba(0, 0, 0, 0.2);
+  --sd-theme-poem-poem-opened-panel-border-02: #ebeef5;
+  --sd-theme-poem-poem-opened-panel-surface-01: #eee;
+  --sd-theme-poem-poem-opened-panel-surface-02: rgba(255, 255, 255, 0.1);
+  --sd-theme-poem-poem-opened-panel-surface-03: rgba(255, 255, 255, 0.18);
+  --sd-theme-poem-poem-opened-panel-surface-04: #fff;
+  --sd-theme-poem-poem-opened-panel-text-01: #333;
+  --sd-theme-poem-poem-opened-panel-text-02: #555;
+  --sd-theme-poem-poem-opened-panel-text-03: #303133;
+  --sd-theme-poem-poem-opened-panel-text-04: #606266;
+  --sd-theme-poem-poem-opened-panel-text-05: #fff;
+  --sd-theme-poem-poem-widget-accent-01: rgb(9, 55, 68);
+  --sd-theme-poem-poem-widget-accent-surface-01: rgb(9, 55, 68);
+  --sd-theme-poem-poem-widget-surface-01: #eee;
+  --sd-theme-poem-poem-widget-text-01: #333;
+  --sd-theme-poem-poem-widget-text-02: #94a3b8;
+  --sd-theme-pomodoro-pomodoro-opened-panel-accent-surface-01: rgba(
     3,
     25,
     56,
     0.34
   );
-  --sd-theme-itab-pomodoro-pomodoro-opened-panel-accent-text-01: rgba(
+  --sd-theme-pomodoro-pomodoro-opened-panel-accent-text-01: rgba(
     255,
     214,
     102,
     0.95
   );
-  --sd-theme-itab-pomodoro-pomodoro-opened-panel-border-01: rgba(
+  --sd-theme-pomodoro-pomodoro-opened-panel-border-01: rgba(
     255,
     255,
     255,
     0.18
   );
-  --sd-theme-itab-pomodoro-pomodoro-opened-panel-border-02: rgba(
+  --sd-theme-pomodoro-pomodoro-opened-panel-border-02: rgba(
     255,
     255,
     255,
     0.1
   );
-  --sd-theme-itab-pomodoro-pomodoro-opened-panel-surface-01: rgba(
+  --sd-theme-pomodoro-pomodoro-opened-panel-surface-01: rgba(
     255,
     255,
     255,
     0.3
   );
-  --sd-theme-itab-pomodoro-pomodoro-opened-panel-surface-02: rgba(
+  --sd-theme-pomodoro-pomodoro-opened-panel-surface-02: rgba(
     255,
     255,
     255,
     0.4
   );
-  --sd-theme-itab-pomodoro-pomodoro-opened-panel-surface-03: rgba(
+  --sd-theme-pomodoro-pomodoro-opened-panel-surface-03: rgba(
     0,
     0,
     0,
     0.14
   );
-  --sd-theme-itab-pomodoro-pomodoro-opened-panel-surface-04: rgba(
+  --sd-theme-pomodoro-pomodoro-opened-panel-surface-04: rgba(
     255,
     255,
     255,
     0.22
   );
-  --sd-theme-itab-pomodoro-pomodoro-opened-panel-text-01: #e3e3e3;
-  --sd-theme-itab-pomodoro-pomodoro-opened-panel-text-02: #fff;
-  --sd-theme-itab-pomodoro-pomodoro-opened-panel-text-03: rgba(
+  --sd-theme-pomodoro-pomodoro-opened-panel-text-01: #e3e3e3;
+  --sd-theme-pomodoro-pomodoro-opened-panel-text-02: #fff;
+  --sd-theme-pomodoro-pomodoro-opened-panel-text-03: rgba(
     255,
     255,
     255,
     0.8
   );
-  --sd-theme-itab-pomodoro-pomodoro-opened-panel-text-04: rgba(
+  --sd-theme-pomodoro-pomodoro-opened-panel-text-04: rgba(
     255,
     255,
     255,
     0.5
   );
-  --sd-theme-itab-pomodoro-pomodoro-opened-panel-text-05: rgba(
+  --sd-theme-pomodoro-pomodoro-opened-panel-text-05: rgba(
     255,
     255,
     255,
     0.58
   );
-  --sd-theme-itab-pomodoro-pomodoro-opened-panel-text-06: rgba(
+  --sd-theme-pomodoro-pomodoro-opened-panel-text-06: rgba(
     255,
     255,
     255,
     0.72
   );
-  --sd-theme-itab-pomodoro-pomodoro-widget-accent-surface-01: rgba(
+  --sd-theme-pomodoro-pomodoro-widget-accent-surface-01: rgba(
     3,
     25,
     56,
     0.6
   );
-  --sd-theme-itab-pomodoro-pomodoro-widget-border-01: rgba(255, 255, 255, 0.4);
-  --sd-theme-itab-pomodoro-pomodoro-widget-border-02: rgba(255, 255, 255, 0.6);
-  --sd-theme-itab-pomodoro-pomodoro-widget-surface-01: #000;
-  --sd-theme-itab-pomodoro-pomodoro-widget-surface-02: rgba(255, 255, 255, 0.3);
-  --sd-theme-itab-pomodoro-pomodoro-widget-surface-03: rgba(255, 255, 255, 0.4);
-  --sd-theme-itab-pomodoro-pomodoro-widget-surface-04: rgba(255, 255, 255, 0.2);
-  --sd-theme-itab-pomodoro-pomodoro-widget-text-01: #fff;
-  --sd-theme-itab-pomodoro-pomodoro-widget-text-02: rgba(255, 255, 255, 0.5);
-  --sd-theme-itab-pomodoro-pomodoro-widget-text-03: rgba(255, 255, 255, 0.6);
-  --sd-theme-itab-todo-todo-opened-panel-accent-surface-01: rgb(24, 144, 255);
-  --sd-theme-itab-todo-todo-opened-panel-border-01: rgb(147, 147, 147);
-  --sd-theme-itab-todo-todo-opened-panel-border-02: rgba(0, 0, 0, 0.08);
-  --sd-theme-itab-todo-todo-opened-panel-surface-01: rgb(245, 245, 245);
-  --sd-theme-itab-todo-todo-opened-panel-surface-02: #fff;
-  --sd-theme-itab-todo-todo-opened-panel-surface-03: rgba(214, 216, 220, 0.72);
-  --sd-theme-itab-todo-todo-opened-panel-surface-04: rgba(204, 207, 212, 0.78);
-  --sd-theme-itab-todo-todo-opened-panel-text-01: rgb(34, 34, 34);
-  --sd-theme-itab-todo-todo-opened-panel-text-02: rgb(147, 147, 147);
-  --sd-theme-itab-todo-todo-opened-panel-text-03: #fff;
-  --sd-theme-itab-todo-todo-opened-panel-text-04: rgb(96, 98, 102);
-  --sd-theme-itab-todo-todo-widget-accent-border-01: rgb(24, 144, 255);
-  --sd-theme-itab-todo-todo-widget-accent-surface-01: rgb(32, 102, 204);
-  --sd-theme-itab-todo-todo-widget-accent-text-01: rgb(52, 110, 253);
-  --sd-theme-itab-todo-todo-widget-border-01: rgb(147, 147, 147);
-  --sd-theme-itab-todo-todo-widget-surface-01: var(--sd-component-surface);
-  --sd-theme-itab-todo-todo-widget-surface-02: rgb(147, 147, 147);
-  --sd-theme-itab-todo-todo-widget-text-01: var(--sd-component-text-primary);
-  --sd-theme-itab-wallpaper-wallpaper-opened-panel-accent-01: rgb(24, 144, 255);
-  --sd-theme-itab-wallpaper-wallpaper-opened-panel-accent-surface-01: rgb(
+  --sd-theme-pomodoro-pomodoro-widget-border-01: rgba(255, 255, 255, 0.4);
+  --sd-theme-pomodoro-pomodoro-widget-border-02: rgba(255, 255, 255, 0.6);
+  --sd-theme-pomodoro-pomodoro-widget-surface-01: #000;
+  --sd-theme-pomodoro-pomodoro-widget-surface-02: rgba(255, 255, 255, 0.3);
+  --sd-theme-pomodoro-pomodoro-widget-surface-03: rgba(255, 255, 255, 0.4);
+  --sd-theme-pomodoro-pomodoro-widget-surface-04: rgba(255, 255, 255, 0.2);
+  --sd-theme-pomodoro-pomodoro-widget-text-01: #fff;
+  --sd-theme-pomodoro-pomodoro-widget-text-02: rgba(255, 255, 255, 0.5);
+  --sd-theme-pomodoro-pomodoro-widget-text-03: rgba(255, 255, 255, 0.6);
+  --sd-theme-todo-todo-opened-panel-accent-surface-01: rgb(24, 144, 255);
+  --sd-theme-todo-todo-opened-panel-border-01: rgb(147, 147, 147);
+  --sd-theme-todo-todo-opened-panel-border-02: rgba(0, 0, 0, 0.08);
+  --sd-theme-todo-todo-opened-panel-surface-01: rgb(245, 245, 245);
+  --sd-theme-todo-todo-opened-panel-surface-02: #fff;
+  --sd-theme-todo-todo-opened-panel-surface-03: rgba(214, 216, 220, 0.72);
+  --sd-theme-todo-todo-opened-panel-surface-04: rgba(204, 207, 212, 0.78);
+  --sd-theme-todo-todo-opened-panel-text-01: rgb(34, 34, 34);
+  --sd-theme-todo-todo-opened-panel-text-02: rgb(147, 147, 147);
+  --sd-theme-todo-todo-opened-panel-text-03: #fff;
+  --sd-theme-todo-todo-opened-panel-text-04: rgb(96, 98, 102);
+  --sd-theme-todo-todo-widget-accent-border-01: rgb(24, 144, 255);
+  --sd-theme-todo-todo-widget-accent-surface-01: rgb(32, 102, 204);
+  --sd-theme-todo-todo-widget-accent-text-01: rgb(52, 110, 253);
+  --sd-theme-todo-todo-widget-border-01: rgb(147, 147, 147);
+  --sd-theme-todo-todo-widget-surface-01: var(--sd-component-surface);
+  --sd-theme-todo-todo-widget-surface-02: rgb(147, 147, 147);
+  --sd-theme-todo-todo-widget-text-01: var(--sd-component-text-primary);
+  --sd-theme-wallpaper-wallpaper-opened-panel-accent-01: rgb(24, 144, 255);
+  --sd-theme-wallpaper-wallpaper-opened-panel-accent-surface-01: rgb(
     24,
     144,
     255
   );
-  --sd-theme-itab-wallpaper-wallpaper-opened-panel-accent-text-01: rgba(
+  --sd-theme-wallpaper-wallpaper-opened-panel-accent-text-01: rgba(
     16,
     24,
     40,
     0.88
   );
-  --sd-theme-itab-wallpaper-wallpaper-opened-panel-accent-text-02: rgb(
+  --sd-theme-wallpaper-wallpaper-opened-panel-accent-text-02: rgb(
     24,
     144,
     255
   );
-  --sd-theme-itab-wallpaper-wallpaper-opened-panel-accent-text-03: rgba(
+  --sd-theme-wallpaper-wallpaper-opened-panel-accent-text-03: rgba(
     16,
     24,
     40,
     0.54
   );
-  --sd-theme-itab-wallpaper-wallpaper-opened-panel-accent-text-04: #dc2626;
-  --sd-theme-itab-wallpaper-wallpaper-opened-panel-shadow-01: rgba(
+  --sd-theme-wallpaper-wallpaper-opened-panel-accent-text-04: #dc2626;
+  --sd-theme-wallpaper-wallpaper-opened-panel-shadow-01: rgba(
     255,
     255,
     255,
     0.72
   );
-  --sd-theme-itab-wallpaper-wallpaper-opened-panel-shadow-02: rgba(
+  --sd-theme-wallpaper-wallpaper-opened-panel-shadow-02: rgba(
     15,
     23,
     42,
     0.2
   );
-  --sd-theme-itab-wallpaper-wallpaper-opened-panel-surface-01: rgba(
+  --sd-theme-wallpaper-wallpaper-opened-panel-surface-01: rgba(
     245,
     247,
     250,
     0.82
   );
-  --sd-theme-itab-wallpaper-wallpaper-opened-panel-surface-02: rgba(
+  --sd-theme-wallpaper-wallpaper-opened-panel-surface-02: rgba(
     255,
     255,
     255,
     0.88
   );
-  --sd-theme-itab-wallpaper-wallpaper-opened-panel-surface-03: #fff;
-  --sd-theme-itab-wallpaper-wallpaper-opened-panel-surface-04: rgba(
+  --sd-theme-wallpaper-wallpaper-opened-panel-surface-03: #fff;
+  --sd-theme-wallpaper-wallpaper-opened-panel-surface-04: rgba(
     255,
     255,
     255,
     0.96
   );
-  --sd-theme-itab-wallpaper-wallpaper-opened-panel-surface-05: #d7d9dc;
-  --sd-theme-itab-wallpaper-wallpaper-opened-panel-surface-06: #dfe6ee;
-  --sd-theme-itab-wallpaper-wallpaper-opened-panel-surface-07: rgba(
+  --sd-theme-wallpaper-wallpaper-opened-panel-surface-05: #d7d9dc;
+  --sd-theme-wallpaper-wallpaper-opened-panel-surface-06: #dfe6ee;
+  --sd-theme-wallpaper-wallpaper-opened-panel-surface-07: rgba(
     0,
     0,
     0,
     0.18
   );
-  --sd-theme-itab-wallpaper-wallpaper-opened-panel-surface-08: rgba(
+  --sd-theme-wallpaper-wallpaper-opened-panel-surface-08: rgba(
     0,
     0,
     0,
     0.38
   );
-  --sd-theme-itab-wallpaper-wallpaper-opened-panel-text-01: rgba(0, 0, 0, 0.78);
-  --sd-theme-itab-wallpaper-wallpaper-opened-panel-text-02: rgba(0, 0, 0, 0.86);
-  --sd-theme-itab-wallpaper-wallpaper-opened-panel-text-03: rgba(0, 0, 0, 0.44);
-  --sd-theme-itab-wallpaper-wallpaper-opened-panel-text-04: rgba(
+  --sd-theme-wallpaper-wallpaper-opened-panel-text-01: rgba(0, 0, 0, 0.78);
+  --sd-theme-wallpaper-wallpaper-opened-panel-text-02: rgba(0, 0, 0, 0.86);
+  --sd-theme-wallpaper-wallpaper-opened-panel-text-03: rgba(0, 0, 0, 0.44);
+  --sd-theme-wallpaper-wallpaper-opened-panel-text-04: rgba(
     62,
     66,
     72,
     0.62
   );
-  --sd-theme-itab-wallpaper-wallpaper-opened-panel-text-05: rgba(
+  --sd-theme-wallpaper-wallpaper-opened-panel-text-05: rgba(
     49,
     54,
     60,
     0.62
   );
-  --sd-theme-itab-wallpaper-wallpaper-opened-panel-text-06: #fff;
-  --sd-theme-itab-wallpaper-wallpaper-widget-accent-surface-01: #0f172a;
-  --sd-theme-itab-wallpaper-wallpaper-widget-shadow-01: rgba(0, 0, 0, 0.38);
-  --sd-theme-itab-wallpaper-wallpaper-widget-surface-01: rgba(0, 0, 0, 0.32);
-  --sd-theme-itab-wallpaper-wallpaper-widget-surface-02: rgba(0, 0, 0, 0.38);
-  --sd-theme-itab-wallpaper-wallpaper-widget-text-01: #fff;
-  --sd-theme-itab-wallpaper-wallpaper-widget-text-02: rgba(255, 255, 255, 0.94);
-  --sd-theme-itab-weather-weather-opened-panel-accent-01: rgba(
+  --sd-theme-wallpaper-wallpaper-opened-panel-text-06: #fff;
+  --sd-theme-wallpaper-wallpaper-widget-accent-surface-01: #0f172a;
+  --sd-theme-wallpaper-wallpaper-widget-shadow-01: rgba(0, 0, 0, 0.38);
+  --sd-theme-wallpaper-wallpaper-widget-surface-01: rgba(0, 0, 0, 0.32);
+  --sd-theme-wallpaper-wallpaper-widget-surface-02: rgba(0, 0, 0, 0.38);
+  --sd-theme-wallpaper-wallpaper-widget-text-01: #fff;
+  --sd-theme-wallpaper-wallpaper-widget-text-02: rgba(255, 255, 255, 0.94);
+  --sd-theme-weather-weather-opened-panel-accent-01: rgba(
     160,
     201,
     255,
     0.88
   );
-  --sd-theme-itab-weather-weather-opened-panel-accent-fill-01: rgb(
+  --sd-theme-weather-weather-opened-panel-accent-fill-01: rgb(
     160,
     201,
     255
   );
-  --sd-theme-itab-weather-weather-opened-panel-surface-00: linear-gradient(
+  --sd-theme-weather-weather-opened-panel-surface-00: linear-gradient(
     35deg,
     var(--sd-component-surface-muted) 30%,
     color-mix(
@@ -1868,226 +1868,226 @@
       var(--sd-component-text-secondary)
     )
   );
-  --sd-theme-itab-weather-weather-opened-panel-scene-base: #184482;
-  --sd-theme-itab-weather-weather-opened-panel-scene-sunny-day: linear-gradient(
+  --sd-theme-weather-weather-opened-panel-scene-base: #184482;
+  --sd-theme-weather-weather-opened-panel-scene-sunny-day: linear-gradient(
     35deg,
     #154280 30%,
     #335693,
     #a8b3d2
   );
-  --sd-theme-itab-weather-weather-opened-panel-scene-sunny-night: linear-gradient(
+  --sd-theme-weather-weather-opened-panel-scene-sunny-night: linear-gradient(
     45deg,
     #000012 20%,
     #29334e
   );
-  --sd-theme-itab-weather-weather-opened-panel-scene-cloudy-day: linear-gradient(
+  --sd-theme-weather-weather-opened-panel-scene-cloudy-day: linear-gradient(
     35deg,
     #054989 30%,
     #72ade0
   );
-  --sd-theme-itab-weather-weather-opened-panel-scene-cloudy-night: linear-gradient(
+  --sd-theme-weather-weather-opened-panel-scene-cloudy-night: linear-gradient(
     35deg,
     #191a2e 30%,
     #4c5f7f
   );
-  --sd-theme-itab-weather-weather-opened-panel-scene-yin-day: linear-gradient(
+  --sd-theme-weather-weather-opened-panel-scene-yin-day: linear-gradient(
     35deg,
     #354564 30%,
     #4c5f7f,
     #8b9bb8
   );
-  --sd-theme-itab-weather-weather-opened-panel-scene-yin-night: linear-gradient(
+  --sd-theme-weather-weather-opened-panel-scene-yin-night: linear-gradient(
     45deg,
     #211e22 20%,
     #383a3e
   );
-  --sd-theme-itab-weather-weather-opened-panel-scene-foggy-day: linear-gradient(
+  --sd-theme-weather-weather-opened-panel-scene-foggy-day: linear-gradient(
     45deg,
     #789fb8 20%,
     #6386a3
   );
-  --sd-theme-itab-weather-weather-opened-panel-scene-foggy-night: linear-gradient(
+  --sd-theme-weather-weather-opened-panel-scene-foggy-night: linear-gradient(
     45deg,
     #6c7682 20%,
     #535d69
   );
-  --sd-theme-itab-weather-weather-opened-panel-scene-haze-day: linear-gradient(
+  --sd-theme-weather-weather-opened-panel-scene-haze-day: linear-gradient(
     45deg,
     #8d8882 20%,
     #bbb7af
   );
-  --sd-theme-itab-weather-weather-opened-panel-scene-haze-night: linear-gradient(
+  --sd-theme-weather-weather-opened-panel-scene-haze-night: linear-gradient(
     45deg,
     #1b1712 20%,
     #5b4c49
   );
-  --sd-theme-itab-weather-weather-opened-panel-border-01: rgba(
+  --sd-theme-weather-weather-opened-panel-border-01: rgba(
     255,
     255,
     255,
     0.2
   );
-  --sd-theme-itab-weather-weather-opened-panel-border-02: rgba(
+  --sd-theme-weather-weather-opened-panel-border-02: rgba(
     255,
     255,
     255,
     0.12
   );
-  --sd-theme-itab-weather-weather-opened-panel-border-03: rgba(
+  --sd-theme-weather-weather-opened-panel-border-03: rgba(
     255,
     255,
     255,
     0.5
   );
-  --sd-theme-itab-weather-weather-opened-panel-fill-01: rgba(
+  --sd-theme-weather-weather-opened-panel-fill-01: rgba(
     255,
     255,
     255,
     0.74
   );
-  --sd-theme-itab-weather-weather-opened-panel-shadow-01: rgba(0, 0, 0, 0.28);
-  --sd-theme-itab-weather-weather-opened-panel-surface-01: rgba(
+  --sd-theme-weather-weather-opened-panel-shadow-01: rgba(0, 0, 0, 0.28);
+  --sd-theme-weather-weather-opened-panel-surface-01: rgba(
     255,
     255,
     255,
     0.15
   );
-  --sd-theme-itab-weather-weather-opened-panel-surface-02: rgba(
+  --sd-theme-weather-weather-opened-panel-surface-02: rgba(
     37,
     39,
     43,
     0.96
   );
-  --sd-theme-itab-weather-weather-opened-panel-surface-03: rgba(
+  --sd-theme-weather-weather-opened-panel-surface-03: rgba(
     255,
     255,
     255,
     0.09
   );
-  --sd-theme-itab-weather-weather-opened-panel-surface-04: color-mix(
+  --sd-theme-weather-weather-opened-panel-surface-04: color-mix(
     in srgb,
     var(--sd-component-on-strong) 3%,
     transparent
   );
-  --sd-theme-itab-weather-weather-opened-panel-surface-05: rgba(
+  --sd-theme-weather-weather-opened-panel-surface-05: rgba(
     255,
     255,
     255,
     0.85
   );
-  --sd-theme-itab-weather-weather-opened-panel-surface-06: rgba(
+  --sd-theme-weather-weather-opened-panel-surface-06: rgba(
     255,
     255,
     255,
     0.08
   );
-  --sd-theme-itab-weather-weather-opened-panel-surface-07: #ffffff08;
-  --sd-theme-itab-weather-weather-opened-panel-surface-08: #ffffff14;
-  --sd-theme-itab-weather-weather-opened-panel-surface-09: #ffffff0f;
-  --sd-theme-itab-weather-weather-opened-panel-surface-10: #154280;
-  --sd-theme-itab-weather-weather-opened-panel-text-01: color-mix(
+  --sd-theme-weather-weather-opened-panel-surface-07: #ffffff08;
+  --sd-theme-weather-weather-opened-panel-surface-08: #ffffff14;
+  --sd-theme-weather-weather-opened-panel-surface-09: #ffffff0f;
+  --sd-theme-weather-weather-opened-panel-surface-10: #154280;
+  --sd-theme-weather-weather-opened-panel-text-01: color-mix(
     in srgb,
     var(--sd-component-on-strong) 82%,
     transparent
   );
-  --sd-theme-itab-weather-weather-opened-panel-text-02: rgba(
+  --sd-theme-weather-weather-opened-panel-text-02: rgba(
     255,
     255,
     255,
     0.78
   );
-  --sd-theme-itab-weather-weather-opened-panel-text-03: rgba(
+  --sd-theme-weather-weather-opened-panel-text-03: rgba(
     255,
     255,
     255,
     0.74
   );
-  --sd-theme-itab-weather-weather-opened-panel-text-04: #fff;
-  --sd-theme-itab-weather-weather-opened-panel-text-05: rgba(
+  --sd-theme-weather-weather-opened-panel-text-04: #fff;
+  --sd-theme-weather-weather-opened-panel-text-05: rgba(
     255,
     204,
     204,
     0.88
   );
-  --sd-theme-itab-weather-weather-opened-panel-text-06: rgba(
+  --sd-theme-weather-weather-opened-panel-text-06: rgba(
     255,
     255,
     255,
     0.72
   );
-  --sd-theme-itab-weather-weather-opened-panel-text-07: rgba(
+  --sd-theme-weather-weather-opened-panel-text-07: rgba(
     255,
     255,
     255,
     0.4
   );
-  --sd-theme-itab-weather-weather-opened-panel-text-08: rgba(
+  --sd-theme-weather-weather-opened-panel-text-08: rgba(
     255,
     255,
     255,
     0.88
   );
-  --sd-theme-itab-weather-weather-opened-panel-text-09: rgba(
+  --sd-theme-weather-weather-opened-panel-text-09: rgba(
     255,
     255,
     255,
     0.9
   );
-  --sd-theme-itab-weather-weather-opened-panel-text-10: rgba(
+  --sd-theme-weather-weather-opened-panel-text-10: rgba(
     255,
     255,
     255,
     0.75
   );
-  --sd-theme-itab-weather-weather-opened-panel-text-11: rgba(
+  --sd-theme-weather-weather-opened-panel-text-11: rgba(
     255,
     255,
     255,
     0.68
   );
-  --sd-theme-itab-weather-weather-opened-panel-text-12: rgba(
+  --sd-theme-weather-weather-opened-panel-text-12: rgba(
     255,
     255,
     255,
     0.92
   );
-  --sd-theme-itab-weather-weather-opened-panel-text-13: rgba(
+  --sd-theme-weather-weather-opened-panel-text-13: rgba(
     255,
     255,
     255,
     0.86
   );
-  --sd-theme-itab-weather-weather-opened-panel-text-14: #d5d5d5;
-  --sd-theme-itab-weather-weather-widget-accent-surface-01: rgb(59, 154, 245);
-  --sd-theme-itab-weather-weather-widget-accent-surface-02: rgb(77, 189, 250);
-  --sd-theme-itab-weather-weather-widget-accent-surface-03: rgb(7, 22, 42);
-  --sd-theme-itab-weather-weather-widget-accent-surface-04: rgb(43, 67, 102);
-  --sd-theme-itab-weather-weather-widget-accent-surface-05: rgb(74, 137, 188);
-  --sd-theme-itab-weather-weather-widget-accent-surface-06: rgb(115, 165, 200);
-  --sd-theme-itab-weather-weather-widget-accent-surface-07: rgb(13, 24, 36);
-  --sd-theme-itab-weather-weather-widget-accent-surface-08: rgb(55, 67, 84);
-  --sd-theme-itab-weather-weather-widget-accent-surface-09: rgb(21, 66, 128);
-  --sd-theme-itab-weather-weather-widget-accent-surface-10: rgb(26, 39, 59);
-  --sd-theme-itab-weather-weather-widget-accent-surface-11: rgb(38, 46, 73);
-  --sd-theme-itab-weather-weather-widget-accent-surface-12: rgb(19, 21, 38);
-  --sd-theme-itab-weather-weather-widget-accent-surface-13: rgb(139, 121, 88);
-  --sd-theme-itab-weather-weather-widget-accent-surface-14: rgb(193, 171, 127);
-  --sd-theme-itab-weather-weather-widget-accent-surface-15: rgb(84, 75, 62);
-  --sd-theme-itab-weather-weather-widget-yin-d-surface-01: rgb(24, 68, 130);
-  --sd-theme-itab-weather-weather-widget-yin-d-gradient-01: rgb(53, 69, 100);
-  --sd-theme-itab-weather-weather-widget-yin-d-gradient-02: rgb(76, 95, 127);
-  --sd-theme-itab-weather-weather-widget-yin-d-gradient-03: rgb(139, 155, 184);
-  --sd-theme-itab-weather-weather-widget-surface-01: rgb(62, 65, 70);
-  --sd-theme-itab-weather-weather-widget-surface-02: rgb(98, 101, 106);
-  --sd-theme-itab-weather-weather-widget-surface-03: rgb(33, 30, 34);
-  --sd-theme-itab-weather-weather-widget-surface-04: rgb(56, 58, 62);
-  --sd-theme-itab-weather-weather-widget-surface-05: rgb(210, 225, 235);
-  --sd-theme-itab-weather-weather-widget-surface-06: rgb(143, 151, 157);
-  --sd-theme-itab-weather-weather-widget-surface-07: rgb(190, 195, 198);
-  --sd-theme-itab-weather-weather-widget-surface-08: rgb(55, 59, 63);
-  --sd-theme-itab-weather-weather-widget-surface-09: rgb(91, 95, 99);
-  --sd-theme-itab-weather-weather-widget-surface-10: rgb(48, 42, 36);
-  --sd-theme-itab-weather-weather-widget-text-01: #fff;
+  --sd-theme-weather-weather-opened-panel-text-14: #d5d5d5;
+  --sd-theme-weather-weather-widget-accent-surface-01: rgb(59, 154, 245);
+  --sd-theme-weather-weather-widget-accent-surface-02: rgb(77, 189, 250);
+  --sd-theme-weather-weather-widget-accent-surface-03: rgb(7, 22, 42);
+  --sd-theme-weather-weather-widget-accent-surface-04: rgb(43, 67, 102);
+  --sd-theme-weather-weather-widget-accent-surface-05: rgb(74, 137, 188);
+  --sd-theme-weather-weather-widget-accent-surface-06: rgb(115, 165, 200);
+  --sd-theme-weather-weather-widget-accent-surface-07: rgb(13, 24, 36);
+  --sd-theme-weather-weather-widget-accent-surface-08: rgb(55, 67, 84);
+  --sd-theme-weather-weather-widget-accent-surface-09: rgb(21, 66, 128);
+  --sd-theme-weather-weather-widget-accent-surface-10: rgb(26, 39, 59);
+  --sd-theme-weather-weather-widget-accent-surface-11: rgb(38, 46, 73);
+  --sd-theme-weather-weather-widget-accent-surface-12: rgb(19, 21, 38);
+  --sd-theme-weather-weather-widget-accent-surface-13: rgb(139, 121, 88);
+  --sd-theme-weather-weather-widget-accent-surface-14: rgb(193, 171, 127);
+  --sd-theme-weather-weather-widget-accent-surface-15: rgb(84, 75, 62);
+  --sd-theme-weather-weather-widget-yin-d-surface-01: rgb(24, 68, 130);
+  --sd-theme-weather-weather-widget-yin-d-gradient-01: rgb(53, 69, 100);
+  --sd-theme-weather-weather-widget-yin-d-gradient-02: rgb(76, 95, 127);
+  --sd-theme-weather-weather-widget-yin-d-gradient-03: rgb(139, 155, 184);
+  --sd-theme-weather-weather-widget-surface-01: rgb(62, 65, 70);
+  --sd-theme-weather-weather-widget-surface-02: rgb(98, 101, 106);
+  --sd-theme-weather-weather-widget-surface-03: rgb(33, 30, 34);
+  --sd-theme-weather-weather-widget-surface-04: rgb(56, 58, 62);
+  --sd-theme-weather-weather-widget-surface-05: rgb(210, 225, 235);
+  --sd-theme-weather-weather-widget-surface-06: rgb(143, 151, 157);
+  --sd-theme-weather-weather-widget-surface-07: rgb(190, 195, 198);
+  --sd-theme-weather-weather-widget-surface-08: rgb(55, 59, 63);
+  --sd-theme-weather-weather-widget-surface-09: rgb(91, 95, 99);
+  --sd-theme-weather-weather-widget-surface-10: rgb(48, 42, 36);
+  --sd-theme-weather-weather-widget-text-01: #fff;
   --sd-theme-network-indicator-accent-border-01: rgba(34, 197, 94, 0.3);
   --sd-theme-network-indicator-accent-border-02: rgba(245, 158, 11, 0.3);
   --sd-theme-network-indicator-accent-border-03: rgba(239, 68, 68, 0.3);
@@ -2333,13 +2333,13 @@
   --sd-home-live-dot-shadow: 0 0 8px
     color-mix(in srgb, var(--sd-state-success) 72%, transparent);
   --sd-home-offline-dot-bg: var(--sd-state-danger);
-  /* iTab source widgets keep their original palettes in dark mode; shell tokens carry theme adaptation. */
-  --sd-itab-todo-empty-shadow: #e5e7eb;
-  --sd-itab-todo-empty-paper: #f2f3f5;
-  --sd-itab-todo-empty-line: #d5d9e0;
-  --sd-itab-poem-wave-back: #8ec2c6;
-  --sd-itab-poem-wave-middle: #74aaa4;
-  --sd-itab-poem-wave-front: #549087;
+  /* source widgets keep their original palettes in dark mode; shell tokens carry theme adaptation. */
+  --sd-todo-empty-shadow: #e5e7eb;
+  --sd-todo-empty-paper: #f2f3f5;
+  --sd-todo-empty-line: #d5d9e0;
+  --sd-poem-wave-back: #8ec2c6;
+  --sd-poem-wave-middle: #74aaa4;
+  --sd-poem-wave-front: #549087;
   --sd-theme-add-widget-modal-accent-surface-01: color-mix(
     in srgb,
     var(--sd-state-info) 18%,
@@ -3092,996 +3092,996 @@
   --sd-theme-home-main-widget-shell-text-02: var(--sd-component-on-strong);
   --sd-theme-icon-shape-fill-01: var(--sd-component-on-strong);
   --sd-theme-icon-shape-fill-02: var(--sd-component-on-strong);
-  /* iTab runtime components follow go.itab.link source visuals instead of global graphite repainting. */
-  --sd-theme-itab-anniversary-anniversary-card-accent-surface-01: #db5c76;
-  --sd-theme-itab-anniversary-anniversary-card-accent-text-01: #db5c76;
-  --sd-theme-itab-anniversary-anniversary-card-shadow-01: rgba(0, 0, 0, 0.1);
-  --sd-theme-itab-anniversary-anniversary-card-shadow-02: rgba(0, 0, 0, 0.2);
-  --sd-theme-itab-anniversary-anniversary-card-surface-01: #fff;
-  --sd-theme-itab-anniversary-anniversary-card-text-01: #fff;
-  --sd-theme-itab-anniversary-anniversary-opened-panel-accent-border-01: rgb(
+  /* Replica runtime components follow source visuals instead of global graphite repainting. */
+  --sd-theme-anniversary-anniversary-card-accent-surface-01: #db5c76;
+  --sd-theme-anniversary-anniversary-card-accent-text-01: #db5c76;
+  --sd-theme-anniversary-anniversary-card-shadow-01: rgba(0, 0, 0, 0.1);
+  --sd-theme-anniversary-anniversary-card-shadow-02: rgba(0, 0, 0, 0.2);
+  --sd-theme-anniversary-anniversary-card-surface-01: #fff;
+  --sd-theme-anniversary-anniversary-card-text-01: #fff;
+  --sd-theme-anniversary-anniversary-opened-panel-accent-border-01: rgb(
     33,
     150,
     243
   );
-  --sd-theme-itab-anniversary-anniversary-opened-panel-accent-surface-01: #f04242;
-  --sd-theme-itab-anniversary-anniversary-opened-panel-accent-surface-02: #ffb322;
-  --sd-theme-itab-anniversary-anniversary-opened-panel-accent-surface-03: #77d24b;
-  --sd-theme-itab-anniversary-anniversary-opened-panel-accent-surface-04: #3aa3ff;
-  --sd-theme-itab-anniversary-anniversary-opened-panel-accent-surface-05: #8d4dff;
-  --sd-theme-itab-anniversary-anniversary-opened-panel-accent-surface-06: rgb(
+  --sd-theme-anniversary-anniversary-opened-panel-accent-surface-01: #f04242;
+  --sd-theme-anniversary-anniversary-opened-panel-accent-surface-02: #ffb322;
+  --sd-theme-anniversary-anniversary-opened-panel-accent-surface-03: #77d24b;
+  --sd-theme-anniversary-anniversary-opened-panel-accent-surface-04: #3aa3ff;
+  --sd-theme-anniversary-anniversary-opened-panel-accent-surface-05: #8d4dff;
+  --sd-theme-anniversary-anniversary-opened-panel-accent-surface-06: rgb(
     33,
     150,
     243
   );
-  --sd-theme-itab-anniversary-anniversary-opened-panel-accent-text-01: rgb(
+  --sd-theme-anniversary-anniversary-opened-panel-accent-text-01: rgb(
     33,
     150,
     243
   );
-  --sd-theme-itab-anniversary-anniversary-opened-panel-border-01: var(
+  --sd-theme-anniversary-anniversary-opened-panel-border-01: var(
     --sd-component-border
   );
-  --sd-theme-itab-anniversary-anniversary-opened-panel-border-02: var(
+  --sd-theme-anniversary-anniversary-opened-panel-border-02: var(
     --sd-color-border-strong
   );
-  --sd-theme-itab-anniversary-anniversary-opened-panel-border-03: var(
+  --sd-theme-anniversary-anniversary-opened-panel-border-03: var(
     --sd-component-border
   );
-  --sd-theme-itab-anniversary-anniversary-opened-panel-border-04: rgba(
+  --sd-theme-anniversary-anniversary-opened-panel-border-04: rgba(
     255,
     255,
     255,
     0.02
   );
-  --sd-theme-itab-anniversary-anniversary-opened-panel-border-05: var(
+  --sd-theme-anniversary-anniversary-opened-panel-border-05: var(
     --sd-component-border
   );
-  --sd-theme-itab-anniversary-anniversary-opened-panel-fill-01: var(
+  --sd-theme-anniversary-anniversary-opened-panel-fill-01: var(
     --sd-component-text-secondary
   );
-  --sd-theme-itab-anniversary-anniversary-opened-panel-shadow-01: var(
+  --sd-theme-anniversary-anniversary-opened-panel-shadow-01: var(
     --sd-home-resize-badge-text
   );
-  --sd-theme-itab-anniversary-anniversary-opened-panel-shadow-02: rgb(
+  --sd-theme-anniversary-anniversary-opened-panel-shadow-02: rgb(
     24,
     144,
     255
   );
-  --sd-theme-itab-anniversary-anniversary-opened-panel-shadow-03: rgba(
+  --sd-theme-anniversary-anniversary-opened-panel-shadow-03: rgba(
     0,
     0,
     0,
     0.1
   );
-  --sd-theme-itab-anniversary-anniversary-opened-panel-shadow-04: rgba(
+  --sd-theme-anniversary-anniversary-opened-panel-shadow-04: rgba(
     255,
     255,
     255,
     0.15
   );
-  --sd-theme-itab-anniversary-anniversary-opened-panel-shadow-05: rgba(
+  --sd-theme-anniversary-anniversary-opened-panel-shadow-05: rgba(
     0,
     0,
     0,
     0.32
   );
-  --sd-theme-itab-anniversary-anniversary-opened-panel-shadow-06: rgba(
+  --sd-theme-anniversary-anniversary-opened-panel-shadow-06: rgba(
     255,
     255,
     255,
     0.08
   );
-  --sd-theme-itab-anniversary-anniversary-opened-panel-surface-01: var(
+  --sd-theme-anniversary-anniversary-opened-panel-surface-01: var(
     --sd-component-surface
   );
-  --sd-theme-itab-anniversary-anniversary-opened-panel-surface-02: var(
+  --sd-theme-anniversary-anniversary-opened-panel-surface-02: var(
     --sd-component-surface-muted
   );
-  --sd-theme-itab-anniversary-anniversary-opened-panel-surface-03: color-mix(
+  --sd-theme-anniversary-anniversary-opened-panel-surface-03: color-mix(
     in srgb,
     var(--sd-component-text-primary) 10%,
     transparent
   );
-  --sd-theme-itab-anniversary-anniversary-opened-panel-surface-04: color-mix(
+  --sd-theme-anniversary-anniversary-opened-panel-surface-04: color-mix(
     in srgb,
     var(--sd-state-info) 76%,
     transparent
   );
-  --sd-theme-itab-anniversary-anniversary-opened-panel-surface-05: color-mix(
+  --sd-theme-anniversary-anniversary-opened-panel-surface-05: color-mix(
     in srgb,
     var(--sd-component-text-primary) 14%,
     transparent
   );
-  --sd-theme-itab-anniversary-anniversary-opened-panel-surface-06: color-mix(
+  --sd-theme-anniversary-anniversary-opened-panel-surface-06: color-mix(
     in srgb,
     var(--sd-component-text-primary) 16%,
     transparent
   );
-  --sd-theme-itab-anniversary-anniversary-opened-panel-surface-07: color-mix(
+  --sd-theme-anniversary-anniversary-opened-panel-surface-07: color-mix(
     in srgb,
     var(--sd-state-info) 72%,
     transparent
   );
-  --sd-theme-itab-anniversary-anniversary-opened-panel-surface-08: color-mix(
+  --sd-theme-anniversary-anniversary-opened-panel-surface-08: color-mix(
     in srgb,
     var(--sd-component-text-primary) 18%,
     transparent
   );
-  --sd-theme-itab-anniversary-anniversary-opened-panel-surface-09: var(
+  --sd-theme-anniversary-anniversary-opened-panel-surface-09: var(
     --sd-component-surface-raised
   );
-  --sd-theme-itab-anniversary-anniversary-opened-panel-surface-10: var(
+  --sd-theme-anniversary-anniversary-opened-panel-surface-10: var(
     --sd-component-surface-muted
   );
-  --sd-theme-itab-anniversary-anniversary-opened-panel-surface-11: color-mix(
+  --sd-theme-anniversary-anniversary-opened-panel-surface-11: color-mix(
     in srgb,
     var(--sd-component-surface-raised) 64%,
     transparent
   );
-  --sd-theme-itab-anniversary-anniversary-opened-panel-surface-12: rgba(
+  --sd-theme-anniversary-anniversary-opened-panel-surface-12: rgba(
     29,
     30,
     31,
     0
   );
-  --sd-theme-itab-anniversary-anniversary-opened-panel-surface-13: var(
+  --sd-theme-anniversary-anniversary-opened-panel-surface-13: var(
     --sd-component-surface-raised
   );
-  --sd-theme-itab-anniversary-anniversary-opened-panel-surface-14: var(
+  --sd-theme-anniversary-anniversary-opened-panel-surface-14: var(
     --sd-state-info-surface
   );
-  --sd-theme-itab-anniversary-anniversary-opened-panel-surface-15: rgba(
+  --sd-theme-anniversary-anniversary-opened-panel-surface-15: rgba(
     255,
     255,
     255,
     0.06
   );
-  --sd-theme-itab-anniversary-anniversary-opened-panel-surface-16: rgba(
+  --sd-theme-anniversary-anniversary-opened-panel-surface-16: rgba(
     255,
     255,
     255,
     0.12
   );
-  --sd-theme-itab-anniversary-anniversary-opened-panel-surface-17: color-mix(
+  --sd-theme-anniversary-anniversary-opened-panel-surface-17: color-mix(
     in srgb,
     var(--sd-component-surface-raised) 86%,
     transparent
   );
-  --sd-theme-itab-anniversary-anniversary-opened-panel-surface-18: rgba(
+  --sd-theme-anniversary-anniversary-opened-panel-surface-18: rgba(
     255,
     255,
     255,
     0.16
   );
-  --sd-theme-itab-anniversary-anniversary-opened-panel-text-01: var(
+  --sd-theme-anniversary-anniversary-opened-panel-text-01: var(
     --sd-component-text-primary
   );
-  --sd-theme-itab-anniversary-anniversary-opened-panel-text-02: var(
+  --sd-theme-anniversary-anniversary-opened-panel-text-02: var(
     --sd-component-text-tertiary
   );
-  --sd-theme-itab-anniversary-anniversary-opened-panel-text-03: var(
+  --sd-theme-anniversary-anniversary-opened-panel-text-03: var(
     --sd-component-text-secondary
   );
-  --sd-theme-itab-anniversary-anniversary-opened-panel-text-04: var(
+  --sd-theme-anniversary-anniversary-opened-panel-text-04: var(
     --sd-component-text-secondary
   );
-  --sd-theme-itab-anniversary-anniversary-opened-panel-text-05: var(
+  --sd-theme-anniversary-anniversary-opened-panel-text-05: var(
     --sd-home-resize-badge-text
   );
-  --sd-theme-itab-anniversary-anniversary-opened-panel-text-06: var(
+  --sd-theme-anniversary-anniversary-opened-panel-text-06: var(
     --sd-component-text-primary
   );
-  --sd-theme-itab-anniversary-anniversary-opened-panel-text-07: rgba(
+  --sd-theme-anniversary-anniversary-opened-panel-text-07: rgba(
     0,
     0,
     0,
     0.18
   );
-  --sd-theme-itab-anniversary-anniversary-opened-panel-text-08: var(
+  --sd-theme-anniversary-anniversary-opened-panel-text-08: var(
     --sd-component-text-secondary
   );
-  --sd-theme-itab-anniversary-anniversary-opened-panel-text-09: var(
+  --sd-theme-anniversary-anniversary-opened-panel-text-09: var(
     --sd-component-text-secondary
   );
-  --sd-theme-itab-anniversary-anniversary-opened-panel-text-10: rgba(
+  --sd-theme-anniversary-anniversary-opened-panel-text-10: rgba(
     255,
     255,
     255,
     0.8
   );
-  --sd-theme-itab-anniversary-anniversary-opened-panel-text-11: var(
+  --sd-theme-anniversary-anniversary-opened-panel-text-11: var(
     --sd-component-text-secondary
   );
-  --sd-theme-itab-anniversary-anniversary-opened-panel-text-12: var(
+  --sd-theme-anniversary-anniversary-opened-panel-text-12: var(
     --sd-component-text-secondary
   );
-  --sd-theme-itab-anniversary-anniversary-opened-panel-text-13: rgb(
+  --sd-theme-anniversary-anniversary-opened-panel-text-13: rgb(
     206,
     207,
     209
   );
-  --sd-theme-itab-anniversary-anniversary-opened-panel-text-14: rgba(
+  --sd-theme-anniversary-anniversary-opened-panel-text-14: rgba(
     255,
     255,
     255,
     0.66
   );
-  --sd-theme-itab-anniversary-anniversary-opened-panel-text-15: rgba(
+  --sd-theme-anniversary-anniversary-opened-panel-text-15: rgba(
     255,
     255,
     255,
     0.9
   );
-  --sd-theme-itab-anniversary-anniversary-opened-panel-text-16: var(
+  --sd-theme-anniversary-anniversary-opened-panel-text-16: var(
     --sd-component-text-tertiary
   );
-  --sd-theme-itab-anniversary-anniversary-opened-panel-text-17: var(
+  --sd-theme-anniversary-anniversary-opened-panel-text-17: var(
     --sd-component-text-primary
   );
-  --sd-theme-itab-calendar-calendar-opened-panel-accent-surface-01: rgb(
+  --sd-theme-calendar-calendar-opened-panel-accent-surface-01: rgb(
     54,
     125,
     241
   );
-  --sd-theme-itab-calendar-calendar-opened-panel-accent-surface-02: rgba(
+  --sd-theme-calendar-calendar-opened-panel-accent-surface-02: rgba(
     255,
     76,
     91,
     0.07
   );
-  --sd-theme-itab-calendar-calendar-opened-panel-accent-surface-03: #ff4d5f;
-  --sd-theme-itab-calendar-calendar-opened-panel-accent-surface-04: #506176;
-  --sd-theme-itab-calendar-calendar-opened-panel-accent-surface-05: #ef5b71;
-  --sd-theme-itab-calendar-calendar-opened-panel-accent-surface-06: #d85cc8;
-  --sd-theme-itab-calendar-calendar-opened-panel-accent-surface-07: #3d93ef;
-  --sd-theme-itab-calendar-calendar-opened-panel-accent-surface-08: #3fbf75;
-  --sd-theme-itab-calendar-calendar-opened-panel-accent-surface-09: #e25a61;
-  --sd-theme-itab-calendar-calendar-opened-panel-accent-text-01: #d84a58;
-  --sd-theme-itab-calendar-calendar-opened-panel-accent-text-02: rgba(
+  --sd-theme-calendar-calendar-opened-panel-accent-surface-03: #ff4d5f;
+  --sd-theme-calendar-calendar-opened-panel-accent-surface-04: #506176;
+  --sd-theme-calendar-calendar-opened-panel-accent-surface-05: #ef5b71;
+  --sd-theme-calendar-calendar-opened-panel-accent-surface-06: #d85cc8;
+  --sd-theme-calendar-calendar-opened-panel-accent-surface-07: #3d93ef;
+  --sd-theme-calendar-calendar-opened-panel-accent-surface-08: #3fbf75;
+  --sd-theme-calendar-calendar-opened-panel-accent-surface-09: #e25a61;
+  --sd-theme-calendar-calendar-opened-panel-accent-text-01: #d84a58;
+  --sd-theme-calendar-calendar-opened-panel-accent-text-02: rgba(
     216,
     74,
     88,
     0.56
   );
-  --sd-theme-itab-calendar-calendar-opened-panel-accent-text-03: rgb(
+  --sd-theme-calendar-calendar-opened-panel-accent-text-03: rgb(
     54,
     125,
     241
   );
-  --sd-theme-itab-calendar-calendar-opened-panel-border-01: var(
+  --sd-theme-calendar-calendar-opened-panel-border-01: var(
     --sd-component-border
   );
-  --sd-theme-itab-calendar-calendar-opened-panel-shadow-01: rgba(0, 0, 0, 0.16);
-  --sd-theme-itab-calendar-calendar-opened-panel-shadow-02: rgba(0, 0, 0, 0.06);
-  --sd-theme-itab-calendar-calendar-opened-panel-shadow-03: rgba(0, 0, 0, 0.18);
-  --sd-theme-itab-calendar-calendar-opened-panel-shadow-04: color-mix(
+  --sd-theme-calendar-calendar-opened-panel-shadow-01: rgba(0, 0, 0, 0.16);
+  --sd-theme-calendar-calendar-opened-panel-shadow-02: rgba(0, 0, 0, 0.06);
+  --sd-theme-calendar-calendar-opened-panel-shadow-03: rgba(0, 0, 0, 0.18);
+  --sd-theme-calendar-calendar-opened-panel-shadow-04: color-mix(
     in srgb,
     var(--sd-component-text-primary) 22%,
     transparent
   );
-  --sd-theme-itab-calendar-calendar-opened-panel-shadow-05: rgba(0, 0, 0, 0.04);
-  --sd-theme-itab-calendar-calendar-opened-panel-shadow-06: rgba(
+  --sd-theme-calendar-calendar-opened-panel-shadow-05: rgba(0, 0, 0, 0.04);
+  --sd-theme-calendar-calendar-opened-panel-shadow-06: rgba(
     54,
     125,
     241,
     0.18
   );
-  --sd-theme-itab-calendar-calendar-opened-panel-shadow-07: rgba(0, 0, 0, 0.08);
-  --sd-theme-itab-calendar-calendar-opened-panel-shadow-08: color-mix(
+  --sd-theme-calendar-calendar-opened-panel-shadow-07: rgba(0, 0, 0, 0.08);
+  --sd-theme-calendar-calendar-opened-panel-shadow-08: color-mix(
     in srgb,
     var(--sd-component-text-primary) 16%,
     transparent
   );
-  --sd-theme-itab-calendar-calendar-opened-panel-surface-01: var(
+  --sd-theme-calendar-calendar-opened-panel-surface-01: var(
     --sd-component-surface
   );
-  --sd-theme-itab-calendar-calendar-opened-panel-surface-02: var(
+  --sd-theme-calendar-calendar-opened-panel-surface-02: var(
     --sd-component-surface-muted
   );
-  --sd-theme-itab-calendar-calendar-opened-panel-surface-03: var(
+  --sd-theme-calendar-calendar-opened-panel-surface-03: var(
     --sd-state-info-surface
   );
-  --sd-theme-itab-calendar-calendar-opened-panel-surface-04: var(
+  --sd-theme-calendar-calendar-opened-panel-surface-04: var(
     --sd-shell-surface
   );
-  --sd-theme-itab-calendar-calendar-opened-panel-surface-05: var(
+  --sd-theme-calendar-calendar-opened-panel-surface-05: var(
     --sd-component-surface-muted
   );
-  --sd-theme-itab-calendar-calendar-opened-panel-surface-06: color-mix(
+  --sd-theme-calendar-calendar-opened-panel-surface-06: color-mix(
     in srgb,
     var(--sd-component-text-primary) 18%,
     transparent
   );
-  --sd-theme-itab-calendar-calendar-opened-panel-surface-07: color-mix(
+  --sd-theme-calendar-calendar-opened-panel-surface-07: color-mix(
     in srgb,
     var(--sd-component-text-primary) 12%,
     transparent
   );
-  --sd-theme-itab-calendar-calendar-opened-panel-surface-08: color-mix(
+  --sd-theme-calendar-calendar-opened-panel-surface-08: color-mix(
     in srgb,
     var(--sd-component-text-primary) 7%,
     transparent
   );
-  --sd-theme-itab-calendar-calendar-opened-panel-surface-09: color-mix(
+  --sd-theme-calendar-calendar-opened-panel-surface-09: color-mix(
     in srgb,
     var(--sd-component-text-primary) 4%,
     transparent
   );
-  --sd-theme-itab-calendar-calendar-opened-panel-surface-10: var(
+  --sd-theme-calendar-calendar-opened-panel-surface-10: var(
     --sd-component-surface-muted
   );
-  --sd-theme-itab-calendar-calendar-opened-panel-surface-11: rgba(
+  --sd-theme-calendar-calendar-opened-panel-surface-11: rgba(
     48,
     52,
     59,
     0.18
   );
-  --sd-theme-itab-calendar-calendar-opened-panel-surface-12: var(
+  --sd-theme-calendar-calendar-opened-panel-surface-12: var(
     --sd-state-info-surface
   );
-  --sd-theme-itab-calendar-calendar-opened-panel-surface-13: var(
+  --sd-theme-calendar-calendar-opened-panel-surface-13: var(
     --sd-component-surface-muted
   );
-  --sd-theme-itab-calendar-calendar-opened-panel-surface-14: color-mix(
+  --sd-theme-calendar-calendar-opened-panel-surface-14: color-mix(
     in srgb,
     var(--sd-home-resize-badge-text) 85%,
     transparent
   );
-  --sd-theme-itab-calendar-calendar-opened-panel-surface-15: var(
+  --sd-theme-calendar-calendar-opened-panel-surface-15: var(
     --sd-component-text-tertiary
   );
-  --sd-theme-itab-calendar-calendar-opened-panel-text-01: var(
+  --sd-theme-calendar-calendar-opened-panel-text-01: var(
     --sd-component-text-primary
   );
-  --sd-theme-itab-calendar-calendar-opened-panel-text-02: var(
+  --sd-theme-calendar-calendar-opened-panel-text-02: var(
     --sd-component-text-secondary
   );
-  --sd-theme-itab-calendar-calendar-opened-panel-text-03: var(
+  --sd-theme-calendar-calendar-opened-panel-text-03: var(
     --sd-component-text-primary
   );
-  --sd-theme-itab-calendar-calendar-opened-panel-text-04: var(
+  --sd-theme-calendar-calendar-opened-panel-text-04: var(
     --sd-component-text-secondary
   );
-  --sd-theme-itab-calendar-calendar-opened-panel-text-05: var(
+  --sd-theme-calendar-calendar-opened-panel-text-05: var(
     --sd-home-resize-badge-text
   );
-  --sd-theme-itab-calendar-calendar-opened-panel-text-06: var(
+  --sd-theme-calendar-calendar-opened-panel-text-06: var(
     --sd-component-text-secondary
   );
-  --sd-theme-itab-calendar-calendar-opened-panel-text-07: var(
+  --sd-theme-calendar-calendar-opened-panel-text-07: var(
     --sd-component-text-secondary
   );
-  --sd-theme-itab-calendar-calendar-opened-panel-text-08: var(
+  --sd-theme-calendar-calendar-opened-panel-text-08: var(
     --sd-component-text-tertiary
   );
-  --sd-theme-itab-calendar-calendar-opened-panel-text-09: color-mix(
+  --sd-theme-calendar-calendar-opened-panel-text-09: color-mix(
     in srgb,
     var(--sd-component-text-primary) 5%,
     transparent
   );
-  --sd-theme-itab-calendar-calendar-opened-panel-text-10: color-mix(
+  --sd-theme-calendar-calendar-opened-panel-text-10: color-mix(
     in srgb,
     var(--sd-component-text-primary) 42%,
     transparent
   );
-  --sd-theme-itab-calendar-calendar-opened-panel-text-11: var(
+  --sd-theme-calendar-calendar-opened-panel-text-11: var(
     --sd-component-text-primary
   );
-  --sd-theme-itab-calendar-calendar-opened-panel-text-12: var(
+  --sd-theme-calendar-calendar-opened-panel-text-12: var(
     --sd-component-text-secondary
   );
-  --sd-theme-itab-calendar-calendar-opened-panel-text-13: var(
+  --sd-theme-calendar-calendar-opened-panel-text-13: var(
     --sd-component-text-tertiary
   );
-  --sd-theme-itab-calendar-calendar-opened-panel-text-14: var(
+  --sd-theme-calendar-calendar-opened-panel-text-14: var(
     --sd-component-text-tertiary
   );
-  --sd-theme-itab-calendar-calendar-widget-accent-surface-01: rgb(255, 90, 93);
-  --sd-theme-itab-calendar-calendar-widget-accent-surface-02: rgb(255, 90, 93);
-  --sd-theme-itab-calendar-calendar-widget-accent-surface-03: rgb(255, 90, 93);
-  --sd-theme-itab-calendar-calendar-widget-accent-text-01: rgb(216, 48, 48);
-  --sd-theme-itab-calendar-calendar-widget-accent-text-02: #d84a58;
-  --sd-theme-itab-calendar-calendar-widget-surface-01: rgb(34, 34, 34);
-  --sd-theme-itab-calendar-calendar-widget-text-01: rgb(223, 221, 221);
-  --sd-theme-itab-calendar-calendar-widget-text-02: #fff;
-  --sd-theme-itab-calendar-calendar-widget-text-03: rgb(223, 221, 221);
-  --sd-theme-itab-calendar-calendar-widget-text-04: #999;
-  --sd-theme-itab-calendar-calendar-widget-text-05: #999;
-  --sd-theme-itab-calendar-calendar-widget-text-06: rgb(223, 221, 221);
-  --sd-theme-itab-calendar-calendar-widget-text-07: rgba(223, 221, 221, 0.46);
-  --sd-theme-itab-clock-clock-opened-panel-accent-border-01: #1890ff;
-  --sd-theme-itab-clock-clock-opened-panel-accent-surface-01: #1890ff;
-  --sd-theme-itab-clock-clock-opened-panel-border-01: rgba(0, 0, 0, 0.62);
-  --sd-theme-itab-clock-clock-opened-panel-border-02: #dcdfe6;
-  --sd-theme-itab-clock-clock-opened-panel-shadow-01: rgba(0, 0, 0, 0.7);
-  --sd-theme-itab-clock-clock-opened-panel-shadow-02: rgba(255, 255, 255, 0.03);
-  --sd-theme-itab-clock-clock-opened-panel-surface-01: #000;
-  --sd-theme-itab-clock-clock-opened-panel-surface-02: #1f1f1f;
-  --sd-theme-itab-clock-clock-opened-panel-surface-03: #181818;
-  --sd-theme-itab-clock-clock-opened-panel-surface-04: #171717;
-  --sd-theme-itab-clock-clock-opened-panel-surface-05: #1d1d1d;
-  --sd-theme-itab-clock-clock-opened-panel-surface-06: rgba(0, 0, 0, 0.76);
-  --sd-theme-itab-clock-clock-opened-panel-surface-07: #dcdfe6;
-  --sd-theme-itab-clock-clock-opened-panel-surface-08: #fff;
-  --sd-theme-itab-clock-clock-opened-panel-text-01: rgba(255, 255, 255, 0.64);
-  --sd-theme-itab-clock-clock-opened-panel-text-02: #222;
-  --sd-theme-itab-clock-clock-opened-panel-text-03: #bdbdbd;
-  --sd-theme-itab-clock-clock-opened-panel-text-04: #ccc;
-  --sd-theme-itab-clock-clock-opened-panel-text-05: rgba(255, 255, 255, 0.28);
-  --sd-theme-itab-clock-clock-opened-panel-text-06: #fff;
-  --sd-theme-itab-clock-clock-widget-surface-01: #111;
-  --sd-theme-itab-clock-clock-widget-text-01: #fff;
-  --sd-theme-itab-daily-english-daily-english-opened-panel-surface-01: #000;
-  --sd-theme-itab-daily-english-daily-english-opened-panel-surface-02: rgba(
+  --sd-theme-calendar-calendar-widget-accent-surface-01: rgb(255, 90, 93);
+  --sd-theme-calendar-calendar-widget-accent-surface-02: rgb(255, 90, 93);
+  --sd-theme-calendar-calendar-widget-accent-surface-03: rgb(255, 90, 93);
+  --sd-theme-calendar-calendar-widget-accent-text-01: rgb(216, 48, 48);
+  --sd-theme-calendar-calendar-widget-accent-text-02: #d84a58;
+  --sd-theme-calendar-calendar-widget-surface-01: rgb(34, 34, 34);
+  --sd-theme-calendar-calendar-widget-text-01: rgb(223, 221, 221);
+  --sd-theme-calendar-calendar-widget-text-02: #fff;
+  --sd-theme-calendar-calendar-widget-text-03: rgb(223, 221, 221);
+  --sd-theme-calendar-calendar-widget-text-04: #999;
+  --sd-theme-calendar-calendar-widget-text-05: #999;
+  --sd-theme-calendar-calendar-widget-text-06: rgb(223, 221, 221);
+  --sd-theme-calendar-calendar-widget-text-07: rgba(223, 221, 221, 0.46);
+  --sd-theme-clock-clock-opened-panel-accent-border-01: #1890ff;
+  --sd-theme-clock-clock-opened-panel-accent-surface-01: #1890ff;
+  --sd-theme-clock-clock-opened-panel-border-01: rgba(0, 0, 0, 0.62);
+  --sd-theme-clock-clock-opened-panel-border-02: #dcdfe6;
+  --sd-theme-clock-clock-opened-panel-shadow-01: rgba(0, 0, 0, 0.7);
+  --sd-theme-clock-clock-opened-panel-shadow-02: rgba(255, 255, 255, 0.03);
+  --sd-theme-clock-clock-opened-panel-surface-01: #000;
+  --sd-theme-clock-clock-opened-panel-surface-02: #1f1f1f;
+  --sd-theme-clock-clock-opened-panel-surface-03: #181818;
+  --sd-theme-clock-clock-opened-panel-surface-04: #171717;
+  --sd-theme-clock-clock-opened-panel-surface-05: #1d1d1d;
+  --sd-theme-clock-clock-opened-panel-surface-06: rgba(0, 0, 0, 0.76);
+  --sd-theme-clock-clock-opened-panel-surface-07: #dcdfe6;
+  --sd-theme-clock-clock-opened-panel-surface-08: #fff;
+  --sd-theme-clock-clock-opened-panel-text-01: rgba(255, 255, 255, 0.64);
+  --sd-theme-clock-clock-opened-panel-text-02: #222;
+  --sd-theme-clock-clock-opened-panel-text-03: #bdbdbd;
+  --sd-theme-clock-clock-opened-panel-text-04: #ccc;
+  --sd-theme-clock-clock-opened-panel-text-05: rgba(255, 255, 255, 0.28);
+  --sd-theme-clock-clock-opened-panel-text-06: #fff;
+  --sd-theme-clock-clock-widget-surface-01: #111;
+  --sd-theme-clock-clock-widget-text-01: #fff;
+  --sd-theme-daily-english-daily-english-opened-panel-surface-01: #000;
+  --sd-theme-daily-english-daily-english-opened-panel-surface-02: rgba(
     0,
     0,
     0,
     0
   );
-  --sd-theme-itab-daily-english-daily-english-opened-panel-surface-03: rgb(
+  --sd-theme-daily-english-daily-english-opened-panel-surface-03: rgb(
     51,
     51,
     51
   );
-  --sd-theme-itab-daily-english-daily-english-opened-panel-text-01: #fff;
-  --sd-theme-itab-daily-english-daily-english-opened-panel-text-02: rgba(
+  --sd-theme-daily-english-daily-english-opened-panel-text-01: #fff;
+  --sd-theme-daily-english-daily-english-opened-panel-text-02: rgba(
     255,
     255,
     255,
     0.72
   );
-  --sd-theme-itab-daily-english-daily-english-widget-surface-01: #000;
-  --sd-theme-itab-daily-english-daily-english-widget-text-01: #fff;
-  --sd-theme-itab-daily-english-daily-english-widget-text-02: rgba(
+  --sd-theme-daily-english-daily-english-widget-surface-01: #000;
+  --sd-theme-daily-english-daily-english-widget-text-01: #fff;
+  --sd-theme-daily-english-daily-english-widget-text-02: rgba(
     255,
     255,
     255,
     0.5
   );
-  --sd-theme-itab-daily-english-daily-english-widget-text-03: rgba(
+  --sd-theme-daily-english-daily-english-widget-text-03: rgba(
     255,
     255,
     255,
     0.7
   );
-  --sd-theme-itab-food-picker-food-picker-opened-panel-accent-border-01: var(
+  --sd-theme-food-picker-food-picker-opened-panel-accent-border-01: var(
     --sd-component-border
   );
-  --sd-theme-itab-food-picker-food-picker-opened-panel-accent-border-02: rgba(
+  --sd-theme-food-picker-food-picker-opened-panel-accent-border-02: rgba(
     243,
     155,
     45,
     0.72
   );
-  --sd-theme-itab-food-picker-food-picker-opened-panel-accent-surface-01: color-mix(
+  --sd-theme-food-picker-food-picker-opened-panel-accent-surface-01: color-mix(
     in srgb,
     var(--sd-state-warning) 18%,
     transparent
   );
-  --sd-theme-itab-food-picker-food-picker-opened-panel-accent-surface-02: #ffbd59;
-  --sd-theme-itab-food-picker-food-picker-opened-panel-accent-surface-03: #ff8d59;
-  --sd-theme-itab-food-picker-food-picker-opened-panel-accent-surface-04: #ffd75e;
-  --sd-theme-itab-food-picker-food-picker-opened-panel-accent-surface-05: #8adf89;
-  --sd-theme-itab-food-picker-food-picker-opened-panel-accent-surface-06: #70c7ff;
-  --sd-theme-itab-food-picker-food-picker-opened-panel-accent-surface-07: #b58cff;
-  --sd-theme-itab-food-picker-food-picker-opened-panel-accent-surface-08: #f39b2d;
-  --sd-theme-itab-food-picker-food-picker-opened-panel-accent-surface-09: color-mix(
+  --sd-theme-food-picker-food-picker-opened-panel-accent-surface-02: #ffbd59;
+  --sd-theme-food-picker-food-picker-opened-panel-accent-surface-03: #ff8d59;
+  --sd-theme-food-picker-food-picker-opened-panel-accent-surface-04: #ffd75e;
+  --sd-theme-food-picker-food-picker-opened-panel-accent-surface-05: #8adf89;
+  --sd-theme-food-picker-food-picker-opened-panel-accent-surface-06: #70c7ff;
+  --sd-theme-food-picker-food-picker-opened-panel-accent-surface-07: #b58cff;
+  --sd-theme-food-picker-food-picker-opened-panel-accent-surface-08: #f39b2d;
+  --sd-theme-food-picker-food-picker-opened-panel-accent-surface-09: color-mix(
     in srgb,
     var(--sd-component-text-primary) 10%,
     transparent
   );
-  --sd-theme-itab-food-picker-food-picker-opened-panel-accent-text-01: var(
+  --sd-theme-food-picker-food-picker-opened-panel-accent-text-01: var(
     --sd-component-text-primary
   );
-  --sd-theme-itab-food-picker-food-picker-opened-panel-accent-text-02: var(
+  --sd-theme-food-picker-food-picker-opened-panel-accent-text-02: var(
     --sd-component-text-primary
   );
-  --sd-theme-itab-food-picker-food-picker-opened-panel-accent-text-03: var(
+  --sd-theme-food-picker-food-picker-opened-panel-accent-text-03: var(
     --sd-component-text-tertiary
   );
-  --sd-theme-itab-food-picker-food-picker-opened-panel-shadow-01: rgba(
+  --sd-theme-food-picker-food-picker-opened-panel-shadow-01: rgba(
     243,
     155,
     45,
     0.16
   );
-  --sd-theme-itab-food-picker-food-picker-opened-panel-surface-01: var(
+  --sd-theme-food-picker-food-picker-opened-panel-surface-01: var(
     --sd-component-surface
   );
-  --sd-theme-itab-food-picker-food-picker-opened-panel-surface-02: var(
+  --sd-theme-food-picker-food-picker-opened-panel-surface-02: var(
     --sd-component-surface-muted
   );
-  --sd-theme-itab-food-picker-food-picker-opened-panel-text-01: var(
+  --sd-theme-food-picker-food-picker-opened-panel-text-01: var(
     --sd-home-resize-badge-text
   );
-  --sd-theme-itab-food-picker-food-picker-widget-accent-surface-01: #f39b2d;
-  --sd-theme-itab-food-picker-food-picker-widget-accent-text-01: var(
+  --sd-theme-food-picker-food-picker-widget-accent-surface-01: #f39b2d;
+  --sd-theme-food-picker-food-picker-widget-accent-text-01: var(
     --sd-component-text-primary
   );
-  --sd-theme-itab-food-picker-food-picker-widget-shadow-01: color-mix(
+  --sd-theme-food-picker-food-picker-widget-shadow-01: color-mix(
     in srgb,
     var(--sd-state-warning) 28%,
     transparent
   );
-  --sd-theme-itab-food-picker-food-picker-widget-surface-01: var(
+  --sd-theme-food-picker-food-picker-widget-surface-01: var(
     --sd-component-surface
   );
-  --sd-theme-itab-food-picker-food-picker-widget-text-01: var(
+  --sd-theme-food-picker-food-picker-widget-text-01: var(
     --sd-component-ink-surface
   );
-  --sd-theme-itab-ip-ip-opened-panel-accent-text-01: #b56b00;
-  --sd-theme-itab-ip-ip-opened-panel-surface-01: var(--sd-component-surface);
-  --sd-theme-itab-ip-ip-opened-panel-text-01: var(--sd-component-text-primary);
-  --sd-theme-itab-ip-ip-opened-panel-text-02: var(--sd-component-text-primary);
-  --sd-theme-itab-ip-ip-widget-accent-surface-01: rgb(60, 102, 255);
-  --sd-theme-itab-ip-ip-widget-text-01: #fff;
-  --sd-theme-itab-ip-ip-widget-text-02: rgba(255, 255, 255, 0.92);
-  --sd-theme-itab-clock-flip-card-accent-surface-01: #3a3a5a;
-  --sd-theme-itab-clock-flip-card-accent-surface-02: #2a2a4a;
-  --sd-theme-itab-clock-flip-card-border-01: rgba(0, 0, 0, 0.4);
-  --sd-theme-itab-clock-flip-card-shadow-01: rgba(0, 0, 0, 0.3);
-  --sd-theme-itab-clock-flip-card-shadow-02: rgba(255, 255, 255, 0.03);
-  --sd-theme-itab-clock-flip-card-surface-01: rgba(0, 0, 0, 0.65);
-  --sd-theme-itab-clock-flip-card-surface-02: rgba(255, 255, 255, 0.03);
-  --sd-theme-itab-clock-flip-card-surface-03: rgba(0, 0, 0, 0.48);
-  --sd-theme-itab-clock-flip-card-surface-04: rgba(0, 0, 0, 0.56);
-  --sd-theme-itab-clock-flip-card-surface-05: rgba(0, 0, 0, 0);
-  --sd-theme-itab-clock-flip-card-text-01: #fff;
-  --sd-theme-itab-memo-memo-fixed-layer-shadow-01: rgba(0, 0, 0, 0.12);
-  --sd-theme-itab-memo-memo-fixed-layer-surface-01: rgba(255, 255, 255, 0.3);
-  --sd-theme-itab-memo-memo-fixed-layer-text-01: rgba(0, 0, 0, 0.9);
-  --sd-theme-itab-memo-memo-fixed-layer-text-02: rgba(0, 0, 0, 0.36);
-  --sd-theme-itab-memo-memo-opened-panel-accent-border-01: #1890ff;
-  --sd-theme-itab-memo-memo-opened-panel-accent-border-02: rgba(
+  --sd-theme-ip-ip-opened-panel-accent-text-01: #b56b00;
+  --sd-theme-ip-ip-opened-panel-surface-01: var(--sd-component-surface);
+  --sd-theme-ip-ip-opened-panel-text-01: var(--sd-component-text-primary);
+  --sd-theme-ip-ip-opened-panel-text-02: var(--sd-component-text-primary);
+  --sd-theme-ip-ip-widget-accent-surface-01: rgb(60, 102, 255);
+  --sd-theme-ip-ip-widget-text-01: #fff;
+  --sd-theme-ip-ip-widget-text-02: rgba(255, 255, 255, 0.92);
+  --sd-theme-clock-flip-card-accent-surface-01: #3a3a5a;
+  --sd-theme-clock-flip-card-accent-surface-02: #2a2a4a;
+  --sd-theme-clock-flip-card-border-01: rgba(0, 0, 0, 0.4);
+  --sd-theme-clock-flip-card-shadow-01: rgba(0, 0, 0, 0.3);
+  --sd-theme-clock-flip-card-shadow-02: rgba(255, 255, 255, 0.03);
+  --sd-theme-clock-flip-card-surface-01: rgba(0, 0, 0, 0.65);
+  --sd-theme-clock-flip-card-surface-02: rgba(255, 255, 255, 0.03);
+  --sd-theme-clock-flip-card-surface-03: rgba(0, 0, 0, 0.48);
+  --sd-theme-clock-flip-card-surface-04: rgba(0, 0, 0, 0.56);
+  --sd-theme-clock-flip-card-surface-05: rgba(0, 0, 0, 0);
+  --sd-theme-clock-flip-card-text-01: #fff;
+  --sd-theme-memo-memo-fixed-layer-shadow-01: rgba(0, 0, 0, 0.12);
+  --sd-theme-memo-memo-fixed-layer-surface-01: rgba(255, 255, 255, 0.3);
+  --sd-theme-memo-memo-fixed-layer-text-01: rgba(0, 0, 0, 0.9);
+  --sd-theme-memo-memo-fixed-layer-text-02: rgba(0, 0, 0, 0.36);
+  --sd-theme-memo-memo-opened-panel-accent-border-01: #1890ff;
+  --sd-theme-memo-memo-opened-panel-accent-border-02: rgba(
     24,
     144,
     255,
     0.48
   );
-  --sd-theme-itab-memo-memo-opened-panel-accent-surface-01: #1890ff;
-  --sd-theme-itab-memo-memo-opened-panel-accent-text-01: rgb(52, 120, 247);
-  --sd-theme-itab-memo-memo-opened-panel-border-01: var(
+  --sd-theme-memo-memo-opened-panel-accent-surface-01: #1890ff;
+  --sd-theme-memo-memo-opened-panel-accent-text-01: rgb(52, 120, 247);
+  --sd-theme-memo-memo-opened-panel-border-01: var(
     --sd-component-text-tertiary
   );
-  --sd-theme-itab-memo-memo-opened-panel-border-02: var(--sd-component-border);
-  --sd-theme-itab-memo-memo-opened-panel-shadow-01: rgba(0, 0, 0, 0.12);
-  --sd-theme-itab-memo-memo-opened-panel-surface-01: var(
+  --sd-theme-memo-memo-opened-panel-border-02: var(--sd-component-border);
+  --sd-theme-memo-memo-opened-panel-shadow-01: rgba(0, 0, 0, 0.12);
+  --sd-theme-memo-memo-opened-panel-surface-01: var(
     --sd-component-surface
   );
-  --sd-theme-itab-memo-memo-opened-panel-surface-02: color-mix(
+  --sd-theme-memo-memo-opened-panel-surface-02: color-mix(
     in srgb,
     var(--sd-component-text-primary) 6%,
     transparent
   );
-  --sd-theme-itab-memo-memo-opened-panel-surface-03: var(
+  --sd-theme-memo-memo-opened-panel-surface-03: var(
     --sd-state-info-surface
   );
-  --sd-theme-itab-memo-memo-opened-panel-text-01: var(
+  --sd-theme-memo-memo-opened-panel-text-01: var(
     --sd-component-text-primary
   );
-  --sd-theme-itab-memo-memo-opened-panel-text-02: var(
+  --sd-theme-memo-memo-opened-panel-text-02: var(
     --sd-component-text-primary
   );
-  --sd-theme-itab-memo-memo-opened-panel-text-03: var(
+  --sd-theme-memo-memo-opened-panel-text-03: var(
     --sd-component-text-tertiary
   );
-  --sd-theme-itab-memo-memo-opened-panel-text-04: var(
+  --sd-theme-memo-memo-opened-panel-text-04: var(
     --sd-home-resize-badge-text
   );
-  --sd-theme-itab-memo-memo-widget-accent-surface-01: rgb(29, 101, 240);
-  --sd-theme-itab-memo-memo-widget-accent-surface-02: rgb(26, 209, 252);
-  --sd-theme-itab-memo-memo-widget-accent-surface-03: rgb(255, 201, 39);
-  --sd-theme-itab-memo-memo-widget-accent-surface-04: rgb(255, 164, 3);
-  --sd-theme-itab-memo-memo-widget-border-01: rgba(0, 0, 0, 0.08);
-  --sd-theme-itab-memo-memo-widget-surface-01: rgb(34, 34, 34);
-  --sd-theme-itab-memo-memo-widget-text-01: rgb(223, 221, 221);
-  --sd-theme-itab-memo-memo-widget-text-02: #fff;
-  --sd-theme-itab-movie-calendar-movie-calendar-opened-panel-accent-surface-01: rgba(
+  --sd-theme-memo-memo-widget-accent-surface-01: rgb(29, 101, 240);
+  --sd-theme-memo-memo-widget-accent-surface-02: rgb(26, 209, 252);
+  --sd-theme-memo-memo-widget-accent-surface-03: rgb(255, 201, 39);
+  --sd-theme-memo-memo-widget-accent-surface-04: rgb(255, 164, 3);
+  --sd-theme-memo-memo-widget-border-01: rgba(0, 0, 0, 0.08);
+  --sd-theme-memo-memo-widget-surface-01: rgb(34, 34, 34);
+  --sd-theme-memo-memo-widget-text-01: rgb(223, 221, 221);
+  --sd-theme-memo-memo-widget-text-02: #fff;
+  --sd-theme-movie-calendar-movie-calendar-opened-panel-accent-surface-01: rgba(
     0,
     20,
     0,
     0.4
   );
-  --sd-theme-itab-movie-calendar-movie-calendar-opened-panel-accent-text-01: #f9d5ad;
-  --sd-theme-itab-movie-calendar-movie-calendar-opened-panel-accent-text-02: #f2cca4;
-  --sd-theme-itab-movie-calendar-movie-calendar-opened-panel-surface-01: rgba(
+  --sd-theme-movie-calendar-movie-calendar-opened-panel-accent-text-01: #f9d5ad;
+  --sd-theme-movie-calendar-movie-calendar-opened-panel-accent-text-02: #f2cca4;
+  --sd-theme-movie-calendar-movie-calendar-opened-panel-surface-01: rgba(
     0,
     0,
     0,
     0.5
   );
-  --sd-theme-itab-movie-calendar-movie-calendar-opened-panel-surface-02: #000;
-  --sd-theme-itab-movie-calendar-movie-calendar-opened-panel-surface-03: rgba(
+  --sd-theme-movie-calendar-movie-calendar-opened-panel-surface-02: #000;
+  --sd-theme-movie-calendar-movie-calendar-opened-panel-surface-03: rgba(
     0,
     0,
     0,
     0.38
   );
-  --sd-theme-itab-movie-calendar-movie-calendar-opened-panel-surface-04: rgba(
+  --sd-theme-movie-calendar-movie-calendar-opened-panel-surface-04: rgba(
     255,
     255,
     255,
     0.16
   );
-  --sd-theme-itab-movie-calendar-movie-calendar-opened-panel-surface-05: rgba(
+  --sd-theme-movie-calendar-movie-calendar-opened-panel-surface-05: rgba(
     0,
     0,
     0,
     0.3
   );
-  --sd-theme-itab-movie-calendar-movie-calendar-opened-panel-surface-06: #4c4c3f;
-  --sd-theme-itab-movie-calendar-movie-calendar-opened-panel-text-01: rgba(
+  --sd-theme-movie-calendar-movie-calendar-opened-panel-surface-06: #4c4c3f;
+  --sd-theme-movie-calendar-movie-calendar-opened-panel-text-01: rgba(
     255,
     255,
     255,
     0.9
   );
-  --sd-theme-itab-movie-calendar-movie-calendar-opened-panel-text-02: #fff;
-  --sd-theme-itab-movie-calendar-movie-calendar-opened-panel-text-03: #d1d0d0;
-  --sd-theme-itab-movie-calendar-movie-calendar-widget-accent-surface-01: #ffac2d;
-  --sd-theme-itab-movie-calendar-movie-calendar-widget-accent-text-01: #4f0e03;
-  --sd-theme-itab-movie-calendar-movie-calendar-widget-shadow-01: rgba(
+  --sd-theme-movie-calendar-movie-calendar-opened-panel-text-02: #fff;
+  --sd-theme-movie-calendar-movie-calendar-opened-panel-text-03: #d1d0d0;
+  --sd-theme-movie-calendar-movie-calendar-widget-accent-surface-01: #ffac2d;
+  --sd-theme-movie-calendar-movie-calendar-widget-accent-text-01: #4f0e03;
+  --sd-theme-movie-calendar-movie-calendar-widget-shadow-01: rgba(
     0,
     0,
     0,
     0.1
   );
-  --sd-theme-itab-movie-calendar-movie-calendar-widget-shadow-02: rgba(
+  --sd-theme-movie-calendar-movie-calendar-widget-shadow-02: rgba(
     0,
     0,
     0,
     0.3
   );
-  --sd-theme-itab-movie-calendar-movie-calendar-widget-surface-01: #3a444c;
-  --sd-theme-itab-movie-calendar-movie-calendar-widget-surface-02: rgba(
+  --sd-theme-movie-calendar-movie-calendar-widget-surface-01: #3a444c;
+  --sd-theme-movie-calendar-movie-calendar-widget-surface-02: rgba(
     0,
     0,
     0,
     0
   );
-  --sd-theme-itab-movie-calendar-movie-calendar-widget-surface-03: rgba(
+  --sd-theme-movie-calendar-movie-calendar-widget-surface-03: rgba(
     0,
     0,
     0,
     0.12
   );
-  --sd-theme-itab-movie-calendar-movie-calendar-widget-text-01: #f4f7f9;
-  --sd-theme-itab-movie-calendar-movie-calendar-widget-text-02: #fff;
-  --sd-theme-itab-movie-calendar-movie-calendar-widget-text-03: #333;
-  --sd-theme-itab-number-uppercase-number-uppercase-opened-panel-accent-border-01: #4a5568;
-  --sd-theme-itab-number-uppercase-number-uppercase-opened-panel-accent-border-02: #facc15;
-  --sd-theme-itab-number-uppercase-number-uppercase-opened-panel-accent-surface-01: #111827;
-  --sd-theme-itab-number-uppercase-number-uppercase-opened-panel-accent-surface-02: #1f2937;
-  --sd-theme-itab-number-uppercase-number-uppercase-opened-panel-accent-surface-03: #1a202c;
-  --sd-theme-itab-number-uppercase-number-uppercase-opened-panel-accent-surface-04: rgba(
+  --sd-theme-movie-calendar-movie-calendar-widget-text-01: #f4f7f9;
+  --sd-theme-movie-calendar-movie-calendar-widget-text-02: #fff;
+  --sd-theme-movie-calendar-movie-calendar-widget-text-03: #333;
+  --sd-theme-number-uppercase-number-uppercase-opened-panel-accent-border-01: #4a5568;
+  --sd-theme-number-uppercase-number-uppercase-opened-panel-accent-border-02: #facc15;
+  --sd-theme-number-uppercase-number-uppercase-opened-panel-accent-surface-01: #111827;
+  --sd-theme-number-uppercase-number-uppercase-opened-panel-accent-surface-02: #1f2937;
+  --sd-theme-number-uppercase-number-uppercase-opened-panel-accent-surface-03: #1a202c;
+  --sd-theme-number-uppercase-number-uppercase-opened-panel-accent-surface-04: rgba(
     250,
     204,
     21,
     0.05
   );
-  --sd-theme-itab-number-uppercase-number-uppercase-opened-panel-accent-surface-05: #2d3748;
-  --sd-theme-itab-number-uppercase-number-uppercase-opened-panel-accent-surface-06: #eab308;
-  --sd-theme-itab-number-uppercase-number-uppercase-opened-panel-accent-text-01: #facc15;
-  --sd-theme-itab-number-uppercase-number-uppercase-opened-panel-shadow-01: rgba(
+  --sd-theme-number-uppercase-number-uppercase-opened-panel-accent-surface-05: #2d3748;
+  --sd-theme-number-uppercase-number-uppercase-opened-panel-accent-surface-06: #eab308;
+  --sd-theme-number-uppercase-number-uppercase-opened-panel-accent-text-01: #facc15;
+  --sd-theme-number-uppercase-number-uppercase-opened-panel-shadow-01: rgba(
     250,
     204,
     21,
     0.19
   );
-  --sd-theme-itab-number-uppercase-number-uppercase-opened-panel-surface-01: #000;
-  --sd-theme-itab-number-uppercase-number-uppercase-opened-panel-text-01: #cbd5e1;
-  --sd-theme-itab-number-uppercase-number-uppercase-opened-panel-text-02: rgba(
+  --sd-theme-number-uppercase-number-uppercase-opened-panel-surface-01: #000;
+  --sd-theme-number-uppercase-number-uppercase-opened-panel-text-01: #cbd5e1;
+  --sd-theme-number-uppercase-number-uppercase-opened-panel-text-02: rgba(
     203,
     213,
     224,
     0.58
   );
-  --sd-theme-itab-number-uppercase-number-uppercase-opened-panel-text-03: #a0aec0;
-  --sd-theme-itab-number-uppercase-number-uppercase-opened-panel-text-04: #cbd5e0;
-  --sd-theme-itab-number-uppercase-number-uppercase-opened-panel-text-05: #e2e8f0;
-  --sd-theme-itab-number-uppercase-number-uppercase-opened-panel-text-06: #aeb8c7;
-  --sd-theme-itab-number-uppercase-number-uppercase-widget-accent-border-01: rgba(
+  --sd-theme-number-uppercase-number-uppercase-opened-panel-text-03: #a0aec0;
+  --sd-theme-number-uppercase-number-uppercase-opened-panel-text-04: #cbd5e0;
+  --sd-theme-number-uppercase-number-uppercase-opened-panel-text-05: #e2e8f0;
+  --sd-theme-number-uppercase-number-uppercase-opened-panel-text-06: #aeb8c7;
+  --sd-theme-number-uppercase-number-uppercase-widget-accent-border-01: rgba(
     250,
     204,
     21,
     0.16
   );
-  --sd-theme-itab-number-uppercase-number-uppercase-widget-accent-border-02: rgba(
+  --sd-theme-number-uppercase-number-uppercase-widget-accent-border-02: rgba(
     250,
     204,
     21,
     0.25
   );
-  --sd-theme-itab-number-uppercase-number-uppercase-widget-accent-surface-01: rgba(
+  --sd-theme-number-uppercase-number-uppercase-widget-accent-surface-01: rgba(
     250,
     204,
     21,
     0.18
   );
-  --sd-theme-itab-number-uppercase-number-uppercase-widget-accent-surface-02: rgba(
+  --sd-theme-number-uppercase-number-uppercase-widget-accent-surface-02: rgba(
     250,
     204,
     21,
     0.1
   );
-  --sd-theme-itab-number-uppercase-number-uppercase-widget-accent-surface-03: #111827;
-  --sd-theme-itab-number-uppercase-number-uppercase-widget-accent-surface-04: #eab308;
-  --sd-theme-itab-number-uppercase-number-uppercase-widget-accent-text-01: #facc15;
-  --sd-theme-itab-number-uppercase-number-uppercase-widget-accent-text-02: rgba(
+  --sd-theme-number-uppercase-number-uppercase-widget-accent-surface-03: #111827;
+  --sd-theme-number-uppercase-number-uppercase-widget-accent-surface-04: #eab308;
+  --sd-theme-number-uppercase-number-uppercase-widget-accent-text-01: #facc15;
+  --sd-theme-number-uppercase-number-uppercase-widget-accent-text-02: rgba(
     250,
     204,
     21,
     0.55
   );
-  --sd-theme-itab-number-uppercase-number-uppercase-widget-accent-text-03: #fef08a;
-  --sd-theme-itab-poem-poem-opened-panel-border-01: var(--sd-component-border);
-  --sd-theme-itab-poem-poem-opened-panel-border-02: var(--sd-component-border);
-  --sd-theme-itab-poem-poem-opened-panel-surface-01: var(
+  --sd-theme-number-uppercase-number-uppercase-widget-accent-text-03: #fef08a;
+  --sd-theme-poem-poem-opened-panel-border-01: var(--sd-component-border);
+  --sd-theme-poem-poem-opened-panel-border-02: var(--sd-component-border);
+  --sd-theme-poem-poem-opened-panel-surface-01: var(
     --sd-component-surface
   );
-  --sd-theme-itab-poem-poem-opened-panel-surface-02: color-mix(
+  --sd-theme-poem-poem-opened-panel-surface-02: color-mix(
     in srgb,
     var(--sd-component-text-primary) 10%,
     transparent
   );
-  --sd-theme-itab-poem-poem-opened-panel-surface-03: color-mix(
+  --sd-theme-poem-poem-opened-panel-surface-03: color-mix(
     in srgb,
     var(--sd-component-text-primary) 18%,
     transparent
   );
-  --sd-theme-itab-poem-poem-opened-panel-surface-04: var(
+  --sd-theme-poem-poem-opened-panel-surface-04: var(
     --sd-component-surface-raised
   );
-  --sd-theme-itab-poem-poem-opened-panel-text-01: var(
+  --sd-theme-poem-poem-opened-panel-text-01: var(
     --sd-component-text-primary
   );
-  --sd-theme-itab-poem-poem-opened-panel-text-02: var(
+  --sd-theme-poem-poem-opened-panel-text-02: var(
     --sd-component-text-secondary
   );
-  --sd-theme-itab-poem-poem-opened-panel-text-03: var(
+  --sd-theme-poem-poem-opened-panel-text-03: var(
     --sd-component-text-primary
   );
-  --sd-theme-itab-poem-poem-opened-panel-text-04: var(
+  --sd-theme-poem-poem-opened-panel-text-04: var(
     --sd-component-text-tertiary
   );
-  --sd-theme-itab-poem-poem-opened-panel-text-05: var(
+  --sd-theme-poem-poem-opened-panel-text-05: var(
     --sd-home-resize-badge-text
   );
-  --sd-theme-itab-poem-poem-widget-accent-01: rgb(9, 55, 68);
-  --sd-theme-itab-poem-poem-widget-accent-surface-01: rgb(9, 55, 68);
-  --sd-theme-itab-poem-poem-widget-surface-01: var(--sd-component-surface);
-  --sd-theme-itab-poem-poem-widget-text-01: var(--sd-component-text-primary);
-  --sd-theme-itab-poem-poem-widget-text-02: var(--sd-component-text-secondary);
-  --sd-theme-itab-pomodoro-pomodoro-opened-panel-accent-surface-01: rgba(
+  --sd-theme-poem-poem-widget-accent-01: rgb(9, 55, 68);
+  --sd-theme-poem-poem-widget-accent-surface-01: rgb(9, 55, 68);
+  --sd-theme-poem-poem-widget-surface-01: var(--sd-component-surface);
+  --sd-theme-poem-poem-widget-text-01: var(--sd-component-text-primary);
+  --sd-theme-poem-poem-widget-text-02: var(--sd-component-text-secondary);
+  --sd-theme-pomodoro-pomodoro-opened-panel-accent-surface-01: rgba(
     3,
     25,
     56,
     0.34
   );
-  --sd-theme-itab-pomodoro-pomodoro-opened-panel-accent-text-01: rgba(
+  --sd-theme-pomodoro-pomodoro-opened-panel-accent-text-01: rgba(
     255,
     214,
     102,
     0.95
   );
-  --sd-theme-itab-pomodoro-pomodoro-opened-panel-border-01: rgba(
+  --sd-theme-pomodoro-pomodoro-opened-panel-border-01: rgba(
     255,
     255,
     255,
     0.18
   );
-  --sd-theme-itab-pomodoro-pomodoro-opened-panel-border-02: rgba(
+  --sd-theme-pomodoro-pomodoro-opened-panel-border-02: rgba(
     255,
     255,
     255,
     0.1
   );
-  --sd-theme-itab-pomodoro-pomodoro-opened-panel-surface-01: rgba(
+  --sd-theme-pomodoro-pomodoro-opened-panel-surface-01: rgba(
     255,
     255,
     255,
     0.3
   );
-  --sd-theme-itab-pomodoro-pomodoro-opened-panel-surface-02: rgba(
+  --sd-theme-pomodoro-pomodoro-opened-panel-surface-02: rgba(
     255,
     255,
     255,
     0.4
   );
-  --sd-theme-itab-pomodoro-pomodoro-opened-panel-surface-03: rgba(
+  --sd-theme-pomodoro-pomodoro-opened-panel-surface-03: rgba(
     0,
     0,
     0,
     0.14
   );
-  --sd-theme-itab-pomodoro-pomodoro-opened-panel-surface-04: rgba(
+  --sd-theme-pomodoro-pomodoro-opened-panel-surface-04: rgba(
     255,
     255,
     255,
     0.22
   );
-  --sd-theme-itab-pomodoro-pomodoro-opened-panel-text-01: #e3e3e3;
-  --sd-theme-itab-pomodoro-pomodoro-opened-panel-text-02: #fff;
-  --sd-theme-itab-pomodoro-pomodoro-opened-panel-text-03: rgba(
+  --sd-theme-pomodoro-pomodoro-opened-panel-text-01: #e3e3e3;
+  --sd-theme-pomodoro-pomodoro-opened-panel-text-02: #fff;
+  --sd-theme-pomodoro-pomodoro-opened-panel-text-03: rgba(
     255,
     255,
     255,
     0.8
   );
-  --sd-theme-itab-pomodoro-pomodoro-opened-panel-text-04: rgba(
+  --sd-theme-pomodoro-pomodoro-opened-panel-text-04: rgba(
     255,
     255,
     255,
     0.5
   );
-  --sd-theme-itab-pomodoro-pomodoro-opened-panel-text-05: rgba(
+  --sd-theme-pomodoro-pomodoro-opened-panel-text-05: rgba(
     255,
     255,
     255,
     0.58
   );
-  --sd-theme-itab-pomodoro-pomodoro-opened-panel-text-06: rgba(
+  --sd-theme-pomodoro-pomodoro-opened-panel-text-06: rgba(
     255,
     255,
     255,
     0.72
   );
-  --sd-theme-itab-pomodoro-pomodoro-widget-accent-surface-01: rgba(
+  --sd-theme-pomodoro-pomodoro-widget-accent-surface-01: rgba(
     3,
     25,
     56,
     0.6
   );
-  --sd-theme-itab-pomodoro-pomodoro-widget-border-01: rgba(255, 255, 255, 0.4);
-  --sd-theme-itab-pomodoro-pomodoro-widget-border-02: rgba(255, 255, 255, 0.6);
-  --sd-theme-itab-pomodoro-pomodoro-widget-surface-01: #000;
-  --sd-theme-itab-pomodoro-pomodoro-widget-surface-02: rgba(255, 255, 255, 0.3);
-  --sd-theme-itab-pomodoro-pomodoro-widget-surface-03: rgba(255, 255, 255, 0.4);
-  --sd-theme-itab-pomodoro-pomodoro-widget-surface-04: rgba(255, 255, 255, 0.2);
-  --sd-theme-itab-pomodoro-pomodoro-widget-text-01: #fff;
-  --sd-theme-itab-pomodoro-pomodoro-widget-text-02: rgba(255, 255, 255, 0.5);
-  --sd-theme-itab-pomodoro-pomodoro-widget-text-03: rgba(255, 255, 255, 0.6);
-  --sd-theme-itab-todo-todo-opened-panel-accent-surface-01: rgb(24, 144, 255);
-  --sd-theme-itab-todo-todo-opened-panel-border-01: var(
+  --sd-theme-pomodoro-pomodoro-widget-border-01: rgba(255, 255, 255, 0.4);
+  --sd-theme-pomodoro-pomodoro-widget-border-02: rgba(255, 255, 255, 0.6);
+  --sd-theme-pomodoro-pomodoro-widget-surface-01: #000;
+  --sd-theme-pomodoro-pomodoro-widget-surface-02: rgba(255, 255, 255, 0.3);
+  --sd-theme-pomodoro-pomodoro-widget-surface-03: rgba(255, 255, 255, 0.4);
+  --sd-theme-pomodoro-pomodoro-widget-surface-04: rgba(255, 255, 255, 0.2);
+  --sd-theme-pomodoro-pomodoro-widget-text-01: #fff;
+  --sd-theme-pomodoro-pomodoro-widget-text-02: rgba(255, 255, 255, 0.5);
+  --sd-theme-pomodoro-pomodoro-widget-text-03: rgba(255, 255, 255, 0.6);
+  --sd-theme-todo-todo-opened-panel-accent-surface-01: rgb(24, 144, 255);
+  --sd-theme-todo-todo-opened-panel-border-01: var(
     --sd-component-text-tertiary
   );
-  --sd-theme-itab-todo-todo-opened-panel-border-02: var(--sd-component-border);
-  --sd-theme-itab-todo-todo-opened-panel-surface-01: var(
+  --sd-theme-todo-todo-opened-panel-border-02: var(--sd-component-border);
+  --sd-theme-todo-todo-opened-panel-surface-01: var(
     --sd-component-surface
   );
-  --sd-theme-itab-todo-todo-opened-panel-surface-02: var(
+  --sd-theme-todo-todo-opened-panel-surface-02: var(
     --sd-component-surface-muted
   );
-  --sd-theme-itab-todo-todo-opened-panel-surface-03: color-mix(
+  --sd-theme-todo-todo-opened-panel-surface-03: color-mix(
     in srgb,
     var(--sd-component-text-primary) 20%,
     transparent
   );
-  --sd-theme-itab-todo-todo-opened-panel-surface-04: color-mix(
+  --sd-theme-todo-todo-opened-panel-surface-04: color-mix(
     in srgb,
     var(--sd-component-text-primary) 28%,
     transparent
   );
-  --sd-theme-itab-todo-todo-opened-panel-text-01: var(
+  --sd-theme-todo-todo-opened-panel-text-01: var(
     --sd-component-text-primary
   );
-  --sd-theme-itab-todo-todo-opened-panel-text-02: var(
+  --sd-theme-todo-todo-opened-panel-text-02: var(
     --sd-component-text-tertiary
   );
-  --sd-theme-itab-todo-todo-opened-panel-text-03: var(
+  --sd-theme-todo-todo-opened-panel-text-03: var(
     --sd-home-resize-badge-text
   );
-  --sd-theme-itab-todo-todo-opened-panel-text-04: var(
+  --sd-theme-todo-todo-opened-panel-text-04: var(
     --sd-component-text-secondary
   );
-  --sd-theme-itab-todo-todo-widget-accent-border-01: rgb(24, 144, 255);
-  --sd-theme-itab-todo-todo-widget-accent-surface-01: rgb(32, 102, 204);
-  --sd-theme-itab-todo-todo-widget-accent-text-01: rgb(52, 110, 253);
-  --sd-theme-itab-todo-todo-widget-border-01: rgb(147, 147, 147);
-  --sd-theme-itab-todo-todo-widget-surface-01: rgb(34, 34, 34);
-  --sd-theme-itab-todo-todo-widget-surface-02: rgb(147, 147, 147);
-  --sd-theme-itab-todo-todo-widget-text-01: rgba(255, 255, 255, 0.8);
-  --sd-theme-itab-wallpaper-wallpaper-opened-panel-accent-01: rgb(24, 144, 255);
-  --sd-theme-itab-wallpaper-wallpaper-opened-panel-accent-surface-01: rgb(
+  --sd-theme-todo-todo-widget-accent-border-01: rgb(24, 144, 255);
+  --sd-theme-todo-todo-widget-accent-surface-01: rgb(32, 102, 204);
+  --sd-theme-todo-todo-widget-accent-text-01: rgb(52, 110, 253);
+  --sd-theme-todo-todo-widget-border-01: rgb(147, 147, 147);
+  --sd-theme-todo-todo-widget-surface-01: rgb(34, 34, 34);
+  --sd-theme-todo-todo-widget-surface-02: rgb(147, 147, 147);
+  --sd-theme-todo-todo-widget-text-01: rgba(255, 255, 255, 0.8);
+  --sd-theme-wallpaper-wallpaper-opened-panel-accent-01: rgb(24, 144, 255);
+  --sd-theme-wallpaper-wallpaper-opened-panel-accent-surface-01: rgb(
     24,
     144,
     255
   );
-  --sd-theme-itab-wallpaper-wallpaper-opened-panel-accent-text-01: var(
+  --sd-theme-wallpaper-wallpaper-opened-panel-accent-text-01: var(
     --sd-component-text-primary
   );
-  --sd-theme-itab-wallpaper-wallpaper-opened-panel-accent-text-02: rgb(
+  --sd-theme-wallpaper-wallpaper-opened-panel-accent-text-02: rgb(
     24,
     144,
     255
   );
-  --sd-theme-itab-wallpaper-wallpaper-opened-panel-accent-text-03: var(
+  --sd-theme-wallpaper-wallpaper-opened-panel-accent-text-03: var(
     --sd-component-text-tertiary
   );
-  --sd-theme-itab-wallpaper-wallpaper-opened-panel-accent-text-04: #dc2626;
-  --sd-theme-itab-wallpaper-wallpaper-opened-panel-shadow-01: rgba(
+  --sd-theme-wallpaper-wallpaper-opened-panel-accent-text-04: #dc2626;
+  --sd-theme-wallpaper-wallpaper-opened-panel-shadow-01: rgba(
     0,
     0,
     0,
     0.28
   );
-  --sd-theme-itab-wallpaper-wallpaper-opened-panel-shadow-02: rgba(
+  --sd-theme-wallpaper-wallpaper-opened-panel-shadow-02: rgba(
     15,
     23,
     42,
     0.2
   );
-  --sd-theme-itab-wallpaper-wallpaper-opened-panel-surface-01: color-mix(
+  --sd-theme-wallpaper-wallpaper-opened-panel-surface-01: color-mix(
     in srgb,
     var(--sd-component-surface) 88%,
     transparent
   );
-  --sd-theme-itab-wallpaper-wallpaper-opened-panel-surface-02: color-mix(
+  --sd-theme-wallpaper-wallpaper-opened-panel-surface-02: color-mix(
     in srgb,
     var(--sd-component-surface-raised) 92%,
     transparent
   );
-  --sd-theme-itab-wallpaper-wallpaper-opened-panel-surface-03: var(
+  --sd-theme-wallpaper-wallpaper-opened-panel-surface-03: var(
     --sd-component-surface-raised
   );
-  --sd-theme-itab-wallpaper-wallpaper-opened-panel-surface-04: var(
+  --sd-theme-wallpaper-wallpaper-opened-panel-surface-04: var(
     --sd-shell-surface
   );
-  --sd-theme-itab-wallpaper-wallpaper-opened-panel-surface-05: var(
+  --sd-theme-wallpaper-wallpaper-opened-panel-surface-05: var(
     --sd-component-surface-muted
   );
-  --sd-theme-itab-wallpaper-wallpaper-opened-panel-surface-06: var(
+  --sd-theme-wallpaper-wallpaper-opened-panel-surface-06: var(
     --sd-component-surface-muted
   );
-  --sd-theme-itab-wallpaper-wallpaper-opened-panel-surface-07: rgba(
+  --sd-theme-wallpaper-wallpaper-opened-panel-surface-07: rgba(
     0,
     0,
     0,
     0.18
   );
-  --sd-theme-itab-wallpaper-wallpaper-opened-panel-surface-08: rgba(
+  --sd-theme-wallpaper-wallpaper-opened-panel-surface-08: rgba(
     0,
     0,
     0,
     0.38
   );
-  --sd-theme-itab-wallpaper-wallpaper-opened-panel-text-01: var(
+  --sd-theme-wallpaper-wallpaper-opened-panel-text-01: var(
     --sd-component-text-primary
   );
-  --sd-theme-itab-wallpaper-wallpaper-opened-panel-text-02: var(
+  --sd-theme-wallpaper-wallpaper-opened-panel-text-02: var(
     --sd-component-text-primary
   );
-  --sd-theme-itab-wallpaper-wallpaper-opened-panel-text-03: var(
+  --sd-theme-wallpaper-wallpaper-opened-panel-text-03: var(
     --sd-component-text-tertiary
   );
-  --sd-theme-itab-wallpaper-wallpaper-opened-panel-text-04: var(
+  --sd-theme-wallpaper-wallpaper-opened-panel-text-04: var(
     --sd-component-text-secondary
   );
-  --sd-theme-itab-wallpaper-wallpaper-opened-panel-text-05: var(
+  --sd-theme-wallpaper-wallpaper-opened-panel-text-05: var(
     --sd-component-text-secondary
   );
-  --sd-theme-itab-wallpaper-wallpaper-opened-panel-text-06: var(
+  --sd-theme-wallpaper-wallpaper-opened-panel-text-06: var(
     --sd-home-resize-badge-text
   );
-  --sd-theme-itab-wallpaper-wallpaper-widget-accent-surface-01: #0f172a;
-  --sd-theme-itab-wallpaper-wallpaper-widget-shadow-01: rgba(0, 0, 0, 0.38);
-  --sd-theme-itab-wallpaper-wallpaper-widget-surface-01: rgba(0, 0, 0, 0.32);
-  --sd-theme-itab-wallpaper-wallpaper-widget-surface-02: rgba(0, 0, 0, 0.38);
-  --sd-theme-itab-wallpaper-wallpaper-widget-text-01: #fff;
-  --sd-theme-itab-wallpaper-wallpaper-widget-text-02: rgba(255, 255, 255, 0.94);
-  --sd-theme-itab-weather-weather-opened-panel-accent-01: rgba(
+  --sd-theme-wallpaper-wallpaper-widget-accent-surface-01: #0f172a;
+  --sd-theme-wallpaper-wallpaper-widget-shadow-01: rgba(0, 0, 0, 0.38);
+  --sd-theme-wallpaper-wallpaper-widget-surface-01: rgba(0, 0, 0, 0.32);
+  --sd-theme-wallpaper-wallpaper-widget-surface-02: rgba(0, 0, 0, 0.38);
+  --sd-theme-wallpaper-wallpaper-widget-text-01: #fff;
+  --sd-theme-wallpaper-wallpaper-widget-text-02: rgba(255, 255, 255, 0.94);
+  --sd-theme-weather-weather-opened-panel-accent-01: rgba(
     160,
     201,
     255,
     0.88
   );
-  --sd-theme-itab-weather-weather-opened-panel-accent-fill-01: rgb(
+  --sd-theme-weather-weather-opened-panel-accent-fill-01: rgb(
     160,
     201,
     255
   );
-  --sd-theme-itab-weather-weather-opened-panel-surface-00: linear-gradient(
+  --sd-theme-weather-weather-opened-panel-surface-00: linear-gradient(
     35deg,
     var(--sd-component-surface-muted) 30%,
     color-mix(
@@ -4095,168 +4095,168 @@
       var(--sd-component-text-secondary)
     )
   );
-  --sd-theme-itab-weather-weather-opened-panel-border-01: rgba(
+  --sd-theme-weather-weather-opened-panel-border-01: rgba(
     255,
     255,
     255,
     0.2
   );
-  --sd-theme-itab-weather-weather-opened-panel-border-02: rgba(
+  --sd-theme-weather-weather-opened-panel-border-02: rgba(
     255,
     255,
     255,
     0.12
   );
-  --sd-theme-itab-weather-weather-opened-panel-border-03: rgba(
+  --sd-theme-weather-weather-opened-panel-border-03: rgba(
     255,
     255,
     255,
     0.5
   );
-  --sd-theme-itab-weather-weather-opened-panel-fill-01: rgba(
+  --sd-theme-weather-weather-opened-panel-fill-01: rgba(
     255,
     255,
     255,
     0.74
   );
-  --sd-theme-itab-weather-weather-opened-panel-shadow-01: rgba(0, 0, 0, 0.28);
-  --sd-theme-itab-weather-weather-opened-panel-surface-01: rgba(
+  --sd-theme-weather-weather-opened-panel-shadow-01: rgba(0, 0, 0, 0.28);
+  --sd-theme-weather-weather-opened-panel-surface-01: rgba(
     255,
     255,
     255,
     0.15
   );
-  --sd-theme-itab-weather-weather-opened-panel-surface-02: rgba(
+  --sd-theme-weather-weather-opened-panel-surface-02: rgba(
     37,
     39,
     43,
     0.96
   );
-  --sd-theme-itab-weather-weather-opened-panel-surface-03: rgba(
+  --sd-theme-weather-weather-opened-panel-surface-03: rgba(
     255,
     255,
     255,
     0.09
   );
-  --sd-theme-itab-weather-weather-opened-panel-surface-04: color-mix(
+  --sd-theme-weather-weather-opened-panel-surface-04: color-mix(
     in srgb,
     var(--sd-component-on-strong) 3%,
     transparent
   );
-  --sd-theme-itab-weather-weather-opened-panel-surface-05: rgba(
+  --sd-theme-weather-weather-opened-panel-surface-05: rgba(
     255,
     255,
     255,
     0.85
   );
-  --sd-theme-itab-weather-weather-opened-panel-surface-06: rgba(
+  --sd-theme-weather-weather-opened-panel-surface-06: rgba(
     255,
     255,
     255,
     0.08
   );
-  --sd-theme-itab-weather-weather-opened-panel-text-01: color-mix(
+  --sd-theme-weather-weather-opened-panel-text-01: color-mix(
     in srgb,
     var(--sd-component-on-strong) 82%,
     transparent
   );
-  --sd-theme-itab-weather-weather-opened-panel-text-02: rgba(
+  --sd-theme-weather-weather-opened-panel-text-02: rgba(
     255,
     255,
     255,
     0.78
   );
-  --sd-theme-itab-weather-weather-opened-panel-text-03: rgba(
+  --sd-theme-weather-weather-opened-panel-text-03: rgba(
     255,
     255,
     255,
     0.74
   );
-  --sd-theme-itab-weather-weather-opened-panel-text-04: #fff;
-  --sd-theme-itab-weather-weather-opened-panel-text-05: rgba(
+  --sd-theme-weather-weather-opened-panel-text-04: #fff;
+  --sd-theme-weather-weather-opened-panel-text-05: rgba(
     255,
     204,
     204,
     0.88
   );
-  --sd-theme-itab-weather-weather-opened-panel-text-06: rgba(
+  --sd-theme-weather-weather-opened-panel-text-06: rgba(
     255,
     255,
     255,
     0.72
   );
-  --sd-theme-itab-weather-weather-opened-panel-text-07: rgba(
+  --sd-theme-weather-weather-opened-panel-text-07: rgba(
     255,
     255,
     255,
     0.4
   );
-  --sd-theme-itab-weather-weather-opened-panel-text-08: rgba(
+  --sd-theme-weather-weather-opened-panel-text-08: rgba(
     255,
     255,
     255,
     0.88
   );
-  --sd-theme-itab-weather-weather-opened-panel-text-09: rgba(
+  --sd-theme-weather-weather-opened-panel-text-09: rgba(
     255,
     255,
     255,
     0.9
   );
-  --sd-theme-itab-weather-weather-opened-panel-text-10: rgba(
+  --sd-theme-weather-weather-opened-panel-text-10: rgba(
     255,
     255,
     255,
     0.75
   );
-  --sd-theme-itab-weather-weather-opened-panel-text-11: rgba(
+  --sd-theme-weather-weather-opened-panel-text-11: rgba(
     255,
     255,
     255,
     0.68
   );
-  --sd-theme-itab-weather-weather-opened-panel-text-12: rgba(
+  --sd-theme-weather-weather-opened-panel-text-12: rgba(
     255,
     255,
     255,
     0.92
   );
-  --sd-theme-itab-weather-weather-opened-panel-text-13: rgba(
+  --sd-theme-weather-weather-opened-panel-text-13: rgba(
     255,
     255,
     255,
     0.86
   );
-  --sd-theme-itab-weather-weather-widget-accent-surface-01: rgb(59, 154, 245);
-  --sd-theme-itab-weather-weather-widget-accent-surface-02: rgb(77, 189, 250);
-  --sd-theme-itab-weather-weather-widget-accent-surface-03: rgb(7, 22, 42);
-  --sd-theme-itab-weather-weather-widget-accent-surface-04: rgb(43, 67, 102);
-  --sd-theme-itab-weather-weather-widget-accent-surface-05: rgb(74, 137, 188);
-  --sd-theme-itab-weather-weather-widget-accent-surface-06: rgb(115, 165, 200);
-  --sd-theme-itab-weather-weather-widget-accent-surface-07: rgb(13, 24, 36);
-  --sd-theme-itab-weather-weather-widget-accent-surface-08: rgb(55, 67, 84);
-  --sd-theme-itab-weather-weather-widget-accent-surface-09: rgb(21, 66, 128);
-  --sd-theme-itab-weather-weather-widget-accent-surface-10: rgb(26, 39, 59);
-  --sd-theme-itab-weather-weather-widget-accent-surface-11: rgb(38, 46, 73);
-  --sd-theme-itab-weather-weather-widget-accent-surface-12: rgb(19, 21, 38);
-  --sd-theme-itab-weather-weather-widget-accent-surface-13: rgb(139, 121, 88);
-  --sd-theme-itab-weather-weather-widget-accent-surface-14: rgb(193, 171, 127);
-  --sd-theme-itab-weather-weather-widget-accent-surface-15: rgb(84, 75, 62);
-  --sd-theme-itab-weather-weather-widget-yin-d-surface-01: rgb(24, 68, 130);
-  --sd-theme-itab-weather-weather-widget-yin-d-gradient-01: rgb(53, 69, 100);
-  --sd-theme-itab-weather-weather-widget-yin-d-gradient-02: rgb(76, 95, 127);
-  --sd-theme-itab-weather-weather-widget-yin-d-gradient-03: rgb(139, 155, 184);
-  --sd-theme-itab-weather-weather-widget-surface-01: rgb(62, 65, 70);
-  --sd-theme-itab-weather-weather-widget-surface-02: rgb(98, 101, 106);
-  --sd-theme-itab-weather-weather-widget-surface-03: rgb(33, 30, 34);
-  --sd-theme-itab-weather-weather-widget-surface-04: rgb(56, 58, 62);
-  --sd-theme-itab-weather-weather-widget-surface-05: rgb(210, 225, 235);
-  --sd-theme-itab-weather-weather-widget-surface-06: rgb(143, 151, 157);
-  --sd-theme-itab-weather-weather-widget-surface-07: rgb(190, 195, 198);
-  --sd-theme-itab-weather-weather-widget-surface-08: rgb(55, 59, 63);
-  --sd-theme-itab-weather-weather-widget-surface-09: rgb(91, 95, 99);
-  --sd-theme-itab-weather-weather-widget-surface-10: rgb(48, 42, 36);
-  --sd-theme-itab-weather-weather-widget-text-01: #fff;
+  --sd-theme-weather-weather-widget-accent-surface-01: rgb(59, 154, 245);
+  --sd-theme-weather-weather-widget-accent-surface-02: rgb(77, 189, 250);
+  --sd-theme-weather-weather-widget-accent-surface-03: rgb(7, 22, 42);
+  --sd-theme-weather-weather-widget-accent-surface-04: rgb(43, 67, 102);
+  --sd-theme-weather-weather-widget-accent-surface-05: rgb(74, 137, 188);
+  --sd-theme-weather-weather-widget-accent-surface-06: rgb(115, 165, 200);
+  --sd-theme-weather-weather-widget-accent-surface-07: rgb(13, 24, 36);
+  --sd-theme-weather-weather-widget-accent-surface-08: rgb(55, 67, 84);
+  --sd-theme-weather-weather-widget-accent-surface-09: rgb(21, 66, 128);
+  --sd-theme-weather-weather-widget-accent-surface-10: rgb(26, 39, 59);
+  --sd-theme-weather-weather-widget-accent-surface-11: rgb(38, 46, 73);
+  --sd-theme-weather-weather-widget-accent-surface-12: rgb(19, 21, 38);
+  --sd-theme-weather-weather-widget-accent-surface-13: rgb(139, 121, 88);
+  --sd-theme-weather-weather-widget-accent-surface-14: rgb(193, 171, 127);
+  --sd-theme-weather-weather-widget-accent-surface-15: rgb(84, 75, 62);
+  --sd-theme-weather-weather-widget-yin-d-surface-01: rgb(24, 68, 130);
+  --sd-theme-weather-weather-widget-yin-d-gradient-01: rgb(53, 69, 100);
+  --sd-theme-weather-weather-widget-yin-d-gradient-02: rgb(76, 95, 127);
+  --sd-theme-weather-weather-widget-yin-d-gradient-03: rgb(139, 155, 184);
+  --sd-theme-weather-weather-widget-surface-01: rgb(62, 65, 70);
+  --sd-theme-weather-weather-widget-surface-02: rgb(98, 101, 106);
+  --sd-theme-weather-weather-widget-surface-03: rgb(33, 30, 34);
+  --sd-theme-weather-weather-widget-surface-04: rgb(56, 58, 62);
+  --sd-theme-weather-weather-widget-surface-05: rgb(210, 225, 235);
+  --sd-theme-weather-weather-widget-surface-06: rgb(143, 151, 157);
+  --sd-theme-weather-weather-widget-surface-07: rgb(190, 195, 198);
+  --sd-theme-weather-weather-widget-surface-08: rgb(55, 59, 63);
+  --sd-theme-weather-weather-widget-surface-09: rgb(91, 95, 99);
+  --sd-theme-weather-weather-widget-surface-10: rgb(48, 42, 36);
+  --sd-theme-weather-weather-widget-text-01: #fff;
   --sd-theme-network-indicator-accent-border-01: color-mix(
     in srgb,
     var(--sd-state-success) 30%,
@@ -6558,7 +6558,7 @@ button.sd-window-control-dot.is-red:focus-visible {
   position: fixed;
   top: max(1rem, env(safe-area-inset-top));
   right: max(1rem, env(safe-area-inset-right));
-  z-index: 120;
+  z-index: 1100;
   display: grid;
   gap: 0.75rem;
   width: min(24rem, calc(100vw - 2rem));

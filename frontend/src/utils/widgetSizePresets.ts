@@ -24,13 +24,13 @@ export interface WidgetSizePreset extends WidgetSize {
   label: string;
   density: WidgetSizeDensity;
   pattern: WidgetSizePattern;
-  scope?: "itab";
+  scope?: "sd";
   default?: boolean;
   max?: boolean;
 }
 
 export type CatalogWidgetSizePreset = WidgetSizePreset & {
-  scope?: "itab";
+  scope?: "sd";
 };
 
 export interface DisabledWidgetSizePreset extends WidgetSizePreset {
@@ -39,7 +39,7 @@ export interface DisabledWidgetSizePreset extends WidgetSizePreset {
 
 export interface WidgetSizeFamily {
   type: string;
-  scope?: "itab";
+  scope?: "sd";
   supported: CatalogWidgetSizePreset[];
   disabled: DisabledWidgetSizePreset[];
   defaultSize: WidgetSize;
@@ -114,7 +114,7 @@ const defineFamily = (
     if (!candidate) throw new Error(`Unknown widget size key: ${key}`);
     return {
       ...candidate,
-      scope: "itab" as const,
+      scope: "sd" as const,
       default: key === defaultKey,
       max: key === supportedKeys[supportedKeys.length - 1],
     };
@@ -124,7 +124,7 @@ const defineFamily = (
     (candidate) => !supportedKeySet.has(candidate.key),
   ).map((candidate) => ({
     ...candidate,
-    scope: "itab" as const,
+    scope: "sd" as const,
     reason: hardLimitLabel
       ? `${hardLimitLabel}，该尺寸不可用`
       : "该组件不支持此尺寸",
@@ -135,7 +135,7 @@ const defineFamily = (
 
   return {
     type,
-    scope: "itab",
+    scope: "sd",
     supported,
     disabled,
     defaultSize: {
@@ -150,7 +150,7 @@ const defineFamily = (
   };
 };
 
-const allItabSizes: WidgetSizeKey[] = ["1x1", "1x2", "2x1", "2x2", "2x4"];
+const allSdSizes: WidgetSizeKey[] = ["1x1", "1x2", "2x1", "2x2", "2x4"];
 
 const widgetSizeFamilyList: readonly WidgetSizeFamily[] = [];
 
@@ -219,7 +219,7 @@ export const resolveWidgetSizeFamily = (type: string): WidgetSizeFamily => {
   const family = WIDGET_SIZE_FAMILIES[type];
   if (family) return family;
 
-  return defineFamily(type, allItabSizes, "1x1");
+  return defineFamily(type, allSdSizes, "1x1");
 };
 
 export const resolveWidgetDefaultSize = (type: string): WidgetSize => {

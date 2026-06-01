@@ -4,17 +4,17 @@ import { flushPromises, mount } from "@vue/test-utils";
 import { createTestingPinia } from "@pinia/testing";
 import { nextTick } from "vue";
 import WallpaperLibrary from "./WallpaperLibrary.vue";
-import { fetchItabBingWallpapers } from "@/features/itab-wallpaper/itabWallpaperApi";
-import type { ItabBingWallpaperResult } from "@/features/itab-wallpaper/itabWallpaperApi";
-import type { ItabWallpaperEntry } from "@/features/itab-wallpaper/itabWallpaperTypes";
+import { fetchSdBingWallpapers } from "@/features/sd-wallpaper/sdWallpaperApi";
+import type { SdBingWallpaperResult } from "@/features/sd-wallpaper/sdWallpaperApi";
+import type { SdWallpaperEntry } from "@/features/sd-wallpaper/sdWallpaperTypes";
 
-vi.mock("@/features/itab-wallpaper/itabWallpaperApi", () => ({
-  fetchItabBingWallpapers: vi.fn(),
+vi.mock("@/features/sd-wallpaper/sdWallpaperApi", () => ({
+  fetchSdBingWallpapers: vi.fn(),
 }));
 
-const fetchBingWallpapersMock = vi.mocked(fetchItabBingWallpapers);
+const fetchBingWallpapersMock = vi.mocked(fetchSdBingWallpapers);
 
-const buildWallpaperEntry = (id: string): ItabWallpaperEntry => ({
+const buildWallpaperEntry = (id: string): SdWallpaperEntry => ({
   id,
   title: `Bing ${id}`,
   location: `Location ${id}`,
@@ -26,8 +26,8 @@ const buildWallpaperEntry = (id: string): ItabWallpaperEntry => ({
 const buildResult = (
   currentPage: number,
   totalPages: number,
-  entries: ItabWallpaperEntry[],
-): ItabBingWallpaperResult => ({
+  entries: SdWallpaperEntry[],
+): SdBingWallpaperResult => ({
   entries,
   sourceStatus: "ok",
   totalPages,

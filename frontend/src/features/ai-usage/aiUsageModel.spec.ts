@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ITAB_GRID_SCHEMA_VERSION } from "@/features/itab-widgets/itabGrid";
+import { SD_GRID_SCHEMA_VERSION } from "@/features/sd-widgets/sdGrid";
 import {
   applyAiUsageSizeToWidget,
   createDefaultAiUsageWidget,
@@ -19,7 +19,7 @@ describe("aiUsageModel", () => {
       h: 2,
       data: {
         runtime: "ai-usage",
-        layoutSystem: ITAB_GRID_SCHEMA_VERSION,
+        layoutSystem: SD_GRID_SCHEMA_VERSION,
         version: 1,
         sizeKey: "2x2",
         providerId: "openai",

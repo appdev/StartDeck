@@ -1,10 +1,10 @@
-import type { ItabWidgetSizeKey } from "@/features/itab-widgets/itabSizePresets";
+import type { SdWidgetSizeKey } from "@/features/sd-widgets/sdSizePresets";
 
 export const AI_USAGE_WIDGET_TYPE = "ai-usage";
 export const AI_USAGE_CATALOG_ID = "ai-usage";
 export const AI_USAGE_RUNTIME = "ai-usage";
 export const AI_USAGE_DATA_VERSION = 1;
-export const AI_USAGE_DEFAULT_SIZE: ItabWidgetSizeKey = "2x2";
+export const AI_USAGE_DEFAULT_SIZE: SdWidgetSizeKey = "2x2";
 
 export type AiUsageProviderId = "openai" | "claude" | "deepseek" | string;
 export type AiUsageCredentialType = "access_token" | "session_cookie";
@@ -36,7 +36,7 @@ export interface AiUsageWidgetData {
   runtime: typeof AI_USAGE_RUNTIME;
   layoutSystem?: string;
   version: typeof AI_USAGE_DATA_VERSION;
-  sizeKey: ItabWidgetSizeKey;
+  sizeKey: SdWidgetSizeKey;
   providerId: AiUsageProviderId;
   displayName: string;
   accountLabel?: string;

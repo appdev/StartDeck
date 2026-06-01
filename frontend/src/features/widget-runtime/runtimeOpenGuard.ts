@@ -11,7 +11,7 @@ const RUNTIME_OPEN_IGNORE_SELECTORS = [
   '[contenteditable="true"]',
   "[data-grid-drag-ignore]",
   "[data-runtime-open-ignore]",
-  "[data-itab-inner-control]",
+  "[data-sd-inner-control]",
   "[data-runtime-action]",
   "[data-docker-action]",
   "[data-system-status-action]",

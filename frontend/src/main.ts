@@ -8,7 +8,7 @@ import { useMainStore } from "./stores/main";
 import { attachErrorCapture, ensureOverlayHandled } from "./utils/overlay";
 import { installFetchUrlPatch } from "./utils/runtimeUrls";
 import { installNetworkFetchPatch } from "./utils/networkFetch";
-import { prefetchItabIpLocationOnBoot } from "./features/itab-ip/itabIpBoot";
+import { prefetchSdIpLocationOnBoot } from "./features/sd-ip/sdIpBoot";
 
 if (typeof document !== "undefined" && typeof navigator !== "undefined") {
   const ua = navigator.userAgent || "";
@@ -42,7 +42,7 @@ const bootstrap = async () => {
   const store = useMainStore();
   try {
     await store.init();
-    prefetchItabIpLocationOnBoot();
+    prefetchSdIpLocationOnBoot();
   } catch (error) {
     console.error("Initial store init failed", error);
   }

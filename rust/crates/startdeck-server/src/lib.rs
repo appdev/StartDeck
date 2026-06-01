@@ -28,7 +28,8 @@ use startdeck_core::models::{
     AppSnapshot, NavGroup, NavItem, SystemConfig, UserRecord, WidgetRecord,
 };
 use startdeck_core::{
-    RuntimeConfig, app_snapshot, save_snapshot, system_config, user_password_hash,
+    RuntimeConfig, app_snapshot, migrate_legacy_widget_value, save_snapshot, system_config,
+    user_password_hash,
 };
 use tokio::fs;
 use tower::{ServiceBuilder, service_fn};
@@ -45,13 +46,14 @@ mod ai_usage;
 mod codelife;
 mod docker_api;
 mod ip_lookup;
-mod itab;
+mod live_widgets;
 mod managed_icons;
 mod qweather;
 mod static_assets;
 mod tapd_defects;
 mod telemetry;
 mod tencent_map;
+mod upstream_allowlist;
 
 const SESSION_COOKIE_NAME: &str = "startdeck_session";
 const SESSION_MAX_AGE_SECONDS: i64 = 30 * 24 * 60 * 60;
@@ -68,34 +70,34 @@ pub struct AppState {
     http: Client,
     jwt_secret: Arc<Vec<u8>>,
     meta_server_base: Arc<String>,
-    remote_itab_fetch_enabled: bool,
+    remote_widget_fetch_enabled: bool,
 }
 
 impl AppState {
     pub fn new(config: RuntimeConfig, pool: SqlitePool) -> Self {
-        Self::new_with_remote_itab_fetch(config, pool, true)
+        Self::new_with_remote_widget_fetch(config, pool, true)
     }
 
-    pub fn new_with_remote_itab_fetch(
+    pub fn new_with_remote_widget_fetch(
         config: RuntimeConfig,
         pool: SqlitePool,
-        remote_itab_fetch_enabled: bool,
+        remote_widget_fetch_enabled: bool,
     ) -> Self {
         let meta_server_base = std::env::var("META_SERVER_BASE_URL")
             .unwrap_or_else(|_| "http://127.0.0.1:9002".to_string());
-        Self::new_with_meta_server_base(config, pool, remote_itab_fetch_enabled, meta_server_base)
+        Self::new_with_meta_server_base(config, pool, remote_widget_fetch_enabled, meta_server_base)
     }
 
     pub fn new_with_meta_server_base(
         config: RuntimeConfig,
         pool: SqlitePool,
-        remote_itab_fetch_enabled: bool,
+        remote_widget_fetch_enabled: bool,
         meta_server_base: impl Into<String>,
     ) -> Self {
         Self::try_new_with_meta_server_base(
             config,
             pool,
-            remote_itab_fetch_enabled,
+            remote_widget_fetch_enabled,
             meta_server_base,
         )
         .expect("load StartDeck session signing key")
@@ -104,7 +106,7 @@ impl AppState {
     pub fn try_new_with_meta_server_base(
         config: RuntimeConfig,
         pool: SqlitePool,
-        remote_itab_fetch_enabled: bool,
+        remote_widget_fetch_enabled: bool,
         meta_server_base: impl Into<String>,
     ) -> anyhow::Result<Self> {
         let jwt_secret = load_session_signing_key(&config)?;
@@ -117,7 +119,7 @@ impl AppState {
                 .expect("reqwest client"),
             jwt_secret: Arc::new(jwt_secret),
             meta_server_base: Arc::new(meta_server_base.into().trim_end_matches('/').to_string()),
-            remote_itab_fetch_enabled,
+            remote_widget_fetch_enabled,
         })
     }
 
@@ -208,8 +210,8 @@ pub fn app(state: AppState) -> Router {
     let mobile_dir = state.config.mobile_backgrounds_dir.clone();
     let assets_dir = static_assets::public_subdir(&state.config, "assets");
     let assets_fallback_dir = assets_dir.clone();
-    let itab_live_assets_dir = static_assets::public_subdir(&state.config, "itab-live-assets");
-    let itab_assets_dir = static_assets::public_subdir(&state.config, "itab");
+    let sd_live_assets_dir = static_assets::public_subdir(&state.config, "sd-live-assets");
+    let sd_assets_dir = static_assets::public_subdir(&state.config, "sd");
     let intro_assets_dir = static_assets::public_subdir(&state.config, "intro-assets");
     Router::new()
         .route("/healthz", get(healthz))
@@ -302,20 +304,29 @@ pub fn app(state: AppState) -> Router {
         )
         .route("/api/config-versions/restore", post(restore_config_version))
         .route("/api/config-versions/{id}", delete(delete_config_version))
-        .route("/api/today-english", get(itab::cached_widget_data))
-        .route("/api/movie-calendar", get(itab::cached_widget_data))
-        .route("/api/bing-wallpapers", get(itab::cached_widget_data))
-        .route("/api/weather/location", get(itab::cached_widget_data))
-        .route("/api/weather/search", get(itab::cached_widget_data))
-        .route("/api/weather/current", get(itab::cached_widget_data))
-        .route("/api/poem", get(itab::cached_widget_data))
+        .route("/api/today-english", get(live_widgets::cached_widget_data))
+        .route("/api/movie-calendar", get(live_widgets::cached_widget_data))
+        .route(
+            "/api/bing-wallpapers",
+            get(live_widgets::cached_widget_data),
+        )
+        .route(
+            "/api/weather/location",
+            get(live_widgets::cached_widget_data),
+        )
+        .route("/api/weather/search", get(live_widgets::cached_widget_data))
+        .route(
+            "/api/weather/current",
+            get(live_widgets::cached_widget_data),
+        )
+        .route("/api/poem", get(live_widgets::cached_widget_data))
         .route(
             "/api/today-english/media/{kind}",
-            get(itab::cached_today_english_media),
+            get(live_widgets::cached_today_english_media),
         )
         .route(
             "/api/movie-calendar/image/{kind}",
-            get(itab::cached_movie_calendar_image),
+            get(live_widgets::cached_movie_calendar_image),
         )
         .route("/icon-cache/{*path}", any(removed_icon_route))
         .route("/icons/{*path}", any(removed_icon_route))
@@ -360,16 +371,16 @@ pub fn app(state: AppState) -> Router {
                 ))),
         )
         .nest_service(
-            "/itab-live-assets",
+            "/sd-live-assets",
             ServiceBuilder::new()
                 .layer(map_response(insert_immutable_static_cache))
-                .service(ServeDir::new(itab_live_assets_dir)),
+                .service(ServeDir::new(sd_live_assets_dir)),
         )
         .nest_service(
-            "/itab",
+            "/sd",
             ServiceBuilder::new()
                 .layer(map_response(insert_immutable_static_cache))
-                .service(ServeDir::new(itab_assets_dir)),
+                .service(ServeDir::new(sd_assets_dir)),
         )
         .nest_service(
             "/intro-assets",
@@ -1769,19 +1780,23 @@ async fn normalize_snapshot(
             items
                 .iter()
                 .enumerate()
-                .map(|(index, widget)| WidgetRecord {
-                    id: string_value(widget, "id").unwrap_or_else(|| Uuid::new_v4().to_string()),
-                    widget_type: string_value(widget, "type")
-                        .unwrap_or_else(|| "custom".to_string()),
-                    enabled: widget
-                        .get("enable")
-                        .or_else(|| widget.get("enabled"))
-                        .and_then(Value::as_bool)
-                        .unwrap_or(true),
-                    is_public: false,
-                    data: widget.get("data").cloned().unwrap_or_else(|| json!({})),
-                    layout: normalize_widget_layout(widget),
-                    sort_order: index as i64,
+                .map(|(index, widget)| {
+                    let widget = migrate_legacy_widget_value(widget.clone());
+                    WidgetRecord {
+                        id: string_value(&widget, "id")
+                            .unwrap_or_else(|| Uuid::new_v4().to_string()),
+                        widget_type: string_value(&widget, "type")
+                            .unwrap_or_else(|| "custom".to_string()),
+                        enabled: widget
+                            .get("enable")
+                            .or_else(|| widget.get("enabled"))
+                            .and_then(Value::as_bool)
+                            .unwrap_or(true),
+                        is_public: false,
+                        data: widget.get("data").cloned().unwrap_or_else(|| json!({})),
+                        layout: normalize_widget_layout(&widget),
+                        sort_order: index as i64,
+                    }
                 })
                 .collect()
         })

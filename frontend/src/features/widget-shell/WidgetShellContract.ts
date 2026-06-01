@@ -1,15 +1,15 @@
 import {
-  isItabWidgetSizeKey,
-  resolveItabGridRect,
-} from "@/features/itab-widgets/itabGrid";
+  isSdWidgetSizeKey,
+  resolveSdGridRect,
+} from "@/features/sd-widgets/sdGrid";
 
-export const ITAB_WIDGET_SHELL_CONTRACT_VERSION =
-  "itab-widget-shell/2026-05-22";
+export const SD_WIDGET_SHELL_CONTRACT_VERSION =
+  "sd-widget-shell/2026-05-22";
 export const STARTDECK_WIDGET_SHELL_CONTRACT_VERSION =
   "startdeck-home-widget-shell/2026-05-22";
 
-export const ITAB_WIDGET_SHELL_SELECTORS = {
-  root: ".itab-native-widget",
+export const SD_WIDGET_SHELL_SELECTORS = {
+  root: ".sd-native-widget",
   card: ".widget-card",
   title: ".widget-title",
 } as const;
@@ -44,11 +44,11 @@ export const WIDGET_SHELL_FORBIDDEN_STYLE_PROPERTIES = [
   "transform",
 ] as const;
 
-export const ITAB_WIDGET_SHELL_FORBIDDEN_SELECTORS = [
-  ".itab-native-widget",
+export const SD_WIDGET_SHELL_FORBIDDEN_SELECTORS = [
+  ".sd-native-widget",
   ".widget-card",
   ".widget-title",
-  ".itab-native-panel",
+  ".sd-native-panel",
   ".opened-window",
   ":deep(.widget-card)",
   ":deep(.widget-title)",
@@ -80,7 +80,7 @@ export const STARTDECK_WIDGET_SHELL_FORBIDDEN_SELECTORS = [
   "#app",
 ] as const;
 
-const ITAB_ROOT_REQUIRED_STYLES = {
+const SD_ROOT_REQUIRED_STYLES = {
   position: "relative",
   display: "block",
   minWidth: "0px",
@@ -90,7 +90,7 @@ const ITAB_ROOT_REQUIRED_STYLES = {
   paddingLeft: "0px",
 } as const;
 
-const ITAB_CARD_REQUIRED_STYLES = {
+const SD_CARD_REQUIRED_STYLES = {
   position: "absolute",
   top: "0px",
   right: "0px",
@@ -100,7 +100,7 @@ const ITAB_CARD_REQUIRED_STYLES = {
   borderRadius: "18px",
 } as const;
 
-const ITAB_TITLE_REQUIRED_STYLES = {
+const SD_TITLE_REQUIRED_STYLES = {
   position: "absolute",
   overflow: "hidden",
   textOverflow: "ellipsis",
@@ -189,7 +189,7 @@ export type WidgetShellRequiredElement = {
 };
 
 export type WidgetShellProfile = {
-  id: "itab" | "startdeck-home";
+  id: "sd" | "startdeck-home";
   version: string;
   selectors: Record<string, string>;
   rootSelector: string;
@@ -205,24 +205,24 @@ export type WidgetShellProfile = {
   requireCardShadow: boolean;
   requireCardGeometryMatch: boolean;
   requireContentGeometryMatch: boolean;
-  requireItabGridSizeMatch?: boolean;
+  requireSdGridSizeMatch?: boolean;
   sourceStyleOwnerExpected: string;
 };
 
-export const ITAB_WIDGET_SHELL_PROFILE: WidgetShellProfile = {
-  id: "itab",
-  version: ITAB_WIDGET_SHELL_CONTRACT_VERSION,
-  selectors: ITAB_WIDGET_SHELL_SELECTORS,
-  rootSelector: ITAB_WIDGET_SHELL_SELECTORS.root,
-  rootMissingExpected: ITAB_WIDGET_SHELL_SELECTORS.root,
+export const SD_WIDGET_SHELL_PROFILE: WidgetShellProfile = {
+  id: "sd",
+  version: SD_WIDGET_SHELL_CONTRACT_VERSION,
+  selectors: SD_WIDGET_SHELL_SELECTORS,
+  rootSelector: SD_WIDGET_SHELL_SELECTORS.root,
+  rootMissingExpected: SD_WIDGET_SHELL_SELECTORS.root,
   rootMissingMessage:
-    "widget shell root must match the iTab widget shell profile",
-  forbiddenSelectors: ITAB_WIDGET_SHELL_FORBIDDEN_SELECTORS,
+    "widget shell root must match the replica widget shell profile",
+  forbiddenSelectors: SD_WIDGET_SHELL_FORBIDDEN_SELECTORS,
   forbiddenStyleProperties: WIDGET_SHELL_FORBIDDEN_STYLE_PROPERTIES,
   requiredElements: [
     {
       element: "card",
-      selector: ITAB_WIDGET_SHELL_SELECTORS.card,
+      selector: SD_WIDGET_SHELL_SELECTORS.card,
       directParent: "root",
       required: true,
       missingCode: "missing-direct-card",
@@ -230,7 +230,7 @@ export const ITAB_WIDGET_SHELL_PROFILE: WidgetShellProfile = {
     },
     {
       element: "title",
-      selector: ITAB_WIDGET_SHELL_SELECTORS.title,
+      selector: SD_WIDGET_SHELL_SELECTORS.title,
       directParent: "root",
       required: true,
       missingCode: "missing-direct-title",
@@ -238,9 +238,9 @@ export const ITAB_WIDGET_SHELL_PROFILE: WidgetShellProfile = {
     },
   ],
   requiredStyles: {
-    root: ITAB_ROOT_REQUIRED_STYLES,
-    card: ITAB_CARD_REQUIRED_STYLES,
-    title: ITAB_TITLE_REQUIRED_STYLES,
+    root: SD_ROOT_REQUIRED_STYLES,
+    card: SD_CARD_REQUIRED_STYLES,
+    title: SD_TITLE_REQUIRED_STYLES,
   },
   cardAllowedDisplayValues: CARD_ALLOWED_DISPLAY_VALUES,
   requireCardShadow: true,
@@ -297,7 +297,7 @@ export const STARTDECK_WIDGET_SHELL_PROFILE: WidgetShellProfile = {
   requireCardShadow: false,
   requireCardGeometryMatch: true,
   requireContentGeometryMatch: true,
-  requireItabGridSizeMatch: true,
+  requireSdGridSizeMatch: true,
   sourceStyleOwnerExpected:
     "main shell owns structure only; widget content owns visual chrome",
 };
@@ -396,7 +396,7 @@ const contentRectMatchesCardContentBox = (
 };
 
 const resolveProfile = (profile?: WidgetShellProfile) =>
-  profile ?? ITAB_WIDGET_SHELL_PROFILE;
+  profile ?? SD_WIDGET_SHELL_PROFILE;
 
 export const validateWidgetShell = (
   root: HTMLElement | null | undefined,
@@ -495,13 +495,13 @@ export const validateWidgetShell = (
     const cardRect = card.getBoundingClientRect();
     const rootSizeKey = root.dataset.widgetSize;
     if (
-      profile.requireItabGridSizeMatch &&
+      profile.requireSdGridSizeMatch &&
       rootSizeKey &&
-      isItabWidgetSizeKey(rootSizeKey) &&
+      isSdWidgetSizeKey(rootSizeKey) &&
       rootRect.width > 0 &&
       rootRect.height > 0
     ) {
-      const expectedRect = resolveItabGridRect(rootSizeKey);
+      const expectedRect = resolveSdGridRect(rootSizeKey);
       if (
         Math.abs(rootRect.width - expectedRect.width) > tolerance ||
         Math.abs(rootRect.height - expectedRect.height) > tolerance
@@ -513,7 +513,7 @@ export const validateWidgetShell = (
           expected: `${expectedRect.width}x${expectedRect.height}`,
           actual: `${rootRect.width}x${rootRect.height}`,
           message:
-            "main widget shell root must match the active iTab grid size",
+            "main widget shell root must match the active grid size",
         });
       }
     }

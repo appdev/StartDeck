@@ -339,10 +339,10 @@ watch(
       localGroupId.value = props.groupId || "";
       resetSmartMatchState();
       if (props.data) {
-        const { isPublic: _legacyIsPublic, ...editableData } = props.data;
+        const { isPublic: _legacyIsPublic, ...formData } = props.data;
         // 编辑模式：回填数据
         form.value = {
-          ...editableData,
+          ...formData,
           backupUrls: props.data.backupUrls
             ? props.data.backupUrls.map((u) =>
                 typeof u === "string" ? { name: "", url: u } : { ...u },

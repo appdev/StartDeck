@@ -10,7 +10,7 @@
     },
     {
       "title": "豆包-你的AI朋友",
-      "url": "https://www.doubao.com?channel=itab2&source=hw_db_itab_01",
+      "url": "https://www.doubao.com",
       "icon_url": "icons/www.doubao.com.webp",
       "original_icon_url": "https://files.codelife.cc/icons/doubao.com.webp",
       "background_color": "#ffffff",
@@ -49,16 +49,8 @@
       "icon_local_host": "ai.openmao.cn"
     },
     {
-      "title": "Ai导航",
-      "url": "https://ai.itab.link/",
-      "icon_url": "icons/ai.itab.link.svg",
-      "original_icon_url": "https://files.codelife.cc/icons/itab.svg",
-      "background_color": "#1581ff",
-      "icon_local_host": "ai.itab.link"
-    },
-    {
       "title": "秘塔AI搜索",
-      "url": "https://metaso.cn/?s=itaber&referrer_s=itaber",
+      "url": "https://metaso.cn",
       "icon_url": "icons/metaso.cn.png",
       "original_icon_url": "https://files.codelife.cc/icons/metaso.cn.png",
       "background_color": "#ffffff",
@@ -82,7 +74,7 @@
     },
     {
       "title": "扣子",
-      "url": "https://www.coze.cn/?utm_medium=daohang&utm_source=itab&utm_content=home&utm_id=0&utm_campaign=&utm_term=49156769k&utm_source_platform=",
+      "url": "https://www.coze.cn/?utm_medium=daohang&utm_content=home&utm_id=0&utm_campaign=&utm_term=49156769k&utm_source_platform=",
       "icon_url": "icons/www.coze.cn.svg",
       "original_icon_url": "https://files.codelife.cc/icons/coze-cn.svg",
       "background_color": "#fff",
@@ -98,7 +90,7 @@
     },
     {
       "title": "专业AI论文写作",
-      "url": "https://ibiling.cn/paper?from=itabpaper02",
+      "url": "https://ibiling.cn/paper",
       "icon_url": "icons/ibiling.cn.svg",
       "original_icon_url": "https://files.codelife.cc/icons/biling.cn.svg",
       "background_color": "#00b178",
@@ -106,7 +98,7 @@
     },
     {
       "title": "天工AI",
-      "url": "https://tiangong.cn/?channel=itab",
+      "url": "https://tiangong.cn",
       "icon_url": "icons/tiangong.cn.webp",
       "original_icon_url": "https://files.codelife.cc/icons/tiangong.cn.webp",
       "background_color": "#fefefe",
@@ -122,7 +114,7 @@
     },
     {
       "title": "豆包MarsCode",
-      "url": "https://marscode.cn/?utm_source=itab.link&utm_medium=xycpa&utm_campaign=",
+      "url": "https://marscode.cn/?utm_medium=xycpa&utm_campaign=",
       "icon_url": "icons/marscode.cn.svg",
       "original_icon_url": "https://files.codelife.cc/icons/marscode.cn.svg",
       "background_color": "#fff",
@@ -178,7 +170,7 @@
     },
     {
       "title": "AI工具集",
-      "url": "https://ai-bot.cn/?utm_source=itab",
+      "url": "https://ai-bot.cn",
       "icon_url": "icons/ai-bot.cn.svg",
       "original_icon_url": "https://files.codelife.cc/icons/ai-bot.svg",
       "background_color": "#fff",
@@ -202,7 +194,7 @@
     },
     {
       "title": "AiPPT",
-      "url": "https://www.aippt.cn/?seller=itab",
+      "url": "https://www.aippt.cn",
       "icon_url": "icons/www.aippt.cn.png",
       "original_icon_url": "https://files.codelife.cc/icons/aippt.cn.png",
       "background_color": "#fff",
@@ -210,7 +202,7 @@
     },
     {
       "title": "即时AI",
-      "url": "https://js.design/ai?source=itab&plan=ai",
+      "url": "https://js.design/ai?plan=ai",
       "icon_url": "icons/js.design.png",
       "original_icon_url": "https://files.codelife.cc/icons/js-design-ai.png",
       "background_color": "#ffffff",
@@ -226,19 +218,11 @@
     },
     {
       "title": "畅问AI",
-      "url": "https://changwenai.com/?from=itab",
+      "url": "https://changwenai.com",
       "icon_url": "icons/changwenai.com.png",
       "original_icon_url": "https://files.codelife.cc/icons/changwenai.png",
       "background_color": "#ffffff",
       "icon_local_host": "changwenai.com"
-    },
-    {
-      "title": "添加图标",
-      "url": "itab://add",
-      "icon_url": "icons/add.svg",
-      "original_icon_url": "https://files.codelife.cc/icons/add.svg",
-      "background_color": "#ffffff",
-      "icon_local_host": "add"
     },
     {
       "title": "书签",
@@ -263,14 +247,6 @@
       "original_icon_url": "https://files.codelife.cc/icons/downloads.svg",
       "background_color": "#5893f4",
       "icon_local_host": "downloads"
-    },
-    {
-      "title": "设置",
-      "url": "itab://setting",
-      "icon_url": "icons/setting.svg",
-      "original_icon_url": "https://files.codelife.cc/icons/setting.svg",
-      "background_color": "#fff",
-      "icon_local_host": "setting"
     },
     {
       "title": "扩展管理",
@@ -346,7 +322,7 @@
     },
     {
       "title": "小红书",
-      "url": "https://www.xiaohongshu.com/explore?m_source=itab",
+      "url": "https://www.xiaohongshu.com/explore",
       "icon_url": "icons/www.xiaohongshu.com.svg",
       "original_icon_url": "https://files.codelife.cc/icons/xiaohongshu.svg",
       "background_color": "#ff2442",
@@ -401,14 +377,6 @@
       "icon_local_host": "i.mooc.chaoxing.com"
     },
     {
-      "title": "iTab新手引导",
-      "url": "itab://guide",
-      "icon_url": "icons/guide.svg",
-      "original_icon_url": "https://files.codelife.cc/icons/guide.svg",
-      "background_color": "#febc04",
-      "icon_local_host": "guide"
-    },
-    {
       "title": "Twitter",
       "url": "https://twitter.com/",
       "icon_url": "icons/twitter.com.svg",
@@ -431,14 +399,6 @@
       "original_icon_url": "https://files.codelife.cc/icons/csdn.svg",
       "background_color": "#cc001b",
       "icon_local_host": "www.csdn.net"
-    },
-    {
-      "title": "京东商城",
-      "url": "https://www.itab.link/web/jd.html",
-      "icon_url": "icons/www.itab.link.svg",
-      "original_icon_url": "https://files.codelife.cc/icons/jd.svg",
-      "background_color": "#ff0000",
-      "icon_local_host": "www.itab.link"
     },
     {
       "title": "爱奇艺",
@@ -530,7 +490,7 @@
     },
     {
       "title": "boardmix白板",
-      "url": "https://boardmix.cn/?utm_source=itab&utm_medium=cpc&utm_campaign=%E5%A4%96%E9%93%BE%E5%90%88%E4%BD%9C&_channel_track_key=5umVmiWD",
+      "url": "https://boardmix.cn/?utm_medium=cpc&utm_campaign=%E5%A4%96%E9%93%BE%E5%90%88%E4%BD%9C&_channel_track_key=5umVmiWD",
       "icon_url": "icons/boardmix.cn.svg",
       "original_icon_url": "https://files.codelife.cc/icons/boardmix.cn.svg",
       "background_color": "#fff",
@@ -570,7 +530,7 @@
     },
     {
       "title": "扩展搜搜",
-      "url": "https://www.crxsoso.com/?utm=itab",
+      "url": "https://www.crxsoso.com",
       "icon_url": "icons/www.crxsoso.com.svg",
       "original_icon_url": "https://files.codelife.cc/icons/crxsoso.com.svg",
       "background_color": "#fff",
@@ -626,7 +586,7 @@
     },
     {
       "title": "Canva可画",
-      "url": "https://www.canva.cn/?utm_term=itabtest&channel_link_type=web&utm_campaign=ACQ-itab&sat_cf=1&utm_medium=paid&_channel_track_key=aaAo2jiA&utm_source=itab&utm_content=display",
+      "url": "https://www.canva.cn/?channel_link_type=web&sat_cf=1&utm_medium=paid&_channel_track_key=aaAo2jiA&utm_content=display",
       "icon_url": "icons/www.canva.cn.svg",
       "original_icon_url": "https://files.codelife.cc/icons/canva.svg",
       "background_color": "#ffffff",
@@ -642,23 +602,15 @@
     },
     {
       "title": "测速网",
-      "url": "https://www.speedtest.cn/?from=itab",
+      "url": "https://www.speedtest.cn",
       "icon_url": "icons/www.speedtest.cn.svg",
       "original_icon_url": "https://files.codelife.cc/icons/speedtest.svg",
       "background_color": "#1c2132",
       "icon_local_host": "www.speedtest.cn"
     },
     {
-      "title": "iSlide PPT神器",
-      "url": "https://dwz.islide.cc/itab",
-      "icon_url": "icons/dwz.islide.cc.svg",
-      "original_icon_url": "https://files.codelife.cc/website/islide.svg",
-      "background_color": "#ffffff",
-      "icon_local_host": "dwz.islide.cc"
-    },
-    {
       "title": "百度翻译",
-      "url": "https://fanyi.baidu.com/mtpe-individual/multimodal?channel=itab",
+      "url": "https://fanyi.baidu.com/mtpe-individual/multimodal",
       "icon_url": "icons/fanyi.baidu.com.svg",
       "original_icon_url": "https://files.codelife.cc/icons/fanyi-baidu.svg",
       "background_color": "#fff",
@@ -674,7 +626,7 @@
     },
     {
       "title": "iSlide PPT神器",
-      "url": "https://www.islide.cc/ppt?utm_source=itab&utm_medium=web&utm_campaign=1",
+      "url": "https://www.islide.cc/ppt?utm_medium=web&utm_campaign=1",
       "icon_url": "icons/www.islide.cc.svg",
       "original_icon_url": "https://files.codelife.cc/icons/islide.svg",
       "background_color": "#ffffff",
@@ -697,14 +649,6 @@
       "icon_local_host": "www.autopiano.cn"
     },
     {
-      "title": "秘塔写作猫",
-      "url": "https://xiezuocat.com/#/?s=itab",
-      "icon_url": "icons/xiezuocat.com.svg",
-      "original_icon_url": "https://files.codelife.cc/icons/xiezuocat.com.svg",
-      "background_color": "#fefefe",
-      "icon_local_host": "xiezuocat.com"
-    },
-    {
       "title": "哔哩哔哩",
       "url": "https://www.bilibili.com/",
       "icon_url": "icons/www.bilibili.com.svg",
@@ -722,7 +666,7 @@
     },
     {
       "title": "Zion无代码开发",
-      "url": "https://www.functorz.com/?channel=iTab",
+      "url": "https://www.functorz.com",
       "icon_url": "icons/www.functorz.com.png",
       "original_icon_url": "https://files.codelife.cc/icons/functorz.png",
       "background_color": "#000000",
@@ -834,7 +778,7 @@
     },
     {
       "title": "即时设计",
-      "url": "https://js.design?source=itab&plan=2",
+      "url": "https://js.design/?plan=2",
       "icon_url": "icons/js.design.png",
       "original_icon_url": "https://files.codelife.cc/icons/jsdesign.svg",
       "background_color": "#cf3d35",
@@ -906,7 +850,7 @@
     },
     {
       "title": "开发者搜索",
-      "url": "https://kaifa.baidu.com/?from=itab.link",
+      "url": "https://kaifa.baidu.com",
       "icon_url": "icons/kaifa.baidu.com.svg",
       "original_icon_url": "https://files.codelife.cc/icons/kaifa.baidu.svg",
       "background_color": "#fff",
@@ -922,7 +866,7 @@
     },
     {
       "title": "芦笋 - 极简录屏&云端存储&一键分享",
-      "url": "https://lusun.com/?utm_source=itab",
+      "url": "https://lusun.com",
       "icon_url": "icons/lusun.com.svg",
       "original_icon_url": "https://files.codelife.cc/icons/lusun.svg",
       "background_color": "#fff",
@@ -978,7 +922,7 @@
     },
     {
       "title": "极客时间",
-      "url": "https://time.geekbang.org/?utm_term=iTab&utm_source=iTab&utm_medium=iTab&utm_campaign=iTab&utm_content=iTab",
+      "url": "https://time.geekbang.org",
       "icon_url": "icons/time.geekbang.org.svg",
       "original_icon_url": "https://files.codelife.cc/icons/geekbang.svg",
       "background_color": "#fff",
@@ -1127,14 +1071,6 @@
       "original_icon_url": "https://files.codelife.cc/icons/leetcode.svg",
       "background_color": "#fff",
       "icon_local_host": "leetcode.cn"
-    },
-    {
-      "title": "Apifox",
-      "url": "https://apifox.cn/a1itabweb",
-      "icon_url": "icons/apifox.cn.svg",
-      "original_icon_url": "https://files.codelife.cc/icons/apifoxcn.svg",
-      "background_color": "#f4425f",
-      "icon_local_host": "apifox.cn"
     },
     {
       "title": "腾讯文档",
@@ -1322,7 +1258,7 @@
     },
     {
       "title": "小众技术资源库",
-      "url": "https://www.xiaozhongjishu.com/?from=itab",
+      "url": "https://www.xiaozhongjishu.com",
       "icon_url": "icons/www.xiaozhongjishu.com.png",
       "original_icon_url": "https://files.codelife.cc/icons/xiaozhongjishu.com.png",
       "background_color": "",
@@ -1338,7 +1274,7 @@
     },
     {
       "title": "智谱清言",
-      "url": "https://chatglm.cn/apps?image=https%3A%2F%2Fsfile.chatglm.cn%2Factiveimg%2Fbdms%2F66b97e348217030036f486f1&open_from=ads_web_itab",
+      "url": "https://chatglm.cn/apps?image=https%3A%2F%2Fsfile.chatglm.cn%2Factiveimg%2Fbdms%2F66b97e348217030036f486f1",
       "icon_url": "icons/chatglm.cn.png",
       "original_icon_url": "https://files.codelife.cc/icons/chatglm.cn.png",
       "background_color": "#ffffff",
@@ -1378,7 +1314,7 @@
     },
     {
       "title": "AI思维导图",
-      "url": "https://shutu.cn/?from=itab",
+      "url": "https://shutu.cn",
       "icon_url": "icons/shutu.cn.webp",
       "original_icon_url": "https://files.codelife.cc/icons/shutu.cn.webp",
       "background_color": "#ffffff",
@@ -1410,7 +1346,7 @@
     },
     {
       "title": "心动AI简历",
-      "url": "https://cv.ibiling.cn/?from=itab",
+      "url": "https://cv.ibiling.cn",
       "icon_url": "icons/cv.ibiling.cn.webp",
       "original_icon_url": "https://files.codelife.cc/icons/cv.ibiling.cn.webp",
       "background_color": "#ffffff",
@@ -1561,14 +1497,6 @@
       "icon_local_host": "datayi.cn"
     },
     {
-      "title": "iTab新标签页",
-      "url": "https://itab.link/",
-      "icon_url": "icons/itab.link.svg",
-      "original_icon_url": "https://files.codelife.cc/icons/itab.svg",
-      "background_color": "#1581ff",
-      "icon_local_host": "itab.link"
-    },
-    {
       "title": "百度网盘搜索引擎",
       "url": "http://www.pan1234.com/",
       "icon_url": "icons/www.pan1234.com.png",
@@ -1625,14 +1553,6 @@
       "icon_local_host": "www.fenbi.com"
     },
     {
-      "title": "火山翻译",
-      "url": "https://translate.volcengine.com/translate&from=itab2",
-      "icon_url": "icons/translate.volcengine.com.svg",
-      "original_icon_url": "https://files.codelife.cc/icons/translate.volcengine.com.svg",
-      "background_color": "#fff",
-      "icon_local_host": "translate.volcengine.com"
-    },
-    {
       "title": "大学资源网",
       "url": "http://www.dxzy163.com/",
       "icon_url": "icons/www.dxzy163.com.svg",
@@ -1642,7 +1562,7 @@
     },
     {
       "title": "即梦AI",
-      "url": "https://jimeng.jianying.com/ai-tool/home/?utm_medium=aitools&utm_source=itab&utm_campaign=null&utm_content=49220815g",
+      "url": "https://jimeng.jianying.com/ai-tool/home/?utm_medium=aitools&utm_campaign=null&utm_content=49220815g",
       "icon_url": "icons/jimeng.jianying.com.png",
       "original_icon_url": "https://files.codelife.cc/icons/jimeng.jianying.png",
       "background_color": "",
@@ -1663,14 +1583,6 @@
       "original_icon_url": "https://files.codelife.cc/icons/1688.svg",
       "background_color": "#fe4002",
       "icon_local_host": "p4psearch.1688.com"
-    },
-    {
-      "title": "iTab网页版",
-      "url": "https://go.itab.link/",
-      "icon_url": "icons/go.itab.link.svg",
-      "original_icon_url": "https://files.codelife.cc/icons/itab.svg",
-      "background_color": "#1681ff",
-      "icon_local_host": "go.itab.link"
     },
     {
       "title": "即时工具",
@@ -1714,7 +1626,7 @@
     },
     {
       "title": "马克喵",
-      "url": "https://www.macat.vip/?utm=itab.link",
+      "url": "https://www.macat.vip",
       "icon_url": "icons/www.macat.vip.png",
       "original_icon_url": "https://files.codelife.cc/icons/macat-vip.png",
       "background_color": "#ffff",
@@ -1730,7 +1642,7 @@
     },
     {
       "title": "uTools",
-      "url": "https://u.tools/?from=itab",
+      "url": "https://u.tools",
       "icon_url": "icons/u.tools.svg",
       "original_icon_url": "https://files.codelife.cc/icons/utools.svg",
       "background_color": "#fff",
@@ -2274,7 +2186,7 @@
     },
     {
       "title": "少数派",
-      "url": "https://sspai.com/?utm_source=itab.ink",
+      "url": "https://sspai.com",
       "icon_url": "icons/sspai.com.svg",
       "original_icon_url": "https://files.codelife.cc/icons/sspai.svg",
       "background_color": "#d7191a",
@@ -2418,7 +2330,7 @@
     },
     {
       "title": "ProcessOn",
-      "url": "https://www.processon.com/?utm_source=goitablink",
+      "url": "https://www.processon.com",
       "icon_url": "icons/www.processon.com.png",
       "original_icon_url": "https://files.codelife.cc/icons/processon.png",
       "background_color": "#1985f0",
@@ -2537,14 +2449,6 @@
       "icon_local_host": "ancient.fenbi.com"
     },
     {
-      "title": "iTab浏览器",
-      "url": "https://www.itab.link/browser.html",
-      "icon_url": "icons/www.itab.link.svg",
-      "original_icon_url": "https://files.codelife.cc/icons/itab-browser.png",
-      "background_color": "#ffffff",
-      "icon_local_host": "www.itab.link"
-    },
-    {
       "title": "滴答清单",
       "url": "https://www.dida365.com/webapp",
       "icon_url": "icons/www.dida365.com.svg",
@@ -2554,7 +2458,7 @@
     },
     {
       "title": "字由",
-      "url": "https://www.hellofont.cn?from=itab:test",
+      "url": "https://www.hellofont.cn",
       "icon_url": "icons/www.hellofont.cn.svg",
       "original_icon_url": "https://files.codelife.cc/icons/hellofont.cn.svg",
       "background_color": "#403F41",
@@ -2721,14 +2625,6 @@
       "icon_local_host": "www.sina.com.cn"
     },
     {
-      "title": "印象笔记",
-      "url": "https://www.yinxiang.com/itab/",
-      "icon_url": "icons/www.yinxiang.com.svg",
-      "original_icon_url": "https://files.codelife.cc/icons/www.yinxiang.com.svg",
-      "background_color": "#32bf62",
-      "icon_local_host": "www.yinxiang.com"
-    },
-    {
       "title": "我的世界百科 Wiki",
       "url": "https://minecraft-zh.gamepedia.com/Minecraft_Wiki",
       "icon_url": "icons/minecraft-zh.gamepedia.com.png",
@@ -2810,7 +2706,7 @@
     },
     {
       "title": "包图网",
-      "url": "https://ibaotu.com/?spm=itab",
+      "url": "https://ibaotu.com",
       "icon_url": "icons/ibaotu.com.svg",
       "original_icon_url": "https://files.codelife.cc/icons/ibaotu.svg",
       "background_color": "#fff5c8",
@@ -3170,7 +3066,7 @@
     },
     {
       "title": "今日热榜",
-      "url": "https://rebang.today/?from=itab.link",
+      "url": "https://rebang.today",
       "icon_url": "icons/rebang.today.png",
       "original_icon_url": "https://files.codelife.cc/icons/rebang.today.png",
       "background_color": "#165dff",
@@ -3250,7 +3146,7 @@
     },
     {
       "title": "火山写作",
-      "url": "https://www.writingo.net/document?source=itab",
+      "url": "https://www.writingo.net/document",
       "icon_url": "icons/www.writingo.net.svg",
       "original_icon_url": "https://files.codelife.cc/icons/writingo.net.svg",
       "background_color": "#ffffff",
@@ -4090,7 +3986,7 @@
     },
     {
       "title": "Top.AI",
-      "url": "https://topd.tencent.com/ai?ref=itab.link",
+      "url": "https://topd.tencent.com/ai",
       "icon_url": "icons/topd.tencent.com.png",
       "original_icon_url": "https://files.codelife.cc/icons/top-ai.png",
       "background_color": "#ffffff",
@@ -4306,7 +4202,7 @@
     },
     {
       "title": "美图设计室",
-      "url": "https://www.x-design.com/?channel=goitab",
+      "url": "https://www.x-design.com",
       "icon_url": "icons/www.x-design.com.svg",
       "original_icon_url": "https://files.codelife.cc/icons/x-design.com .svg",
       "background_color": "#000000",
@@ -4602,7 +4498,7 @@
     },
     {
       "title": "爱拍剪辑和录屏",
-      "url": "www.aipai.com?from=itab",
+      "url": "www.aipai.com",
       "icon_url": "icons/goplayeditor.svg",
       "original_icon_url": "https://files.codelife.cc/icons/goplayeditor.svg",
       "background_color": "#579df3",
@@ -4642,7 +4538,7 @@
     },
     {
       "title": "什么值得读",
-      "url": "https://www.shenmezhidedu.com/?itab=from",
+      "url": "https://www.shenmezhidedu.com",
       "icon_url": "icons/www.shenmezhidedu.com.svg",
       "original_icon_url": "https://files.codelife.cc/icons/www.shenmezhidedu.com.svg",
       "background_color": "#fff",
@@ -5066,7 +4962,7 @@
     },
     {
       "title": "大作免费版权图片",
-      "url": "https://www.bigbigwork.com/?from=itab",
+      "url": "https://www.bigbigwork.com",
       "icon_url": "icons/www.bigbigwork.com.svg",
       "original_icon_url": "https://files.codelife.cc/icons/bigbigwork.svg",
       "background_color": "#ff4d4d",
@@ -5618,7 +5514,7 @@
     },
     {
       "title": "天工AI助手",
-      "url": "https://tiangong.cn/?channel=itab",
+      "url": "https://tiangong.cn",
       "icon_url": "icons/tiangong.cn.webp",
       "original_icon_url": "https://files.codelife.cc/icons/tiangong.cn.webp",
       "background_color": "#ffffff",
@@ -5890,7 +5786,7 @@
     },
     {
       "title": "问小白",
-      "url": "https://www.wenxiaobai.com/?forceLogin=true&source=itablink&ad_source=itablink",
+      "url": "https://www.wenxiaobai.com/?forceLogin=true",
       "icon_url": "icons/www.wenxiaobai.com.png",
       "original_icon_url": "https://files.codelife.cc/icons/wenxiaobai.png",
       "background_color": "#fff",
@@ -6346,7 +6242,7 @@
     },
     {
       "title": "摆平AI论文写作",
-      "url": "https://baipingai.com/paper/paper-sc?from=itab",
+      "url": "https://baipingai.com/paper/paper-sc",
       "icon_url": "icons/baipingai.com.png",
       "original_icon_url": "https://files.codelife.cc/icons/baipingai.png",
       "background_color": "#364dfd",
@@ -6458,7 +6354,7 @@
     },
     {
       "title": "AI对话鸭",
-      "url": "https://botvip.cn/?from=itab",
+      "url": "https://botvip.cn",
       "icon_url": "icons/botvip.cn.svg",
       "original_icon_url": "https://files.codelife.cc/icons/botvip.cn.svg",
       "background_color": "#ffffff",
@@ -6466,7 +6362,7 @@
     },
     {
       "title": "公文写作AI",
-      "url": "https://zhubiai.com/?from=itab",
+      "url": "https://zhubiai.com",
       "icon_url": "icons/zhubiai.com.png",
       "original_icon_url": "https://files.codelife.cc/icons/zhubiai.png",
       "background_color": "#bb271a",
@@ -6834,7 +6730,7 @@
     },
     {
       "title": "WHEE",
-      "url": "https://www.whee.com/?channel=goitab",
+      "url": "https://www.whee.com",
       "icon_url": "icons/www.whee.com.svg",
       "original_icon_url": "https://files.codelife.cc/icons/whee.com.svg",
       "background_color": "#3549ff",
@@ -6874,7 +6770,7 @@
     },
     {
       "title": "博思AIPPT",
-      "url": "https://pptgo.cn/?utm_source=referrals&utm_content=iTabnav&_channel_track_key=tpxzQ4ud",
+      "url": "https://pptgo.cn/?utm_source=referrals&_channel_track_key=tpxzQ4ud",
       "icon_url": "icons/pptgo.cn.webp",
       "original_icon_url": "https://files.codelife.cc/icons/pptgo.cn.webp",
       "background_color": "",
@@ -6938,7 +6834,7 @@
     },
     {
       "title": "小鸡词典",
-      "url": "https://jikipedia.com/?from=itab.link",
+      "url": "https://jikipedia.com",
       "icon_url": "icons/jikipedia.com.png",
       "original_icon_url": "https://files.codelife.cc/icons/60b9eb67ae5a9ba4024b3b40.png",
       "background_color": "#fdd502",
@@ -7002,7 +6898,7 @@
     },
     {
       "title": "飞书多维表格",
-      "url": "https://www.feishu.cn/paid/ai-register?utm_from=dlz_itab",
+      "url": "https://www.feishu.cn/paid/ai-register",
       "icon_url": "icons/www.feishu.cn.png",
       "original_icon_url": "https://files.codelife.cc/icons/feishu-duowei.svg",
       "background_color": "#fff",
@@ -7290,7 +7186,7 @@
     },
     {
       "title": "降低AI疑似度",
-      "url": "https://ibiling.cn/paper-pass?from=itabpass",
+      "url": "https://ibiling.cn/paper-pass",
       "icon_url": "icons/ibiling.cn.svg",
       "original_icon_url": "https://files.codelife.cc/icons/ibiling123.png",
       "background_color": "",
@@ -7962,7 +7858,7 @@
     },
     {
       "title": "免费AI写小说",
-      "url": "https://ibiling.cn/novel-workbench?from=itabnovel",
+      "url": "https://ibiling.cn/novel-workbench",
       "icon_url": "icons/ibiling.cn.svg",
       "original_icon_url": "https://files.codelife.cc/icons/ibilingworkbench.png",
       "background_color": "#fff",
@@ -8258,7 +8154,7 @@
     },
     {
       "title": "知犀AI",
-      "url": "https://www.swdt.com/?utm_source=itab",
+      "url": "https://www.swdt.com",
       "icon_url": "icons/www.swdt.com.svg",
       "original_icon_url": "https://files.codelife.cc/icons/zhixi.svg",
       "background_color": "#8d49d9",
@@ -8466,7 +8362,7 @@
     },
     {
       "title": "AI文档翻译",
-      "url": "https://app.immersivetranslate.com/?utm_source=link&utm_medium=doc&utm_campaign=itab",
+      "url": "https://app.immersivetranslate.com/?utm_source=link&utm_medium=doc",
       "icon_url": "icons/app.immersivetranslate.com.png",
       "original_icon_url": "https://files.codelife.cc/icons/immersivetranslate.png",
       "background_color": "",
@@ -8503,14 +8399,6 @@
       "original_icon_url": "https://files.codelife.cc/icons/vuejs.svg",
       "background_color": "#fff",
       "icon_local_host": "router.vuejs.org"
-    },
-    {
-      "title": "mindshow",
-      "url": "https://www.mindshow.fun/#/home?inviteCode=itab",
-      "icon_url": "icons/www.mindshow.fun.svg",
-      "original_icon_url": "https://files.codelife.cc/icons/mindshow.fun.svg",
-      "background_color": "#ffffff",
-      "icon_local_host": "www.mindshow.fun"
     },
     {
       "title": "Semantic Scholar",
@@ -8578,7 +8466,7 @@
     },
     {
       "title": "千图AI设计助手",
-      "url": "https://hisheai.com/?from=itab",
+      "url": "https://hisheai.com",
       "icon_url": "icons/hisheai.com.svg",
       "original_icon_url": "https://files.codelife.cc/icons/hisheai.svg",
       "background_color": "#0b62ff",
@@ -8690,7 +8578,7 @@
     },
     {
       "title": "此刻电影日历",
-      "url": "https://www.cikeee.com/?u_sour=itab",
+      "url": "https://www.cikeee.com",
       "icon_url": "icons/www.cikeee.com.svg",
       "original_icon_url": "https://files.codelife.cc/icons/cikeee.svg",
       "background_color": "#2c2f30",
@@ -9082,7 +8970,7 @@
     },
     {
       "title": "chrome插件网",
-      "url": "https://www.chromefor.com/?utm_source=itab.link",
+      "url": "https://www.chromefor.com",
       "icon_url": "icons/www.chromefor.com.png",
       "original_icon_url": "https://files.codelife.cc/icons/60b9eb40ae5a9ba4024b3abe.png",
       "background_color": "#ffffff",
@@ -9546,7 +9434,7 @@
     },
     {
       "title": "AI开搭",
-      "url": "https://aikaida.com/?from=itab",
+      "url": "https://aikaida.com",
       "icon_url": "icons/aikaida.com.png",
       "original_icon_url": "https://files.codelife.cc/icons/aikaida.png",
       "background_color": "#ffffff",
@@ -9954,7 +9842,7 @@
     },
     {
       "title": "",
-      "url": "https://hihaibao.com/?from=itab",
+      "url": "https://hihaibao.com",
       "icon_url": "icons/hihaibao.com.svg",
       "original_icon_url": "https://files.codelife.cc/icons/hihaibao.svg",
       "background_color": "#348bff",
@@ -10394,7 +10282,7 @@
     },
     {
       "title": "美间AI设计",
-      "url": "https://www.meijian.com/mj/meijian/site-v2/member/activity/e-commerce/reg-promotion?utm_source=dsdhxbqitab",
+      "url": "https://www.meijian.com/mj/meijian/site-v2/member/activity/e-commerce/reg-promotion",
       "icon_url": "icons/www.meijian.com.png",
       "original_icon_url": "https://files.codelife.cc/icons/meijian.png",
       "background_color": "#fff",
@@ -10626,7 +10514,7 @@
     },
     {
       "title": "BoardOS",
-      "url": "https://boardos.online/?from=itab.link",
+      "url": "https://boardos.online",
       "icon_url": "icons/boardos.online.svg",
       "original_icon_url": "https://files.codelife.cc/icons/boardos.svg",
       "background_color": "#f6f8f6",
@@ -11042,7 +10930,7 @@
     },
     {
       "title": "创脑",
-      "url": "https://ichuangnao.com?from=itab",
+      "url": "https://ichuangnao.com",
       "icon_url": "icons/ichuangnao.com.png",
       "original_icon_url": "https://files.codelife.cc/icons/ichuangnao.png",
       "background_color": "#333333",
@@ -11826,7 +11714,7 @@
     },
     {
       "title": "酷雀",
-      "url": "https://www.kuque.com/?from=itab",
+      "url": "https://www.kuque.com",
       "icon_url": "icons/www.kuque.com.svg",
       "original_icon_url": "https://files.codelife.cc/icons/kuque.svg",
       "background_color": "#fff",
@@ -12458,7 +12346,7 @@
     },
     {
       "title": "PPT世界",
-      "url": "https://www.pptx.cn?hmsr=iTab&hmpl=YHZSki&hmcu=20230703&hmkw=&hmci=",
+      "url": "https://www.pptx.cn/?hmpl=YHZSki&hmcu=20230703&hmkw=&hmci=",
       "icon_url": "icons/www.pptx.cn.svg",
       "original_icon_url": "https://files.codelife.cc/icons/pptx.cn.svg",
       "background_color": "#ffffff",
@@ -12898,7 +12786,7 @@
     },
     {
       "title": "TraeAi编辑器",
-      "url": "https://www.trae.com.cn/?utm_source=advertising&utm_medium=itab_ug_cpa&utm_term=hw_trae_itab",
+      "url": "https://www.trae.com.cn/?utm_source=advertising",
       "icon_url": "icons/www.trae.com.cn.svg",
       "original_icon_url": "https://files.codelife.cc/icons/trae.ai.svg",
       "background_color": "#000000",
@@ -14858,7 +14746,7 @@
     },
     {
       "title": "原型托管",
-      "url": "https://axmax.cn?utm_source=itab",
+      "url": "https://axmax.cn",
       "icon_url": "icons/axmax.cn.svg",
       "original_icon_url": "https://files.codelife.cc/icons/axmaxcn.svg",
       "background_color": "#ffffff",
@@ -15298,7 +15186,7 @@
     },
     {
       "title": "产品经理AI助手",
-      "url": "https://www.pm-ai.cn/?utm_source=itab",
+      "url": "https://www.pm-ai.cn",
       "icon_url": "icons/www.pm-ai.cn.png",
       "original_icon_url": "https://files.codelife.cc/icons/pm-ai.cn.png",
       "background_color": "#ffffff",
@@ -25162,7 +25050,7 @@
     },
     {
       "title": "易条形",
-      "url": "https://www.1txm.com/?from=itab",
+      "url": "https://www.1txm.com",
       "icon_url": "icons/www.1txm.com.jpg",
       "original_icon_url": "https://files.codelife.cc/icons/1txm.jpg",
       "background_color": "#fff",

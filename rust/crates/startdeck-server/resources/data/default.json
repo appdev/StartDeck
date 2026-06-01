@@ -152,18 +152,18 @@
       "colSpan": 4,
       "rowSpan": 2,
       "id": "wallpaper-1779726776021-ush28b",
-      "type": "itab-wallpaper-16",
+      "type": "sd-wallpaper-16",
       "enable": true,
       "data": {
-        "runtime": "itab-wallpaper",
-        "layoutSystem": "itab-grid/2026-05-22",
+        "runtime": "sd-wallpaper",
+        "layoutSystem": "sd-grid/2026-05-22",
         "version": 1,
         "sizeKey": "2x4",
-        "itab": {
-          "namespace": "itab",
+        "sd": {
+          "namespace": "sd",
           "captureIndex": 16,
-          "catalogId": "itab-wallpaper-16",
-          "localStateKey": "itab.wallpaper.16",
+          "catalogId": "sd-wallpaper-16",
+          "localStateKey": "sd.wallpaper.16",
           "adapterKind": "wallpaper",
           "state": {
             "progress": 0.8,
@@ -186,12 +186,12 @@
       "h": 2,
       "colSpan": 2,
       "rowSpan": 2,
-      "id": "itab-number-uppercase-35-1779726789070-6x6arb",
-      "type": "itab-number-uppercase-35",
+      "id": "sd-number-uppercase-35-1779726789070-6x6arb",
+      "type": "sd-number-uppercase-35",
       "enable": true,
       "data": {
-        "runtime": "itab-number-uppercase",
-        "layoutSystem": "itab-grid/2026-05-22",
+        "runtime": "sd-number-uppercase",
+        "layoutSystem": "sd-grid/2026-05-22",
         "version": 1,
         "sizeKey": "2x2",
         "inputNumber": "",
@@ -207,11 +207,11 @@
       "colSpan": 2,
       "rowSpan": 2,
       "id": "food-picker-1779726790657-n8iejy",
-      "type": "itab-food-picker-15",
+      "type": "sd-food-picker-15",
       "enable": true,
       "data": {
-        "runtime": "itab-food-picker",
-        "layoutSystem": "itab-grid/2026-05-22",
+        "runtime": "sd-food-picker",
+        "layoutSystem": "sd-grid/2026-05-22",
         "version": 1,
         "sizeKey": "2x2",
         "menuItems": [
@@ -234,11 +234,11 @@
       "colSpan": 2,
       "rowSpan": 2,
       "id": "anniversary-1779875717902-986789",
-      "type": "itab-anniversary-03",
+      "type": "sd-anniversary-03",
       "enable": false,
       "data": {
-        "runtime": "itab-anniversary",
-        "layoutSystem": "itab-grid/2026-05-22",
+        "runtime": "sd-anniversary",
+        "layoutSystem": "sd-grid/2026-05-22",
         "version": 1,
         "sizeKey": "2x2",
         "title": "纪念日",
@@ -249,7 +249,7 @@
         "repeat": "不重复",
         "textColor": "#ffffff",
         "backgroundColor": "#8e726f",
-        "backgroundImage": "/itab-live-assets/anniversary/yiyan-12.webp",
+        "backgroundImage": "/sd-live-assets/anniversary/yiyan-12.webp",
         "backgroundMode": "image",
         "mask": 0
       }
@@ -260,11 +260,11 @@
       "colSpan": 4,
       "rowSpan": 2,
       "id": "anniversary-1779876005956-osxyhe",
-      "type": "itab-anniversary-03",
+      "type": "sd-anniversary-03",
       "enable": false,
       "data": {
-        "runtime": "itab-anniversary",
-        "layoutSystem": "itab-grid/2026-05-22",
+        "runtime": "sd-anniversary",
+        "layoutSystem": "sd-grid/2026-05-22",
         "version": 1,
         "sizeKey": "2x4",
         "title": "倒数日",
@@ -275,7 +275,7 @@
         "repeat": "每月",
         "textColor": "#1890ff",
         "backgroundColor": "#ffffff",
-        "backgroundImage": "/itab-live-assets/anniversary/yiyan-8.webp",
+        "backgroundImage": "/sd-live-assets/anniversary/yiyan-8.webp",
         "backgroundMode": "image",
         "mask": 0
       }
@@ -286,11 +286,11 @@
       "colSpan": 2,
       "rowSpan": 2,
       "id": "anniversary-1779879109167-4cnlx5",
-      "type": "itab-anniversary-03",
+      "type": "sd-anniversary-03",
       "enable": false,
       "data": {
-        "runtime": "itab-anniversary",
-        "layoutSystem": "itab-grid/2026-05-22",
+        "runtime": "sd-anniversary",
+        "layoutSystem": "sd-grid/2026-05-22",
         "version": 1,
         "sizeKey": "2x2",
         "title": "纪念日",
@@ -301,7 +301,7 @@
         "repeat": "不重复",
         "textColor": "#ffffff",
         "backgroundColor": "#8e726f",
-        "backgroundImage": "/itab-live-assets/anniversary/yiyan-12.webp",
+        "backgroundImage": "/sd-live-assets/anniversary/yiyan-12.webp",
         "backgroundMode": "image",
         "mask": 0
       }
@@ -314,18 +314,18 @@
       "colSpan": 2,
       "rowSpan": 2,
       "id": "wallpaper-1779934603582-snnhww",
-      "type": "itab-wallpaper-16",
+      "type": "sd-wallpaper-16",
       "enable": false,
       "data": {
-        "runtime": "itab-wallpaper",
-        "layoutSystem": "itab-grid/2026-05-22",
+        "runtime": "sd-wallpaper",
+        "layoutSystem": "sd-grid/2026-05-22",
         "version": 1,
         "sizeKey": "2x2",
-        "itab": {
-          "namespace": "itab",
+        "sd": {
+          "namespace": "sd",
           "captureIndex": 16,
-          "catalogId": "itab-wallpaper-16",
-          "localStateKey": "itab.wallpaper.16",
+          "catalogId": "sd-wallpaper-16",
+          "localStateKey": "sd.wallpaper.16",
           "adapterKind": "wallpaper",
           "state": {
             "progress": 0.8,
@@ -342,11 +342,11 @@
       "colSpan": 2,
       "rowSpan": 2,
       "id": "anniversary-1779934696112-e6m8rv",
-      "type": "itab-anniversary-03",
+      "type": "sd-anniversary-03",
       "enable": true,
       "data": {
-        "runtime": "itab-anniversary",
-        "layoutSystem": "itab-grid/2026-05-22",
+        "runtime": "sd-anniversary",
+        "layoutSystem": "sd-grid/2026-05-22",
         "version": 1,
         "sizeKey": "2x2",
         "title": "倒数日",
@@ -357,7 +357,7 @@
         "repeat": "每月",
         "textColor": "#1890ff",
         "backgroundColor": "#ffffff",
-        "backgroundImage": "/itab-live-assets/anniversary/yiyan-12.webp",
+        "backgroundImage": "/sd-live-assets/anniversary/yiyan-12.webp",
         "backgroundMode": "color",
         "mask": 0
       }
@@ -370,11 +370,11 @@
       "colSpan": 2,
       "rowSpan": 2,
       "id": "anniversary-1779934767440-nuj4vj",
-      "type": "itab-anniversary-03",
+      "type": "sd-anniversary-03",
       "enable": true,
       "data": {
-        "runtime": "itab-anniversary",
-        "layoutSystem": "itab-grid/2026-05-22",
+        "runtime": "sd-anniversary",
+        "layoutSystem": "sd-grid/2026-05-22",
         "version": 1,
         "sizeKey": "2x2",
         "title": "纪念日",
@@ -385,7 +385,7 @@
         "repeat": "不重复",
         "textColor": "#ffffff",
         "backgroundColor": "#8e726f",
-        "backgroundImage": "/itab-live-assets/anniversary/yiyan-2.webp",
+        "backgroundImage": "/sd-live-assets/anniversary/yiyan-2.webp",
         "backgroundMode": "image",
         "mask": 0
       }
@@ -402,7 +402,7 @@
       "enable": true,
       "data": {
         "runtime": "ai-usage",
-        "layoutSystem": "itab-grid/2026-05-22",
+        "layoutSystem": "sd-grid/2026-05-22",
         "version": 1,
         "sizeKey": "2x2",
         "providerId": "openai",
@@ -433,7 +433,7 @@
       "enable": true,
       "data": {
         "runtime": "tapd-defects",
-        "layoutSystem": "itab-grid/2026-05-22",
+        "layoutSystem": "sd-grid/2026-05-22",
         "version": 1,
         "sizeKey": "2x2",
         "workspaceId": "",
@@ -485,11 +485,11 @@
       "colSpan": 4,
       "rowSpan": 2,
       "id": "weather",
-      "type": "itab-weather-00",
+      "type": "sd-weather-00",
       "enable": true,
       "data": {
-        "runtime": "itab-weather",
-        "layoutSystem": "itab-grid/2026-05-22",
+        "runtime": "sd-weather",
+        "layoutSystem": "sd-grid/2026-05-22",
         "version": 1,
         "sizeKey": "2x4",
         "location": {
@@ -509,11 +509,11 @@
       "colSpan": 4,
       "rowSpan": 4,
       "id": "todo",
-      "type": "itab-todo-17",
+      "type": "sd-todo-17",
       "enable": true,
       "data": {
-        "runtime": "itab-todo",
-        "layoutSystem": "itab-grid/2026-05-22",
+        "runtime": "sd-todo",
+        "layoutSystem": "sd-grid/2026-05-22",
         "version": 1,
         "sizeKey": "4x4",
         "tasks": [
@@ -553,11 +553,11 @@
       "colSpan": 4,
       "rowSpan": 2,
       "id": "memo",
-      "type": "itab-memo-04",
+      "type": "sd-memo-04",
       "enable": true,
       "data": {
-        "runtime": "itab-memo",
-        "layoutSystem": "itab-grid/2026-05-22",
+        "runtime": "sd-memo",
+        "layoutSystem": "sd-grid/2026-05-22",
         "version": 1,
         "sizeKey": "2x4",
         "notes": [
@@ -600,11 +600,11 @@
       "colSpan": 4,
       "rowSpan": 2,
       "id": "clock",
-      "type": "itab-clock-12",
+      "type": "sd-clock-12",
       "enable": true,
       "data": {
-        "runtime": "itab-clock",
-        "layoutSystem": "itab-grid/2026-05-22",
+        "runtime": "sd-clock",
+        "layoutSystem": "sd-grid/2026-05-22",
         "version": 1,
         "sizeKey": "2x4",
         "showSeconds": true
@@ -618,11 +618,11 @@
       "colSpan": 4,
       "rowSpan": 2,
       "id": "daily-english",
-      "type": "itab-daily-english-14",
+      "type": "sd-daily-english-14",
       "enable": true,
       "data": {
-        "runtime": "itab-daily-english",
-        "layoutSystem": "itab-grid/2026-05-22",
+        "runtime": "sd-daily-english",
+        "layoutSystem": "sd-grid/2026-05-22",
         "version": 1,
         "sizeKey": "2x4"
       }
@@ -635,11 +635,11 @@
       "colSpan": 4,
       "rowSpan": 2,
       "id": "poem",
-      "type": "itab-poem-10",
+      "type": "sd-poem-10",
       "enable": true,
       "data": {
-        "runtime": "itab-poem",
-        "layoutSystem": "itab-grid/2026-05-22",
+        "runtime": "sd-poem",
+        "layoutSystem": "sd-grid/2026-05-22",
         "version": 1,
         "sizeKey": "2x4",
         "currentPoem": {
@@ -671,11 +671,11 @@
       "colSpan": 4,
       "rowSpan": 2,
       "id": "pomodoro",
-      "type": "itab-pomodoro-29",
+      "type": "sd-pomodoro-29",
       "enable": true,
       "data": {
-        "runtime": "itab-pomodoro",
-        "layoutSystem": "itab-grid/2026-05-22",
+        "runtime": "sd-pomodoro",
+        "layoutSystem": "sd-grid/2026-05-22",
         "version": 1,
         "sizeKey": "2x4",
         "duration": 1500,
@@ -695,11 +695,11 @@
       "colSpan": 4,
       "rowSpan": 2,
       "id": "movie-calendar",
-      "type": "itab-movie-calendar-05",
+      "type": "sd-movie-calendar-05",
       "enable": true,
       "data": {
-        "runtime": "itab-movie-calendar",
-        "layoutSystem": "itab-grid/2026-05-22",
+        "runtime": "sd-movie-calendar",
+        "layoutSystem": "sd-grid/2026-05-22",
         "version": 1,
         "sizeKey": "2x4"
       }
@@ -712,11 +712,11 @@
       "colSpan": 2,
       "rowSpan": 2,
       "id": "ip",
-      "type": "itab-ip-30",
+      "type": "sd-ip-30",
       "enable": true,
       "data": {
-        "runtime": "itab-ip",
-        "layoutSystem": "itab-grid/2026-05-22",
+        "runtime": "sd-ip",
+        "layoutSystem": "sd-grid/2026-05-22",
         "version": 1,
         "sizeKey": "2x2"
       }
@@ -729,11 +729,11 @@
       "colSpan": 4,
       "rowSpan": 2,
       "id": "calendar",
-      "type": "itab-calendar-01",
+      "type": "sd-calendar-01",
       "enable": true,
       "data": {
-        "runtime": "itab-calendar",
-        "layoutSystem": "itab-grid/2026-05-22",
+        "runtime": "sd-calendar",
+        "layoutSystem": "sd-grid/2026-05-22",
         "version": 1,
         "sizeKey": "2x4"
       }
@@ -753,7 +753,7 @@
         "runtime": "docker",
         "version": 1,
         "sizeKey": "2x4",
-        "layoutSystem": "itab-grid/2026-05-22"
+        "layoutSystem": "sd-grid/2026-05-22"
       }
     },
     {
@@ -767,7 +767,7 @@
       "type": "system-status",
       "enable": true,
       "data": {
-        "layoutSystem": "itab-grid/2026-05-22",
+        "layoutSystem": "sd-grid/2026-05-22",
         "sizeKey": "2x4",
         "runtime": "system-status",
         "version": 1

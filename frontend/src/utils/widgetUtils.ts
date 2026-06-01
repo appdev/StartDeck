@@ -6,102 +6,102 @@
 import type { WidgetConfig } from "@/types";
 import { resolveWidgetDefaultSize } from "@/utils/widgetSizePresets";
 import {
-  ITAB_WEATHER_CATALOG_ID,
-  ITAB_WEATHER_WIDGET_TYPE,
-} from "@/features/itab-weather/itabWeatherTypes";
+  SD_WEATHER_CATALOG_ID,
+  SD_WEATHER_WIDGET_TYPE,
+} from "@/features/sd-weather/sdWeatherTypes";
 import {
-  ITAB_TODO_CATALOG_ID,
-  ITAB_TODO_WIDGET_TYPE,
-} from "@/features/itab-todo/itabTodoTypes";
+  SD_TODO_CATALOG_ID,
+  SD_TODO_WIDGET_TYPE,
+} from "@/features/sd-todo/sdTodoTypes";
 import {
-  ITAB_MEMO_CATALOG_ID,
-  ITAB_MEMO_WIDGET_TYPE,
-} from "@/features/itab-memo/itabMemoTypes";
+  SD_MEMO_CATALOG_ID,
+  SD_MEMO_WIDGET_TYPE,
+} from "@/features/sd-memo/sdMemoTypes";
 import {
-  ITAB_CLOCK_CATALOG_ID,
-  ITAB_CLOCK_WIDGET_TYPE,
-} from "@/features/itab-clock/itabClockTypes";
+  SD_CLOCK_CATALOG_ID,
+  SD_CLOCK_WIDGET_TYPE,
+} from "@/features/sd-clock/sdClockTypes";
 import {
-  ITAB_DAILY_ENGLISH_CATALOG_ID,
-  ITAB_DAILY_ENGLISH_WIDGET_TYPE,
-} from "@/features/itab-daily-english/itabDailyEnglishTypes";
+  SD_DAILY_ENGLISH_CATALOG_ID,
+  SD_DAILY_ENGLISH_WIDGET_TYPE,
+} from "@/features/sd-daily-english/sdDailyEnglishTypes";
 import {
-  ITAB_POEM_CATALOG_ID,
-  ITAB_POEM_WIDGET_TYPE,
-} from "@/features/itab-poem/itabPoemTypes";
+  SD_POEM_CATALOG_ID,
+  SD_POEM_WIDGET_TYPE,
+} from "@/features/sd-poem/sdPoemTypes";
 import {
-  ITAB_POMODORO_CATALOG_ID,
-  ITAB_POMODORO_WIDGET_TYPE,
-} from "@/features/itab-pomodoro/itabPomodoroTypes";
-import { ITAB_ANNIVERSARY_WIDGET_TYPE } from "@/features/itab-anniversary/itabAnniversaryTypes";
+  SD_POMODORO_CATALOG_ID,
+  SD_POMODORO_WIDGET_TYPE,
+} from "@/features/sd-pomodoro/sdPomodoroTypes";
+import { SD_ANNIVERSARY_WIDGET_TYPE } from "@/features/sd-anniversary/sdAnniversaryTypes";
 import {
-  ITAB_MOVIE_CALENDAR_CATALOG_ID,
-  ITAB_MOVIE_CALENDAR_WIDGET_TYPE,
-} from "@/features/itab-movie-calendar/itabMovieCalendarTypes";
+  SD_MOVIE_CALENDAR_CATALOG_ID,
+  SD_MOVIE_CALENDAR_WIDGET_TYPE,
+} from "@/features/sd-movie-calendar/sdMovieCalendarTypes";
 import {
-  ITAB_IP_CATALOG_ID,
-  ITAB_IP_WIDGET_TYPE,
-} from "@/features/itab-ip/itabIpTypes";
+  SD_IP_CATALOG_ID,
+  SD_IP_WIDGET_TYPE,
+} from "@/features/sd-ip/sdIpTypes";
 import {
-  ITAB_CALENDAR_CATALOG_ID,
-  ITAB_CALENDAR_WIDGET_TYPE,
-} from "@/features/itab-calendar/itabCalendarTypes";
-import { ITAB_NUMBER_UPPERCASE_WIDGET_TYPE } from "@/features/itab-number-uppercase/itabNumberUppercaseTypes";
-import { ITAB_FOOD_PICKER_WIDGET_TYPE } from "@/features/itab-food-picker/itabFoodPickerTypes";
+  SD_CALENDAR_CATALOG_ID,
+  SD_CALENDAR_WIDGET_TYPE,
+} from "@/features/sd-calendar/sdCalendarTypes";
+import { SD_NUMBER_UPPERCASE_WIDGET_TYPE } from "@/features/sd-number-uppercase/sdNumberUppercaseTypes";
+import { SD_FOOD_PICKER_WIDGET_TYPE } from "@/features/sd-food-picker/sdFoodPickerTypes";
 import { AI_USAGE_WIDGET_TYPE } from "@/features/ai-usage/aiUsageTypes";
 import { TAPD_DEFECTS_WIDGET_TYPE } from "@/features/tapd-defects/tapdDefectTypes";
 import {
-  applyItabWeatherSizeToWidget,
-  normalizeItabWeatherWidgetData,
-} from "@/features/itab-weather/itabWeatherModel";
+  applySdWeatherSizeToWidget,
+  normalizeSdWeatherWidgetData,
+} from "@/features/sd-weather/sdWeatherModel";
 import {
-  applyItabTodoSizeToWidget,
-  normalizeItabTodoWidgetData,
-} from "@/features/itab-todo/itabTodoModel";
+  applySdTodoSizeToWidget,
+  normalizeSdTodoWidgetData,
+} from "@/features/sd-todo/sdTodoModel";
 import {
-  applyItabMemoSizeToWidget,
-  normalizeItabMemoWidgetData,
-} from "@/features/itab-memo/itabMemoModel";
+  applySdMemoSizeToWidget,
+  normalizeSdMemoWidgetData,
+} from "@/features/sd-memo/sdMemoModel";
 import {
-  applyItabClockSizeToWidget,
-  normalizeItabClockWidgetData,
-} from "@/features/itab-clock/itabClockModel";
+  applySdClockSizeToWidget,
+  normalizeSdClockWidgetData,
+} from "@/features/sd-clock/sdClockModel";
 import {
-  applyItabDailyEnglishSizeToWidget,
-  normalizeItabDailyEnglishWidgetData,
-} from "@/features/itab-daily-english/itabDailyEnglishModel";
+  applySdDailyEnglishSizeToWidget,
+  normalizeSdDailyEnglishWidgetData,
+} from "@/features/sd-daily-english/sdDailyEnglishModel";
 import {
-  applyItabPoemSizeToWidget,
-  normalizeItabPoemWidgetData,
-} from "@/features/itab-poem/itabPoemModel";
+  applySdPoemSizeToWidget,
+  normalizeSdPoemWidgetData,
+} from "@/features/sd-poem/sdPoemModel";
 import {
-  applyItabPomodoroSizeToWidget,
-  normalizeItabPomodoroWidgetData,
-} from "@/features/itab-pomodoro/itabPomodoroModel";
+  applySdPomodoroSizeToWidget,
+  normalizeSdPomodoroWidgetData,
+} from "@/features/sd-pomodoro/sdPomodoroModel";
 import {
-  applyItabAnniversarySizeToWidget,
-  normalizeItabAnniversaryWidgetData,
-} from "@/features/itab-anniversary/itabAnniversaryModel";
+  applySdAnniversarySizeToWidget,
+  normalizeSdAnniversaryWidgetData,
+} from "@/features/sd-anniversary/sdAnniversaryModel";
 import {
-  applyItabMovieCalendarSizeToWidget,
-  normalizeItabMovieCalendarWidgetData,
-} from "@/features/itab-movie-calendar/itabMovieCalendarModel";
+  applySdMovieCalendarSizeToWidget,
+  normalizeSdMovieCalendarWidgetData,
+} from "@/features/sd-movie-calendar/sdMovieCalendarModel";
 import {
-  applyItabIpSizeToWidget,
-  normalizeItabIpWidgetData,
-} from "@/features/itab-ip/itabIpModel";
+  applySdIpSizeToWidget,
+  normalizeSdIpWidgetData,
+} from "@/features/sd-ip/sdIpModel";
 import {
-  applyItabCalendarSizeToWidget,
-  normalizeItabCalendarWidgetData,
-} from "@/features/itab-calendar/itabCalendarModel";
+  applySdCalendarSizeToWidget,
+  normalizeSdCalendarWidgetData,
+} from "@/features/sd-calendar/sdCalendarModel";
 import {
-  applyItabNumberUppercaseSizeToWidget,
-  normalizeItabNumberUppercaseWidgetData,
-} from "@/features/itab-number-uppercase/itabNumberUppercaseModel";
+  applySdNumberUppercaseSizeToWidget,
+  normalizeSdNumberUppercaseWidgetData,
+} from "@/features/sd-number-uppercase/sdNumberUppercaseModel";
 import {
-  applyItabFoodPickerSizeToWidget,
-  normalizeItabFoodPickerWidgetData,
-} from "@/features/itab-food-picker/itabFoodPickerModel";
+  applySdFoodPickerSizeToWidget,
+  normalizeSdFoodPickerWidgetData,
+} from "@/features/sd-food-picker/sdFoodPickerModel";
 import {
   applyAiUsageSizeToWidget,
   normalizeAiUsageWidgetData,
@@ -111,9 +111,10 @@ import {
   normalizeTapdDefectWidgetData,
 } from "@/features/tapd-defects/tapdDefectModel";
 import {
-  hasItabGridSchema,
-  withItabGridData,
-} from "@/features/itab-widgets/itabGrid";
+  hasSdGridSchema,
+  withSdGridData,
+} from "@/features/sd-widgets/sdGrid";
+import { migrateLegacyWidgetConfig } from "@/utils/legacyWidgetMigration";
 import {
   applyDockerWidgetSizeToWidget,
   applySystemStatusWidgetSizeToWidget,
@@ -163,7 +164,7 @@ const REMOVED_WIDGET_IDS = new Set([
 
 const withDefaultWidgetSize = <T extends WidgetConfig>(widget: T): T => {
   const size = resolveWidgetDefaultSize(widget.type);
-  return withItabGridData({
+  return withSdGridData({
     ...widget,
     colSpan: size.colSpan,
     rowSpan: size.rowSpan,
@@ -206,7 +207,7 @@ export function normalizeIncomingWidgets(
             !REMOVED_WIDGET_TYPES.has(widget.type) &&
             !REMOVED_WIDGET_IDS.has(widget.id),
         )
-        .map((widget) => ({ ...widget }))
+        .map((widget) => migrateLegacyWidgetConfig({ ...widget }))
     : [];
 
   if (nextWidgets.length === 0) {
@@ -216,7 +217,7 @@ export function normalizeIncomingWidgets(
     return createDefaultWidgetList(!!isLoggedIn);
   }
 
-  if (hasIncomingList && !nextWidgets.some(hasItabGridSchema)) {
+  if (hasIncomingList && !nextWidgets.some(hasSdGridSchema)) {
     return createDefaultWidgetList(!!isLoggedIn);
   }
 
@@ -228,232 +229,232 @@ export function normalizeIncomingWidgets(
     nextWidgets.push(...withoutLegacyClock);
   }
 
-  const itabWeatherCandidates = nextWidgets.filter(
-    (widget) => widget.type === ITAB_WEATHER_WIDGET_TYPE,
+  const sdWeatherCandidates = nextWidgets.filter(
+    (widget) => widget.type === SD_WEATHER_WIDGET_TYPE,
   );
-  if (itabWeatherCandidates.length > 0) {
+  if (sdWeatherCandidates.length > 0) {
     const keep =
-      itabWeatherCandidates.find(
-        (widget) => widget.id === ITAB_WEATHER_CATALOG_ID,
-      ) || itabWeatherCandidates[0]!;
-    const normalizedData = normalizeItabWeatherWidgetData(keep.data);
-    keep.id = ITAB_WEATHER_CATALOG_ID;
-    keep.type = ITAB_WEATHER_WIDGET_TYPE;
+      sdWeatherCandidates.find(
+        (widget) => widget.id === SD_WEATHER_CATALOG_ID,
+      ) || sdWeatherCandidates[0]!;
+    const normalizedData = normalizeSdWeatherWidgetData(keep.data);
+    keep.id = SD_WEATHER_CATALOG_ID;
+    keep.type = SD_WEATHER_WIDGET_TYPE;
     keep.enable = keep.enable !== false;
-    applyItabWeatherSizeToWidget(keep, normalizedData.sizeKey);
-    const withoutItabWeather = nextWidgets.filter(
-      (widget) => widget.type !== ITAB_WEATHER_WIDGET_TYPE,
+    applySdWeatherSizeToWidget(keep, normalizedData.sizeKey);
+    const withoutSdWeather = nextWidgets.filter(
+      (widget) => widget.type !== SD_WEATHER_WIDGET_TYPE,
     );
     nextWidgets.length = 0;
-    nextWidgets.push(...withoutItabWeather, keep);
+    nextWidgets.push(...withoutSdWeather, keep);
   }
 
-  const itabTodoCandidates = nextWidgets.filter(
-    (widget) => widget.type === ITAB_TODO_WIDGET_TYPE,
+  const sdTodoCandidates = nextWidgets.filter(
+    (widget) => widget.type === SD_TODO_WIDGET_TYPE,
   );
-  if (itabTodoCandidates.length > 0) {
+  if (sdTodoCandidates.length > 0) {
     const keep =
-      itabTodoCandidates.find((widget) => widget.id === ITAB_TODO_CATALOG_ID) ||
-      itabTodoCandidates[0]!;
-    const normalizedData = normalizeItabTodoWidgetData(keep.data);
-    keep.id = ITAB_TODO_CATALOG_ID;
-    keep.type = ITAB_TODO_WIDGET_TYPE;
+      sdTodoCandidates.find((widget) => widget.id === SD_TODO_CATALOG_ID) ||
+      sdTodoCandidates[0]!;
+    const normalizedData = normalizeSdTodoWidgetData(keep.data);
+    keep.id = SD_TODO_CATALOG_ID;
+    keep.type = SD_TODO_WIDGET_TYPE;
     keep.enable = keep.enable !== false;
-    applyItabTodoSizeToWidget(keep, normalizedData.sizeKey);
-    const withoutItabTodo = nextWidgets.filter(
-      (widget) => widget.type !== ITAB_TODO_WIDGET_TYPE,
+    applySdTodoSizeToWidget(keep, normalizedData.sizeKey);
+    const withoutSdTodo = nextWidgets.filter(
+      (widget) => widget.type !== SD_TODO_WIDGET_TYPE,
     );
     nextWidgets.length = 0;
-    nextWidgets.push(...withoutItabTodo, keep);
+    nextWidgets.push(...withoutSdTodo, keep);
   }
 
-  const itabMemoCandidates = nextWidgets.filter(
-    (widget) => widget.type === ITAB_MEMO_WIDGET_TYPE,
+  const sdMemoCandidates = nextWidgets.filter(
+    (widget) => widget.type === SD_MEMO_WIDGET_TYPE,
   );
-  if (itabMemoCandidates.length > 0) {
+  if (sdMemoCandidates.length > 0) {
     const keep =
-      itabMemoCandidates.find((widget) => widget.id === ITAB_MEMO_CATALOG_ID) ||
-      itabMemoCandidates[0]!;
-    const normalizedData = normalizeItabMemoWidgetData(keep.data);
-    keep.id = ITAB_MEMO_CATALOG_ID;
-    keep.type = ITAB_MEMO_WIDGET_TYPE;
-    keep.enable = keep.enable !== false;
-    keep.data = normalizedData;
-    applyItabMemoSizeToWidget(keep, normalizedData.sizeKey);
-    const withoutItabMemo = nextWidgets.filter(
-      (widget) => widget.type !== ITAB_MEMO_WIDGET_TYPE,
-    );
-    nextWidgets.length = 0;
-    nextWidgets.push(...withoutItabMemo, keep);
-  }
-
-  const itabClockCandidates = nextWidgets.filter(
-    (widget) => widget.type === ITAB_CLOCK_WIDGET_TYPE,
-  );
-  if (itabClockCandidates.length > 0) {
-    const keep =
-      itabClockCandidates.find(
-        (widget) => widget.id === ITAB_CLOCK_CATALOG_ID,
-      ) || itabClockCandidates[0]!;
-    const normalizedData = normalizeItabClockWidgetData(keep.data);
-    keep.id = ITAB_CLOCK_CATALOG_ID;
-    keep.type = ITAB_CLOCK_WIDGET_TYPE;
+      sdMemoCandidates.find((widget) => widget.id === SD_MEMO_CATALOG_ID) ||
+      sdMemoCandidates[0]!;
+    const normalizedData = normalizeSdMemoWidgetData(keep.data);
+    keep.id = SD_MEMO_CATALOG_ID;
+    keep.type = SD_MEMO_WIDGET_TYPE;
     keep.enable = keep.enable !== false;
     keep.data = normalizedData;
-    applyItabClockSizeToWidget(keep, normalizedData.sizeKey);
-    const withoutItabClock = nextWidgets.filter(
-      (widget) => widget.type !== ITAB_CLOCK_WIDGET_TYPE,
+    applySdMemoSizeToWidget(keep, normalizedData.sizeKey);
+    const withoutSdMemo = nextWidgets.filter(
+      (widget) => widget.type !== SD_MEMO_WIDGET_TYPE,
     );
     nextWidgets.length = 0;
-    nextWidgets.push(...withoutItabClock, keep);
+    nextWidgets.push(...withoutSdMemo, keep);
   }
 
-  const itabDailyEnglishCandidates = nextWidgets.filter(
-    (widget) => widget.type === ITAB_DAILY_ENGLISH_WIDGET_TYPE,
+  const sdClockCandidates = nextWidgets.filter(
+    (widget) => widget.type === SD_CLOCK_WIDGET_TYPE,
   );
-  if (itabDailyEnglishCandidates.length > 0) {
+  if (sdClockCandidates.length > 0) {
     const keep =
-      itabDailyEnglishCandidates.find(
-        (widget) => widget.id === ITAB_DAILY_ENGLISH_CATALOG_ID,
-      ) || itabDailyEnglishCandidates[0]!;
-    const normalizedData = normalizeItabDailyEnglishWidgetData(keep.data);
-    keep.id = ITAB_DAILY_ENGLISH_CATALOG_ID;
-    keep.type = ITAB_DAILY_ENGLISH_WIDGET_TYPE;
+      sdClockCandidates.find(
+        (widget) => widget.id === SD_CLOCK_CATALOG_ID,
+      ) || sdClockCandidates[0]!;
+    const normalizedData = normalizeSdClockWidgetData(keep.data);
+    keep.id = SD_CLOCK_CATALOG_ID;
+    keep.type = SD_CLOCK_WIDGET_TYPE;
     keep.enable = keep.enable !== false;
-    applyItabDailyEnglishSizeToWidget(keep, normalizedData.sizeKey);
-    const withoutItabDailyEnglish = nextWidgets.filter(
-      (widget) => widget.type !== ITAB_DAILY_ENGLISH_WIDGET_TYPE,
+    keep.data = normalizedData;
+    applySdClockSizeToWidget(keep, normalizedData.sizeKey);
+    const withoutSdClock = nextWidgets.filter(
+      (widget) => widget.type !== SD_CLOCK_WIDGET_TYPE,
     );
     nextWidgets.length = 0;
-    nextWidgets.push(...withoutItabDailyEnglish, keep);
+    nextWidgets.push(...withoutSdClock, keep);
   }
 
-  const itabPoemCandidates = nextWidgets.filter(
-    (widget) => widget.type === ITAB_POEM_WIDGET_TYPE,
+  const sdDailyEnglishCandidates = nextWidgets.filter(
+    (widget) => widget.type === SD_DAILY_ENGLISH_WIDGET_TYPE,
   );
-  if (itabPoemCandidates.length > 0) {
+  if (sdDailyEnglishCandidates.length > 0) {
     const keep =
-      itabPoemCandidates.find((widget) => widget.id === ITAB_POEM_CATALOG_ID) ||
-      itabPoemCandidates[0]!;
-    const normalizedData = normalizeItabPoemWidgetData(keep.data);
-    keep.id = ITAB_POEM_CATALOG_ID;
-    keep.type = ITAB_POEM_WIDGET_TYPE;
+      sdDailyEnglishCandidates.find(
+        (widget) => widget.id === SD_DAILY_ENGLISH_CATALOG_ID,
+      ) || sdDailyEnglishCandidates[0]!;
+    const normalizedData = normalizeSdDailyEnglishWidgetData(keep.data);
+    keep.id = SD_DAILY_ENGLISH_CATALOG_ID;
+    keep.type = SD_DAILY_ENGLISH_WIDGET_TYPE;
     keep.enable = keep.enable !== false;
-    applyItabPoemSizeToWidget(keep, normalizedData.sizeKey);
-    const withoutItabPoem = nextWidgets.filter(
-      (widget) => widget.type !== ITAB_POEM_WIDGET_TYPE,
+    applySdDailyEnglishSizeToWidget(keep, normalizedData.sizeKey);
+    const withoutSdDailyEnglish = nextWidgets.filter(
+      (widget) => widget.type !== SD_DAILY_ENGLISH_WIDGET_TYPE,
     );
     nextWidgets.length = 0;
-    nextWidgets.push(...withoutItabPoem, keep);
+    nextWidgets.push(...withoutSdDailyEnglish, keep);
   }
 
-  const itabPomodoroCandidates = nextWidgets.filter(
-    (widget) => widget.type === ITAB_POMODORO_WIDGET_TYPE,
+  const sdPoemCandidates = nextWidgets.filter(
+    (widget) => widget.type === SD_POEM_WIDGET_TYPE,
   );
-  if (itabPomodoroCandidates.length > 0) {
+  if (sdPoemCandidates.length > 0) {
     const keep =
-      itabPomodoroCandidates.find(
-        (widget) => widget.id === ITAB_POMODORO_CATALOG_ID,
-      ) || itabPomodoroCandidates[0]!;
-    const normalizedData = normalizeItabPomodoroWidgetData(keep.data);
-    keep.id = ITAB_POMODORO_CATALOG_ID;
-    keep.type = ITAB_POMODORO_WIDGET_TYPE;
+      sdPoemCandidates.find((widget) => widget.id === SD_POEM_CATALOG_ID) ||
+      sdPoemCandidates[0]!;
+    const normalizedData = normalizeSdPoemWidgetData(keep.data);
+    keep.id = SD_POEM_CATALOG_ID;
+    keep.type = SD_POEM_WIDGET_TYPE;
     keep.enable = keep.enable !== false;
-    applyItabPomodoroSizeToWidget(keep, normalizedData.sizeKey);
-    const withoutItabPomodoro = nextWidgets.filter(
-      (widget) => widget.type !== ITAB_POMODORO_WIDGET_TYPE,
+    applySdPoemSizeToWidget(keep, normalizedData.sizeKey);
+    const withoutSdPoem = nextWidgets.filter(
+      (widget) => widget.type !== SD_POEM_WIDGET_TYPE,
     );
     nextWidgets.length = 0;
-    nextWidgets.push(...withoutItabPomodoro, keep);
+    nextWidgets.push(...withoutSdPoem, keep);
   }
 
-  const itabAnniversaryCandidates = nextWidgets.filter(
-    (widget) => widget.type === ITAB_ANNIVERSARY_WIDGET_TYPE,
+  const sdPomodoroCandidates = nextWidgets.filter(
+    (widget) => widget.type === SD_POMODORO_WIDGET_TYPE,
   );
-  for (const widget of itabAnniversaryCandidates) {
-    const normalizedData = normalizeItabAnniversaryWidgetData(widget.data);
-    widget.type = ITAB_ANNIVERSARY_WIDGET_TYPE;
+  if (sdPomodoroCandidates.length > 0) {
+    const keep =
+      sdPomodoroCandidates.find(
+        (widget) => widget.id === SD_POMODORO_CATALOG_ID,
+      ) || sdPomodoroCandidates[0]!;
+    const normalizedData = normalizeSdPomodoroWidgetData(keep.data);
+    keep.id = SD_POMODORO_CATALOG_ID;
+    keep.type = SD_POMODORO_WIDGET_TYPE;
+    keep.enable = keep.enable !== false;
+    applySdPomodoroSizeToWidget(keep, normalizedData.sizeKey);
+    const withoutSdPomodoro = nextWidgets.filter(
+      (widget) => widget.type !== SD_POMODORO_WIDGET_TYPE,
+    );
+    nextWidgets.length = 0;
+    nextWidgets.push(...withoutSdPomodoro, keep);
+  }
+
+  const sdAnniversaryCandidates = nextWidgets.filter(
+    (widget) => widget.type === SD_ANNIVERSARY_WIDGET_TYPE,
+  );
+  for (const widget of sdAnniversaryCandidates) {
+    const normalizedData = normalizeSdAnniversaryWidgetData(widget.data);
+    widget.type = SD_ANNIVERSARY_WIDGET_TYPE;
     widget.enable = widget.enable !== false;
-    applyItabAnniversarySizeToWidget(widget, normalizedData.sizeKey);
+    applySdAnniversarySizeToWidget(widget, normalizedData.sizeKey);
   }
 
-  const itabMovieCalendarCandidates = nextWidgets.filter(
-    (widget) => widget.type === ITAB_MOVIE_CALENDAR_WIDGET_TYPE,
+  const sdMovieCalendarCandidates = nextWidgets.filter(
+    (widget) => widget.type === SD_MOVIE_CALENDAR_WIDGET_TYPE,
   );
-  if (itabMovieCalendarCandidates.length > 0) {
+  if (sdMovieCalendarCandidates.length > 0) {
     const keep =
-      itabMovieCalendarCandidates.find(
-        (widget) => widget.id === ITAB_MOVIE_CALENDAR_CATALOG_ID,
-      ) || itabMovieCalendarCandidates[0]!;
-    const normalizedData = normalizeItabMovieCalendarWidgetData(keep.data);
-    keep.id = ITAB_MOVIE_CALENDAR_CATALOG_ID;
-    keep.type = ITAB_MOVIE_CALENDAR_WIDGET_TYPE;
+      sdMovieCalendarCandidates.find(
+        (widget) => widget.id === SD_MOVIE_CALENDAR_CATALOG_ID,
+      ) || sdMovieCalendarCandidates[0]!;
+    const normalizedData = normalizeSdMovieCalendarWidgetData(keep.data);
+    keep.id = SD_MOVIE_CALENDAR_CATALOG_ID;
+    keep.type = SD_MOVIE_CALENDAR_WIDGET_TYPE;
     keep.enable = keep.enable !== false;
-    applyItabMovieCalendarSizeToWidget(keep, normalizedData.sizeKey);
-    const withoutItabMovieCalendar = nextWidgets.filter(
-      (widget) => widget.type !== ITAB_MOVIE_CALENDAR_WIDGET_TYPE,
+    applySdMovieCalendarSizeToWidget(keep, normalizedData.sizeKey);
+    const withoutSdMovieCalendar = nextWidgets.filter(
+      (widget) => widget.type !== SD_MOVIE_CALENDAR_WIDGET_TYPE,
     );
     nextWidgets.length = 0;
-    nextWidgets.push(...withoutItabMovieCalendar, keep);
+    nextWidgets.push(...withoutSdMovieCalendar, keep);
   }
 
-  const itabIpCandidates = nextWidgets.filter(
-    (widget) => widget.type === ITAB_IP_WIDGET_TYPE,
+  const sdIpCandidates = nextWidgets.filter(
+    (widget) => widget.type === SD_IP_WIDGET_TYPE,
   );
-  if (itabIpCandidates.length > 0) {
+  if (sdIpCandidates.length > 0) {
     const keep =
-      itabIpCandidates.find((widget) => widget.id === ITAB_IP_CATALOG_ID) ||
-      itabIpCandidates[0]!;
-    const normalizedData = normalizeItabIpWidgetData(keep.data);
-    keep.id = ITAB_IP_CATALOG_ID;
-    keep.type = ITAB_IP_WIDGET_TYPE;
+      sdIpCandidates.find((widget) => widget.id === SD_IP_CATALOG_ID) ||
+      sdIpCandidates[0]!;
+    const normalizedData = normalizeSdIpWidgetData(keep.data);
+    keep.id = SD_IP_CATALOG_ID;
+    keep.type = SD_IP_WIDGET_TYPE;
     keep.enable = keep.enable !== false;
-    applyItabIpSizeToWidget(keep, normalizedData.sizeKey);
-    const withoutItabIp = nextWidgets.filter(
-      (widget) => widget.type !== ITAB_IP_WIDGET_TYPE,
+    applySdIpSizeToWidget(keep, normalizedData.sizeKey);
+    const withoutSdIp = nextWidgets.filter(
+      (widget) => widget.type !== SD_IP_WIDGET_TYPE,
     );
     nextWidgets.length = 0;
-    nextWidgets.push(...withoutItabIp, keep);
+    nextWidgets.push(...withoutSdIp, keep);
   }
 
-  const itabCalendarCandidates = nextWidgets.filter(
-    (widget) => widget.type === ITAB_CALENDAR_WIDGET_TYPE,
+  const sdCalendarCandidates = nextWidgets.filter(
+    (widget) => widget.type === SD_CALENDAR_WIDGET_TYPE,
   );
-  if (itabCalendarCandidates.length > 0) {
+  if (sdCalendarCandidates.length > 0) {
     const keep =
-      itabCalendarCandidates.find(
-        (widget) => widget.id === ITAB_CALENDAR_CATALOG_ID,
-      ) || itabCalendarCandidates[0]!;
-    const normalizedData = normalizeItabCalendarWidgetData(keep.data);
-    keep.id = ITAB_CALENDAR_CATALOG_ID;
-    keep.type = ITAB_CALENDAR_WIDGET_TYPE;
+      sdCalendarCandidates.find(
+        (widget) => widget.id === SD_CALENDAR_CATALOG_ID,
+      ) || sdCalendarCandidates[0]!;
+    const normalizedData = normalizeSdCalendarWidgetData(keep.data);
+    keep.id = SD_CALENDAR_CATALOG_ID;
+    keep.type = SD_CALENDAR_WIDGET_TYPE;
     keep.enable = keep.enable !== false;
-    applyItabCalendarSizeToWidget(keep, normalizedData.sizeKey);
-    const withoutItabCalendar = nextWidgets.filter(
-      (widget) => widget.type !== ITAB_CALENDAR_WIDGET_TYPE,
+    applySdCalendarSizeToWidget(keep, normalizedData.sizeKey);
+    const withoutSdCalendar = nextWidgets.filter(
+      (widget) => widget.type !== SD_CALENDAR_WIDGET_TYPE,
     );
     nextWidgets.length = 0;
-    nextWidgets.push(...withoutItabCalendar, keep);
+    nextWidgets.push(...withoutSdCalendar, keep);
   }
 
-  const itabNumberUppercaseCandidates = nextWidgets.filter(
-    (widget) => widget.type === ITAB_NUMBER_UPPERCASE_WIDGET_TYPE,
+  const sdNumberUppercaseCandidates = nextWidgets.filter(
+    (widget) => widget.type === SD_NUMBER_UPPERCASE_WIDGET_TYPE,
   );
-  for (const widget of itabNumberUppercaseCandidates) {
-    const normalizedData = normalizeItabNumberUppercaseWidgetData(widget.data);
-    widget.type = ITAB_NUMBER_UPPERCASE_WIDGET_TYPE;
+  for (const widget of sdNumberUppercaseCandidates) {
+    const normalizedData = normalizeSdNumberUppercaseWidgetData(widget.data);
+    widget.type = SD_NUMBER_UPPERCASE_WIDGET_TYPE;
     widget.enable = widget.enable !== false;
-    applyItabNumberUppercaseSizeToWidget(widget, normalizedData.sizeKey);
+    applySdNumberUppercaseSizeToWidget(widget, normalizedData.sizeKey);
   }
 
-  const itabFoodPickerCandidates = nextWidgets.filter(
-    (widget) => widget.type === ITAB_FOOD_PICKER_WIDGET_TYPE,
+  const sdFoodPickerCandidates = nextWidgets.filter(
+    (widget) => widget.type === SD_FOOD_PICKER_WIDGET_TYPE,
   );
-  for (const widget of itabFoodPickerCandidates) {
-    const normalizedData = normalizeItabFoodPickerWidgetData(widget.data);
-    widget.type = ITAB_FOOD_PICKER_WIDGET_TYPE;
+  for (const widget of sdFoodPickerCandidates) {
+    const normalizedData = normalizeSdFoodPickerWidgetData(widget.data);
+    widget.type = SD_FOOD_PICKER_WIDGET_TYPE;
     widget.enable = widget.enable !== false;
-    applyItabFoodPickerSizeToWidget(widget, normalizedData.sizeKey);
+    applySdFoodPickerSizeToWidget(widget, normalizedData.sizeKey);
   }
 
   const aiUsageCandidates = nextWidgets.filter(
@@ -594,6 +595,6 @@ export function normalizeIncomingWidgets(
   }
 
   return nextWidgets.map((widget) =>
-    isRuntimeWidgetType(widget.type) ? widget : withItabGridData(widget),
+    isRuntimeWidgetType(widget.type) ? widget : withSdGridData(widget),
   );
 }

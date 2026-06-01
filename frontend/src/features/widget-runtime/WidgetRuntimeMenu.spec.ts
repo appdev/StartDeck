@@ -5,7 +5,7 @@ import WidgetRuntimeMenu from "./WidgetRuntimeMenu.vue";
 
 const widget = {
   id: "weather",
-  type: "itab-weather-00",
+  type: "sd-weather-00",
   enable: true,
   isPublic: true,
   colSpan: 2,
@@ -13,7 +13,7 @@ const widget = {
   w: 2,
   h: 2,
   data: {
-    runtime: "itab-weather",
+    runtime: "sd-weather",
     version: 1,
     sizeKey: "2x2",
   },
@@ -46,7 +46,7 @@ describe("WidgetRuntimeMenu", () => {
       },
     });
 
-  it("renders all iTab weather sizes without inverting labels", () => {
+  it("renders all weather sizes without inverting labels", () => {
     const wrapper = mountMenu();
 
     expect(wrapper.find(".sd-runtime-menu-heading").text()).toBe("布局");
@@ -67,8 +67,8 @@ describe("WidgetRuntimeMenu", () => {
   });
 
   it.each([
-    ["Todo", "todo", "itab-todo-17", "itab-todo", { tasks: [] }],
-    ["Memo", "memo", "itab-memo-04", "itab-memo", { notes: [] }],
+    ["Todo", "todo", "sd-todo-17", "sd-todo", { tasks: [] }],
+    ["Memo", "memo", "sd-memo-04", "sd-memo", { notes: [] }],
   ])(
     "renders 4x4 for %s runtime widgets",
     (_label, id, type, runtime, payload) => {

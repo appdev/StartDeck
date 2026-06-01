@@ -8,9 +8,9 @@ import {
 } from "@/features/widget-runtime/widgetRuntimeRegistry";
 import type { RuntimeWidgetSizeKey } from "@/features/widget-runtime/widgetRuntimeSizes";
 import {
-  isItabWidgetSizeKey,
-  withItabGridData,
-} from "@/features/itab-widgets/itabGrid";
+  isSdWidgetSizeKey,
+  withSdGridData,
+} from "@/features/sd-widgets/sdGrid";
 import {
   createWidgetFromCatalog,
   getWidgetCatalogItem,
@@ -204,8 +204,8 @@ const previewWidget = computed<WidgetConfig | undefined>(() => {
     applyTapdDefectsPreviewState(widget);
     return widget;
   }
-  return isItabWidgetSizeKey(size.key)
-    ? withItabGridData(widget, size.key)
+  return isSdWidgetSizeKey(size.key)
+    ? withSdGridData(widget, size.key)
     : {
         ...widget,
         colSpan: size.colSpan,
@@ -281,7 +281,7 @@ onBeforeUnmount(() => {
 
 :global(html.widget-catalog-preview-route) {
   /* The app scales compact viewports globally; catalog previews must keep
-     captured iTab geometry at exact CSS pixels for shell validation. */
+     captured source geometry at exact CSS pixels for shell validation. */
   zoom: 1;
 }
 

@@ -108,15 +108,15 @@ describe("WidgetOpenedPanelHost", () => {
     );
   });
 
-  it("syncs the main-project weather opened shell with the iTab source frame", () => {
+  it("syncs the main-project weather opened shell with the source frame", () => {
     expect(source).toContain(
-      ".sd-widget-opened-overlay.sd-widget-opened-overlay--itab-weather",
+      ".sd-widget-opened-overlay.sd-widget-opened-overlay--sd-weather",
     );
     expect(source).toContain(
       "background: var(--sd-theme-runtime-widget-opened-panel-host-surface-03)",
     );
     expect(source).toContain("backdrop-filter: none");
-    expect(source).toContain(".sd-widget-opened-window.opened-itab-weather");
+    expect(source).toContain(".sd-widget-opened-window.opened-sd-weather");
     expect(source).toContain(
       "border: 1px solid var(--sd-theme-runtime-widget-opened-panel-host-border-03)",
     );

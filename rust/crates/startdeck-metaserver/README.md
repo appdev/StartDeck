@@ -102,8 +102,8 @@ curl 'http://icons.put.run/api/icon?url=https://apkdv.com/posts/implementing_ios
 - 启动时从本地种子文件导入已有图标数据
 - 查询命中本地缓存时直接返回
 - 默认种子资源和运行期缓存分开存储
-- 未命中时调用 iTab `website/info` 接口
-- 未命中时优先调用 Microlink API，若 Microlink 没有返回 `logo.url` 再回退到 iTab `website/info`
+- 未命中时调用 StartDeck `website/info` 接口
+- 未命中时优先调用 Microlink API，若 Microlink 没有返回 `logo.url` 再回退到 StartDeck `website/info`
 - 自动下载图标到本地并更新缓存
 - 缓存记录超过一个月会自动重新抓取；重抓失败时继续回退已有缓存
 - 支持输出 StartDeck 兼容的 metadata 结构

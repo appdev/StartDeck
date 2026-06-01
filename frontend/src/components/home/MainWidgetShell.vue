@@ -16,7 +16,7 @@ import {
   type WidgetShellViolation,
 } from "@/features/widget-shell/WidgetShellContract";
 
-type MainWidgetShellSizeCapability = "itab-default" | "large-board";
+type MainWidgetShellSizeCapability = "sd-default" | "large-board";
 
 const props = withDefaults(
   defineProps<{
@@ -27,7 +27,7 @@ const props = withDefaults(
     validateContract?: boolean;
   }>(),
   {
-    widgetSizeCapability: "itab-default",
+    widgetSizeCapability: "sd-default",
     title: "",
     validateContract: true,
   },

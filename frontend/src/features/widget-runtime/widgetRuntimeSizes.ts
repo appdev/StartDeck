@@ -1,65 +1,65 @@
 import {
-  ITAB_WIDGET_SIZE_CANDIDATES,
-  toItabWidgetSizeKey,
-  type ItabWidgetSizeKey,
-  type ItabWidgetSizePreset,
-} from "@/features/itab-widgets/itabSizePresets";
+  SD_WIDGET_SIZE_CANDIDATES,
+  toSdWidgetSizeKey,
+  type SdWidgetSizeKey,
+  type SdWidgetSizePreset,
+} from "@/features/sd-widgets/sdSizePresets";
 import {
-  ITAB_WEATHER_DEFAULT_SIZE,
-  ITAB_WEATHER_WIDGET_TYPE,
-} from "@/features/itab-weather/itabWeatherTypes";
+  SD_WEATHER_DEFAULT_SIZE,
+  SD_WEATHER_WIDGET_TYPE,
+} from "@/features/sd-weather/sdWeatherTypes";
 import {
-  ITAB_TODO_DEFAULT_SIZE,
-  ITAB_TODO_WIDGET_TYPE,
-} from "@/features/itab-todo/itabTodoTypes";
+  SD_TODO_DEFAULT_SIZE,
+  SD_TODO_WIDGET_TYPE,
+} from "@/features/sd-todo/sdTodoTypes";
 import {
-  ITAB_MEMO_DEFAULT_SIZE,
-  ITAB_MEMO_WIDGET_TYPE,
-} from "@/features/itab-memo/itabMemoTypes";
+  SD_MEMO_DEFAULT_SIZE,
+  SD_MEMO_WIDGET_TYPE,
+} from "@/features/sd-memo/sdMemoTypes";
 import {
-  ITAB_CLOCK_DEFAULT_SIZE,
-  ITAB_CLOCK_WIDGET_TYPE,
-} from "@/features/itab-clock/itabClockTypes";
+  SD_CLOCK_DEFAULT_SIZE,
+  SD_CLOCK_WIDGET_TYPE,
+} from "@/features/sd-clock/sdClockTypes";
 import {
-  ITAB_DAILY_ENGLISH_DEFAULT_SIZE,
-  ITAB_DAILY_ENGLISH_WIDGET_TYPE,
-} from "@/features/itab-daily-english/itabDailyEnglishTypes";
+  SD_DAILY_ENGLISH_DEFAULT_SIZE,
+  SD_DAILY_ENGLISH_WIDGET_TYPE,
+} from "@/features/sd-daily-english/sdDailyEnglishTypes";
 import {
-  ITAB_POEM_DEFAULT_SIZE,
-  ITAB_POEM_WIDGET_TYPE,
-} from "@/features/itab-poem/itabPoemTypes";
+  SD_POEM_DEFAULT_SIZE,
+  SD_POEM_WIDGET_TYPE,
+} from "@/features/sd-poem/sdPoemTypes";
 import {
-  ITAB_POMODORO_DEFAULT_SIZE,
-  ITAB_POMODORO_WIDGET_TYPE,
-} from "@/features/itab-pomodoro/itabPomodoroTypes";
+  SD_POMODORO_DEFAULT_SIZE,
+  SD_POMODORO_WIDGET_TYPE,
+} from "@/features/sd-pomodoro/sdPomodoroTypes";
 import {
-  ITAB_ANNIVERSARY_DEFAULT_SIZE,
-  ITAB_ANNIVERSARY_WIDGET_TYPE,
-} from "@/features/itab-anniversary/itabAnniversaryTypes";
+  SD_ANNIVERSARY_DEFAULT_SIZE,
+  SD_ANNIVERSARY_WIDGET_TYPE,
+} from "@/features/sd-anniversary/sdAnniversaryTypes";
 import {
-  ITAB_WALLPAPER_DEFAULT_SIZE,
-  ITAB_WALLPAPER_WIDGET_TYPE,
-} from "@/features/itab-wallpaper/itabWallpaperTypes";
+  SD_WALLPAPER_DEFAULT_SIZE,
+  SD_WALLPAPER_WIDGET_TYPE,
+} from "@/features/sd-wallpaper/sdWallpaperTypes";
 import {
-  ITAB_MOVIE_CALENDAR_DEFAULT_SIZE,
-  ITAB_MOVIE_CALENDAR_WIDGET_TYPE,
-} from "@/features/itab-movie-calendar/itabMovieCalendarTypes";
+  SD_MOVIE_CALENDAR_DEFAULT_SIZE,
+  SD_MOVIE_CALENDAR_WIDGET_TYPE,
+} from "@/features/sd-movie-calendar/sdMovieCalendarTypes";
 import {
-  ITAB_IP_DEFAULT_SIZE,
-  ITAB_IP_WIDGET_TYPE,
-} from "@/features/itab-ip/itabIpTypes";
+  SD_IP_DEFAULT_SIZE,
+  SD_IP_WIDGET_TYPE,
+} from "@/features/sd-ip/sdIpTypes";
 import {
-  ITAB_CALENDAR_DEFAULT_SIZE,
-  ITAB_CALENDAR_WIDGET_TYPE,
-} from "@/features/itab-calendar/itabCalendarTypes";
+  SD_CALENDAR_DEFAULT_SIZE,
+  SD_CALENDAR_WIDGET_TYPE,
+} from "@/features/sd-calendar/sdCalendarTypes";
 import {
-  ITAB_NUMBER_UPPERCASE_DEFAULT_SIZE,
-  ITAB_NUMBER_UPPERCASE_WIDGET_TYPE,
-} from "@/features/itab-number-uppercase/itabNumberUppercaseTypes";
+  SD_NUMBER_UPPERCASE_DEFAULT_SIZE,
+  SD_NUMBER_UPPERCASE_WIDGET_TYPE,
+} from "@/features/sd-number-uppercase/sdNumberUppercaseTypes";
 import {
-  ITAB_FOOD_PICKER_DEFAULT_SIZE,
-  ITAB_FOOD_PICKER_WIDGET_TYPE,
-} from "@/features/itab-food-picker/itabFoodPickerTypes";
+  SD_FOOD_PICKER_DEFAULT_SIZE,
+  SD_FOOD_PICKER_WIDGET_TYPE,
+} from "@/features/sd-food-picker/sdFoodPickerTypes";
 import {
   AI_USAGE_DEFAULT_SIZE,
   AI_USAGE_WIDGET_TYPE,
@@ -69,16 +69,16 @@ import {
   TAPD_DEFECTS_WIDGET_TYPE,
 } from "@/features/tapd-defects/tapdDefectTypes";
 
-export type RuntimeWidgetSizeScope = "itab";
-export type RuntimeWidgetSizeKey = ItabWidgetSizeKey | "4x4";
+export type RuntimeWidgetSizeScope = "sd";
+export type RuntimeWidgetSizeKey = SdWidgetSizeKey | "4x4";
 export type RuntimeWidgetSizePreset = Omit<
-  ItabWidgetSizePreset,
+  SdWidgetSizePreset,
   "key" | "label"
 > & {
   key: RuntimeWidgetSizeKey;
   label: RuntimeWidgetSizeKey;
 };
-export type RuntimeWidgetSizeCapability = "itab-default" | "large-board";
+export type RuntimeWidgetSizeCapability = "sd-default" | "large-board";
 
 export interface RuntimeWidgetSizeFamily {
   type: string;
@@ -106,12 +106,12 @@ export const RUNTIME_WIDGET_4X4_SIZE: RuntimeWidgetSizePreset = {
   height: 330,
   density: "board",
   pattern: "grid",
-  scope: "itab",
+  scope: "sd",
   max: true,
 };
 
 export const RUNTIME_WIDGET_SIZE_CANDIDATES: RuntimeWidgetSizePreset[] = [
-  ...ITAB_WIDGET_SIZE_CANDIDATES,
+  ...SD_WIDGET_SIZE_CANDIDATES,
   RUNTIME_WIDGET_4X4_SIZE,
 ];
 
@@ -136,19 +136,19 @@ const RUNTIME_WIDGET_SIZE_KEYS_BY_CAPABILITY: Record<
   RuntimeWidgetSizeCapability,
   RuntimeWidgetSizeKey[]
 > = {
-  "itab-default": DEFAULT_RUNTIME_WIDGET_SIZE_KEYS,
+  "sd-default": DEFAULT_RUNTIME_WIDGET_SIZE_KEYS,
   "large-board": LARGE_BOARD_RUNTIME_WIDGET_SIZE_KEYS,
 };
 
 export const RUNTIME_WIDGET_LARGE_BOARD_TYPES = new Set<string>([
-  ITAB_TODO_WIDGET_TYPE,
-  ITAB_MEMO_WIDGET_TYPE,
+  SD_TODO_WIDGET_TYPE,
+  SD_MEMO_WIDGET_TYPE,
 ]);
 
 export const resolveRuntimeWidgetSizeCapability = (
   type: string,
 ): RuntimeWidgetSizeCapability =>
-  RUNTIME_WIDGET_LARGE_BOARD_TYPES.has(type) ? "large-board" : "itab-default";
+  RUNTIME_WIDGET_LARGE_BOARD_TYPES.has(type) ? "large-board" : "sd-default";
 
 export const resolveRuntimeWidgetSize = (sizeKey: RuntimeWidgetSizeKey) => {
   const size = runtimeSizeByKey.get(sizeKey);
@@ -168,7 +168,7 @@ export const isRuntimeWidgetSizeSpan = (size: {
 const resolveRuntimeSizeList = (keys: RuntimeWidgetSizeKey[]) =>
   keys.map(resolveRuntimeWidgetSize);
 
-const createItabRuntimeSizeFamily = (
+const createSdRuntimeSizeFamily = (
   type: string,
   defaultSizeKey: RuntimeWidgetSizeKey,
   capability: RuntimeWidgetSizeCapability = resolveRuntimeWidgetSizeCapability(
@@ -187,7 +187,7 @@ const createItabRuntimeSizeFamily = (
   );
   return {
     type,
-    scope: "itab",
+    scope: "sd",
     supported,
     disabled: [],
     defaultSize: {
@@ -201,102 +201,102 @@ const createItabRuntimeSizeFamily = (
 };
 
 const runtimeWidgetSizeFamilies = new Map<string, RuntimeWidgetSizeFamily>([
-  ["docker", createItabRuntimeSizeFamily("docker", "2x2")],
-  ["system-status", createItabRuntimeSizeFamily("system-status", "1x1")],
-  ["custom-css", createItabRuntimeSizeFamily("custom-css", "1x1")],
+  ["docker", createSdRuntimeSizeFamily("docker", "2x2")],
+  ["system-status", createSdRuntimeSizeFamily("system-status", "1x1")],
+  ["custom-css", createSdRuntimeSizeFamily("custom-css", "1x1")],
   [
-    ITAB_WEATHER_WIDGET_TYPE,
-    createItabRuntimeSizeFamily(
-      ITAB_WEATHER_WIDGET_TYPE,
-      ITAB_WEATHER_DEFAULT_SIZE,
+    SD_WEATHER_WIDGET_TYPE,
+    createSdRuntimeSizeFamily(
+      SD_WEATHER_WIDGET_TYPE,
+      SD_WEATHER_DEFAULT_SIZE,
     ),
   ],
   [
-    ITAB_TODO_WIDGET_TYPE,
-    createItabRuntimeSizeFamily(ITAB_TODO_WIDGET_TYPE, ITAB_TODO_DEFAULT_SIZE),
+    SD_TODO_WIDGET_TYPE,
+    createSdRuntimeSizeFamily(SD_TODO_WIDGET_TYPE, SD_TODO_DEFAULT_SIZE),
   ],
   [
-    ITAB_MEMO_WIDGET_TYPE,
-    createItabRuntimeSizeFamily(ITAB_MEMO_WIDGET_TYPE, ITAB_MEMO_DEFAULT_SIZE),
+    SD_MEMO_WIDGET_TYPE,
+    createSdRuntimeSizeFamily(SD_MEMO_WIDGET_TYPE, SD_MEMO_DEFAULT_SIZE),
   ],
   [
-    ITAB_CLOCK_WIDGET_TYPE,
-    createItabRuntimeSizeFamily(
-      ITAB_CLOCK_WIDGET_TYPE,
-      ITAB_CLOCK_DEFAULT_SIZE,
+    SD_CLOCK_WIDGET_TYPE,
+    createSdRuntimeSizeFamily(
+      SD_CLOCK_WIDGET_TYPE,
+      SD_CLOCK_DEFAULT_SIZE,
     ),
   ],
   [
-    ITAB_DAILY_ENGLISH_WIDGET_TYPE,
-    createItabRuntimeSizeFamily(
-      ITAB_DAILY_ENGLISH_WIDGET_TYPE,
-      ITAB_DAILY_ENGLISH_DEFAULT_SIZE,
+    SD_DAILY_ENGLISH_WIDGET_TYPE,
+    createSdRuntimeSizeFamily(
+      SD_DAILY_ENGLISH_WIDGET_TYPE,
+      SD_DAILY_ENGLISH_DEFAULT_SIZE,
     ),
   ],
   [
-    ITAB_POEM_WIDGET_TYPE,
-    createItabRuntimeSizeFamily(ITAB_POEM_WIDGET_TYPE, ITAB_POEM_DEFAULT_SIZE),
+    SD_POEM_WIDGET_TYPE,
+    createSdRuntimeSizeFamily(SD_POEM_WIDGET_TYPE, SD_POEM_DEFAULT_SIZE),
   ],
   [
-    ITAB_POMODORO_WIDGET_TYPE,
-    createItabRuntimeSizeFamily(
-      ITAB_POMODORO_WIDGET_TYPE,
-      ITAB_POMODORO_DEFAULT_SIZE,
+    SD_POMODORO_WIDGET_TYPE,
+    createSdRuntimeSizeFamily(
+      SD_POMODORO_WIDGET_TYPE,
+      SD_POMODORO_DEFAULT_SIZE,
     ),
   ],
   [
-    ITAB_ANNIVERSARY_WIDGET_TYPE,
-    createItabRuntimeSizeFamily(
-      ITAB_ANNIVERSARY_WIDGET_TYPE,
-      ITAB_ANNIVERSARY_DEFAULT_SIZE,
+    SD_ANNIVERSARY_WIDGET_TYPE,
+    createSdRuntimeSizeFamily(
+      SD_ANNIVERSARY_WIDGET_TYPE,
+      SD_ANNIVERSARY_DEFAULT_SIZE,
     ),
   ],
   [
-    ITAB_WALLPAPER_WIDGET_TYPE,
-    createItabRuntimeSizeFamily(
-      ITAB_WALLPAPER_WIDGET_TYPE,
-      ITAB_WALLPAPER_DEFAULT_SIZE,
+    SD_WALLPAPER_WIDGET_TYPE,
+    createSdRuntimeSizeFamily(
+      SD_WALLPAPER_WIDGET_TYPE,
+      SD_WALLPAPER_DEFAULT_SIZE,
     ),
   ],
   [
-    ITAB_MOVIE_CALENDAR_WIDGET_TYPE,
-    createItabRuntimeSizeFamily(
-      ITAB_MOVIE_CALENDAR_WIDGET_TYPE,
-      ITAB_MOVIE_CALENDAR_DEFAULT_SIZE,
+    SD_MOVIE_CALENDAR_WIDGET_TYPE,
+    createSdRuntimeSizeFamily(
+      SD_MOVIE_CALENDAR_WIDGET_TYPE,
+      SD_MOVIE_CALENDAR_DEFAULT_SIZE,
     ),
   ],
   [
-    ITAB_IP_WIDGET_TYPE,
-    createItabRuntimeSizeFamily(ITAB_IP_WIDGET_TYPE, ITAB_IP_DEFAULT_SIZE),
+    SD_IP_WIDGET_TYPE,
+    createSdRuntimeSizeFamily(SD_IP_WIDGET_TYPE, SD_IP_DEFAULT_SIZE),
   ],
   [
-    ITAB_CALENDAR_WIDGET_TYPE,
-    createItabRuntimeSizeFamily(
-      ITAB_CALENDAR_WIDGET_TYPE,
-      ITAB_CALENDAR_DEFAULT_SIZE,
+    SD_CALENDAR_WIDGET_TYPE,
+    createSdRuntimeSizeFamily(
+      SD_CALENDAR_WIDGET_TYPE,
+      SD_CALENDAR_DEFAULT_SIZE,
     ),
   ],
   [
-    ITAB_NUMBER_UPPERCASE_WIDGET_TYPE,
-    createItabRuntimeSizeFamily(
-      ITAB_NUMBER_UPPERCASE_WIDGET_TYPE,
-      ITAB_NUMBER_UPPERCASE_DEFAULT_SIZE,
+    SD_NUMBER_UPPERCASE_WIDGET_TYPE,
+    createSdRuntimeSizeFamily(
+      SD_NUMBER_UPPERCASE_WIDGET_TYPE,
+      SD_NUMBER_UPPERCASE_DEFAULT_SIZE,
     ),
   ],
   [
-    ITAB_FOOD_PICKER_WIDGET_TYPE,
-    createItabRuntimeSizeFamily(
-      ITAB_FOOD_PICKER_WIDGET_TYPE,
-      ITAB_FOOD_PICKER_DEFAULT_SIZE,
+    SD_FOOD_PICKER_WIDGET_TYPE,
+    createSdRuntimeSizeFamily(
+      SD_FOOD_PICKER_WIDGET_TYPE,
+      SD_FOOD_PICKER_DEFAULT_SIZE,
     ),
   ],
   [
     AI_USAGE_WIDGET_TYPE,
-    createItabRuntimeSizeFamily(AI_USAGE_WIDGET_TYPE, AI_USAGE_DEFAULT_SIZE),
+    createSdRuntimeSizeFamily(AI_USAGE_WIDGET_TYPE, AI_USAGE_DEFAULT_SIZE),
   ],
   [
     TAPD_DEFECTS_WIDGET_TYPE,
-    createItabRuntimeSizeFamily(
+    createSdRuntimeSizeFamily(
       TAPD_DEFECTS_WIDGET_TYPE,
       TAPD_DEFECTS_DEFAULT_SIZE,
     ),
@@ -353,6 +353,6 @@ export const toRuntimeWidgetSizeKey = (
       (candidate) =>
         candidate.colSpan === size.colSpan &&
         candidate.rowSpan === size.rowSpan,
-    )?.key || toItabWidgetSizeKey(size)
+    )?.key || toSdWidgetSizeKey(size)
   );
 };

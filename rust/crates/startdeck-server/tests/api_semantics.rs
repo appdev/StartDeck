@@ -116,14 +116,14 @@ async fn test_context_with_widget_cache(include_poem_cache: bool) -> TestContext
         std::fs::write(
             data_dir.join("widget_cache.json"),
             serde_json::to_vec(&json!({
-                "itab_poem": {
+                "sd_poem": {
                     "default": {
                         "data": {"content": "cached poem"},
                         "sourceStatus": "fixture",
                         "updatedAt": 1779700000000_i64
                     }
                 },
-                "itab_bing_wallpaper": {
+                "sd_bing_wallpaper": {
                     "timelessq:large:page:1:pageSize:24:v1": {
                         "data": {
                             "entries": [
@@ -194,8 +194,8 @@ async fn test_context_with_widget_cache(include_poem_cache: bool) -> TestContext
     std::fs::write(public_dir.join("ICON.PNG"), b"png-bytes").unwrap();
     std::fs::create_dir_all(public_dir.join("assets/ai-usage/providers")).unwrap();
     std::fs::create_dir_all(public_dir.join("assets/seed-icons/nav")).unwrap();
-    std::fs::create_dir_all(public_dir.join("itab-live-assets/anniversary")).unwrap();
-    std::fs::create_dir_all(public_dir.join("itab/weather/icon")).unwrap();
+    std::fs::create_dir_all(public_dir.join("sd-live-assets/anniversary")).unwrap();
+    std::fs::create_dir_all(public_dir.join("sd/weather/icon")).unwrap();
     std::fs::write(
         public_dir.join("assets/index-current123.js"),
         b"console.log('current entry')",
@@ -217,12 +217,12 @@ async fn test_context_with_widget_cache(include_poem_cache: bool) -> TestContext
     )
     .unwrap();
     std::fs::write(
-        public_dir.join("itab-live-assets/anniversary/yiyan-2.webp"),
+        public_dir.join("sd-live-assets/anniversary/yiyan-2.webp"),
         b"webp-bytes",
     )
     .unwrap();
     std::fs::write(
-        public_dir.join("itab/weather/icon/104-fill.svg"),
+        public_dir.join("sd/weather/icon/104-fill.svg"),
         r#"<svg id="weather"/>"#,
     )
     .unwrap();
@@ -237,7 +237,7 @@ async fn test_context_with_widget_cache(include_poem_cache: bool) -> TestContext
     import_legacy_app_data(&pool, &config).await.unwrap();
     let app = {
         let _guard = ENV_LOCK.lock().unwrap();
-        app(AppState::new_with_remote_itab_fetch(
+        app(AppState::new_with_remote_widget_fetch(
             config.clone(),
             pool.clone(),
             false,
@@ -273,7 +273,7 @@ async fn test_app_with_seeded_weather_cache() -> axum::Router {
         serde_json::to_vec(&json!({
             "appConfig": {"customTitle": "Default"},
             "groups": [{"id": "default-group", "title": "Default Group", "items": []}],
-            "widgets": [{"id": "default-clock", "type": "itab-clock", "enable": true, "isPublic": true, "data": {}}]
+            "widgets": [{"id": "default-clock", "type": "sd-clock", "enable": true, "isPublic": true, "data": {}}]
         }))
         .unwrap(),
     )
@@ -287,7 +287,7 @@ async fn test_app_with_seeded_weather_cache() -> axum::Router {
     let now = chrono::Utc::now().timestamp_millis();
     sqlx::query(
         r#"INSERT INTO runtime_cache(kind, cache_key, value_json, expires_at, source_status, updated_at)
-           VALUES ('itab_weather', 'current:city:location:101280608', ?, ?, 'ok', ?)"#,
+           VALUES ('sd_weather', 'current:city:location:101280608', ?, ?, 'ok', ?)"#,
     )
     .bind(
         json!({
@@ -312,7 +312,7 @@ async fn test_app_with_seeded_weather_cache() -> axum::Router {
     .unwrap();
     {
         let _guard = ENV_LOCK.lock().unwrap();
-        app(AppState::new_with_remote_itab_fetch(config, pool, true))
+        app(AppState::new_with_remote_widget_fetch(config, pool, true))
     }
 }
 
@@ -1668,8 +1668,8 @@ async fn application_assets_are_served_from_assets_route() {
     for uri in [
         "/assets/ai-usage/providers/openai.svg",
         "/assets/seed-icons/nav/github.svg",
-        "/itab-live-assets/anniversary/yiyan-2.webp",
-        "/itab/weather/icon/104-fill.svg",
+        "/sd-live-assets/anniversary/yiyan-2.webp",
+        "/sd/weather/icon/104-fill.svg",
         "/intro-assets/missing-but-route-checked-later.svg",
     ] {
         let response = app
@@ -2397,8 +2397,8 @@ async fn route_surface_smoke_covers_auth_and_runtime_semantics() {
             "/api/wallpaper/fetch",
             Some(json!({"url": "https://example.com/wall.jpg"})),
         ),
-        ("GET", concat!("/api/", "itab/poem"), None),
-        ("GET", "/api/itab-resources/legacy-resource", None),
+        ("GET", concat!("/api/", "sd/poem"), None),
+        ("GET", "/api/sd-resources/legacy-resource", None),
     ] {
         let (status, _) = json_call(&app, method, uri, Some(&token), body).await;
         assert_eq!(status, StatusCode::NOT_FOUND, "{method} {uri}");

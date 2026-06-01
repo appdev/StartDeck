@@ -118,7 +118,7 @@ const WIDGET_UI_CATEGORIES: {
   {
     label: "娱乐",
     value: "entertainment",
-    types: ["itab-movie-calendar-05", "itab-poem-10", "itab-daily-english-14"],
+    types: ["sd-movie-calendar-05", "sd-poem-10", "sd-daily-english-14"],
   },
 ];
 
@@ -227,47 +227,47 @@ const addWidget = async (item: WidgetCatalogItem) => {
     :z-index="130"
     close-on-overlay
     close-on-escape
-    initial-focus="[data-testid='itab-add-search']"
-    overlay-class="itab-add-overlay"
-    panel-class="itab-add-panel"
-    surface-class="itab-add-surface"
-    body-class="itab-add-body"
+    initial-focus="[data-testid='sd-add-search']"
+    overlay-class="sd-add-overlay"
+    panel-class="sd-add-panel"
+    surface-class="sd-add-surface"
+    body-class="sd-add-body"
     aria-label="添加"
     :show-traffic-lights="false"
     :show-close="false"
     @close="close"
   >
-    <div data-testid="itab-add-modal" class="itab-add-layout">
+    <div data-testid="sd-add-modal" class="sd-add-layout">
       <AppWindowControls
-        class="itab-add-window-controls"
+        class="sd-add-window-controls"
         aria-label="添加组件窗口控制"
         close-label="关闭添加组件"
         @close="close"
       />
 
-      <section class="itab-add-main">
-        <div class="itab-add-toolbar">
-          <label class="itab-add-search-wrap">
+      <section class="sd-add-main">
+        <div class="sd-add-toolbar">
+          <label class="sd-add-search-wrap">
             <span class="sr-only">搜索</span>
             <input
               v-model="searchText"
-              data-testid="itab-add-search"
+              data-testid="sd-add-search"
               type="search"
               placeholder="输入并搜索"
-              class="itab-add-search"
+              class="sd-add-search"
             />
           </label>
 
-          <label class="itab-add-destination-wrap">
+          <label class="sd-add-destination-wrap">
             <span>添加到:</span>
-            <span class="itab-add-destination-shell">
-              <span class="itab-add-destination-label">{{
+            <span class="sd-add-destination-shell">
+              <span class="sd-add-destination-label">{{
                 destinationLabel
               }}</span>
               <select
                 v-model="destinationGroupId"
-                data-testid="itab-add-destination"
-                class="itab-add-destination"
+                data-testid="sd-add-destination"
+                class="sd-add-destination"
                 aria-label="添加到"
               >
                 <option
@@ -282,18 +282,18 @@ const addWidget = async (item: WidgetCatalogItem) => {
           </label>
         </div>
 
-        <div v-if="resultMessage" class="itab-add-result" role="status">
+        <div v-if="resultMessage" class="sd-add-result" role="status">
           {{ resultMessage }}
         </div>
 
-        <div class="itab-add-pane">
-          <div class="itab-add-chip-row" aria-label="组件分类">
+        <div class="sd-add-pane">
+          <div class="sd-add-chip-row" aria-label="组件分类">
             <button
               v-for="category in categoryOptions"
               :key="category.value"
               type="button"
-              data-testid="itab-add-category-chip"
-              class="itab-add-chip"
+              data-testid="sd-add-category-chip"
+              class="sd-add-chip"
               :class="{ 'is-active': activeWidgetCategory === category.value }"
               :aria-pressed="activeWidgetCategory === category.value"
               @click="activeWidgetCategory = category.value"
@@ -302,22 +302,22 @@ const addWidget = async (item: WidgetCatalogItem) => {
             </button>
           </div>
 
-          <div class="itab-add-widget-grid is-replica">
+          <div class="sd-add-widget-grid is-replica">
             <article
               v-for="item in filteredCatalog"
               :key="item.id"
-              data-testid="itab-add-widget-card"
-              class="itab-add-widget-card is-replica-card is-catalog-card"
+              data-testid="sd-add-widget-card"
+              class="sd-add-widget-card is-replica-card is-catalog-card"
               :class="{ 'is-enabled': actionDisabled(item) }"
             >
-              <div class="itab-add-replica-heading">
+              <div class="sd-add-replica-heading">
                 <h3>{{ item.title }}</h3>
                 <p>{{ item.description }}</p>
               </div>
-              <div class="itab-add-replica-preview">
-                <span class="itab-add-replica-art">
+              <div class="sd-add-replica-preview">
+                <span class="sd-add-replica-art">
                   <iframe
-                    class="itab-add-widget-preview-frame"
+                    class="sd-add-widget-preview-frame"
                     :src="widgetPreviewFrameSrc(item)"
                     :title="`${item.title} 2x2 预览`"
                     loading="lazy"
@@ -327,11 +327,11 @@ const addWidget = async (item: WidgetCatalogItem) => {
                   ></iframe>
                 </span>
               </div>
-              <div class="itab-add-replica-footer">
+              <div class="sd-add-replica-footer">
                 <button
                   type="button"
-                  data-testid="itab-add-card-add"
-                  class="itab-add-card-button"
+                  data-testid="sd-add-card-add"
+                  class="sd-add-card-button"
                   :disabled="
                     actionDisabled(item) || busyKey === `widget:${item.id}`
                   "
@@ -349,7 +349,7 @@ const addWidget = async (item: WidgetCatalogItem) => {
             </article>
           </div>
 
-          <div v-if="filteredCatalog.length === 0" class="itab-add-empty">
+          <div v-if="filteredCatalog.length === 0" class="sd-add-empty">
             未找到小组件
           </div>
         </div>
@@ -359,17 +359,17 @@ const addWidget = async (item: WidgetCatalogItem) => {
 </template>
 
 <style scoped>
-:global(.itab-add-overlay) {
+:global(.sd-add-overlay) {
   background: var(--sd-shell-overlay);
   -webkit-backdrop-filter: var(--sd-shell-overlay-filter);
   backdrop-filter: var(--sd-shell-overlay-filter);
 }
 
-:global(.itab-add-panel) {
+:global(.sd-add-panel) {
   width: min(1000px, calc(100vw - 32px));
 }
 
-:global(.itab-add-surface) {
+:global(.sd-add-surface) {
   position: relative;
   overflow: hidden;
   border: 1px solid var(--sd-shell-border);
@@ -381,16 +381,16 @@ const addWidget = async (item: WidgetCatalogItem) => {
   backdrop-filter: var(--sd-shell-surface-filter);
 }
 
-:global(.itab-add-surface > .sd-window-bar) {
+:global(.sd-add-surface > .sd-window-bar) {
   display: none;
 }
 
-:global(.itab-add-body) {
+:global(.sd-add-body) {
   padding: 0;
   overflow: hidden;
 }
 
-.itab-add-layout {
+.sd-add-layout {
   position: relative;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -399,21 +399,21 @@ const addWidget = async (item: WidgetCatalogItem) => {
   color: var(--sd-shell-text-primary);
 }
 
-.itab-add-window-controls {
+.sd-add-window-controls {
   position: absolute;
   z-index: 3;
   top: 11px;
   right: 20px;
 }
 
-.itab-add-main {
+.sd-add-main {
   display: flex;
   min-width: 0;
   min-height: 0;
   flex-direction: column;
 }
 
-.itab-add-toolbar {
+.sd-add-toolbar {
   display: grid;
   grid-template-columns: 220px auto;
   gap: 18px;
@@ -423,12 +423,12 @@ const addWidget = async (item: WidgetCatalogItem) => {
   padding: 17px 18px 11px;
 }
 
-.itab-add-search-wrap,
-.itab-add-destination-wrap {
+.sd-add-search-wrap,
+.sd-add-destination-wrap {
   min-width: 0;
 }
 
-.itab-add-destination-wrap {
+.sd-add-destination-wrap {
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -437,7 +437,7 @@ const addWidget = async (item: WidgetCatalogItem) => {
   font-weight: 400;
 }
 
-.itab-add-search-wrap {
+.sd-add-search-wrap {
   position: relative;
   display: flex;
   height: 24px;
@@ -447,7 +447,7 @@ const addWidget = async (item: WidgetCatalogItem) => {
   padding-left: 26px;
 }
 
-.itab-add-search-wrap::before {
+.sd-add-search-wrap::before {
   content: "";
   position: absolute;
   left: 9px;
@@ -457,7 +457,7 @@ const addWidget = async (item: WidgetCatalogItem) => {
   border-radius: 50%;
 }
 
-.itab-add-search-wrap::after {
+.sd-add-search-wrap::after {
   content: "";
   position: absolute;
   top: 14px;
@@ -469,11 +469,11 @@ const addWidget = async (item: WidgetCatalogItem) => {
   transform: rotate(45deg);
 }
 
-.itab-add-destination-wrap {
+.sd-add-destination-wrap {
   height: 24px;
 }
 
-.itab-add-destination-shell {
+.sd-add-destination-shell {
   position: relative;
   display: inline-grid;
   width: 82px;
@@ -483,7 +483,7 @@ const addWidget = async (item: WidgetCatalogItem) => {
   background: var(--sd-theme-add-widget-modal-surface-04);
 }
 
-.itab-add-destination-label {
+.sd-add-destination-label {
   position: absolute;
   right: 23px;
   left: 11px;
@@ -496,7 +496,7 @@ const addWidget = async (item: WidgetCatalogItem) => {
   white-space: nowrap;
 }
 
-.itab-add-destination-shell::after {
+.sd-add-destination-shell::after {
   content: "";
   position: absolute;
   top: 9px;
@@ -509,8 +509,8 @@ const addWidget = async (item: WidgetCatalogItem) => {
   transform: rotate(45deg);
 }
 
-.itab-add-search,
-.itab-add-destination {
+.sd-add-search,
+.sd-add-destination {
   width: 100%;
   min-width: 0;
   height: 24px;
@@ -523,7 +523,7 @@ const addWidget = async (item: WidgetCatalogItem) => {
   padding: 0;
 }
 
-.itab-add-destination {
+.sd-add-destination {
   width: 100%;
   height: 100%;
   appearance: none;
@@ -533,13 +533,13 @@ const addWidget = async (item: WidgetCatalogItem) => {
   padding: 0;
 }
 
-.itab-add-search:focus,
-.itab-add-destination:focus {
+.sd-add-search:focus,
+.sd-add-destination:focus {
   border-color: transparent;
   box-shadow: none;
 }
 
-.itab-add-result {
+.sd-add-result {
   margin: 10px 18px 0;
   border-radius: 8px;
   background: var(--sd-theme-add-widget-modal-accent-surface-02);
@@ -549,7 +549,7 @@ const addWidget = async (item: WidgetCatalogItem) => {
   padding: 8px 10px;
 }
 
-.itab-add-pane {
+.sd-add-pane {
   display: flex;
   min-height: 0;
   flex: 1 1 auto;
@@ -559,18 +559,18 @@ const addWidget = async (item: WidgetCatalogItem) => {
   padding: 0 12px 18px 18px;
 }
 
-.itab-add-chip-row {
+.sd-add-chip-row {
   display: flex;
   flex: 0 0 auto;
   overflow-x: auto;
   padding-bottom: 2px;
 }
 
-.itab-add-chip-row {
+.sd-add-chip-row {
   gap: 10px;
 }
 
-.itab-add-chip {
+.sd-add-chip {
   height: 24px;
   border: 0;
   border-radius: 11px;
@@ -582,16 +582,16 @@ const addWidget = async (item: WidgetCatalogItem) => {
   padding: 0 6px;
 }
 
-.itab-add-chip {
+.sd-add-chip {
   min-width: 38px;
 }
 
-.itab-add-chip.is-active {
+.sd-add-chip.is-active {
   background: var(--sd-theme-add-widget-modal-accent-surface-01);
   color: var(--sd-theme-add-widget-modal-text-04);
 }
 
-.itab-add-widget-grid {
+.sd-add-widget-grid {
   display: grid;
   width: 100%;
   min-height: 0;
@@ -604,28 +604,28 @@ const addWidget = async (item: WidgetCatalogItem) => {
   scrollbar-width: thin;
 }
 
-.itab-add-widget-grid::-webkit-scrollbar {
+.sd-add-widget-grid::-webkit-scrollbar {
   width: var(--sd-scrollbar-size);
 }
 
-.itab-add-widget-grid::-webkit-scrollbar-track {
+.sd-add-widget-grid::-webkit-scrollbar-track {
   background: var(--sd-scrollbar-track);
 }
 
-.itab-add-widget-grid::-webkit-scrollbar-thumb {
+.sd-add-widget-grid::-webkit-scrollbar-thumb {
   border-radius: 999px;
   background: var(--sd-scrollbar-thumb);
 }
 
-.itab-add-widget-grid::-webkit-scrollbar-thumb:hover {
+.sd-add-widget-grid::-webkit-scrollbar-thumb:hover {
   background: var(--sd-scrollbar-thumb-hover);
 }
 
-.itab-add-widget-grid {
+.sd-add-widget-grid {
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
 }
 
-.itab-add-widget-grid.is-replica {
+.sd-add-widget-grid.is-replica {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   grid-auto-rows: 308px;
   align-content: start;
@@ -635,7 +635,7 @@ const addWidget = async (item: WidgetCatalogItem) => {
   padding-right: 0;
 }
 
-.itab-add-widget-card {
+.sd-add-widget-card {
   position: relative;
   border: 0;
   border-radius: 12px;
@@ -643,14 +643,14 @@ const addWidget = async (item: WidgetCatalogItem) => {
   box-shadow: none;
 }
 
-.itab-add-widget-card {
+.sd-add-widget-card {
   display: grid;
   grid-template-rows: 168px auto auto auto;
   min-height: 308px;
   padding: 10px;
 }
 
-.itab-add-widget-card.is-replica-card {
+.sd-add-widget-card.is-replica-card {
   width: 100%;
   height: 308px;
   min-height: 308px;
@@ -660,11 +660,11 @@ const addWidget = async (item: WidgetCatalogItem) => {
   color: var(--sd-theme-add-widget-modal-text-01);
 }
 
-.itab-add-widget-card.is-enabled {
+.sd-add-widget-card.is-enabled {
   opacity: 0.64;
 }
 
-.itab-add-widget-preview-frame {
+.sd-add-widget-preview-frame {
   display: block;
   width: 150px;
   height: 150px;
@@ -675,7 +675,7 @@ const addWidget = async (item: WidgetCatalogItem) => {
   pointer-events: none;
 }
 
-.itab-add-replica-preview {
+.sd-add-replica-preview {
   position: relative;
   display: grid;
   min-height: 190px;
@@ -684,13 +684,13 @@ const addWidget = async (item: WidgetCatalogItem) => {
   background: transparent;
 }
 
-.itab-add-replica-heading {
+.sd-add-replica-heading {
   display: grid;
   place-items: center;
   text-align: center;
 }
 
-.itab-add-replica-heading h3 {
+.sd-add-replica-heading h3 {
   overflow: hidden;
   max-width: 94%;
   color: var(--sd-theme-add-widget-modal-text-06);
@@ -701,7 +701,7 @@ const addWidget = async (item: WidgetCatalogItem) => {
   white-space: nowrap;
 }
 
-.itab-add-replica-heading p {
+.sd-add-replica-heading p {
   display: -webkit-box;
   overflow: hidden;
   max-width: 92%;
@@ -712,19 +712,19 @@ const addWidget = async (item: WidgetCatalogItem) => {
   -webkit-line-clamp: 2;
 }
 
-.itab-add-replica-art {
+.sd-add-replica-art {
   display: grid;
   place-items: center;
 }
 
-.itab-add-replica-footer {
+.sd-add-replica-footer {
   display: flex;
   align-items: end;
   justify-content: flex-end;
   padding: 13px 12px 0;
 }
 
-.itab-add-card-button {
+.sd-add-card-button {
   height: 32px;
   border: 0;
   border-radius: 6px;
@@ -734,7 +734,7 @@ const addWidget = async (item: WidgetCatalogItem) => {
   color: var(--sd-theme-add-widget-modal-text-04);
 }
 
-.itab-add-card-button {
+.sd-add-card-button {
   position: static;
   width: 46px;
   height: 24px;
@@ -742,18 +742,18 @@ const addWidget = async (item: WidgetCatalogItem) => {
   font-weight: 400;
 }
 
-.itab-add-widget-card:not(.is-replica-card) .itab-add-card-button {
+.sd-add-widget-card:not(.is-replica-card) .sd-add-card-button {
   position: absolute;
   right: 10px;
   bottom: 10px;
 }
 
-.itab-add-card-button:disabled {
+.sd-add-card-button:disabled {
   cursor: not-allowed;
   opacity: 0.55;
 }
 
-.itab-add-empty {
+.sd-add-empty {
   display: grid;
   min-height: 160px;
   place-items: center;
@@ -763,24 +763,24 @@ const addWidget = async (item: WidgetCatalogItem) => {
 }
 
 @media (max-width: 834px) {
-  .itab-add-layout {
+  .sd-add-layout {
     grid-template-columns: 1fr;
     height: min(680px, calc(100vh - 32px));
   }
 
-  .itab-add-toolbar {
+  .sd-add-toolbar {
     grid-template-columns: 1fr;
   }
 
-  .itab-add-widget-grid {
+  .sd-add-widget-grid {
     grid-template-columns: 1fr;
   }
 
-  .itab-add-widget-grid.is-replica {
+  .sd-add-widget-grid.is-replica {
     grid-template-columns: minmax(0, 1fr);
   }
 
-  .itab-add-widget-card.is-replica-card {
+  .sd-add-widget-card.is-replica-card {
     width: 100%;
   }
 }

@@ -11,13 +11,13 @@ import {
   type WidgetSizeKey,
 } from "./widgetSizePresets";
 
-const itabSizeKeys = ["1x1", "1x2", "2x1", "2x2", "2x4"] as const;
+const sdSizeKeys = ["1x1", "1x2", "2x1", "2x2", "2x4"] as const;
 
 const expectedDefaults: Record<string, WidgetSizeKey> = {};
 
 describe("widgetSizePresets", () => {
-  it("defines the fixed iTab candidate size set", () => {
-    expect(WIDGET_SIZE_CANDIDATE_KEYS).toEqual([...itabSizeKeys]);
+  it("defines the fixed scoped candidate size set", () => {
+    expect(WIDGET_SIZE_CANDIDATE_KEYS).toEqual([...sdSizeKeys]);
     expect(WIDGET_SIZE_CANDIDATES.map((size) => size.label)).toEqual([
       "1x1",
       "1x2",
@@ -30,7 +30,7 @@ describe("widgetSizePresets", () => {
     expect(toWidgetSizeKey({ colSpan: 4, rowSpan: 2 })).toBe("2x4");
   });
 
-  it("gives every main-project widget the same iTab size family", () => {
+  it("gives every main-project widget the same scoped size family", () => {
     expect(WIDGET_SIZE_FAMILY_TYPES).toHaveLength(0);
     expect(Object.keys(expectedDefaults).sort()).toEqual(
       [...WIDGET_SIZE_FAMILY_TYPES].sort(),
@@ -38,11 +38,11 @@ describe("widgetSizePresets", () => {
 
     for (const type of WIDGET_SIZE_FAMILY_TYPES) {
       const family = resolveWidgetSizeFamily(type);
-      expect(family.scope).toBe("itab");
+      expect(family.scope).toBe("sd");
       expect(family.supported.map((size) => size.key)).toEqual([
-        ...itabSizeKeys,
+        ...sdSizeKeys,
       ]);
-      expect(family.supported.every((size) => size.scope === "itab")).toBe(
+      expect(family.supported.every((size) => size.scope === "sd")).toBe(
         true,
       );
       expect(family.disabled).toEqual([]);
@@ -57,15 +57,15 @@ describe("widgetSizePresets", () => {
     }
   });
 
-  it("uses the iTab fallback family for unknown future widgets", () => {
+  it("uses the scoped fallback family for unknown future widgets", () => {
     const family = resolveWidgetSizeFamily("future-widget");
-    expect(family.scope).toBe("itab");
-    expect(family.supported.map((size) => size.key)).toEqual([...itabSizeKeys]);
+    expect(family.scope).toBe("sd");
+    expect(family.supported.map((size) => size.key)).toEqual([...sdSizeKeys]);
     expect(family.defaultSize).toEqual({ colSpan: 1, rowSpan: 1 });
   });
 
   it("does not reference removed StartDeck size keys in functional faces", () => {
-    const allowed = new Set<string>(itabSizeKeys);
+    const allowed = new Set<string>(sdSizeKeys);
     for (const faces of Object.values(WIDGET_FUNCTIONAL_FACE_MATRIX)) {
       expect(Object.keys(faces).every((key) => allowed.has(key))).toBe(true);
     }

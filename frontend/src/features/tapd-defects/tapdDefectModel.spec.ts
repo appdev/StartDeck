@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ITAB_GRID_SCHEMA_VERSION } from "@/features/itab-widgets/itabGrid";
+import { SD_GRID_SCHEMA_VERSION } from "@/features/sd-widgets/sdGrid";
 import {
   applyTapdDefectSizeToWidget,
   buildTapdFilters,
@@ -24,7 +24,7 @@ describe("tapdDefectModel", () => {
       h: 2,
       data: {
         runtime: "tapd-defects",
-        layoutSystem: ITAB_GRID_SCHEMA_VERSION,
+        layoutSystem: SD_GRID_SCHEMA_VERSION,
         version: 1,
         sizeKey: "2x2",
         visibilityScope: "owned-by-current-user",

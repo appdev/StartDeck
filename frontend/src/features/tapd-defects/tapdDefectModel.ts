@@ -1,11 +1,11 @@
 import type { WidgetConfig } from "@/types";
 import {
-  ITAB_WIDGET_SIZE_BY_KEY,
-  resolveItabWidgetSize,
-  toItabWidgetSizeKey,
-  type ItabWidgetSizeKey,
-} from "@/features/itab-widgets/itabSizePresets";
-import { ITAB_GRID_SCHEMA_VERSION } from "@/features/itab-widgets/itabGrid";
+  SD_WIDGET_SIZE_BY_KEY,
+  resolveSdWidgetSize,
+  toSdWidgetSizeKey,
+  type SdWidgetSizeKey,
+} from "@/features/sd-widgets/sdSizePresets";
+import { SD_GRID_SCHEMA_VERSION } from "@/features/sd-widgets/sdGrid";
 import {
   TAPD_ACTIONABLE_DEFECT_STATUS,
   TAPD_DEFECTS_CATALOG_ID,
@@ -28,9 +28,9 @@ const isObject = (value: unknown): value is Record<string, unknown> =>
 
 export const isTapdDefectSizeKey = (
   value: unknown,
-): value is ItabWidgetSizeKey =>
+): value is SdWidgetSizeKey =>
   typeof value === "string" &&
-  ITAB_WIDGET_SIZE_BY_KEY.has(value as ItabWidgetSizeKey);
+  SD_WIDGET_SIZE_BY_KEY.has(value as SdWidgetSizeKey);
 
 const normalizeText = (value: unknown, fallback = "") => {
   if (typeof value !== "string") return fallback;
@@ -241,7 +241,7 @@ export const normalizeTapdDefectWidgetData = (
   const visibilityScope = normalizeVisibilityScope(input.visibilityScope);
   return {
     runtime: TAPD_DEFECTS_RUNTIME,
-    layoutSystem: ITAB_GRID_SCHEMA_VERSION,
+    layoutSystem: SD_GRID_SCHEMA_VERSION,
     version: TAPD_DEFECTS_DATA_VERSION,
     sizeKey,
     workspaceId,
@@ -269,7 +269,7 @@ export const normalizeTapdDefectWidgetData = (
 };
 
 export const createDefaultTapdDefectWidget = (): WidgetConfig => {
-  const size = resolveItabWidgetSize(TAPD_DEFECTS_DEFAULT_SIZE);
+  const size = resolveSdWidgetSize(TAPD_DEFECTS_DEFAULT_SIZE);
   return {
     id: TAPD_DEFECTS_CATALOG_ID,
     type: TAPD_DEFECTS_WIDGET_TYPE,
@@ -284,14 +284,14 @@ export const createDefaultTapdDefectWidget = (): WidgetConfig => {
 
 export const applyTapdDefectSizeToWidget = (
   widget: WidgetConfig,
-  sizeKey: ItabWidgetSizeKey,
+  sizeKey: SdWidgetSizeKey,
 ) => {
-  const size = resolveItabWidgetSize(sizeKey);
+  const size = resolveSdWidgetSize(sizeKey);
   const data = normalizeTapdDefectWidgetData(widget.data);
   widget.type = TAPD_DEFECTS_WIDGET_TYPE;
   widget.data = {
     ...data,
-    layoutSystem: ITAB_GRID_SCHEMA_VERSION,
+    layoutSystem: SD_GRID_SCHEMA_VERSION,
     sizeKey,
   } satisfies TapdDefectWidgetData;
   widget.colSpan = size.colSpan;
@@ -301,7 +301,7 @@ export const applyTapdDefectSizeToWidget = (
 };
 
 export const syncTapdDefectSizeFromWidgetSpans = (widget: WidgetConfig) => {
-  const sizeKey = toItabWidgetSizeKey({
+  const sizeKey = toSdWidgetSizeKey({
     colSpan: widget.w ?? widget.colSpan,
     rowSpan: widget.h ?? widget.rowSpan,
   });

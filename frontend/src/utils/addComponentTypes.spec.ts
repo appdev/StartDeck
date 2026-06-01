@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { AddComponentPayload } from "@/utils/addComponentTypes";
 
 describe("addComponentTypes", () => {
-  it("accepts widget add payloads from StartDeck and scoped iTab size keys", () => {
+  it("accepts widget add payloads from StartDeck and scoped size keys", () => {
     const payload = {
       kind: "widget",
       catalogItemId: "clock",
@@ -13,7 +13,7 @@ describe("addComponentTypes", () => {
 
     expect(payload.sizeKey).toBe("2x1");
 
-    const itabPayload = {
+    const sdPayload = {
       kind: "widget",
       catalogItemId: "weather",
       destinationGroupId: "home",
@@ -21,6 +21,6 @@ describe("addComponentTypes", () => {
       sizeKey: "1x2",
     } satisfies AddComponentPayload;
 
-    expect(itabPayload.sizeKey).toBe("1x2");
+    expect(sdPayload.sizeKey).toBe("1x2");
   });
 });

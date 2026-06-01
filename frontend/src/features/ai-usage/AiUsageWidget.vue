@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import type { WidgetConfig } from "@/types";
-import type { ItabWidgetSizeKey } from "@/features/itab-widgets/itabSizePresets";
+import type { SdWidgetSizeKey } from "@/features/sd-widgets/sdSizePresets";
 import { useAuthStore } from "@/stores/auth";
 import AiProviderIcon from "./AiProviderIcon.vue";
 import { queryAiUsage } from "./aiUsageApi";
@@ -18,7 +18,7 @@ import type { AiUsageProviderSummary, AiUsageWidgetData } from "./aiUsageTypes";
 
 const props = defineProps<{
   widget: WidgetConfig;
-  sizeKey: ItabWidgetSizeKey;
+  sizeKey: SdWidgetSizeKey;
   refreshToken?: number;
 }>();
 

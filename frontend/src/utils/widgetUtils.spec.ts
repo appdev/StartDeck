@@ -4,28 +4,28 @@ import {
   createDefaultWidgetList,
   normalizeIncomingWidgets,
 } from "./widgetUtils";
-import { ITAB_GRID_SCHEMA_VERSION } from "@/features/itab-widgets/itabGrid";
-import { ITAB_TODO_WIDGET_TYPE } from "@/features/itab-todo/itabTodoTypes";
-import { ITAB_MEMO_WIDGET_TYPE } from "@/features/itab-memo/itabMemoTypes";
-import { ITAB_CLOCK_WIDGET_TYPE } from "@/features/itab-clock/itabClockTypes";
-import { ITAB_DAILY_ENGLISH_WIDGET_TYPE } from "@/features/itab-daily-english/itabDailyEnglishTypes";
-import { ITAB_POMODORO_WIDGET_TYPE } from "@/features/itab-pomodoro/itabPomodoroTypes";
-import { ITAB_POEM_WIDGET_TYPE } from "@/features/itab-poem/itabPoemTypes";
-import { ITAB_ANNIVERSARY_WIDGET_TYPE } from "@/features/itab-anniversary/itabAnniversaryTypes";
+import { SD_GRID_SCHEMA_VERSION } from "@/features/sd-widgets/sdGrid";
+import { SD_TODO_WIDGET_TYPE } from "@/features/sd-todo/sdTodoTypes";
+import { SD_MEMO_WIDGET_TYPE } from "@/features/sd-memo/sdMemoTypes";
+import { SD_CLOCK_WIDGET_TYPE } from "@/features/sd-clock/sdClockTypes";
+import { SD_DAILY_ENGLISH_WIDGET_TYPE } from "@/features/sd-daily-english/sdDailyEnglishTypes";
+import { SD_POMODORO_WIDGET_TYPE } from "@/features/sd-pomodoro/sdPomodoroTypes";
+import { SD_POEM_WIDGET_TYPE } from "@/features/sd-poem/sdPoemTypes";
+import { SD_ANNIVERSARY_WIDGET_TYPE } from "@/features/sd-anniversary/sdAnniversaryTypes";
 import {
-  ITAB_MOVIE_CALENDAR_CATALOG_ID,
-  ITAB_MOVIE_CALENDAR_WIDGET_TYPE,
-} from "@/features/itab-movie-calendar/itabMovieCalendarTypes";
+  SD_MOVIE_CALENDAR_CATALOG_ID,
+  SD_MOVIE_CALENDAR_WIDGET_TYPE,
+} from "@/features/sd-movie-calendar/sdMovieCalendarTypes";
 import {
-  ITAB_IP_CATALOG_ID,
-  ITAB_IP_WIDGET_TYPE,
-} from "@/features/itab-ip/itabIpTypes";
+  SD_IP_CATALOG_ID,
+  SD_IP_WIDGET_TYPE,
+} from "@/features/sd-ip/sdIpTypes";
 import {
-  ITAB_CALENDAR_CATALOG_ID,
-  ITAB_CALENDAR_WIDGET_TYPE,
-} from "@/features/itab-calendar/itabCalendarTypes";
-import { ITAB_NUMBER_UPPERCASE_WIDGET_TYPE } from "@/features/itab-number-uppercase/itabNumberUppercaseTypes";
-import { ITAB_FOOD_PICKER_WIDGET_TYPE } from "@/features/itab-food-picker/itabFoodPickerTypes";
+  SD_CALENDAR_CATALOG_ID,
+  SD_CALENDAR_WIDGET_TYPE,
+} from "@/features/sd-calendar/sdCalendarTypes";
+import { SD_NUMBER_UPPERCASE_WIDGET_TYPE } from "@/features/sd-number-uppercase/sdNumberUppercaseTypes";
+import { SD_FOOD_PICKER_WIDGET_TYPE } from "@/features/sd-food-picker/sdFoodPickerTypes";
 
 const publicClock: WidgetConfig = {
   id: "clock-public",
@@ -73,27 +73,27 @@ describe("normalizeIncomingWidgets", () => {
       expect(widgets.some((widget) => widget.type === type)).toBe(false);
     }
     expect(
-      widgets.some((widget) => widget.type === ITAB_TODO_WIDGET_TYPE),
+      widgets.some((widget) => widget.type === SD_TODO_WIDGET_TYPE),
     ).toBe(false);
     expect(
-      widgets.some((widget) => widget.type === ITAB_MEMO_WIDGET_TYPE),
+      widgets.some((widget) => widget.type === SD_MEMO_WIDGET_TYPE),
     ).toBe(false);
     expect(
-      widgets.some((widget) => widget.type === ITAB_DAILY_ENGLISH_WIDGET_TYPE),
+      widgets.some((widget) => widget.type === SD_DAILY_ENGLISH_WIDGET_TYPE),
     ).toBe(false);
     expect(
-      widgets.some((widget) => widget.type === ITAB_POMODORO_WIDGET_TYPE),
+      widgets.some((widget) => widget.type === SD_POMODORO_WIDGET_TYPE),
     ).toBe(false);
     expect(
-      widgets.some((widget) => widget.type === ITAB_ANNIVERSARY_WIDGET_TYPE),
+      widgets.some((widget) => widget.type === SD_ANNIVERSARY_WIDGET_TYPE),
     ).toBe(false);
     expect(
-      widgets.some((widget) => widget.type === ITAB_MOVIE_CALENDAR_WIDGET_TYPE),
+      widgets.some((widget) => widget.type === SD_MOVIE_CALENDAR_WIDGET_TYPE),
     ).toBe(false);
     expect(
-      widgets.some((widget) => widget.type === ITAB_CALENDAR_WIDGET_TYPE),
+      widgets.some((widget) => widget.type === SD_CALENDAR_WIDGET_TYPE),
     ).toBe(false);
-    expect(widgets.some((widget) => widget.type === ITAB_IP_WIDGET_TYPE)).toBe(
+    expect(widgets.some((widget) => widget.type === SD_IP_WIDGET_TYPE)).toBe(
       false,
     );
     expect(widgets.some((widget) => widget.type === "music")).toBe(false);
@@ -119,25 +119,25 @@ describe("normalizeIncomingWidgets", () => {
     expect(widgets.some((widget) => widget.type === "clock")).toBe(false);
     expect(widgets.some((widget) => widget.type === "pomodoro")).toBe(false);
     expect(
-      widgets.some((widget) => widget.type === ITAB_CLOCK_WIDGET_TYPE),
+      widgets.some((widget) => widget.type === SD_CLOCK_WIDGET_TYPE),
     ).toBe(false);
     expect(
-      widgets.some((widget) => widget.type === ITAB_TODO_WIDGET_TYPE),
+      widgets.some((widget) => widget.type === SD_TODO_WIDGET_TYPE),
     ).toBe(false);
     expect(
-      widgets.some((widget) => widget.type === ITAB_MEMO_WIDGET_TYPE),
+      widgets.some((widget) => widget.type === SD_MEMO_WIDGET_TYPE),
     ).toBe(false);
     expect(
-      widgets.some((widget) => widget.type === ITAB_DAILY_ENGLISH_WIDGET_TYPE),
+      widgets.some((widget) => widget.type === SD_DAILY_ENGLISH_WIDGET_TYPE),
     ).toBe(false);
     expect(
-      widgets.some((widget) => widget.type === ITAB_POMODORO_WIDGET_TYPE),
+      widgets.some((widget) => widget.type === SD_POMODORO_WIDGET_TYPE),
     ).toBe(false);
     expect(
-      widgets.some((widget) => widget.type === ITAB_MOVIE_CALENDAR_WIDGET_TYPE),
+      widgets.some((widget) => widget.type === SD_MOVIE_CALENDAR_WIDGET_TYPE),
     ).toBe(false);
     expect(
-      widgets.some((widget) => widget.type === ITAB_CALENDAR_WIDGET_TYPE),
+      widgets.some((widget) => widget.type === SD_CALENDAR_WIDGET_TYPE),
     ).toBe(false);
     expect(widgets.some((widget) => widget.type === "music")).toBe(false);
     expect(widgets.some((widget) => widget.type === "player")).toBe(false);
@@ -166,7 +166,7 @@ describe("normalizeIncomingWidgets", () => {
     expectOnlyDockerDefault(widgets);
     expect(widgets.some((widget) => widget.type === "clock")).toBe(false);
     expect(
-      widgets.some((widget) => widget.type === ITAB_CLOCK_WIDGET_TYPE),
+      widgets.some((widget) => widget.type === SD_CLOCK_WIDGET_TYPE),
     ).toBe(false);
     expect(widgets.some((widget) => widget.type === "memo")).toBe(false);
     expect(widgets.some((widget) => widget.type === "todo")).toBe(false);
@@ -176,19 +176,19 @@ describe("normalizeIncomingWidgets", () => {
       expect(widgets.some((widget) => widget.type === type)).toBe(false);
     }
     expect(
-      widgets.some((widget) => widget.type === ITAB_TODO_WIDGET_TYPE),
+      widgets.some((widget) => widget.type === SD_TODO_WIDGET_TYPE),
     ).toBe(false);
     expect(
-      widgets.some((widget) => widget.type === ITAB_MEMO_WIDGET_TYPE),
+      widgets.some((widget) => widget.type === SD_MEMO_WIDGET_TYPE),
     ).toBe(false);
     expect(
-      widgets.some((widget) => widget.type === ITAB_DAILY_ENGLISH_WIDGET_TYPE),
+      widgets.some((widget) => widget.type === SD_DAILY_ENGLISH_WIDGET_TYPE),
     ).toBe(false);
     expect(
-      widgets.some((widget) => widget.type === ITAB_POMODORO_WIDGET_TYPE),
+      widgets.some((widget) => widget.type === SD_POMODORO_WIDGET_TYPE),
     ).toBe(false);
     expect(
-      widgets.some((widget) => widget.type === ITAB_MOVIE_CALENDAR_WIDGET_TYPE),
+      widgets.some((widget) => widget.type === SD_MOVIE_CALENDAR_WIDGET_TYPE),
     ).toBe(false);
     expect(widgets.some((widget) => widget.type === "music")).toBe(false);
     expect(widgets.some((widget) => widget.type === "player")).toBe(false);
@@ -226,22 +226,22 @@ describe("normalizeIncomingWidgets", () => {
     expect(widgets.some((widget) => widget.type === "pomodoro")).toBe(false);
     expect(widgets.some((widget) => widget.type === "calendar")).toBe(false);
     expect(
-      widgets.some((widget) => widget.type === ITAB_CLOCK_WIDGET_TYPE),
+      widgets.some((widget) => widget.type === SD_CLOCK_WIDGET_TYPE),
     ).toBe(false);
     expect(
-      widgets.some((widget) => widget.type === ITAB_TODO_WIDGET_TYPE),
+      widgets.some((widget) => widget.type === SD_TODO_WIDGET_TYPE),
     ).toBe(false);
     expect(
-      widgets.some((widget) => widget.type === ITAB_MEMO_WIDGET_TYPE),
+      widgets.some((widget) => widget.type === SD_MEMO_WIDGET_TYPE),
     ).toBe(false);
     expect(
-      widgets.some((widget) => widget.type === ITAB_DAILY_ENGLISH_WIDGET_TYPE),
+      widgets.some((widget) => widget.type === SD_DAILY_ENGLISH_WIDGET_TYPE),
     ).toBe(false);
     expect(
-      widgets.some((widget) => widget.type === ITAB_POMODORO_WIDGET_TYPE),
+      widgets.some((widget) => widget.type === SD_POMODORO_WIDGET_TYPE),
     ).toBe(false);
     expect(
-      widgets.some((widget) => widget.type === ITAB_MOVIE_CALENDAR_WIDGET_TYPE),
+      widgets.some((widget) => widget.type === SD_MOVIE_CALENDAR_WIDGET_TYPE),
     ).toBe(false);
     expect(widgets.some((widget) => widget.type === "music")).toBe(false);
     expect(widgets.some((widget) => widget.type === "player")).toBe(false);
@@ -261,7 +261,7 @@ describe("normalizeIncomingWidgets", () => {
           colSpan: 4,
           rowSpan: 2,
           data: {
-            layoutSystem: ITAB_GRID_SCHEMA_VERSION,
+            layoutSystem: SD_GRID_SCHEMA_VERSION,
             autoUpdate: true,
             autoUpdateKeepImages: 5,
             autoUpdateMinFreeGB: 8,
@@ -290,7 +290,7 @@ describe("normalizeIncomingWidgets", () => {
       rowSpan: 2,
       data: {
         runtime: "docker",
-        layoutSystem: ITAB_GRID_SCHEMA_VERSION,
+        layoutSystem: SD_GRID_SCHEMA_VERSION,
         sizeKey: "2x4",
         autoUpdate: true,
         publicHosts: { nginx: "nginx.example.com" },
@@ -314,7 +314,7 @@ describe("normalizeIncomingWidgets", () => {
           colSpan: 1,
           rowSpan: 2,
           data: {
-            layoutSystem: ITAB_GRID_SCHEMA_VERSION,
+            layoutSystem: SD_GRID_SCHEMA_VERSION,
             unknownTelemetryKey: "keep",
           },
         },
@@ -338,7 +338,7 @@ describe("normalizeIncomingWidgets", () => {
       rowSpan: 2,
       data: {
         runtime: "system-status",
-        layoutSystem: ITAB_GRID_SCHEMA_VERSION,
+        layoutSystem: SD_GRID_SCHEMA_VERSION,
         sizeKey: "2x1",
         unknownTelemetryKey: "keep",
       },
@@ -353,7 +353,7 @@ describe("normalizeIncomingWidgets", () => {
         enable: true,
         isPublic: true,
         data: {
-          layoutSystem: ITAB_GRID_SCHEMA_VERSION,
+          layoutSystem: SD_GRID_SCHEMA_VERSION,
           sizeKey: "2x2",
           url: "https://example.com/embed",
         },
@@ -364,7 +364,7 @@ describe("normalizeIncomingWidgets", () => {
         enable: true,
         isPublic: true,
         data: {
-          layoutSystem: ITAB_GRID_SCHEMA_VERSION,
+          layoutSystem: SD_GRID_SCHEMA_VERSION,
           sizeKey: "1x1",
         },
       },
@@ -374,7 +374,7 @@ describe("normalizeIncomingWidgets", () => {
         enable: true,
         isPublic: true,
         data: {
-          layoutSystem: ITAB_GRID_SCHEMA_VERSION,
+          layoutSystem: SD_GRID_SCHEMA_VERSION,
           sizeKey: "2x2",
           title: "Public HTML",
           html: '<iframe title="普通嵌入" src="https://example.com"></iframe>',
@@ -417,7 +417,7 @@ describe("normalizeIncomingWidgets", () => {
           colSpan: 4,
           rowSpan: 2,
           data: {
-            layoutSystem: ITAB_GRID_SCHEMA_VERSION,
+            layoutSystem: SD_GRID_SCHEMA_VERSION,
             sizeKey: "2x4",
             version: 7,
             title: "Operations Embed",
@@ -446,7 +446,7 @@ describe("normalizeIncomingWidgets", () => {
       rowSpan: 2,
       data: {
         runtime: "custom-css",
-        layoutSystem: ITAB_GRID_SCHEMA_VERSION,
+        layoutSystem: SD_GRID_SCHEMA_VERSION,
         sizeKey: "2x4",
         version: 7,
         title: "Operations Embed",
@@ -460,7 +460,7 @@ describe("normalizeIncomingWidgets", () => {
     });
   });
 
-  it("keeps iTab weather out of release defaults and destructively removes old weather widgets", () => {
+  it("keeps weather out of release defaults and destructively removes old weather widgets", () => {
     const defaults = createDefaultWidgetList(true);
     const defaultWeather = defaults.find((widget) => widget.id === "weather");
 
@@ -482,10 +482,10 @@ describe("normalizeIncomingWidgets", () => {
     expectOnlyDockerDefault(normalized);
   });
 
-  it("keeps iTab IP out of release defaults and destructively removes old IP widgets", () => {
+  it("keeps IP out of release defaults and destructively removes old IP widgets", () => {
     const defaults = createDefaultWidgetList(true);
     const defaultIp = defaults.find(
-      (widget) => widget.id === ITAB_IP_CATALOG_ID,
+      (widget) => widget.id === SD_IP_CATALOG_ID,
     );
 
     expect(defaultIp).toBeUndefined();
@@ -497,15 +497,15 @@ describe("normalizeIncomingWidgets", () => {
 
     expect(normalized.some((widget) => widget.type === "ip")).toBe(false);
     expect(
-      normalized.find((widget) => widget.id === ITAB_IP_CATALOG_ID),
+      normalized.find((widget) => widget.id === SD_IP_CATALOG_ID),
     ).toBeUndefined();
     expectOnlyDockerDefault(normalized);
   });
 
-  it("keeps iTab calendar out of release defaults and destructively removes old calendar widgets", () => {
+  it("keeps calendar out of release defaults and destructively removes old calendar widgets", () => {
     const defaults = createDefaultWidgetList(true);
     const defaultCalendar = defaults.find(
-      (widget) => widget.id === ITAB_CALENDAR_CATALOG_ID,
+      (widget) => widget.id === SD_CALENDAR_CATALOG_ID,
     );
 
     expect(defaultCalendar).toBeUndefined();
@@ -520,12 +520,12 @@ describe("normalizeIncomingWidgets", () => {
 
     expect(normalized.some((widget) => widget.type === "calendar")).toBe(false);
     expect(
-      normalized.find((widget) => widget.id === ITAB_CALENDAR_CATALOG_ID),
+      normalized.find((widget) => widget.id === SD_CALENDAR_CATALOG_ID),
     ).toBeUndefined();
     expectOnlyDockerDefault(normalized);
   });
 
-  it("keeps iTab clock out of release defaults and destructively removes old clock widgets", () => {
+  it("keeps clock out of release defaults and destructively removes old clock widgets", () => {
     const defaults = createDefaultWidgetList(true);
     const defaultClock = defaults.find((widget) => widget.id === "clock");
 
@@ -542,13 +542,13 @@ describe("normalizeIncomingWidgets", () => {
         },
         {
           id: "weather",
-          type: "itab-weather-00",
+          type: "sd-weather-00",
           enable: true,
           isPublic: true,
           data: {
-            runtime: "itab-weather",
+            runtime: "sd-weather",
             version: 1,
-            layoutSystem: ITAB_GRID_SCHEMA_VERSION,
+            layoutSystem: SD_GRID_SCHEMA_VERSION,
             sizeKey: "1x2",
           },
         },
@@ -559,17 +559,17 @@ describe("normalizeIncomingWidgets", () => {
     expect(normalized.some((widget) => widget.type === "clock")).toBe(false);
     expect(normalized.find((widget) => widget.id === "clock")).toBeUndefined();
     expect(normalized.find((widget) => widget.id === "weather")).toMatchObject({
-      type: "itab-weather-00",
+      type: "sd-weather-00",
       data: expect.objectContaining({ sizeKey: "1x2" }),
     });
   });
 
-  it("keeps persisted canonical iTab clock id, seconds setting, and size", () => {
+  it("keeps persisted canonical clock id, seconds setting, and size", () => {
     const normalized = normalizeIncomingWidgets(
       [
         {
           id: "legacy-clock-id",
-          type: ITAB_CLOCK_WIDGET_TYPE,
+          type: SD_CLOCK_WIDGET_TYPE,
           enable: true,
           isPublic: true,
           w: 4,
@@ -577,9 +577,9 @@ describe("normalizeIncomingWidgets", () => {
           colSpan: 4,
           rowSpan: 2,
           data: {
-            runtime: "itab-clock",
+            runtime: "sd-clock",
             version: 1,
-            layoutSystem: ITAB_GRID_SCHEMA_VERSION,
+            layoutSystem: SD_GRID_SCHEMA_VERSION,
             sizeKey: "2x4",
             showSeconds: false,
           },
@@ -589,7 +589,7 @@ describe("normalizeIncomingWidgets", () => {
     );
 
     expect(normalized.find((widget) => widget.id === "clock")).toMatchObject({
-      type: ITAB_CLOCK_WIDGET_TYPE,
+      type: SD_CLOCK_WIDGET_TYPE,
       colSpan: 4,
       rowSpan: 2,
       w: 4,
@@ -601,18 +601,18 @@ describe("normalizeIncomingWidgets", () => {
     });
   });
 
-  it("normalizes canonical iTab weather size data without StartDeck size inversion", () => {
+  it("normalizes canonical weather size data without StartDeck size inversion", () => {
     const normalized = normalizeIncomingWidgets(
       [
         {
           id: "legacy-id",
-          type: "itab-weather-00",
+          type: "sd-weather-00",
           enable: true,
           isPublic: true,
           data: {
-            runtime: "itab-weather",
+            runtime: "sd-weather",
             version: 1,
-            layoutSystem: ITAB_GRID_SCHEMA_VERSION,
+            layoutSystem: SD_GRID_SCHEMA_VERSION,
             sizeKey: "1x2",
           },
         },
@@ -621,19 +621,19 @@ describe("normalizeIncomingWidgets", () => {
     );
 
     expect(normalized.find((widget) => widget.id === "weather")).toMatchObject({
-      type: "itab-weather-00",
+      type: "sd-weather-00",
       colSpan: 2,
       rowSpan: 1,
       data: expect.objectContaining({ sizeKey: "1x2" }),
     });
   });
 
-  it("keeps persisted canonical iTab weather id and size", () => {
+  it("keeps persisted canonical weather id and size", () => {
     const normalized = normalizeIncomingWidgets(
       [
         {
           id: "weather",
-          type: "itab-weather-00",
+          type: "sd-weather-00",
           enable: true,
           isPublic: true,
           w: 2,
@@ -641,9 +641,9 @@ describe("normalizeIncomingWidgets", () => {
           colSpan: 2,
           rowSpan: 2,
           data: {
-            runtime: "itab-weather",
+            runtime: "sd-weather",
             version: 1,
-            layoutSystem: ITAB_GRID_SCHEMA_VERSION,
+            layoutSystem: SD_GRID_SCHEMA_VERSION,
             sizeKey: "2x2",
           },
         },
@@ -659,7 +659,7 @@ describe("normalizeIncomingWidgets", () => {
 
     expect(normalized.some((widget) => widget.type === "weather")).toBe(false);
     expect(normalized.find((widget) => widget.id === "weather")).toMatchObject({
-      type: "itab-weather-00",
+      type: "sd-weather-00",
       colSpan: 2,
       rowSpan: 2,
       w: 2,
@@ -668,7 +668,7 @@ describe("normalizeIncomingWidgets", () => {
     });
   });
 
-  it("keeps iTab Todo out of release defaults and destructively removes old Todo widgets", () => {
+  it("keeps Todo out of release defaults and destructively removes old Todo widgets", () => {
     const defaults = createDefaultWidgetList(true);
     const defaultTodo = defaults.find((widget) => widget.id === "todo");
 
@@ -693,12 +693,12 @@ describe("normalizeIncomingWidgets", () => {
     expectOnlyDockerDefault(normalized);
   });
 
-  it("keeps persisted canonical iTab Todo id, tasks, and size", () => {
+  it("keeps persisted canonical Todo id, tasks, and size", () => {
     const normalized = normalizeIncomingWidgets(
       [
         {
           id: "legacy-todo-id",
-          type: ITAB_TODO_WIDGET_TYPE,
+          type: SD_TODO_WIDGET_TYPE,
           enable: true,
           isPublic: true,
           w: 4,
@@ -706,9 +706,9 @@ describe("normalizeIncomingWidgets", () => {
           colSpan: 4,
           rowSpan: 2,
           data: {
-            runtime: "itab-todo",
+            runtime: "sd-todo",
             version: 1,
-            layoutSystem: ITAB_GRID_SCHEMA_VERSION,
+            layoutSystem: SD_GRID_SCHEMA_VERSION,
             sizeKey: "2x4",
             tasks: [{ id: "task-1", text: "评审 UI", done: false }],
           },
@@ -718,7 +718,7 @@ describe("normalizeIncomingWidgets", () => {
     );
 
     expect(normalized.find((widget) => widget.id === "todo")).toMatchObject({
-      type: ITAB_TODO_WIDGET_TYPE,
+      type: SD_TODO_WIDGET_TYPE,
       colSpan: 4,
       rowSpan: 2,
       w: 4,
@@ -730,7 +730,7 @@ describe("normalizeIncomingWidgets", () => {
     });
   });
 
-  it("keeps iTab Memo out of release defaults and destructively removes old Memo widgets", () => {
+  it("keeps Memo out of release defaults and destructively removes old Memo widgets", () => {
     const defaults = createDefaultWidgetList(true);
     const defaultMemo = defaults.find((widget) => widget.id === "memo");
 
@@ -756,12 +756,12 @@ describe("normalizeIncomingWidgets", () => {
     expectOnlyDockerDefault(normalized);
   });
 
-  it("keeps persisted canonical iTab Memo id, notes, and size", () => {
+  it("keeps persisted canonical Memo id, notes, and size", () => {
     const normalized = normalizeIncomingWidgets(
       [
         {
           id: "legacy-memo-id",
-          type: ITAB_MEMO_WIDGET_TYPE,
+          type: SD_MEMO_WIDGET_TYPE,
           enable: true,
           isPublic: true,
           w: 4,
@@ -769,9 +769,9 @@ describe("normalizeIncomingWidgets", () => {
           colSpan: 4,
           rowSpan: 2,
           data: {
-            runtime: "itab-memo",
+            runtime: "sd-memo",
             version: 1,
-            layoutSystem: ITAB_GRID_SCHEMA_VERSION,
+            layoutSystem: SD_GRID_SCHEMA_VERSION,
             sizeKey: "2x4",
             notes: [
               {
@@ -790,7 +790,7 @@ describe("normalizeIncomingWidgets", () => {
     );
 
     expect(normalized.find((widget) => widget.id === "memo")).toMatchObject({
-      type: ITAB_MEMO_WIDGET_TYPE,
+      type: SD_MEMO_WIDGET_TYPE,
       colSpan: 4,
       rowSpan: 2,
       w: 4,
@@ -812,11 +812,11 @@ describe("normalizeIncomingWidgets", () => {
     [
       "Todo",
       "legacy-todo-id",
-      ITAB_TODO_WIDGET_TYPE,
+      SD_TODO_WIDGET_TYPE,
       {
-        runtime: "itab-todo",
+        runtime: "sd-todo",
         version: 1,
-        layoutSystem: ITAB_GRID_SCHEMA_VERSION,
+        layoutSystem: SD_GRID_SCHEMA_VERSION,
         sizeKey: "4x4",
         tasks: [{ id: "task-1", text: "评审 UI", done: false }],
       },
@@ -825,11 +825,11 @@ describe("normalizeIncomingWidgets", () => {
     [
       "Memo",
       "legacy-memo-id",
-      ITAB_MEMO_WIDGET_TYPE,
+      SD_MEMO_WIDGET_TYPE,
       {
-        runtime: "itab-memo",
+        runtime: "sd-memo",
         version: 1,
-        layoutSystem: ITAB_GRID_SCHEMA_VERSION,
+        layoutSystem: SD_GRID_SCHEMA_VERSION,
         sizeKey: "4x4",
         notes: [
           {
@@ -883,7 +883,7 @@ describe("normalizeIncomingWidgets", () => {
         { id: "old-poem", type: "poem", enable: true, isPublic: true },
         {
           id: "legacy-poem-id",
-          type: ITAB_POEM_WIDGET_TYPE,
+          type: SD_POEM_WIDGET_TYPE,
           enable: true,
           isPublic: true,
           w: 4,
@@ -891,9 +891,9 @@ describe("normalizeIncomingWidgets", () => {
           colSpan: 4,
           rowSpan: 2,
           data: {
-            runtime: "itab-poem",
+            runtime: "sd-poem",
             version: 1,
-            layoutSystem: ITAB_GRID_SCHEMA_VERSION,
+            layoutSystem: SD_GRID_SCHEMA_VERSION,
             sizeKey: "2x4",
           },
         },
@@ -903,7 +903,7 @@ describe("normalizeIncomingWidgets", () => {
 
     expect(normalized.some((widget) => widget.type === "poem")).toBe(false);
     expect(normalized.find((widget) => widget.id === "poem")).toMatchObject({
-      type: ITAB_POEM_WIDGET_TYPE,
+      type: SD_POEM_WIDGET_TYPE,
       colSpan: 4,
       rowSpan: 2,
       w: 4,
@@ -912,7 +912,7 @@ describe("normalizeIncomingWidgets", () => {
     });
   });
 
-  it("keeps iTab daily English out of release defaults", () => {
+  it("keeps daily English out of release defaults", () => {
     const defaults = createDefaultWidgetList(true);
     const dailyEnglish = defaults.find(
       (widget) => widget.id === "daily-english",
@@ -921,21 +921,21 @@ describe("normalizeIncomingWidgets", () => {
     expect(dailyEnglish).toBeUndefined();
   });
 
-  it("keeps iTab movie calendar out of release defaults", () => {
+  it("keeps movie calendar out of release defaults", () => {
     const defaults = createDefaultWidgetList(true);
     const movieCalendar = defaults.find(
-      (widget) => widget.id === ITAB_MOVIE_CALENDAR_CATALOG_ID,
+      (widget) => widget.id === SD_MOVIE_CALENDAR_CATALOG_ID,
     );
 
     expect(movieCalendar).toBeUndefined();
   });
 
-  it("keeps persisted canonical iTab movie calendar id and size", () => {
+  it("keeps persisted canonical movie calendar id and size", () => {
     const normalized = normalizeIncomingWidgets(
       [
         {
           id: "legacy-movie-calendar-id",
-          type: ITAB_MOVIE_CALENDAR_WIDGET_TYPE,
+          type: SD_MOVIE_CALENDAR_WIDGET_TYPE,
           enable: true,
           isPublic: true,
           w: 4,
@@ -943,9 +943,9 @@ describe("normalizeIncomingWidgets", () => {
           colSpan: 4,
           rowSpan: 2,
           data: {
-            runtime: "itab-movie-calendar",
+            runtime: "sd-movie-calendar",
             version: 1,
-            layoutSystem: ITAB_GRID_SCHEMA_VERSION,
+            layoutSystem: SD_GRID_SCHEMA_VERSION,
             sizeKey: "2x4",
             movieTitle: "红气球之旅",
           },
@@ -955,28 +955,28 @@ describe("normalizeIncomingWidgets", () => {
     );
 
     expect(
-      normalized.find((widget) => widget.id === ITAB_MOVIE_CALENDAR_CATALOG_ID),
+      normalized.find((widget) => widget.id === SD_MOVIE_CALENDAR_CATALOG_ID),
     ).toMatchObject({
-      type: ITAB_MOVIE_CALENDAR_WIDGET_TYPE,
+      type: SD_MOVIE_CALENDAR_WIDGET_TYPE,
       colSpan: 4,
       rowSpan: 2,
       w: 4,
       h: 2,
       data: {
-        runtime: "itab-movie-calendar",
+        runtime: "sd-movie-calendar",
         version: 1,
-        layoutSystem: ITAB_GRID_SCHEMA_VERSION,
+        layoutSystem: SD_GRID_SCHEMA_VERSION,
         sizeKey: "2x4",
       },
     });
   });
 
-  it("keeps persisted canonical iTab daily English id and size", () => {
+  it("keeps persisted canonical daily English id and size", () => {
     const normalized = normalizeIncomingWidgets(
       [
         {
           id: "legacy-daily-id",
-          type: ITAB_DAILY_ENGLISH_WIDGET_TYPE,
+          type: SD_DAILY_ENGLISH_WIDGET_TYPE,
           enable: true,
           isPublic: true,
           w: 4,
@@ -984,9 +984,9 @@ describe("normalizeIncomingWidgets", () => {
           colSpan: 4,
           rowSpan: 2,
           data: {
-            runtime: "itab-daily-english",
+            runtime: "sd-daily-english",
             version: 1,
-            layoutSystem: ITAB_GRID_SCHEMA_VERSION,
+            layoutSystem: SD_GRID_SCHEMA_VERSION,
             sizeKey: "2x4",
             sentence: "do not persist",
           },
@@ -998,21 +998,21 @@ describe("normalizeIncomingWidgets", () => {
     expect(
       normalized.find((widget) => widget.id === "daily-english"),
     ).toMatchObject({
-      type: ITAB_DAILY_ENGLISH_WIDGET_TYPE,
+      type: SD_DAILY_ENGLISH_WIDGET_TYPE,
       colSpan: 4,
       rowSpan: 2,
       w: 4,
       h: 2,
       data: {
-        runtime: "itab-daily-english",
+        runtime: "sd-daily-english",
         version: 1,
-        layoutSystem: ITAB_GRID_SCHEMA_VERSION,
+        layoutSystem: SD_GRID_SCHEMA_VERSION,
         sizeKey: "2x4",
       },
     });
   });
 
-  it("keeps iTab Pomodoro out of release defaults and destructively removes old Pomodoro widgets", () => {
+  it("keeps Pomodoro out of release defaults and destructively removes old Pomodoro widgets", () => {
     const defaults = createDefaultWidgetList(true);
     const defaultPomodoro = defaults.find((widget) => widget.id === "pomodoro");
 
@@ -1039,12 +1039,12 @@ describe("normalizeIncomingWidgets", () => {
     expectOnlyDockerDefault(normalized);
   });
 
-  it("keeps persisted canonical iTab Pomodoro id, timer state, and size", () => {
+  it("keeps persisted canonical Pomodoro id, timer state, and size", () => {
     const normalized = normalizeIncomingWidgets(
       [
         {
           id: "legacy-pomodoro-id",
-          type: ITAB_POMODORO_WIDGET_TYPE,
+          type: SD_POMODORO_WIDGET_TYPE,
           enable: true,
           isPublic: true,
           w: 4,
@@ -1052,9 +1052,9 @@ describe("normalizeIncomingWidgets", () => {
           colSpan: 4,
           rowSpan: 2,
           data: {
-            runtime: "itab-pomodoro",
+            runtime: "sd-pomodoro",
             version: 1,
-            layoutSystem: ITAB_GRID_SCHEMA_VERSION,
+            layoutSystem: SD_GRID_SCHEMA_VERSION,
             sizeKey: "2x4",
             duration: 1800,
             remainingSeconds: 900,
@@ -1071,7 +1071,7 @@ describe("normalizeIncomingWidgets", () => {
 
     expect(normalized.find((widget) => widget.id === "pomodoro")).toMatchObject(
       {
-        type: ITAB_POMODORO_WIDGET_TYPE,
+        type: SD_POMODORO_WIDGET_TYPE,
         colSpan: 4,
         rowSpan: 2,
         w: 4,
@@ -1090,12 +1090,12 @@ describe("normalizeIncomingWidgets", () => {
     );
   });
 
-  it("keeps multiple persisted canonical iTab food picker widgets and size data", () => {
+  it("keeps multiple persisted canonical food picker widgets and size data", () => {
     const normalized = normalizeIncomingWidgets(
       [
         {
           id: "food-a",
-          type: ITAB_FOOD_PICKER_WIDGET_TYPE,
+          type: SD_FOOD_PICKER_WIDGET_TYPE,
           enable: true,
           isPublic: true,
           w: 4,
@@ -1103,9 +1103,9 @@ describe("normalizeIncomingWidgets", () => {
           colSpan: 4,
           rowSpan: 2,
           data: {
-            runtime: "itab-food-picker",
+            runtime: "sd-food-picker",
             version: 1,
-            layoutSystem: ITAB_GRID_SCHEMA_VERSION,
+            layoutSystem: SD_GRID_SCHEMA_VERSION,
             sizeKey: "2x4",
             menuItems: ["面", "饭", "面"],
             currentItem: "饭",
@@ -1113,11 +1113,11 @@ describe("normalizeIncomingWidgets", () => {
         },
         {
           id: "food-b",
-          type: ITAB_FOOD_PICKER_WIDGET_TYPE,
+          type: SD_FOOD_PICKER_WIDGET_TYPE,
           enable: false,
           isPublic: true,
           data: {
-            runtime: "itab-food-picker",
+            runtime: "sd-food-picker",
             version: 1,
             sizeKey: "bad",
             menuItems: [],
@@ -1130,11 +1130,11 @@ describe("normalizeIncomingWidgets", () => {
 
     expect(
       normalized.filter(
-        (widget) => widget.type === ITAB_FOOD_PICKER_WIDGET_TYPE,
+        (widget) => widget.type === SD_FOOD_PICKER_WIDGET_TYPE,
       ),
     ).toHaveLength(2);
     expect(normalized.find((widget) => widget.id === "food-a")).toMatchObject({
-      type: ITAB_FOOD_PICKER_WIDGET_TYPE,
+      type: SD_FOOD_PICKER_WIDGET_TYPE,
       colSpan: 4,
       rowSpan: 2,
       w: 4,
@@ -1147,7 +1147,7 @@ describe("normalizeIncomingWidgets", () => {
     });
     expect(normalized.find((widget) => widget.id === "food-b")).toMatchObject({
       enable: false,
-      type: ITAB_FOOD_PICKER_WIDGET_TYPE,
+      type: SD_FOOD_PICKER_WIDGET_TYPE,
       data: expect.objectContaining({
         sizeKey: "2x2",
         currentItem: "",
@@ -1155,12 +1155,12 @@ describe("normalizeIncomingWidgets", () => {
     });
   });
 
-  it("keeps multiple persisted canonical iTab number uppercase widgets and size data", () => {
+  it("keeps multiple persisted canonical number uppercase widgets and size data", () => {
     const normalized = normalizeIncomingWidgets(
       [
         {
           id: "amount-a",
-          type: ITAB_NUMBER_UPPERCASE_WIDGET_TYPE,
+          type: SD_NUMBER_UPPERCASE_WIDGET_TYPE,
           enable: true,
           isPublic: true,
           w: 4,
@@ -1168,9 +1168,9 @@ describe("normalizeIncomingWidgets", () => {
           colSpan: 4,
           rowSpan: 2,
           data: {
-            runtime: "itab-number-uppercase",
+            runtime: "sd-number-uppercase",
             version: 1,
-            layoutSystem: ITAB_GRID_SCHEMA_VERSION,
+            layoutSystem: SD_GRID_SCHEMA_VERSION,
             sizeKey: "2x4",
             inputNumber: "10001.05",
             uppercaseResult: "stale",
@@ -1179,11 +1179,11 @@ describe("normalizeIncomingWidgets", () => {
         },
         {
           id: "amount-b",
-          type: ITAB_NUMBER_UPPERCASE_WIDGET_TYPE,
+          type: SD_NUMBER_UPPERCASE_WIDGET_TYPE,
           enable: false,
           isPublic: true,
           data: {
-            runtime: "itab-number-uppercase",
+            runtime: "sd-number-uppercase",
             version: 1,
             sizeKey: "bad",
             inputNumber: "1024",
@@ -1197,12 +1197,12 @@ describe("normalizeIncomingWidgets", () => {
 
     expect(
       normalized.filter(
-        (widget) => widget.type === ITAB_NUMBER_UPPERCASE_WIDGET_TYPE,
+        (widget) => widget.type === SD_NUMBER_UPPERCASE_WIDGET_TYPE,
       ),
     ).toHaveLength(2);
     expect(normalized.find((widget) => widget.id === "amount-a")).toMatchObject(
       {
-        type: ITAB_NUMBER_UPPERCASE_WIDGET_TYPE,
+        type: SD_NUMBER_UPPERCASE_WIDGET_TYPE,
         colSpan: 4,
         rowSpan: 2,
         w: 4,
@@ -1217,7 +1217,7 @@ describe("normalizeIncomingWidgets", () => {
     expect(normalized.find((widget) => widget.id === "amount-b")).toMatchObject(
       {
         enable: false,
-        type: ITAB_NUMBER_UPPERCASE_WIDGET_TYPE,
+        type: SD_NUMBER_UPPERCASE_WIDGET_TYPE,
         data: expect.objectContaining({
           sizeKey: "2x2",
           uppercaseResult: "壹仟零贰拾肆元整",
@@ -1226,7 +1226,7 @@ describe("normalizeIncomingWidgets", () => {
     );
   });
 
-  it("keeps iTab anniversary out of release defaults and keeps persisted size/style data", () => {
+  it("keeps anniversary out of release defaults and keeps persisted size/style data", () => {
     const defaults = createDefaultWidgetList(true);
     const defaultAnniversary = defaults.find(
       (widget) => widget.id === "anniversary",
@@ -1238,7 +1238,7 @@ describe("normalizeIncomingWidgets", () => {
       [
         {
           id: "legacy-anniversary-id",
-          type: ITAB_ANNIVERSARY_WIDGET_TYPE,
+          type: SD_ANNIVERSARY_WIDGET_TYPE,
           enable: true,
           isPublic: true,
           w: 4,
@@ -1246,9 +1246,9 @@ describe("normalizeIncomingWidgets", () => {
           colSpan: 4,
           rowSpan: 2,
           data: {
-            runtime: "itab-anniversary",
+            runtime: "sd-anniversary",
             version: 1,
-            layoutSystem: ITAB_GRID_SCHEMA_VERSION,
+            layoutSystem: SD_GRID_SCHEMA_VERSION,
             sizeKey: "2x4",
             title: "发薪提醒",
             label: "发工资还有",
@@ -1259,7 +1259,7 @@ describe("normalizeIncomingWidgets", () => {
             textColor: "#2196f3",
             backgroundMode: "color",
             backgroundColor: "#ffffff",
-            backgroundImage: "/itab-live-assets/anniversary/yiyan-12.webp",
+            backgroundImage: "/sd-live-assets/anniversary/yiyan-12.webp",
             mask: 35,
           },
         },
@@ -1270,7 +1270,7 @@ describe("normalizeIncomingWidgets", () => {
     expect(
       normalized.find((widget) => widget.id === "legacy-anniversary-id"),
     ).toMatchObject({
-      type: ITAB_ANNIVERSARY_WIDGET_TYPE,
+      type: SD_ANNIVERSARY_WIDGET_TYPE,
       colSpan: 4,
       rowSpan: 2,
       w: 4,
@@ -1312,7 +1312,7 @@ describe("normalizeIncomingWidgets", () => {
           widget.data &&
           typeof widget.data === "object" &&
           (widget.data as { layoutSystem?: unknown }).layoutSystem ===
-            ITAB_GRID_SCHEMA_VERSION,
+            SD_GRID_SCHEMA_VERSION,
       ),
     ).toBe(true);
   });

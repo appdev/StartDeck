@@ -43,7 +43,7 @@ describe("WidgetSizeStrip", () => {
     ]);
   });
 
-  it("surfaces iTab runtime limit reasons in disabled size labels", () => {
+  it("surfaces runtime limit reasons in disabled size labels", () => {
     const state = resolveWidgetSizeState({
       widgetType: "custom-css",
       deviceKey: "mobile",

@@ -20,8 +20,8 @@ type AppVersionCheckResponse = {
 
 const STABLE_ASSET_PREFIXES = [
   "/assets/",
-  "/itab-live-assets/",
-  "/itab/",
+  "/sd-live-assets/",
+  "/sd/",
   "/api/icons/",
 ];
 const STABLE_ASSET_PATHS = [

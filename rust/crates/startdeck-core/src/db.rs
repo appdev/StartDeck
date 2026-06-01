@@ -15,8 +15,9 @@ use crate::models::{
     AppSnapshot, IconAssetRecord, IconRecord, NavGroup, NavItem, SystemConfig, UserRecord,
     WidgetRecord,
 };
+use crate::{migrate_legacy_widget_json_string, migrate_legacy_widget_string};
 
-const CURRENT_SCHEMA_VERSION: i64 = 8;
+const CURRENT_SCHEMA_VERSION: i64 = 9;
 
 pub async fn connect_sqlite(config: &RuntimeConfig) -> Result<SqlitePool> {
     config.ensure_dirs().context("create runtime directories")?;
@@ -243,7 +244,7 @@ pub async fn ensure_schema(pool: &SqlitePool) -> Result<()> {
         r#"CREATE INDEX IF NOT EXISTS idx_managed_icon_assets_blob
            ON managed_icon_assets(blob_id)"#,
         r#"INSERT OR IGNORE INTO schema_migrations(version, applied_at)
-           VALUES (8, CAST(strftime('%s','now') AS INTEGER) * 1000)"#,
+           VALUES (9, CAST(strftime('%s','now') AS INTEGER) * 1000)"#,
     ];
     for statement in statements {
         sqlx::query(statement).execute(pool).await?;
@@ -289,8 +290,11 @@ async fn migrate_schema(pool: &SqlitePool) -> Result<()> {
     if version < 7 {
         migrate_to_schema_7(pool).await?;
     }
-    if version < CURRENT_SCHEMA_VERSION {
+    if version < 8 {
         migrate_to_schema_8(pool).await?;
+    }
+    if version < CURRENT_SCHEMA_VERSION {
+        migrate_to_schema_9(pool).await?;
     }
     Ok(())
 }
@@ -512,6 +516,150 @@ async fn migrate_to_schema_8(pool: &SqlitePool) -> Result<()> {
         .bind(now_ms())
         .execute(pool)
         .await?;
+    Ok(())
+}
+
+async fn migrate_to_schema_9(pool: &SqlitePool) -> Result<()> {
+    migrate_legacy_widget_records(pool).await?;
+    migrate_legacy_widget_memos(pool).await?;
+    migrate_legacy_widget_runtime_cache(pool).await?;
+    migrate_legacy_widget_config_versions(pool).await?;
+    sqlx::query("INSERT OR IGNORE INTO schema_migrations(version, applied_at) VALUES (9, ?)")
+        .bind(now_ms())
+        .execute(pool)
+        .await?;
+    Ok(())
+}
+
+async fn migrate_legacy_widget_records(pool: &SqlitePool) -> Result<()> {
+    if !table_exists(pool, "widgets").await? {
+        return Ok(());
+    }
+    let rows = sqlx::query("SELECT username, id, widget_type, data_json, layout_json FROM widgets")
+        .fetch_all(pool)
+        .await?;
+    for row in rows {
+        let username = row.get::<String, _>("username");
+        let id = row.get::<String, _>("id");
+        let widget_type = row.get::<String, _>("widget_type");
+        let data_json = row.get::<String, _>("data_json");
+        let layout_json = row.get::<String, _>("layout_json");
+        let next_id = migrate_legacy_widget_string(&id);
+        let next_type = migrate_legacy_widget_string(&widget_type);
+        let next_data_json = migrate_legacy_widget_json_string(&data_json);
+        let next_layout_json = migrate_legacy_widget_json_string(&layout_json);
+        if next_id != id
+            || next_type != widget_type
+            || next_data_json != data_json
+            || next_layout_json != layout_json
+        {
+            sqlx::query(
+                r#"UPDATE widgets
+                   SET id = ?, widget_type = ?, data_json = ?, layout_json = ?
+                   WHERE username = ? AND id = ?"#,
+            )
+            .bind(next_id)
+            .bind(next_type)
+            .bind(next_data_json)
+            .bind(next_layout_json)
+            .bind(username)
+            .bind(id)
+            .execute(pool)
+            .await?;
+        }
+    }
+    Ok(())
+}
+
+async fn migrate_legacy_widget_memos(pool: &SqlitePool) -> Result<()> {
+    if !table_exists(pool, "memos").await? {
+        return Ok(());
+    }
+    let rows = sqlx::query("SELECT widget_id, username FROM memos")
+        .fetch_all(pool)
+        .await?;
+    for row in rows {
+        let widget_id = row.get::<String, _>("widget_id");
+        let username = row.get::<String, _>("username");
+        let next_widget_id = migrate_legacy_widget_string(&widget_id);
+        if next_widget_id != widget_id {
+            sqlx::query(
+                r#"UPDATE memos
+                   SET widget_id = ?
+                   WHERE widget_id = ? AND username = ?"#,
+            )
+            .bind(next_widget_id)
+            .bind(widget_id)
+            .bind(username)
+            .execute(pool)
+            .await?;
+        }
+    }
+    Ok(())
+}
+
+async fn migrate_legacy_widget_runtime_cache(pool: &SqlitePool) -> Result<()> {
+    if !table_exists(pool, "runtime_cache").await? {
+        return Ok(());
+    }
+    let rows = sqlx::query(
+        "SELECT kind, cache_key, value_json, expires_at, source_status, updated_at FROM runtime_cache",
+    )
+    .fetch_all(pool)
+    .await?;
+    for row in rows {
+        let kind = row.get::<String, _>("kind");
+        let cache_key = row.get::<String, _>("cache_key");
+        let value_json = row.get::<String, _>("value_json");
+        let expires_at = row.get::<Option<i64>, _>("expires_at");
+        let source_status = row.get::<String, _>("source_status");
+        let updated_at = row.get::<i64, _>("updated_at");
+        let next_kind = migrate_legacy_widget_string(&kind);
+        let next_cache_key = migrate_legacy_widget_string(&cache_key);
+        let next_value_json = migrate_legacy_widget_json_string(&value_json);
+        if next_kind != kind || next_cache_key != cache_key || next_value_json != value_json {
+            sqlx::query("DELETE FROM runtime_cache WHERE kind = ? AND cache_key = ?")
+                .bind(&kind)
+                .bind(&cache_key)
+                .execute(pool)
+                .await?;
+            sqlx::query(
+                r#"INSERT OR REPLACE INTO runtime_cache(
+                    kind, cache_key, value_json, expires_at, source_status, updated_at
+                ) VALUES (?, ?, ?, ?, ?, ?)"#,
+            )
+            .bind(next_kind)
+            .bind(next_cache_key)
+            .bind(next_value_json)
+            .bind(expires_at)
+            .bind(source_status)
+            .bind(updated_at)
+            .execute(pool)
+            .await?;
+        }
+    }
+    Ok(())
+}
+
+async fn migrate_legacy_widget_config_versions(pool: &SqlitePool) -> Result<()> {
+    if !table_exists(pool, "config_versions").await? {
+        return Ok(());
+    }
+    let rows = sqlx::query("SELECT id, snapshot_json FROM config_versions")
+        .fetch_all(pool)
+        .await?;
+    for row in rows {
+        let id = row.get::<String, _>("id");
+        let snapshot_json = row.get::<String, _>("snapshot_json");
+        let next_snapshot_json = migrate_legacy_widget_json_string(&snapshot_json);
+        if next_snapshot_json != snapshot_json {
+            sqlx::query("UPDATE config_versions SET snapshot_json = ? WHERE id = ?")
+                .bind(next_snapshot_json)
+                .bind(id)
+                .execute(pool)
+                .await?;
+        }
+    }
     Ok(())
 }
 

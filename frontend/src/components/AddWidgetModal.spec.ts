@@ -10,8 +10,8 @@ import type {
 import type { WidgetConfig } from "@/types";
 import { AI_USAGE_CATALOG_ID } from "@/features/ai-usage/aiUsageTypes";
 import { TAPD_DEFECTS_CATALOG_ID } from "@/features/tapd-defects/tapdDefectTypes";
-import { ITAB_FOOD_PICKER_CATALOG_ID } from "@/features/itab-food-picker/itabFoodPickerTypes";
-import { ITAB_NUMBER_UPPERCASE_CATALOG_ID } from "@/features/itab-number-uppercase/itabNumberUppercaseTypes";
+import { SD_FOOD_PICKER_CATALOG_ID } from "@/features/sd-food-picker/sdFoodPickerTypes";
+import { SD_NUMBER_UPPERCASE_CATALOG_ID } from "@/features/sd-number-uppercase/sdNumberUppercaseTypes";
 
 const mountModal = (
   onAddComponent = vi.fn<
@@ -55,32 +55,32 @@ const mountModal = (
     },
   });
 
-describe("AddWidgetModal iTab add UI", () => {
-  it("renders stable iTab selectors with only the widget add flow", async () => {
+describe("AddWidgetModal widget add UI", () => {
+  it("renders stable widget selectors with only the widget add flow", async () => {
     const wrapper = mountModal();
 
-    expect(wrapper.find('[data-testid="itab-add-modal"]').exists()).toBe(true);
-    expect(wrapper.find(".itab-add-sidebar").exists()).toBe(false);
-    expect(wrapper.find('[data-testid="itab-add-tab-widget"]').exists()).toBe(
+    expect(wrapper.find('[data-testid="sd-add-modal"]').exists()).toBe(true);
+    expect(wrapper.find(".sd-add-sidebar").exists()).toBe(false);
+    expect(wrapper.find('[data-testid="sd-add-tab-widget"]').exists()).toBe(
       false,
     );
-    expect(wrapper.find('[data-testid="itab-add-tab-custom"]').exists()).toBe(
+    expect(wrapper.find('[data-testid="sd-add-tab-custom"]').exists()).toBe(
       false,
     );
-    expect(wrapper.find('[data-testid="itab-add-search"]').exists()).toBe(true);
-    expect(wrapper.find('[data-testid="itab-add-destination"]').exists()).toBe(
+    expect(wrapper.find('[data-testid="sd-add-search"]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid="sd-add-destination"]').exists()).toBe(
       true,
     );
-    expect(wrapper.find('[data-testid="itab-add-widget-card"]').exists()).toBe(
+    expect(wrapper.find('[data-testid="sd-add-widget-card"]').exists()).toBe(
       true,
     );
-    expect(wrapper.find('[data-testid="itab-add-batch-button"]').exists()).toBe(
+    expect(wrapper.find('[data-testid="sd-add-batch-button"]').exists()).toBe(
       false,
     );
-    expect(wrapper.find('[data-testid="itab-add-tab-site"]').exists()).toBe(
+    expect(wrapper.find('[data-testid="sd-add-tab-site"]').exists()).toBe(
       false,
     );
-    expect(wrapper.find('[data-testid="itab-add-custom-url"]').exists()).toBe(
+    expect(wrapper.find('[data-testid="sd-add-custom-url"]').exists()).toBe(
       false,
     );
     expect(wrapper.text()).not.toContain("网址导航");
@@ -93,44 +93,44 @@ describe("AddWidgetModal iTab add UI", () => {
     expect(wrapper.text()).not.toContain("最近更新");
     expect(wrapper.text()).not.toContain("最受欢迎");
     expect(wrapper.text()).not.toContain("其他");
-    expect(wrapper.find('[data-testid="itab-add-rank-tab"]').exists()).toBe(
+    expect(wrapper.find('[data-testid="sd-add-rank-tab"]').exists()).toBe(
       false,
     );
     expect(
       wrapper
-        .findAll('[data-testid="itab-add-category-chip"]')
+        .findAll('[data-testid="sd-add-category-chip"]')
         .map((chip) => chip.text()),
     ).toEqual(["全部", "效率", "工具", "系统", "开发", "设计", "创意", "娱乐"]);
-    expect(wrapper.find(".itab-add-replica-popularity").exists()).toBe(false);
+    expect(wrapper.find(".sd-add-replica-popularity").exists()).toBe(false);
     const initialCards = wrapper.findAll(
-      '[data-testid="itab-add-widget-card"]',
+      '[data-testid="sd-add-widget-card"]',
     );
     expect(
       initialCards.slice(0, 4).map((card) => card.find("h3").text()),
     ).toEqual(["时钟", "天气", "纪念日", "日历"]);
     expect(
-      wrapper.find(".itab-add-widget-preview-frame").attributes("src"),
+      wrapper.find(".sd-add-widget-preview-frame").attributes("src"),
     ).toContain("/widget-preview?");
     expect(
       wrapper
-        .findAll('[data-testid="itab-add-category-chip"]')[0]!
+        .findAll('[data-testid="sd-add-category-chip"]')[0]!
         .attributes("aria-pressed"),
     ).toBe("true");
-    expect(wrapper.find(".itab-add-window-controls").exists()).toBe(true);
-    expect(wrapper.find(".itab-add-window-controls .is-green").exists()).toBe(
+    expect(wrapper.find(".sd-add-window-controls").exists()).toBe(true);
+    expect(wrapper.find(".sd-add-window-controls .is-green").exists()).toBe(
       true,
     );
-    await wrapper.find(".itab-add-window-controls .is-red").trigger("click");
+    await wrapper.find(".sd-add-window-controls .is-red").trigger("click");
     expect(wrapper.emitted("update:show")).toEqual([[false]]);
-    expect(wrapper.find(".itab-add-replica-dots").exists()).toBe(false);
-    expect(wrapper.find(".itab-add-size-button").exists()).toBe(false);
+    expect(wrapper.find(".sd-add-replica-dots").exists()).toBe(false);
+    expect(wrapper.find(".sd-add-size-button").exists()).toBe(false);
 
-    const allTabCard = wrapper.find('[data-testid="itab-add-widget-card"]');
+    const allTabCard = wrapper.find('[data-testid="sd-add-widget-card"]');
     expect(allTabCard.classes()).toContain("is-replica-card");
     expect(allTabCard.classes()).toContain("is-catalog-card");
-    expect(allTabCard.find(".itab-add-replica-heading").exists()).toBe(true);
-    expect(allTabCard.find(".itab-add-replica-preview").exists()).toBe(true);
-    expect(wrapper.find(".itab-add-size-button").exists()).toBe(false);
+    expect(allTabCard.find(".sd-add-replica-heading").exists()).toBe(true);
+    expect(allTabCard.find(".sd-add-replica-preview").exists()).toBe(true);
+    expect(wrapper.find(".sd-add-size-button").exists()).toBe(false);
   });
 
   it("emits default widget size through the shared payload contract", async () => {
@@ -141,11 +141,11 @@ describe("AddWidgetModal iTab add UI", () => {
     }));
     const wrapper = mountModal(addSpy);
 
-    await wrapper.find('[data-testid="itab-add-search"]').setValue("时钟");
+    await wrapper.find('[data-testid="sd-add-search"]').setValue("时钟");
     await wrapper.vm.$nextTick();
 
-    expect(wrapper.find(".itab-add-size-button").exists()).toBe(false);
-    await wrapper.find('[data-testid="itab-add-card-add"]').trigger("click");
+    expect(wrapper.find(".sd-add-size-button").exists()).toBe(false);
+    await wrapper.find('[data-testid="sd-add-card-add"]').trigger("click");
 
     expect(addSpy).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -174,13 +174,13 @@ describe("AddWidgetModal iTab add UI", () => {
     ]);
 
     const systemChip = wrapper
-      .findAll('[data-testid="itab-add-category-chip"]')
+      .findAll('[data-testid="sd-add-category-chip"]')
       .find((chip) => chip.text() === "系统");
     if (!systemChip) throw new Error("system category chip not found");
     await systemChip.trigger("click");
     await wrapper.vm.$nextTick();
 
-    const cards = wrapper.findAll('[data-testid="itab-add-widget-card"]');
+    const cards = wrapper.findAll('[data-testid="sd-add-widget-card"]');
     const dockerCard = cards.find(
       (card) => card.find("h3").text() === "Docker",
     );
@@ -189,15 +189,15 @@ describe("AddWidgetModal iTab add UI", () => {
     );
     if (!dockerCard || !systemCard) throw new Error("system widgets not found");
 
-    const dockerButton = dockerCard.find('[data-testid="itab-add-card-add"]');
+    const dockerButton = dockerCard.find('[data-testid="sd-add-card-add"]');
     expect(dockerButton.text()).toBe("启用");
     expect(dockerButton.attributes("disabled")).toBeUndefined();
-    expect(systemCard.find('[data-testid="itab-add-card-add"]').text()).toBe(
+    expect(systemCard.find('[data-testid="sd-add-card-add"]').text()).toBe(
       "已启用",
     );
     expect(
       systemCard
-        .find('[data-testid="itab-add-card-add"]')
+        .find('[data-testid="sd-add-card-add"]')
         .attributes("disabled"),
     ).toBeDefined();
 
@@ -220,15 +220,15 @@ describe("AddWidgetModal iTab add UI", () => {
     }));
     const wrapper = mountModal(addSpy);
 
-    await wrapper.find('[data-testid="itab-add-search"]').setValue("天气");
+    await wrapper.find('[data-testid="sd-add-search"]').setValue("天气");
     await wrapper.vm.$nextTick();
 
     const weatherCard = wrapper
-      .findAll(".itab-add-widget-card.is-replica-card")
+      .findAll(".sd-add-widget-card.is-replica-card")
       .find((card) => card.find("h3").text() === "天气");
     if (!weatherCard) throw new Error("weather catalog card not found");
 
-    const addButton = weatherCard.find('[data-testid="itab-add-card-add"]');
+    const addButton = weatherCard.find('[data-testid="sd-add-card-add"]');
     expect(addButton.text()).toBe("添加");
     expect(addButton.attributes("disabled")).toBeUndefined();
 
@@ -253,15 +253,15 @@ describe("AddWidgetModal iTab add UI", () => {
     }));
     const wrapper = mountModal(addSpy);
 
-    await wrapper.find('[data-testid="itab-add-search"]').setValue("本机IP");
+    await wrapper.find('[data-testid="sd-add-search"]').setValue("本机IP");
     await wrapper.vm.$nextTick();
 
     const ipCard = wrapper
-      .findAll(".itab-add-widget-card.is-replica-card")
+      .findAll(".sd-add-widget-card.is-replica-card")
       .find((card) => card.find("h3").text() === "本机IP");
     if (!ipCard) throw new Error("IP catalog card not found");
 
-    const addButton = ipCard.find('[data-testid="itab-add-card-add"]');
+    const addButton = ipCard.find('[data-testid="sd-add-card-add"]');
     expect(addButton.text()).toBe("添加");
     expect(addButton.attributes("disabled")).toBeUndefined();
 
@@ -278,7 +278,7 @@ describe("AddWidgetModal iTab add UI", () => {
     );
   });
 
-  it("maps the iTab food picker catalog search to the migrated multi-instance add flow", async () => {
+  it("maps the food picker catalog search to the migrated multi-instance add flow", async () => {
     const addSpy = vi.fn(async (payload: AddComponentPayload) => ({
       status: "success" as const,
       id: payload.kind === "widget" ? payload.catalogItemId : "created",
@@ -287,16 +287,16 @@ describe("AddWidgetModal iTab add UI", () => {
     const wrapper = mountModal(addSpy);
 
     await wrapper
-      .find('[data-testid="itab-add-search"]')
+      .find('[data-testid="sd-add-search"]')
       .setValue("今天吃什么");
     await wrapper.vm.$nextTick();
 
     const foodCard = wrapper
-      .findAll('[data-testid="itab-add-widget-card"]')
+      .findAll('[data-testid="sd-add-widget-card"]')
       .find((card) => card.find("h3").text() === "今天吃什么");
     if (!foodCard) throw new Error("food picker catalog card not found");
 
-    const addButton = foodCard.find('[data-testid="itab-add-card-add"]');
+    const addButton = foodCard.find('[data-testid="sd-add-card-add"]');
     expect(addButton.text()).toBe("添加");
     expect(addButton.attributes("disabled")).toBeUndefined();
 
@@ -305,7 +305,7 @@ describe("AddWidgetModal iTab add UI", () => {
     expect(addSpy).toHaveBeenCalledWith(
       expect.objectContaining({
         kind: "widget",
-        catalogItemId: ITAB_FOOD_PICKER_CATALOG_ID,
+        catalogItemId: SD_FOOD_PICKER_CATALOG_ID,
         destinationGroupId: "home",
         saveMode: "dirty",
         sizeKey: "2x2",
@@ -321,15 +321,15 @@ describe("AddWidgetModal iTab add UI", () => {
     }));
     const wrapper = mountModal(addSpy);
 
-    await wrapper.find('[data-testid="itab-add-search"]').setValue("金额换算");
+    await wrapper.find('[data-testid="sd-add-search"]').setValue("金额换算");
     await wrapper.vm.$nextTick();
 
     const numberCard = wrapper
-      .findAll('[data-testid="itab-add-widget-card"]')
+      .findAll('[data-testid="sd-add-widget-card"]')
       .find((card) => card.find("h3").text() === "金额换算");
     if (!numberCard) throw new Error("number uppercase catalog card not found");
 
-    const addButton = numberCard.find('[data-testid="itab-add-card-add"]');
+    const addButton = numberCard.find('[data-testid="sd-add-card-add"]');
     expect(addButton.text()).toBe("添加");
     expect(addButton.attributes("disabled")).toBeUndefined();
 
@@ -338,7 +338,7 @@ describe("AddWidgetModal iTab add UI", () => {
     expect(addSpy).toHaveBeenCalledWith(
       expect.objectContaining({
         kind: "widget",
-        catalogItemId: ITAB_NUMBER_UPPERCASE_CATALOG_ID,
+        catalogItemId: SD_NUMBER_UPPERCASE_CATALOG_ID,
         destinationGroupId: "home",
         saveMode: "dirty",
         sizeKey: "2x2",
@@ -354,15 +354,15 @@ describe("AddWidgetModal iTab add UI", () => {
     }));
     const wrapper = mountModal(addSpy);
 
-    await wrapper.find('[data-testid="itab-add-search"]').setValue("AI 使用量");
+    await wrapper.find('[data-testid="sd-add-search"]').setValue("AI 使用量");
     await wrapper.vm.$nextTick();
 
     const aiUsageCard = wrapper
-      .findAll('[data-testid="itab-add-widget-card"]')
+      .findAll('[data-testid="sd-add-widget-card"]')
       .find((card) => card.find("h3").text() === "AI 使用量");
     if (!aiUsageCard) throw new Error("AI usage catalog card not found");
 
-    const addButton = aiUsageCard.find('[data-testid="itab-add-card-add"]');
+    const addButton = aiUsageCard.find('[data-testid="sd-add-card-add"]');
     expect(addButton.text()).toBe("添加");
     expect(addButton.attributes("disabled")).toBeUndefined();
 
@@ -387,15 +387,15 @@ describe("AddWidgetModal iTab add UI", () => {
     }));
     const wrapper = mountModal(addSpy);
 
-    await wrapper.find('[data-testid="itab-add-search"]').setValue("TAPD 缺陷");
+    await wrapper.find('[data-testid="sd-add-search"]').setValue("TAPD 缺陷");
     await wrapper.vm.$nextTick();
 
     const tapdCard = wrapper
-      .findAll('[data-testid="itab-add-widget-card"]')
+      .findAll('[data-testid="sd-add-widget-card"]')
       .find((card) => card.find("h3").text() === "TAPD 缺陷");
     if (!tapdCard) throw new Error("TAPD defects catalog card not found");
 
-    const addButton = tapdCard.find('[data-testid="itab-add-card-add"]');
+    const addButton = tapdCard.find('[data-testid="sd-add-card-add"]');
     expect(addButton.text()).toBe("添加");
     expect(addButton.attributes("disabled")).toBeUndefined();
 
@@ -420,7 +420,7 @@ describe("AddWidgetModal iTab add UI", () => {
     }));
     const wrapper = mountModal(addSpy);
 
-    const cards = wrapper.findAll(".itab-add-widget-card.is-replica-card");
+    const cards = wrapper.findAll(".sd-add-widget-card.is-replica-card");
     const clockCard = cards.find((card) => card.find("h3").text() === "时钟");
     const memoCard = cards.find((card) => card.find("h3").text() === "备忘录");
     const todoCard = cards.find((card) => card.find("h3").text() === "待办");
@@ -436,12 +436,12 @@ describe("AddWidgetModal iTab add UI", () => {
     if (!poemCard) throw new Error("poem catalog card not found");
     if (!pomodoroCard) throw new Error("pomodoro catalog card not found");
 
-    const clockButton = clockCard.find('[data-testid="itab-add-card-add"]');
-    const memoButton = memoCard.find('[data-testid="itab-add-card-add"]');
-    const todoButton = todoCard.find('[data-testid="itab-add-card-add"]');
-    const poemButton = poemCard.find('[data-testid="itab-add-card-add"]');
+    const clockButton = clockCard.find('[data-testid="sd-add-card-add"]');
+    const memoButton = memoCard.find('[data-testid="sd-add-card-add"]');
+    const todoButton = todoCard.find('[data-testid="sd-add-card-add"]');
+    const poemButton = poemCard.find('[data-testid="sd-add-card-add"]');
     const pomodoroButton = pomodoroCard.find(
-      '[data-testid="itab-add-card-add"]',
+      '[data-testid="sd-add-card-add"]',
     );
     expect(clockButton.text()).toBe("添加");
     expect(memoButton.text()).toBe("添加");
@@ -507,25 +507,25 @@ describe("AddWidgetModal iTab add UI", () => {
     );
   });
 
-  it("reports canonical iTab weather singleton state when matching widgets already exist", async () => {
+  it("reports canonical weather singleton state when matching widgets already exist", async () => {
     const enabled = mountModal(undefined, undefined);
     await enabled.setProps({
       widgets: [
         {
           id: "weather",
-          type: "itab-weather-00",
+          type: "sd-weather-00",
           enable: true,
           isPublic: true,
         },
       ],
     });
-    await enabled.find('[data-testid="itab-add-search"]').setValue("天气");
+    await enabled.find('[data-testid="sd-add-search"]').setValue("天气");
     await enabled.vm.$nextTick();
-    expect(enabled.find('[data-testid="itab-add-card-add"]').text()).toBe(
+    expect(enabled.find('[data-testid="sd-add-card-add"]').text()).toBe(
       "已启用",
     );
     expect(
-      enabled.find('[data-testid="itab-add-card-add"]').attributes("disabled"),
+      enabled.find('[data-testid="sd-add-card-add"]').attributes("disabled"),
     ).toBeDefined();
 
     const disabled = mountModal(undefined, undefined);
@@ -533,19 +533,19 @@ describe("AddWidgetModal iTab add UI", () => {
       widgets: [
         {
           id: "weather",
-          type: "itab-weather-00",
+          type: "sd-weather-00",
           enable: false,
           isPublic: true,
         },
       ],
     });
-    await disabled.find('[data-testid="itab-add-search"]').setValue("天气");
+    await disabled.find('[data-testid="sd-add-search"]').setValue("天气");
     await disabled.vm.$nextTick();
-    expect(disabled.find('[data-testid="itab-add-card-add"]').text()).toBe(
+    expect(disabled.find('[data-testid="sd-add-card-add"]').text()).toBe(
       "启用",
     );
     expect(
-      disabled.find('[data-testid="itab-add-card-add"]').attributes("disabled"),
+      disabled.find('[data-testid="sd-add-card-add"]').attributes("disabled"),
     ).toBeUndefined();
   });
 });

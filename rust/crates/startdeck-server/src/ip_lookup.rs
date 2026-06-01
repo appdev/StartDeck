@@ -122,7 +122,7 @@ pub(crate) async fn resolve_ip_location_response(
     refresh: bool,
 ) -> Value {
     let client_ip = request_ip_from_headers(headers).unwrap_or("127.0.0.1");
-    if !state.remote_itab_fetch_enabled {
+    if !state.remote_widget_fetch_enabled {
         return local_ip_response(query_ip.unwrap_or(client_ip), client_ip);
     }
 

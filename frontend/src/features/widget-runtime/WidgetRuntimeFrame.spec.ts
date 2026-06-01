@@ -29,7 +29,7 @@ vi.mock("./widgetRuntimeRegistry", () => ({
           <span data-runtime-action data-testid="runtime-action">Action</span>
           <span data-docker-action data-testid="docker-action">Docker</span>
           <span data-system-status-action data-testid="system-action">System</span>
-          <span data-itab-inner-control data-testid="itab-control">iTab</span>
+          <span data-sd-inner-control data-testid="sd-control">Control</span>
         </div>
       `,
     }),
@@ -47,7 +47,7 @@ const mountFrame = (props: { editing?: boolean; isDragging?: boolean } = {}) =>
     props: {
       widget: {
         id: "weather",
-        type: "itab-weather-00",
+        type: "sd-weather-00",
         enable: true,
         isPublic: true,
       },
@@ -114,7 +114,7 @@ describe("WidgetRuntimeFrame", () => {
       "runtime-action",
       "docker-action",
       "system-action",
-      "itab-control",
+      "sd-control",
     ];
 
     for (const target of ignoredTargets) {

@@ -1,10 +1,10 @@
-import type { ItabWidgetSizeKey } from "@/features/itab-widgets/itabSizePresets";
+import type { SdWidgetSizeKey } from "@/features/sd-widgets/sdSizePresets";
 
 export const TAPD_DEFECTS_WIDGET_TYPE = "tapd-defects";
 export const TAPD_DEFECTS_CATALOG_ID = "tapd-defects";
 export const TAPD_DEFECTS_RUNTIME = "tapd-defects";
 export const TAPD_DEFECTS_DATA_VERSION = 1;
-export const TAPD_DEFECTS_DEFAULT_SIZE: ItabWidgetSizeKey = "2x2";
+export const TAPD_DEFECTS_DEFAULT_SIZE: SdWidgetSizeKey = "2x2";
 export const TAPD_ACTIONABLE_DEFECT_STATUS_VALUES = [
   "new",
   "assigned",
@@ -101,7 +101,7 @@ export interface TapdDefectWidgetData {
   runtime: typeof TAPD_DEFECTS_RUNTIME;
   layoutSystem?: string;
   version: typeof TAPD_DEFECTS_DATA_VERSION;
-  sizeKey: ItabWidgetSizeKey;
+  sizeKey: SdWidgetSizeKey;
   workspaceId: string;
   projectName: string;
   displayName?: string;
