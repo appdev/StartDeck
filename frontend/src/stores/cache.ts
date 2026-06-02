@@ -17,7 +17,7 @@ const LEGACY_CACHE_KEY = "start-deck-data-cache";
 const CACHE_KEY_PREFIX = "start-deck-data-cache";
 const GUEST_CACHE_KEY = `${CACHE_KEY_PREFIX}:guest`;
 const GUEST_CACHE_USER = "__guest__";
-const GUEST_CACHE_SCHEMA_VERSION = 2;
+const GUEST_CACHE_SCHEMA_VERSION = 3;
 const CACHE_WRITE_GUARD_MS = 15000;
 const SERVER_SNAPSHOT_TIMEOUT_MS = 60000;
 
@@ -137,7 +137,9 @@ export const useCacheStore = defineStore("cache", () => {
           (currentUser === "admin" && cachedUser === "admin")
         : cachedUser === GUEST_CACHE_USER &&
           cache.isGuest === true &&
-          cache.guestCacheSchemaVersion === GUEST_CACHE_SCHEMA_VERSION;
+          cache.guestCacheSchemaVersion === GUEST_CACHE_SCHEMA_VERSION &&
+          ((Array.isArray(cache.groups) && cache.groups.length > 0) ||
+            (Array.isArray(cache.widgets) && cache.widgets.length > 0));
       if (!isMatch) return false;
 
       const sanitizedCache = sanitizeSnapshotIcons(cache);
