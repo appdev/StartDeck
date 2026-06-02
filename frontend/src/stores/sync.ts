@@ -150,10 +150,28 @@ export const useSyncStore = defineStore("sync", () => {
     data: Record<string, unknown>,
   ): "auth" | "guest" => {
     if (data.isGuest === true) return "guest";
+    if (
+      data.authenticated === true &&
+      typeof data.sessionGeneration === "string"
+    )
+      return "auth";
     if (data.isGuest === false) return "auth";
     if (auth.isLogged) return "auth";
     if (data.username && data.version !== undefined) return "auth";
     return "auth";
+  };
+
+  const restoreAuthFromSnapshot = (data: Record<string, unknown>) => {
+    if (auth.isLogged) return;
+    if (data.authenticated !== true) return;
+    const username =
+      typeof data.username === "string" ? data.username.trim() : "";
+    const sessionGeneration =
+      typeof data.sessionGeneration === "string"
+        ? data.sessionGeneration.trim()
+        : "";
+    if (!username || !sessionGeneration) return;
+    auth.applyServerSession(username, sessionGeneration);
   };
 
   const syncUsernameFromServer = (
@@ -286,6 +304,9 @@ export const useSyncStore = defineStore("sync", () => {
       hadAuthenticatedSession = false;
       auth.clearLocalSession();
       resetActiveStateForGuest();
+    }
+    if (responseRole === "auth") {
+      restoreAuthFromSnapshot(data);
     }
     const shouldApply =
       responseRole === "auth" ? auth.isLogged : !auth.isLogged; // guest data must not overwrite an authenticated session

@@ -715,7 +715,7 @@ async fn get_data(State(state): State<AppState>, headers: HeaderMap) -> Result<R
     match session_cookie_auth(&headers, &state) {
         SessionCookieAuth::Valid(session) => {
             let snapshot = app_snapshot(&state.pool, &session.username).await?;
-            Ok(Json(snapshot_to_api_value(snapshot)).into_response())
+            Ok(Json(authenticated_snapshot_to_api_value(snapshot, &session)).into_response())
         }
         SessionCookieAuth::Missing => {
             Ok(Json(default_template_to_api_value(state.config.as_ref()).await?).into_response())
@@ -1538,6 +1538,13 @@ fn snapshot_to_api_value(snapshot: AppSnapshot) -> Value {
         "widgets": snapshot.widgets.iter().map(widget_to_api_value).collect::<Vec<_>>(),
         "version": snapshot.version,
     })
+}
+
+fn authenticated_snapshot_to_api_value(snapshot: AppSnapshot, session: &AuthSession) -> Value {
+    let mut out = object_from_value(snapshot_to_api_value(snapshot));
+    out.insert("authenticated".to_string(), json!(true));
+    out.insert("sessionGeneration".to_string(), json!(session.sid.clone()));
+    Value::Object(out)
 }
 
 async fn default_template_to_api_value(config: &RuntimeConfig) -> Result<Value, ApiError> {

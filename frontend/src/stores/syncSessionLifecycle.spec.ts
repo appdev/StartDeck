@@ -179,6 +179,84 @@ describe("sync session lifecycle", () => {
     expect(sync.isClientReady).toBe(true);
   });
 
+  it("restores authenticated state from an explicit data snapshot after session bootstrap fails", async () => {
+    const sync = useSyncStore();
+    const auth = useAuthStore();
+    const groups = useGroupsStore();
+    const widgets = useWidgetsStore();
+
+    localStorage.setItem("start-deck-username", "admin");
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = String(input);
+        if (url.includes("/api/session")) {
+          throw new TypeError("session endpoint blocked");
+        }
+        if (url.includes("/api/data")) {
+          return new Response(
+            JSON.stringify({
+              appConfig: { customTitle: "Private Default" },
+              groups: [
+                {
+                  id: "private-main",
+                  title: "Private",
+                  items: [{ id: "private-link", title: "Private Link" }],
+                },
+              ],
+              widgets: [
+                {
+                  id: "auth-clock",
+                  type: SD_CLOCK_WIDGET_TYPE,
+                  enable: true,
+                  x: 0,
+                  y: 0,
+                  w: 2,
+                  h: 2,
+                  colSpan: 2,
+                  rowSpan: 2,
+                  data: {
+                    runtime: "sd-clock",
+                    layoutSystem: SD_GRID_SCHEMA_VERSION,
+                    version: 1,
+                    sizeKey: "2x2",
+                  },
+                },
+              ],
+              username: "admin",
+              authenticated: true,
+              sessionGeneration: "server-session-generation",
+              version: 20,
+            }),
+            {
+              status: 200,
+              headers: { "Content-Type": "application/json" },
+            },
+          );
+        }
+        return new Response(JSON.stringify({ success: true }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        });
+      }),
+    );
+
+    await sync.init();
+    await nextTick();
+    await Promise.resolve();
+
+    expect(auth.isLogged).toBe(true);
+    expect(auth.username).toBe("admin");
+    expect(auth.sessionGeneration).toBe("server-session-generation");
+    expect(localStorage.getItem("start-deck-username")).toBe("admin");
+    expect(groups.groups[0]?.id).toBe("private-main");
+    expect(groups.groups[0]?.items[0]?.id).toBe("private-link");
+    expect(
+      widgets.widgets.some((widget) => widget.type === SD_CLOCK_WIDGET_TYPE),
+    ).toBe(true);
+    expect(sync.isClientReady).toBe(true);
+  });
+
   it("ignores contaminated legacy guest cache during logged-out startup", async () => {
     localStorage.setItem(
       "start-deck-data-cache:guest",

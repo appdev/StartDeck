@@ -58,12 +58,21 @@ export const useAuthStore = defineStore("auth", () => {
     localStorage.removeItem(USERNAME_KEY);
   };
 
+  const applyServerSession = (usr: string, generation: string) => {
+    const nextUsername = usr.trim();
+    const nextGeneration = generation.trim();
+    if (!nextUsername || !nextGeneration) return false;
+    username.value = nextUsername;
+    sessionGeneration.value = nextGeneration;
+    sessionReady.value = true;
+    localStorage.setItem(USERNAME_KEY, nextUsername);
+    deleteLegacyToken();
+    return true;
+  };
+
   const applySession = (data: SessionResponse) => {
     if (data.authenticated && data.username && data.sessionGeneration) {
-      username.value = data.username;
-      sessionGeneration.value = data.sessionGeneration;
-      localStorage.setItem(USERNAME_KEY, data.username);
-      deleteLegacyToken();
+      applyServerSession(data.username, data.sessionGeneration);
       return;
     }
     clearLocalSession();
@@ -198,6 +207,7 @@ export const useAuthStore = defineStore("auth", () => {
     password,
     getHeaders,
     clearLocalSession,
+    applyServerSession,
     bootstrapSession,
     login,
     logout,

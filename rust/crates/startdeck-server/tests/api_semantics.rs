@@ -769,6 +769,7 @@ async fn login_and_read_data_snapshot() {
     assert_eq!(body["success"], true);
     assert!(body.get("token").is_none());
     assert!(body["sessionGeneration"].as_str().unwrap().len() > 20);
+    let session_generation = body["sessionGeneration"].as_str().unwrap().to_string();
 
     let response = app
         .clone()
@@ -784,6 +785,8 @@ async fn login_and_read_data_snapshot() {
     assert_eq!(response.status(), StatusCode::OK);
     let body: Value =
         serde_json::from_slice(&to_bytes(response.into_body(), usize::MAX).await.unwrap()).unwrap();
+    assert_eq!(body["authenticated"], true);
+    assert_eq!(body["sessionGeneration"], session_generation);
     assert_eq!(body["appConfig"]["customTitle"], "Demo");
     assert_eq!(body["groups"][0]["title"], "Main");
     assert!(body["groups"][0].get("settings").is_none());
