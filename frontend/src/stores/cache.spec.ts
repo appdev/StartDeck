@@ -117,6 +117,31 @@ describe("cache store auth scope", () => {
     expect(version.value).toBe(0);
   });
 
+  it("rejects older guest cache schemas even with a guest marker", () => {
+    const cache = useCacheStore();
+    const widgets = useWidgetsStore();
+    const groups = useGroupsStore();
+
+    localStorage.setItem(
+      "start-deck-data-cache:guest",
+      JSON.stringify({
+        username: "__guest__",
+        isGuest: true,
+        groups: [{ id: "private", title: "Private", items: [] }],
+        widgets: [privateWidget],
+        version: 9,
+      }),
+    );
+
+    const version = ref(0);
+    const loaded = cache.loadFromCache(version);
+
+    expect(loaded).toBe(false);
+    expect(groups.groups).toEqual([]);
+    expect(widgets.widgets).toEqual([]);
+    expect(version.value).toBe(0);
+  });
+
   it("sanitizes navigation icon refs before writing and after reading cache", () => {
     const cache = useCacheStore();
     const groups = useGroupsStore();
@@ -155,6 +180,7 @@ describe("cache store auth scope", () => {
     expect(raw.groups[0].items[0].icon).toBe("");
     expect(raw.groups[0].items[1].icon).toBe("/api/icons/icn_valid_1");
     expect(raw.isGuest).toBe(true);
+    expect(raw.guestCacheSchemaVersion).toBe(2);
 
     groups.groups = [];
     const version = ref(0);

@@ -262,6 +262,7 @@ describe("sync session lifecycle", () => {
       "start-deck-data-cache:guest",
       JSON.stringify({
         username: "__guest__",
+        isGuest: true,
         groups: [
           {
             id: "private-main",
