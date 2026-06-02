@@ -616,7 +616,7 @@ async fn login_inner(
         Json(json!({"success": true, "username": username, "sessionGeneration": sid}))
             .into_response();
     insert_no_store(response.headers_mut());
-    insert_expired_session_cookies(response.headers_mut(), &headers, secure);
+    insert_expired_domain_session_cookies(response.headers_mut(), &headers, secure);
     insert_set_cookie(response.headers_mut(), session_cookie(&token, secure));
     Ok(response)
 }
@@ -2520,6 +2520,14 @@ fn insert_expired_session_cookies(
     secure: bool,
 ) {
     insert_set_cookie(response_headers, expired_session_cookie(secure));
+    insert_expired_domain_session_cookies(response_headers, request_headers, secure);
+}
+
+fn insert_expired_domain_session_cookies(
+    response_headers: &mut HeaderMap,
+    request_headers: &HeaderMap,
+    secure: bool,
+) {
     for domain in session_cookie_clear_domains(request_headers) {
         insert_set_cookie(
             response_headers,

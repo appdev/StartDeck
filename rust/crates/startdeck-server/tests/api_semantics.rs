@@ -907,10 +907,7 @@ async fn login_sets_http_only_cookie_without_token_and_no_store() {
     assert_eq!(response.status(), StatusCode::OK);
     assert_eq!(response_header(&response, "cache-control"), "no-store");
     let set_cookies = response_headers(&response, "set-cookie");
-    assert_eq!(set_cookies.len(), 2);
-    assert!(set_cookies[0].contains("startdeck_session="));
-    assert!(set_cookies[0].contains("Max-Age=0"));
-    assert!(set_cookies[0].contains("Expires=Thu, 01 Jan 1970 00:00:00 GMT"));
+    assert_eq!(set_cookies.len(), 1);
     let set_cookie = set_cookies.last().unwrap();
     assert!(set_cookie.starts_with("startdeck_session="));
     assert!(set_cookie.contains("HttpOnly"));
@@ -946,14 +943,12 @@ async fn login_expires_stale_domain_session_cookies_before_setting_new_cookie() 
         .unwrap();
     assert_eq!(response.status(), StatusCode::OK);
     let set_cookies = response_headers(&response, "set-cookie");
-    assert_eq!(set_cookies.len(), 4);
+    assert_eq!(set_cookies.len(), 3);
     assert!(set_cookies[0].contains("startdeck_session="));
     assert!(set_cookies[0].contains("Max-Age=0"));
-    assert!(!set_cookies[0].contains("Domain="));
+    assert!(set_cookies[0].contains("Domain=start.zsl.one"));
     assert!(set_cookies[1].contains("Max-Age=0"));
-    assert!(set_cookies[1].contains("Domain=start.zsl.one"));
-    assert!(set_cookies[2].contains("Max-Age=0"));
-    assert!(set_cookies[2].contains("Domain=zsl.one"));
+    assert!(set_cookies[1].contains("Domain=zsl.one"));
 
     let session_cookie = set_cookies.last().unwrap();
     assert!(session_cookie.starts_with("startdeck_session="));
