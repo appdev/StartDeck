@@ -3,10 +3,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createPinia, setActivePinia } from "pinia";
 import { nextTick, ref } from "vue";
 import { useSyncStore } from "./sync";
+import { useAuthStore } from "./auth";
 import { useGroupsStore } from "./groups";
 import { useWidgetsStore } from "./widgets";
 import { SD_GRID_SCHEMA_VERSION } from "@/features/sd-widgets/sdGrid";
 import { SD_CLOCK_WIDGET_TYPE } from "@/features/sd-clock/sdClockTypes";
+import { sessionFetch } from "@/utils/sessionFetch";
 
 vi.mock("@vueuse/core", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@vueuse/core")>();
@@ -21,6 +23,17 @@ vi.mock("@vueuse/core", async (importOriginal) => {
     }),
   };
 });
+
+vi.mock("@/utils/offlineQueue", () => ({
+  enqueue: vi.fn(async () => undefined),
+  enqueueWidget: vi.fn(async () => undefined),
+  size: vi.fn(async () => 0),
+  clear: vi.fn(async () => undefined),
+  getAll: vi.fn(async () => []),
+  quarantineMismatched: vi.fn(async () => undefined),
+  replay: vi.fn(async () => undefined),
+  remove: vi.fn(async () => undefined),
+}));
 
 const guestSnapshot = {
   appConfig: { customTitle: "Guest Default" },
@@ -60,6 +73,54 @@ const guestSnapshot = {
   username: "__guest__",
   isGuest: true,
   version: 0,
+};
+
+const privateWidget = {
+  id: "private-todo",
+  type: "todo",
+  enable: true,
+  isPublic: false,
+  x: 0,
+  y: 0,
+  w: 2,
+  h: 2,
+  data: [{ id: "secret", text: "private task", done: false }],
+};
+
+const seedAuthenticatedState = () => {
+  const auth = useAuthStore();
+  const groups = useGroupsStore();
+  const widgets = useWidgetsStore();
+
+  auth.sessionReady = true;
+  auth.username = "admin";
+  auth.sessionGeneration = "stale-session";
+  localStorage.setItem("start-deck-username", "admin");
+  groups.groups = [
+    {
+      id: "private-main",
+      title: "Private",
+      items: [
+        {
+          id: "private-link",
+          title: "Private Link",
+          url: "https://private.example/",
+          icon: "",
+        },
+      ],
+    },
+  ];
+  widgets.widgets = [privateWidget];
+  widgets.updateLastSavedLayout();
+  return { auth, groups, widgets };
+};
+
+const waitForAsyncGuestTransition = async () => {
+  for (let i = 0; i < 8; i++) {
+    await Promise.resolve();
+    await nextTick();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  }
 };
 
 describe("sync session lifecycle", () => {
@@ -116,5 +177,86 @@ describe("sync session lifecycle", () => {
       type: SD_CLOCK_WIDGET_TYPE,
     });
     expect(sync.isClientReady).toBe(true);
+  });
+
+  it("replaces authenticated content with guest data after a session invalid event", async () => {
+    const sync = useSyncStore();
+    const { auth, groups, widgets } = seedAuthenticatedState();
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = String(input);
+        if (url.includes("/api/protected")) {
+          return new Response(JSON.stringify({ error: "invalid_token" }), {
+            status: 401,
+            headers: { "Content-Type": "application/json" },
+          });
+        }
+        if (url.includes("/api/session")) {
+          return new Response(JSON.stringify({ authenticated: false }), {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          });
+        }
+        if (url.includes("/api/data")) {
+          return new Response(JSON.stringify(guestSnapshot), {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          });
+        }
+        return new Response(JSON.stringify({ success: true }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        });
+      }),
+    );
+
+    await sessionFetch("/api/protected");
+    await waitForAsyncGuestTransition();
+
+    expect(auth.isLogged).toBe(false);
+    expect(groups.groups).toHaveLength(1);
+    expect(groups.groups[0]?.id).toBe("guest-main");
+    expect(groups.groups[0]?.items[0]?.id).toBe("public-link");
+    expect(widgets.widgets).toHaveLength(1);
+    expect(widgets.widgets[0]).toMatchObject({
+      id: "clock",
+      type: SD_CLOCK_WIDGET_TYPE,
+    });
+    expect(sync.isClientReady).toBe(true);
+  });
+
+  it("applies guest fallback data when a stale local auth state fetches /api/data", async () => {
+    const sync = useSyncStore();
+    const { auth, groups, widgets } = seedAuthenticatedState();
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = String(input);
+        if (url.includes("/api/data")) {
+          return new Response(JSON.stringify(guestSnapshot), {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          });
+        }
+        return new Response(JSON.stringify({ success: true }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        });
+      }),
+    );
+
+    await sync.fetchData();
+    await nextTick();
+
+    expect(auth.isLogged).toBe(false);
+    expect(groups.groups).toHaveLength(1);
+    expect(groups.groups[0]?.id).toBe("guest-main");
+    expect(groups.groups[0]?.items[0]?.id).toBe("public-link");
+    expect(widgets.widgets).toHaveLength(1);
+    expect(widgets.widgets[0]).toMatchObject({
+      id: "clock",
+      type: SD_CLOCK_WIDGET_TYPE,
+    });
   });
 });

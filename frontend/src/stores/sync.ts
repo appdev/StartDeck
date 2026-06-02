@@ -142,6 +142,7 @@ export const useSyncStore = defineStore("sync", () => {
   let httpPollTimer: ReturnType<typeof setInterval> | null = null;
   let activePollAbortController: AbortController | null = null;
   let hadAuthenticatedSession = false;
+  let guestTransitionInProgress = false;
 
   let logoutInProgress = false;
 
@@ -280,6 +281,12 @@ export const useSyncStore = defineStore("sync", () => {
     data = sanitizeSnapshotIcons(data);
     // Route by role: guest responses must never overwrite auth state layout
     const responseRole = auth.isLogged ? detectResponseRole(data) : "guest";
+    if (auth.isLogged && responseRole === "guest") {
+      stopAuthenticatedRuntime();
+      hadAuthenticatedSession = false;
+      auth.clearLocalSession();
+      resetActiveStateForGuest();
+    }
     const shouldApply =
       responseRole === "auth" ? auth.isLogged : !auth.isLogged; // guest data must not overwrite an authenticated session
 
@@ -796,7 +803,7 @@ export const useSyncStore = defineStore("sync", () => {
         ),
     );
     onStartDeckSessionInvalid(() => {
-      void revalidateSession();
+      void transitionToGuestState();
     });
   }
 
@@ -820,6 +827,36 @@ export const useSyncStore = defineStore("sync", () => {
   const stopPingCheck = () => {
     if (pingCheckTimer) clearInterval(pingCheckTimer);
     pingCheckTimer = null;
+  };
+
+  const stopAuthenticatedRuntime = () => {
+    stopOfflineQueueReplayTimer();
+    if (status.value === "OPEN") wsClose();
+    networkStore.stopNetworkHeartbeat();
+    stopHttpPolling();
+    clearWsFallbackSyncSchedule(true);
+    stopPingCheck();
+  };
+
+  const transitionToGuestState = async (guestData?: Record<string, unknown>) => {
+    if (guestTransitionInProgress) return;
+    guestTransitionInProgress = true;
+    try {
+      stopAuthenticatedRuntime();
+      hadAuthenticatedSession = false;
+      auth.clearLocalSession();
+      resetActiveStateForGuest();
+      if (guestData) {
+        handleDataUpdate(guestData);
+        widgetsStore.updateLastSavedLayout();
+        cacheStore.markServerSnapshotReady();
+        initCompleted.value = true;
+        return;
+      }
+      await init();
+    } finally {
+      guestTransitionInProgress = false;
+    }
   };
 
   // ---- Watches ----
