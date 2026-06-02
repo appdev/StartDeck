@@ -6,6 +6,7 @@ import {
   createDefaultTapdDefectWidget,
   normalizeTapdDefectWidgetData,
   resolveTapdDisplayName,
+  tapdErrorMessage,
 } from "./tapdDefectModel";
 import {
   TAPD_ACTIONABLE_DEFECT_STATUS,
@@ -158,5 +159,17 @@ describe("tapdDefectModel", () => {
 
     expect(normalized.visibilityScope).toBe("owned-by-current-user");
     expect(normalized.lastSummary?.visibleScope).toBe("owned-by-current-user");
+  });
+
+  it("maps upstream error codes to user-facing messages", () => {
+    expect(tapdErrorMessage("upstream_rate_limited")).toBe(
+      "TAPD 接口限流，请稍后重试",
+    );
+    expect(tapdErrorMessage("reauth_required")).toBe(
+      "TAPD 凭据已失效，请重新保存",
+    );
+    expect(tapdErrorMessage("source_shape_changed")).toBe(
+      "TAPD 返回格式已变化",
+    );
   });
 });

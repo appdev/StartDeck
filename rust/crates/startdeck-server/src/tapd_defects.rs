@@ -217,13 +217,20 @@ pub(crate) async fn query_defects(
     let stored = load_stored_credential(&state, &username, &widget_id).await?;
     let stored = stored.ok_or_else(|| ApiError::bad_request("server_credential_missing"))?;
     let material = decrypt_material(&state, &stored).await?;
-    let current_user = resolve_current_user(
+    let current_user = match resolve_current_user(
         &state.http,
         &material,
         body.current_user.as_deref(),
         &tapd_base_url(),
     )
-    .await;
+    .await
+    {
+        Ok(current_user) => current_user,
+        Err(error) => {
+            let query = build_normalized_query(body, workspace_id, None);
+            return Ok(Json(error_response(query, error.code)));
+        }
+    };
     let query = normalize_query_request(body, workspace_id.clone(), current_user)?;
 
     match fetch_defects_with_base(&state.http, &material, &query, &tapd_base_url()).await {
@@ -380,10 +387,19 @@ fn normalize_query_request(
     workspace_id: String,
     current_user: Option<String>,
 ) -> Result<NormalizedQuery, ApiError> {
-    let visibility_scope = TapdVisibilityScope::Owned;
-    if current_user.is_none() {
+    let query = build_normalized_query(body, workspace_id, current_user);
+    if query.current_user.is_none() {
         return Err(ApiError::bad_request("current_user_required"));
     }
+    Ok(query)
+}
+
+fn build_normalized_query(
+    body: TapdDefectsQueryRequest,
+    workspace_id: String,
+    current_user: Option<String>,
+) -> NormalizedQuery {
+    let visibility_scope = TapdVisibilityScope::Owned;
     let fields = body
         .fields
         .unwrap_or_else(|| {
@@ -414,7 +430,7 @@ fn normalize_query_request(
         .into_iter()
         .filter_map(|value| normalize_bug_id(&value))
         .collect();
-    Ok(NormalizedQuery {
+    NormalizedQuery {
         workspace_id,
         page,
         limit,
@@ -424,7 +440,7 @@ fn normalize_query_request(
         current_user,
         filters: body.filters.unwrap_or_default(),
         blocked_bug_ids,
-    })
+    }
 }
 
 async fn fetch_defects_with_base(
@@ -529,7 +545,8 @@ async fn send_tapd_json(request: RequestBuilder) -> Result<Value, TapdUpstreamEr
     let response = request.send().await.map_err(|_| TapdUpstreamError {
         code: "upstream_unreachable",
     })?;
-    match response.status().as_u16() {
+    let status = response.status();
+    match status.as_u16() {
         401 => {
             return Err(TapdUpstreamError {
                 code: "reauth_required",
@@ -547,28 +564,42 @@ async fn send_tapd_json(request: RequestBuilder) -> Result<Value, TapdUpstreamEr
         }
         _ => {}
     }
-    if !response.status().is_success() {
-        return Err(TapdUpstreamError {
-            code: "upstream_error",
-        });
-    }
     let payload = response
         .json::<Value>()
         .await
         .map_err(|_| TapdUpstreamError {
             code: "source_shape_changed",
         })?;
+    if !status.is_success() {
+        return Err(classify_tapd_payload_error(&payload));
+    }
     let ok = payload
         .get("status")
         .and_then(|value| value.as_i64().or_else(|| value.as_str()?.parse().ok()))
         .unwrap_or(0)
         == 1;
     if !ok {
-        return Err(TapdUpstreamError {
-            code: "upstream_error",
-        });
+        return Err(classify_tapd_payload_error(&payload));
     }
     Ok(payload)
+}
+
+fn classify_tapd_payload_error(payload: &Value) -> TapdUpstreamError {
+    let info = payload
+        .get("info")
+        .and_then(Value::as_str)
+        .unwrap_or_default()
+        .to_ascii_lowercase();
+    if info.contains("token")
+        && (info.contains("invalid") || info.contains("expired") || info.contains("unauthorized"))
+    {
+        return TapdUpstreamError {
+            code: "reauth_required",
+        };
+    }
+    TapdUpstreamError {
+        code: "upstream_error",
+    }
 }
 
 fn authenticate(request: RequestBuilder, material: &TapdCredentialMaterial) -> RequestBuilder {
@@ -858,19 +889,20 @@ async fn resolve_current_user(
     material: &TapdCredentialMaterial,
     raw: Option<&str>,
     base_url: &str,
-) -> Option<String> {
+) -> Result<Option<String>, TapdUpstreamError> {
     if let Some(value) = normalize_param_text(raw) {
-        return Some(value);
+        return Ok(Some(value));
     }
-    match material.credential_type {
-        TapdCredentialType::Basic => material
+    let current_user = match material.credential_type {
+        TapdCredentialType::Basic => Ok(material
             .api_user
             .as_deref()
-            .and_then(|value| normalize_param_text(Some(value))),
+            .and_then(|value| normalize_param_text(Some(value)))),
         TapdCredentialType::Bearer => fetch_current_user_nick(client, material, base_url)
             .await
-            .ok(),
-    }
+            .map(Some),
+    }?;
+    Ok(current_user)
 }
 
 async fn fetch_current_user_nick(
@@ -1233,7 +1265,47 @@ mod tests {
         )
         .await;
 
-        assert_eq!(current_user.as_deref(), Some("tapd_user"));
+        assert_eq!(current_user.unwrap().as_deref(), Some("tapd_user"));
+    }
+
+    #[tokio::test]
+    async fn preserves_bearer_current_user_upstream_errors() {
+        let base_url = spawn_tapd_mock().await;
+        let error = resolve_current_user(
+            &Client::new(),
+            &TapdCredentialMaterial {
+                credential_type: TapdCredentialType::Bearer,
+                api_user: None,
+                api_password: None,
+                access_token: Some("rate-limited-token".to_string()),
+            },
+            None,
+            &base_url,
+        )
+        .await
+        .unwrap_err();
+
+        assert_eq!(error.code, "upstream_rate_limited");
+    }
+
+    #[tokio::test]
+    async fn maps_invalid_bearer_current_user_token_to_reauth_required() {
+        let base_url = spawn_tapd_mock().await;
+        let error = resolve_current_user(
+            &Client::new(),
+            &TapdCredentialMaterial {
+                credential_type: TapdCredentialType::Bearer,
+                api_user: None,
+                api_password: None,
+                access_token: Some("invalid-token".to_string()),
+            },
+            None,
+            &base_url,
+        )
+        .await
+        .unwrap_err();
+
+        assert_eq!(error.code, "reauth_required");
     }
 
     #[tokio::test]
@@ -1343,16 +1415,36 @@ mod tests {
         }))
     }
 
-    async fn mock_user_info() -> Json<Value> {
-        Json(json!({
-            "status": 1,
-            "data": {
-                "id": "6081",
-                "nick": "tapd_user",
-                "name": "TAPD 用户"
-            },
-            "info": "success"
-        }))
+    async fn mock_user_info(headers: HeaderMap) -> (StatusCode, Json<Value>) {
+        let auth = headers
+            .get("authorization")
+            .and_then(|value| value.to_str().ok())
+            .unwrap_or("");
+        if auth == "Bearer rate-limited-token" {
+            return (StatusCode::TOO_MANY_REQUESTS, Json(json!({"status": 0})));
+        }
+        if auth == "Bearer invalid-token" {
+            return (
+                StatusCode::UNPROCESSABLE_ENTITY,
+                Json(json!({
+                    "status": 422,
+                    "data": "",
+                    "info": "The access token provided is invalid",
+                })),
+            );
+        }
+        (
+            StatusCode::OK,
+            Json(json!({
+                "status": 1,
+                "data": {
+                    "id": "6081",
+                    "nick": "tapd_user",
+                    "name": "TAPD 用户"
+                },
+                "info": "success"
+            })),
+        )
     }
 
     async fn mock_count() -> Json<Value> {

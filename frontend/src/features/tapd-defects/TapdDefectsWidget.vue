@@ -7,11 +7,13 @@ import { queryTapdDefects } from "./tapdDefectApi";
 import {
   buildTapdFilters,
   hasTapdDefectConnection,
+  isDuplicateTapdErrorSummary,
   isTapdReopenedStatus,
   normalizeTapdDefectWidgetData,
   resolveTapdDisplayName,
   scopeLabel,
   tapdDefectStatusLabel,
+  tapdErrorMessage,
 } from "./tapdDefectModel";
 import type {
   TapdDefectSummary,
@@ -78,6 +80,8 @@ const topItems = computed(() =>
 const scopeText = computed(() => scopeLabel(effectiveScope.value));
 const metaLine = computed(() => {
   if (needsConfig.value) return "请配置相关参数";
+  if (summary.value?.status === "error")
+    return tapdErrorMessage(summary.value.errorCode);
   const parts = [scopeText.value];
   if (data.value.query.currentUser) parts.push("当前账号");
   if (data.value.blockedBugIds.length > 0)
@@ -87,6 +91,7 @@ const metaLine = computed(() => {
 });
 
 const applySummary = (next: TapdDefectSummary) => {
+  if (isDuplicateTapdErrorSummary(summary.value, next)) return;
   emit("updateData", {
     ...data.value,
     projectName: next.projectName || data.value.projectName,

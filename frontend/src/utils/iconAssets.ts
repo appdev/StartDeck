@@ -6,6 +6,10 @@ const LEGACY_USER_ICON_RE = /^\/api\/assets\/icons\/(icn_[A-Za-z0-9_-]+)$/;
 const META_ICON_RE = /^\/api\/icons\/mta_[A-Za-z0-9_-]+$/;
 const SEED_ICON_RE =
   /^\/assets\/seed-icons\/nav\/[A-Za-z0-9][A-Za-z0-9._-]*\.(?:svg|png|webp|ico)$/i;
+const REMOTE_ICON_PROTOCOLS = new Set(["http:", "https:"]);
+const MAX_ICON_BYTES = 5 * 1024 * 1024;
+const REMOTE_ICON_READ_ERROR =
+  "该图片可预览但浏览器不允许读取，请下载后手动上传图标。";
 
 export type ManagedIconCandidate = {
   id: string;
@@ -51,6 +55,21 @@ type CreateIconResponse = {
 
 export const isCanonicalIconUrl = (value: unknown): value is string =>
   typeof value === "string" && sanitizeNavigationIcon(value) !== "";
+
+export const normalizeRemoteNavigationIconUrl = (value: unknown): string => {
+  if (typeof value !== "string") return "";
+  const raw = value.trim();
+  if (!raw) return "";
+  try {
+    const url = new URL(raw);
+    if (!REMOTE_ICON_PROTOCOLS.has(url.protocol) || !url.hostname) return "";
+    if (url.username || url.password) return "";
+    url.hash = "";
+    return url.href;
+  } catch {
+    return "";
+  }
+};
 
 export const sanitizeNavigationIcon = (value: unknown): string => {
   if (typeof value !== "string") return "";
@@ -166,7 +185,9 @@ export const materializeIconSource = async (
   const raw = value.trim();
   if (!raw) return "";
   const normalized = sanitizeNavigationIcon(raw);
-  if (normalized && type !== "assetId") return normalized;
+  if (normalized && type !== "assetId") {
+    return normalized;
+  }
   const res = await sessionFetch("/api/icons", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -183,13 +204,64 @@ export const materializeIconSource = async (
   return url;
 };
 
+const bytesToBase64 = (bytes: Uint8Array): string => {
+  let binary = "";
+  const chunkSize = 0x8000;
+  for (let offset = 0; offset < bytes.length; offset += chunkSize) {
+    binary += String.fromCharCode(...bytes.subarray(offset, offset + chunkSize));
+  }
+  return btoa(binary);
+};
+
+const blobToDataUrl = async (blob: Blob, contentType: string): Promise<string> => {
+  const buffer = await blob.arrayBuffer().catch(() => null);
+  if (!buffer) throw new Error(REMOTE_ICON_READ_ERROR);
+  return `data:${contentType};base64,${bytesToBase64(new Uint8Array(buffer))}`;
+};
+
+const readRemoteIconAsDataUrl = async (url: string): Promise<string> => {
+  let res: Response;
+  try {
+    res = await fetch(url, {
+      credentials: "omit",
+      cache: "no-store",
+    });
+  } catch {
+    throw new Error(REMOTE_ICON_READ_ERROR);
+  }
+  if (!res.ok) throw new Error(REMOTE_ICON_READ_ERROR);
+  const blob = await res.blob().catch(() => null);
+  if (!blob) throw new Error(REMOTE_ICON_READ_ERROR);
+  const contentType =
+    blob.type || res.headers.get("content-type")?.split(";")[0].trim() || "";
+  if (!contentType.toLowerCase().startsWith("image/")) {
+    throw new Error("远程图标不是有效图片，请下载后手动上传图标。");
+  }
+  if (blob.size <= 0) {
+    throw new Error("远程图标为空，请下载后手动上传图标。");
+  }
+  if (blob.size > MAX_ICON_BYTES) {
+    throw new Error("远程图标超过 5MB，请下载压缩后手动上传图标。");
+  }
+  return blobToDataUrl(blob, contentType);
+};
+
 export const materializeIconInput = async (value: string): Promise<string> => {
   const raw = value.trim();
   if (!raw) return "";
   const normalized = sanitizeNavigationIcon(raw);
+  const remote = normalizeRemoteNavigationIconUrl(raw);
   if (normalized) return normalized;
   if (String(raw).startsWith("data:"))
     return materializeIconSource("dataUrl", raw);
-  if (/^https?:\/\//i.test(raw)) return materializeIconSource("remoteUrl", raw);
+  if (remote) {
+    try {
+      return await materializeIconSource("remoteUrl", remote);
+    } catch {
+      const dataUrl = await readRemoteIconAsDataUrl(remote);
+      return materializeIconSource("dataUrl", dataUrl);
+    }
+  }
+  if (/^https?:\/\//i.test(raw)) return "";
   return materializeIconSource("legacyRef", raw);
 };

@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { mount } from "@vue/test-utils";
+import { flushPromises, mount } from "@vue/test-utils";
 import { createTestingPinia } from "@pinia/testing";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import tapdLogoUrl from "@/assets/tapd/logo.svg";
@@ -270,6 +270,69 @@ describe("TapdDefectsWidget", () => {
     expect(wrapper.emitted("updateData")?.at(-1)?.[0]).toMatchObject({
       visibilityScope: "owned-by-current-user",
     });
+    wrapper.unmount();
+  });
+
+  it("does not persist duplicate config error summaries during auto refresh", async () => {
+    const fetchMock = vi.fn(async () =>
+      Response.json(
+        { success: false, error: "current_user_required" },
+        { status: 400 },
+      ),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    const widget = createDefaultTapdDefectWidget();
+    widget.id = "tapd-duplicate-error";
+    widget.data = {
+      ...(widget.data as Record<string, unknown>),
+      workspaceId: "40685585",
+      projectName: "UGOS_PRO",
+      hasServerCredential: true,
+      visibilityScope: "owned-by-current-user",
+      query: {
+        limit: 100,
+        order: "modified desc",
+        fields: ["id", "title", "status"],
+      },
+      lastSummary: {
+        status: "error",
+        workspaceId: "40685585",
+        projectName: "UGOS_PRO",
+        total: 0,
+        visibleTotal: 0,
+        blockedTotal: 0,
+        verificationTotal: 0,
+        critical: 0,
+        assignedToCurrentUser: 0,
+        visibleScope: "owned-by-current-user",
+        page: 1,
+        limit: 100,
+        lastSyncedAt: "2026-06-02T00:00:00.000Z",
+        errorCode: "current_user_required",
+        items: [],
+      },
+    };
+
+    const wrapper = mount(TapdDefectsWidget, {
+      global: {
+        plugins: [
+          createTestingPinia({
+            createSpy: vi.fn,
+            initialState: authenticatedState,
+          }),
+        ],
+      },
+      props: {
+        widget,
+        sizeKey: "2x2",
+      },
+    });
+    await flushPromises();
+    await wrapper.vm.$nextTick();
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(wrapper.emitted("updateData")).toBeUndefined();
+    expect(wrapper.text()).toContain("请在配置参数里填写 TAPD 用户名");
     wrapper.unmount();
   });
 });

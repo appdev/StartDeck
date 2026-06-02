@@ -19,6 +19,7 @@ const uiFeedback = useUiFeedbackStore();
 useThemeMode(() => store.appConfig.themeMode);
 const { y } = useWindowScroll();
 const { width: windowWidth, height: windowHeight } = useWindowSize();
+const GLOBAL_FEEDBACK_MODAL_Z_INDEX = 1000;
 
 const showBackToTop = computed(() => y.value > windowHeight.value);
 const saveErrorMessage = ref("");
@@ -657,6 +658,7 @@ onMounted(() => {
   <AppModalShell
     v-if="!isStandaloneRoute"
     :show="uiFeedback.alertDialog.show"
+    :z-index="GLOBAL_FEEDBACK_MODAL_Z_INDEX"
     :title="uiFeedback.alertDialog.title"
     :blocking="uiFeedback.alertDialog.blocking"
     :show-close="!uiFeedback.alertDialog.blocking"
@@ -692,6 +694,7 @@ onMounted(() => {
   <ConfirmDialog
     v-if="!isStandaloneRoute"
     :show="uiFeedback.confirmDialog.show"
+    :z-index="GLOBAL_FEEDBACK_MODAL_Z_INDEX"
     :title="uiFeedback.confirmDialog.title"
     :message="uiFeedback.confirmDialog.message"
     :confirm-label="uiFeedback.confirmDialog.confirmLabel"

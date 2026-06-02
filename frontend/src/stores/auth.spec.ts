@@ -77,15 +77,20 @@ describe("auth store cookie session model", () => {
 
   it("shows a login-expired toast when session bootstrap rejects an invalid cookie", async () => {
     vi.useFakeTimers();
+    localStorage.setItem("start-deck-username", "admin");
     const fetchMock = vi.fn(
-      async () =>
-        new Response(
+      async (input: RequestInfo | URL) => {
+        if (String(input).includes("/api/logout")) {
+          return Response.json({ success: true, authenticated: false });
+        }
+        return new Response(
           JSON.stringify({ success: false, error: "invalid_token" }),
           {
             status: 401,
             headers: { "Content-Type": "application/json" },
           },
-        ),
+        );
+      },
     );
     vi.stubGlobal("fetch", fetchMock);
 
@@ -101,5 +106,48 @@ describe("auth store cookie session model", () => {
       message: SESSION_EXPIRED_TOAST_MESSAGE,
       tone: "warning",
     });
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/logout",
+      expect.objectContaining({
+        method: "POST",
+        credentials: "same-origin",
+        cache: "no-store",
+      }),
+    );
+  });
+
+  it("clears invalid cookies without showing an expired-login toast for anonymous sessions", async () => {
+    vi.useFakeTimers();
+    const fetchMock = vi.fn(
+      async (input: RequestInfo | URL) => {
+        if (String(input).includes("/api/logout")) {
+          return Response.json({ success: true, authenticated: false });
+        }
+        return new Response(
+          JSON.stringify({ success: false, error: "invalid_token" }),
+          {
+            status: 401,
+            headers: { "Content-Type": "application/json" },
+          },
+        );
+      },
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const auth = useAuthStore();
+    const uiFeedback = useUiFeedbackStore();
+    await auth.bootstrapSession();
+
+    expect(auth.sessionReady).toBe(true);
+    expect(auth.isLogged).toBe(false);
+    expect(uiFeedback.toasts).toHaveLength(0);
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/logout",
+      expect.objectContaining({
+        method: "POST",
+        credentials: "same-origin",
+        cache: "no-store",
+      }),
+    );
   });
 });

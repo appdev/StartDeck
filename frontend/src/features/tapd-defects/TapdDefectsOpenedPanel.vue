@@ -15,6 +15,7 @@ import { queryTapdDefects } from "./tapdDefectApi";
 import {
   buildTapdFilters,
   hasTapdDefectConnection,
+  isDuplicateTapdErrorSummary,
   isTapdReopenedStatus,
   normalizeTapdDefectWidgetData,
   resolveTapdDisplayName,
@@ -146,6 +147,7 @@ const applySummary = (
   next: TapdDefectSummary,
   base: TapdDefectWidgetData = data.value,
 ) => {
+  if (isDuplicateTapdErrorSummary(base.lastSummary, next)) return false;
   return persistData({
     ...base,
     projectName: next.projectName || base.projectName,

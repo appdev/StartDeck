@@ -2431,6 +2431,9 @@ const reloadRuntimeWidget = (widget: WidgetConfig) => {
   refreshRuntimeWidget(widget);
 };
 
+const runtimeDataSnapshot = (data: WidgetRuntimeData | undefined) =>
+  JSON.stringify(data ?? null);
+
 const updateRuntimeWidgetData = (
   widget: WidgetConfig,
   data: WidgetRuntimeData,
@@ -2445,8 +2448,20 @@ const updateRuntimeWidgetData = (
   const normalized = {
     ...normalizedBase,
     ...(currentSizeKey ? { sizeKey: currentSizeKey } : {}),
-  };
+  } as WidgetRuntimeData;
+  const currentData = normalizeWidgetRuntimeData(
+    widget.type,
+    storeWidget?.data ?? widget.data,
+  );
+  const currentNormalized = currentData
+    ? {
+        ...currentData,
+        ...(currentSizeKey ? { sizeKey: currentSizeKey } : {}),
+      } as WidgetRuntimeData
+    : undefined;
+  const nextSnapshot = runtimeDataSnapshot(normalized);
   if (storeWidget) {
+    if (runtimeDataSnapshot(currentNormalized) === nextSnapshot) return;
     storeWidget.data = normalized;
   }
   const layoutWidget = layoutData.value.find(

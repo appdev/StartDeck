@@ -385,7 +385,45 @@ export const tapdErrorMessage = (code?: string) => {
       return "请在配置参数里填写 TAPD 用户名";
     case "server_credential_missing":
       return "请先保存 TAPD 服务端凭据";
+    case "reauth_required":
+      return "TAPD 凭据已失效，请重新保存";
+    case "upstream_forbidden":
+      return "TAPD 凭据权限不足";
+    case "upstream_rate_limited":
+      return "TAPD 接口限流，请稍后重试";
+    case "upstream_unreachable":
+      return "无法连接 TAPD 服务";
+    case "upstream_error":
+      return "TAPD 服务返回异常";
+    case "source_shape_changed":
+      return "TAPD 返回格式已变化";
     default:
       return code || "同步失败";
   }
 };
+
+const tapdErrorSummaryKey = (summary: TapdDefectSummary) =>
+  JSON.stringify({
+    status: summary.status,
+    workspaceId: summary.workspaceId,
+    projectName: summary.projectName,
+    total: summary.total,
+    visibleTotal: summary.visibleTotal,
+    blockedTotal: summary.blockedTotal,
+    verificationTotal: summary.verificationTotal,
+    critical: summary.critical,
+    assignedToCurrentUser: summary.assignedToCurrentUser,
+    visibleScope: summary.visibleScope,
+    page: summary.page,
+    limit: summary.limit,
+    errorCode: summary.errorCode,
+    items: summary.items,
+  });
+
+export const isDuplicateTapdErrorSummary = (
+  current: TapdDefectSummary | undefined,
+  next: TapdDefectSummary,
+) =>
+  current?.status === "error" &&
+  next.status === "error" &&
+  tapdErrorSummaryKey(current) === tapdErrorSummaryKey(next);

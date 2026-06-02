@@ -34,6 +34,22 @@ export const useAuthStore = defineStore("auth", () => {
     "Content-Type": "application/json",
   });
 
+  const hasLocalSessionHint = () => {
+    try {
+      return !!localStorage.getItem(USERNAME_KEY) || !!username.value;
+    } catch {
+      return !!username.value;
+    }
+  };
+
+  const clearServerSessionCookie = async () => {
+    await fetch("/api/logout", {
+      method: "POST",
+      credentials: "same-origin",
+      cache: "no-store",
+    }).catch(() => undefined);
+  };
+
   const clearLocalSession = () => {
     username.value = "";
     sessionGeneration.value = "";
@@ -66,8 +82,15 @@ export const useAuthStore = defineStore("auth", () => {
       if (res.ok) {
         applySession(data);
       } else {
+        const shouldNotifyExpired =
+          res.status === 401 &&
+          data.error === "invalid_token" &&
+          hasLocalSessionHint();
         clearLocalSession();
         if (res.status === 401 && data.error === "invalid_token") {
+          await clearServerSessionCookie();
+        }
+        if (shouldNotifyExpired) {
           notifySessionExpired();
         }
       }

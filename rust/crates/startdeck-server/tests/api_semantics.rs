@@ -366,8 +366,10 @@ async fn login_token_for(app: &axum::Router, username: &str, password: &str) -> 
     assert_eq!(response.status(), StatusCode::OK);
     let session_cookie = response
         .headers()
-        .get("set-cookie")
-        .and_then(|value| value.to_str().ok())
+        .get_all("set-cookie")
+        .iter()
+        .filter_map(|value| value.to_str().ok())
+        .find(|value| value.contains("Max-Age=2592000"))
         .and_then(|value| value.split(';').next())
         .unwrap()
         .to_string();
@@ -755,8 +757,10 @@ async fn login_and_read_data_snapshot() {
     assert_eq!(response.status(), StatusCode::OK);
     let token = response
         .headers()
-        .get("set-cookie")
-        .and_then(|value| value.to_str().ok())
+        .get_all("set-cookie")
+        .iter()
+        .filter_map(|value| value.to_str().ok())
+        .find(|value| value.contains("Max-Age=2592000"))
         .and_then(|value| value.split(';').next())
         .unwrap()
         .to_string();
@@ -902,7 +906,12 @@ async fn login_sets_http_only_cookie_without_token_and_no_store() {
         .unwrap();
     assert_eq!(response.status(), StatusCode::OK);
     assert_eq!(response_header(&response, "cache-control"), "no-store");
-    let set_cookie = response_header(&response, "set-cookie");
+    let set_cookies = response_headers(&response, "set-cookie");
+    assert_eq!(set_cookies.len(), 2);
+    assert!(set_cookies[0].contains("startdeck_session="));
+    assert!(set_cookies[0].contains("Max-Age=0"));
+    assert!(set_cookies[0].contains("Expires=Thu, 01 Jan 1970 00:00:00 GMT"));
+    let set_cookie = set_cookies.last().unwrap();
     assert!(set_cookie.starts_with("startdeck_session="));
     assert!(set_cookie.contains("HttpOnly"));
     assert!(set_cookie.contains("SameSite=Lax"));
@@ -916,6 +925,41 @@ async fn login_sets_http_only_cookie_without_token_and_no_store() {
     assert!(body.get("token").is_none());
     assert_eq!(body["username"], "admin");
     assert!(body["sessionGeneration"].as_str().unwrap().len() > 20);
+}
+
+#[tokio::test]
+async fn login_expires_stale_domain_session_cookies_before_setting_new_cookie() {
+    let app = test_app().await;
+    let response = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/api/login")
+                .header("host", "start.zsl.one")
+                .header("x-forwarded-proto", "https")
+                .header("content-type", "application/json")
+                .body(Body::from(r#"{"username":"admin","password":"secret"}"#))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
+    let set_cookies = response_headers(&response, "set-cookie");
+    assert_eq!(set_cookies.len(), 4);
+    assert!(set_cookies[0].contains("startdeck_session="));
+    assert!(set_cookies[0].contains("Max-Age=0"));
+    assert!(!set_cookies[0].contains("Domain="));
+    assert!(set_cookies[1].contains("Max-Age=0"));
+    assert!(set_cookies[1].contains("Domain=start.zsl.one"));
+    assert!(set_cookies[2].contains("Max-Age=0"));
+    assert!(set_cookies[2].contains("Domain=zsl.one"));
+
+    let session_cookie = set_cookies.last().unwrap();
+    assert!(session_cookie.starts_with("startdeck_session="));
+    assert!(session_cookie.contains("Max-Age=2592000"));
+    assert!(!session_cookie.contains("Domain="));
+    assert!(session_cookie.contains("Secure"));
 }
 
 #[tokio::test]
@@ -935,7 +979,8 @@ async fn login_marks_cookie_secure_behind_https_proxy() {
         .await
         .unwrap();
     assert_eq!(response.status(), StatusCode::OK);
-    assert!(response_header(&response, "set-cookie").contains("Secure"));
+    let set_cookies = response_headers(&response, "set-cookie");
+    assert!(set_cookies.last().unwrap().contains("Secure"));
 }
 
 #[tokio::test]
@@ -1025,6 +1070,36 @@ async fn session_and_logout_use_no_store_and_expire_invalid_cookie() {
     assert_eq!(response.status(), StatusCode::OK);
     assert_eq!(response_header(&response, "cache-control"), "no-store");
     assert!(response_header(&response, "set-cookie").contains("Max-Age=0"));
+}
+
+#[tokio::test]
+async fn session_accepts_valid_duplicate_cookie_when_stale_cookie_is_sent_first() {
+    let app = test_app().await;
+    let cookie = login_token(&app).await;
+    let duplicate_orders = [
+        format!("startdeck_session=invalid-token; {cookie}"),
+        format!("{cookie}; startdeck_session=invalid-token"),
+    ];
+
+    for duplicate_cookie in duplicate_orders {
+        let response = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .uri("/api/session")
+                    .header("cookie", duplicate_cookie)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+        let body: Value =
+            serde_json::from_slice(&to_bytes(response.into_body(), usize::MAX).await.unwrap())
+                .unwrap();
+        assert_eq!(body["authenticated"], true);
+        assert_eq!(body["username"], "admin");
+    }
 }
 
 #[tokio::test]
@@ -1871,6 +1946,74 @@ async fn save_updates_relational_snapshot() {
     assert_eq!(body["isGuest"], true);
     assert_eq!(body["appConfig"]["customTitle"], "Guest Default");
     assert_eq!(body["widgets"][0]["id"], "memo");
+}
+
+#[tokio::test]
+async fn save_does_not_directly_persist_external_navigation_icon_urls() {
+    let app = test_app().await;
+    let token = login_token(&app).await;
+    let (status, body) = json_call(
+        &app,
+        "POST",
+        "/api/save",
+        Some(&token),
+        Some(json!({
+            "appConfig": {"customTitle": "External Icon"},
+            "groups": [{
+                "id": "g-external",
+                "title": "External",
+                "items": [{
+                    "id": "i-external",
+                    "title": "Grok",
+                    "url": "https://grok.com/",
+                    "icon": "HTTPS://1.1.1.1/images/android-chrome-192x192.png#manual",
+                    "isPublic": true
+                }]
+            }],
+            "widgets": []
+        })),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(body["success"], true);
+
+    let (status, body) = json_call(&app, "GET", "/api/data", Some(&token), None).await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(body["groups"][0]["items"][0]["icon"], "");
+}
+
+#[tokio::test]
+async fn save_drops_private_external_navigation_icon_urls() {
+    let app = test_app().await;
+    let token = login_token(&app).await;
+    let (status, body) = json_call(
+        &app,
+        "POST",
+        "/api/save",
+        Some(&token),
+        Some(json!({
+            "appConfig": {"customTitle": "Blocked Icon"},
+            "groups": [{
+                "id": "g-blocked",
+                "title": "Blocked",
+                "items": [{
+                    "id": "i-blocked",
+                    "title": "Local",
+                    "url": "https://example.com/",
+                    "icon": "http://127.0.0.1:9/icon.svg",
+                    "isPublic": true
+                }]
+            }],
+            "widgets": []
+        })),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(body["success"], true);
+
+    let (status, body) = json_call(&app, "GET", "/api/data", Some(&token), None).await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(body["groups"][0]["items"][0]["icon"], "");
 }
 
 #[tokio::test]

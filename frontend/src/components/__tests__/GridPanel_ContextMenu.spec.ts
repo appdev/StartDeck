@@ -990,6 +990,39 @@ describe("GridPanel Context Menu", () => {
     expect(store.saveData).toHaveBeenCalledWith(false);
   });
 
+  it("does not save unchanged runtime widget data", async () => {
+    const vm = wrapper.vm as unknown as {
+      addComponent: (payload: AddComponentPayload) => Promise<unknown>;
+      updateRuntimeWidgetData: (
+        widget: WidgetConfig,
+        data: Record<string, unknown>,
+      ) => void;
+    };
+    vi.mocked(store.saveData).mockResolvedValue("saved");
+
+    await vm.addComponent({
+      kind: "widget",
+      catalogItemId: "todo",
+      destinationGroupId: "home",
+      saveMode: "dirty",
+      sizeKey: "2x2",
+    });
+    await wrapper.vm.$nextTick();
+
+    const todo = store.widgets.find(
+      (item) => item.type === SD_TODO_WIDGET_TYPE,
+    );
+    if (!todo) throw new Error("Todo widget not found");
+    vi.mocked(store.saveData).mockClear();
+
+    vm.updateRuntimeWidgetData(
+      todo,
+      JSON.parse(JSON.stringify(todo.data)) as Record<string, unknown>,
+    );
+
+    expect(store.saveData).not.toHaveBeenCalled();
+  });
+
   it("selects Memo 4x4 and preserves it when runtime data refreshes from the server", async () => {
     const vm = wrapper.vm as unknown as {
       addComponent: (payload: AddComponentPayload) => Promise<unknown>;

@@ -616,6 +616,7 @@ async fn login_inner(
         Json(json!({"success": true, "username": username, "sessionGeneration": sid}))
             .into_response();
     insert_no_store(response.headers_mut());
+    insert_expired_session_cookies(response.headers_mut(), &headers, secure);
     insert_set_cookie(response.headers_mut(), session_cookie(&token, secure));
     Ok(response)
 }
@@ -2396,39 +2397,46 @@ fn require_admin(headers: &HeaderMap, state: &AppState) -> Result<String, ApiErr
 }
 
 fn session_cookie_auth(headers: &HeaderMap, state: &AppState) -> SessionCookieAuth {
-    let Some(token) = session_cookie_value(headers) else {
+    let tokens = session_cookie_values(headers);
+    if tokens.is_empty() {
         return SessionCookieAuth::Missing;
-    };
-    let validation = Validation::new(Algorithm::HS256);
-    match decode::<Claims>(
-        token,
-        &DecodingKey::from_secret(state.jwt_secret.as_ref().as_slice()),
-        &validation,
-    ) {
-        Ok(data)
-            if !data.claims.username.trim().is_empty() && !data.claims.sid.trim().is_empty() =>
-        {
-            SessionCookieAuth::Valid(AuthSession {
-                username: data.claims.username,
-                sid: data.claims.sid,
-            })
-        }
-        _ => SessionCookieAuth::Invalid,
     }
+
+    let validation = Validation::new(Algorithm::HS256);
+    for token in tokens {
+        match decode::<Claims>(
+            token,
+            &DecodingKey::from_secret(state.jwt_secret.as_ref().as_slice()),
+            &validation,
+        ) {
+            Ok(data)
+                if !data.claims.username.trim().is_empty()
+                    && !data.claims.sid.trim().is_empty() =>
+            {
+                return SessionCookieAuth::Valid(AuthSession {
+                    username: data.claims.username,
+                    sid: data.claims.sid,
+                });
+            }
+            _ => {}
+        }
+    }
+    SessionCookieAuth::Invalid
 }
 
-fn session_cookie_value(headers: &HeaderMap) -> Option<&str> {
+fn session_cookie_values(headers: &HeaderMap) -> Vec<&str> {
     headers
-        .get(header::COOKIE)?
-        .to_str()
-        .ok()?
-        .split(';')
-        .find_map(|part| {
+        .get_all(header::COOKIE)
+        .iter()
+        .filter_map(|value| value.to_str().ok())
+        .flat_map(|value| value.split(';'))
+        .filter_map(|part| {
             let (name, value) = part.trim().split_once('=')?;
             (name.trim() == SESSION_COOKIE_NAME)
                 .then(|| value.trim())
                 .filter(|value| !value.is_empty())
         })
+        .collect()
 }
 
 fn should_mark_session_cookie_secure(headers: &HeaderMap) -> bool {
