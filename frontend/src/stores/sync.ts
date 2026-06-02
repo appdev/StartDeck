@@ -280,7 +280,7 @@ export const useSyncStore = defineStore("sync", () => {
     isApplyingServerData = true;
     data = sanitizeSnapshotIcons(data);
     // Route by role: guest responses must never overwrite auth state layout
-    const responseRole = auth.isLogged ? detectResponseRole(data) : "guest";
+    const responseRole = detectResponseRole(data);
     if (auth.isLogged && responseRole === "guest") {
       stopAuthenticatedRuntime();
       hadAuthenticatedSession = false;

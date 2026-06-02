@@ -179,6 +179,44 @@ describe("sync session lifecycle", () => {
     expect(sync.isClientReady).toBe(true);
   });
 
+  it("ignores contaminated legacy guest cache during logged-out startup", async () => {
+    localStorage.setItem(
+      "start-deck-data-cache:guest",
+      JSON.stringify({
+        username: "__guest__",
+        groups: [
+          {
+            id: "private-main",
+            title: "Private",
+            items: [{ id: "private-link", title: "Private Link" }],
+          },
+        ],
+        widgets: [privateWidget],
+        version: 99,
+      }),
+    );
+    const sync = useSyncStore();
+    const groups = useGroupsStore();
+    const widgets = useWidgetsStore();
+
+    await sync.init();
+    await nextTick();
+    await Promise.resolve();
+
+    expect(groups.groups).toHaveLength(1);
+    expect(groups.groups[0]?.id).toBe("guest-main");
+    expect(groups.groups[0]?.items[0]?.id).toBe("public-link");
+    expect(widgets.widgets).toHaveLength(1);
+    expect(widgets.widgets[0]).toMatchObject({
+      id: "clock",
+      type: SD_CLOCK_WIDGET_TYPE,
+    });
+    expect(
+      widgets.widgets.some((widget) => widget.id === "private-todo"),
+    ).toBe(false);
+    expect(sync.isClientReady).toBe(true);
+  });
+
   it("replaces authenticated content with guest data after a session invalid event", async () => {
     const sync = useSyncStore();
     const { auth, groups, widgets } = seedAuthenticatedState();
@@ -258,5 +296,52 @@ describe("sync session lifecycle", () => {
       id: "clock",
       type: SD_CLOCK_WIDGET_TYPE,
     });
+  });
+
+  it("drops authenticated snapshots that arrive after local auth is cleared", async () => {
+    const sync = useSyncStore();
+    const { auth, groups, widgets } = seedAuthenticatedState();
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = String(input);
+        if (url.includes("/api/data")) {
+          return new Response(
+            JSON.stringify({
+              groups: [
+                {
+                  id: "private-main",
+                  title: "Private",
+                  items: [{ id: "private-link", title: "Private Link" }],
+                },
+              ],
+              widgets: [privateWidget],
+              username: "admin",
+              version: 20,
+            }),
+            {
+              status: 200,
+              headers: { "Content-Type": "application/json" },
+            },
+          );
+        }
+        return new Response(JSON.stringify({ success: true }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        });
+      }),
+    );
+
+    auth.clearLocalSession();
+    groups.groups = [];
+    widgets.widgets = [];
+
+    await sync.fetchData();
+    await nextTick();
+
+    expect(auth.isLogged).toBe(false);
+    expect(groups.groups).toEqual([]);
+    expect(widgets.widgets).toEqual([]);
+    expect(localStorage.getItem("start-deck-data-cache:guest")).toBeNull();
   });
 });

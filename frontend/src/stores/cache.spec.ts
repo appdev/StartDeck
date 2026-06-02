@@ -76,6 +76,7 @@ describe("cache store auth scope", () => {
       ],
       appConfig: {},
       systemConfig: { enableDocker: false },
+      isGuest: true,
       version: 2,
     });
 
@@ -90,6 +91,30 @@ describe("cache store auth scope", () => {
       false,
     );
     expect(version.value).toBe(2);
+  });
+
+  it("rejects legacy guest cache without an explicit guest marker", () => {
+    const cache = useCacheStore();
+    const widgets = useWidgetsStore();
+    const groups = useGroupsStore();
+
+    localStorage.setItem(
+      "start-deck-data-cache:guest",
+      JSON.stringify({
+        username: "__guest__",
+        groups: [{ id: "private", title: "Private", items: [] }],
+        widgets: [privateWidget],
+        version: 9,
+      }),
+    );
+
+    const version = ref(0);
+    const loaded = cache.loadFromCache(version);
+
+    expect(loaded).toBe(false);
+    expect(groups.groups).toEqual([]);
+    expect(widgets.widgets).toEqual([]);
+    expect(version.value).toBe(0);
   });
 
   it("sanitizes navigation icon refs before writing and after reading cache", () => {
@@ -120,6 +145,7 @@ describe("cache store auth scope", () => {
       widgets: [],
       appConfig: {},
       systemConfig: { enableDocker: false },
+      isGuest: true,
       version: 3,
     });
 
@@ -128,6 +154,7 @@ describe("cache store auth scope", () => {
     );
     expect(raw.groups[0].items[0].icon).toBe("");
     expect(raw.groups[0].items[1].icon).toBe("/api/icons/icn_valid_1");
+    expect(raw.isGuest).toBe(true);
 
     groups.groups = [];
     const version = ref(0);

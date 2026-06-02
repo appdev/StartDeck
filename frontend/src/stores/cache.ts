@@ -62,6 +62,9 @@ export const useCacheStore = defineStore("cache", () => {
 
   const saveToCache = (data: Record<string, unknown>) => {
     try {
+      if (!auth.isLogged && data.isGuest !== true) {
+        return;
+      }
       const cacheWidgets = Array.isArray(data.widgets)
         ? (data.widgets as WidgetConfig[]).map((widget) =>
             stripWidgetUiState(widget),
@@ -77,6 +80,7 @@ export const useCacheStore = defineStore("cache", () => {
         ),
         systemConfig: data.systemConfig,
         username,
+        isGuest: data.isGuest === true,
         version: data.version,
         layoutSchemaVersion: data.layoutSchemaVersion,
         lastOperationAt: data.lastOperationAt,
@@ -128,7 +132,7 @@ export const useCacheStore = defineStore("cache", () => {
       const isMatch = auth.isLogged
         ? cachedUser === currentUser ||
           (currentUser === "admin" && cachedUser === "admin")
-        : cachedUser === GUEST_CACHE_USER;
+        : cachedUser === GUEST_CACHE_USER && cache.isGuest === true;
       if (!isMatch) return false;
 
       const sanitizedCache = sanitizeSnapshotIcons(cache);
