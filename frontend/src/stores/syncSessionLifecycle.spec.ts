@@ -382,13 +382,25 @@ describe("sync session lifecycle", () => {
     expect(sync.activeSnapshotRole).toBe("guest");
   });
 
-  it("drops authenticated snapshots that arrive after local auth is cleared", async () => {
+  it("uses credentialless guest fallback when logged-out startup rejects auth snapshots", async () => {
     const sync = useSyncStore();
     const { auth, groups, widgets } = seedAuthenticatedState();
     vi.stubGlobal(
       "fetch",
-      vi.fn(async (input: RequestInfo | URL) => {
+      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
         const url = String(input);
+        if (url.includes("/api/session")) {
+          return new Response(JSON.stringify({ authenticated: false }), {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          });
+        }
+        if (url.includes("/api/data") && init?.credentials === "omit") {
+          return new Response(JSON.stringify(guestSnapshot), {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          });
+        }
         if (url.includes("/api/data")) {
           return new Response(
             JSON.stringify({
@@ -420,14 +432,24 @@ describe("sync session lifecycle", () => {
     groups.groups = [];
     widgets.widgets = [];
 
-    await sync.fetchData();
+    await sync.init();
     await nextTick();
 
     expect(auth.isLogged).toBe(false);
-    expect(groups.groups).toEqual([]);
-    expect(widgets.widgets).toEqual([]);
-    expect(sync.activeSnapshotRole).toBeNull();
-    expect(sync.hasServerSnapshot).toBe(false);
-    expect(localStorage.getItem("start-deck-data-cache:guest")).toBeNull();
+    expect(groups.groups).toHaveLength(1);
+    expect(groups.groups[0]?.id).toBe("guest-main");
+    expect(groups.groups[0]?.items[0]?.id).toBe("public-link");
+    expect(widgets.widgets).toHaveLength(1);
+    expect(widgets.widgets[0]).toMatchObject({
+      id: "clock",
+      type: SD_CLOCK_WIDGET_TYPE,
+    });
+    expect(sync.activeSnapshotRole).toBe("guest");
+    expect(sync.hasServerSnapshot).toBe(true);
+    expect(fetch).toHaveBeenCalledWith(
+      "/api/data",
+      expect.objectContaining({ credentials: "omit" }),
+    );
+    expect(localStorage.getItem("start-deck-data-cache:guest")).not.toBeNull();
   });
 });

@@ -227,6 +227,31 @@ export const useSyncStore = defineStore("sync", () => {
     return dataVersion.value;
   };
 
+  const fetchGuestSnapshotWithoutCredentials = async () => {
+    const res = await fetch("/api/data", {
+      method: "GET",
+      credentials: "omit",
+      cache: "no-store",
+      headers: { "Content-Type": "application/json" },
+    });
+    if (!res.ok) {
+      throw new Error(`Guest snapshot failed with status ${res.status}`);
+    }
+    const data = (await res.json()) as Record<string, unknown>;
+    const applied = handleDataUpdate({
+      ...data,
+      isGuest: true,
+      username: "__guest__",
+    });
+    if (!applied) {
+      throw new Error("Guest snapshot dropped by role guard");
+    }
+    widgetsStore.updateLastSavedLayout();
+    if (!cacheStore.hasServerSnapshot) {
+      cacheStore.markServerSnapshotReady();
+    }
+  };
+
   const stopHttpPolling = () => {
     if (!isHttpPollingActive) return;
     isHttpPollingActive = false;
@@ -439,7 +464,12 @@ export const useSyncStore = defineStore("sync", () => {
         return;
       }
       const applied = handleDataUpdate(data);
-      if (!applied) return;
+      if (!applied) {
+        if (!auth.isLogged) {
+          await fetchGuestSnapshotWithoutCredentials();
+        }
+        return;
+      }
       widgetsStore.updateLastSavedLayout();
       if (!cacheStore.hasServerSnapshot) {
         cacheStore.markServerSnapshotReady();
@@ -723,6 +753,17 @@ export const useSyncStore = defineStore("sync", () => {
         }
         if (attempt < 2) await new Promise((r) => setTimeout(r, 1000));
       }
+      if (!serverSnapshotLoaded && !auth.isLogged) {
+        try {
+          await fetchGuestSnapshotWithoutCredentials();
+          serverSnapshotLoaded = true;
+          setTimeout(() => {
+            networkStore.fetchLuckyStunData();
+          }, 2000);
+        } catch (e) {
+          lastError = e;
+        }
+      }
       if (!serverSnapshotLoaded) {
         if (lastError) console.error("Init failed", lastError);
         const fallbackCacheLoaded = cacheStore.loadFromCache(dataVersion);
@@ -998,7 +1039,7 @@ export const useSyncStore = defineStore("sync", () => {
       () => cacheStore.isClientReady || initCompleted.value,
     ),
     cacheLoadedAt: cacheStore.cacheLoadedAt,
-    hasServerSnapshot: cacheStore.hasServerSnapshot,
+    hasServerSnapshot: computed(() => cacheStore.hasServerSnapshot),
     offlineQueueCount: saveStore.offlineQueueCount,
     offlineQueueConflictState: saveStore.offlineQueueConflictState,
     resolveOfflineQueueConflict,
