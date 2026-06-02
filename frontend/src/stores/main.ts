@@ -182,6 +182,7 @@ export const useMainStore = defineStore("main", () => {
   const isSaving = computed(() => sync.isSaving);
   const hasPendingSave = computed(() => sync.hasPendingSave);
   const hasUnsavedChanges = computed(() => sync.hasUnsavedChanges);
+  const activeSnapshotRole = computed(() => sync.activeSnapshotRole);
   const isServerSnapshotReady = computed(() => sync.isServerSnapshotReady);
   const isClientReady = computed(() => sync.isClientReady);
   const conflictState = computed(() => sync.conflictState);
@@ -316,6 +317,7 @@ export const useMainStore = defineStore("main", () => {
     isSaving,
     hasPendingSave,
     hasUnsavedChanges,
+    activeSnapshotRole,
     isServerSnapshotReady,
     isClientReady,
     conflictState,

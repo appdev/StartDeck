@@ -171,6 +171,11 @@ import LoginModal from "./LoginModal.vue";
 const IconShape = loadAsync(() => import("./IconShape.vue"));
 
 const store = useMainStore();
+const canRenderCurrentSnapshot = computed(() =>
+  store.isLogged
+    ? store.activeSnapshotRole === "auth"
+    : store.activeSnapshotRole === "guest",
+);
 const requireStoreLogin = (message?: string) => {
   if (store.isLogged) return true;
   return notifyLoginRequired(message);
@@ -858,6 +863,7 @@ watch(
     widgetColNum.value,
     deviceKey.value,
     store.isLogged,
+    canRenderCurrentSnapshot.value,
   ],
   () => {
     const nextDeviceKey = deviceKey.value;
@@ -884,7 +890,10 @@ watch(
     // 处于编辑模式(活跃)时，忽略外部更新，以本地拖拽状态为准
     if (isEditMode.value && !authStateChanged) return;
 
-    const visibleWidgets = store.mergedWidgets
+    const visibleWidgets = canRenderCurrentSnapshot.value
+      ? store.mergedWidgets
+      : [];
+    const renderableWidgets = visibleWidgets
       .filter(
         (w) =>
           checkVisible(w) &&
@@ -901,7 +910,7 @@ watch(
 
     const colNum = widgetColNum.value;
 
-    const widgetsToLayout = visibleWidgets.map((w) => {
+    const widgetsToLayout = renderableWidgets.map((w) => {
       const newW: WidgetConfig = { ...w };
       if (deviceKey.value === "mobile") {
         // 运行时网格不读取旧 layouts；移动端重新按当前可见顺序自动排布。
@@ -983,6 +992,10 @@ const handleLayoutUpdated = (newLayout: GridLayoutItem[]) => {
 };
 
 const displayGroups = computed(() => {
+  if (!canRenderCurrentSnapshot.value) {
+    return [];
+  }
+
   // ✨ 性能优化：在编辑模式时，直接返回 store.groups 引用
   // 这样 VueDraggable 就能直接操作 store 中的数组，确保拖拽状态实时同步
   if (isEditMode.value) {

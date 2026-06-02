@@ -13,6 +13,8 @@ import { useNetworkStore } from "./network";
 import { onStartDeckSessionInvalid, sessionFetch } from "@/utils/sessionFetch";
 import { sanitizeSnapshotIcons } from "@/utils/iconAssets";
 
+type ActiveSnapshotRole = "auth" | "guest" | null;
+
 export const useSyncStore = defineStore("sync", () => {
   const auth = useAuthStore();
   const widgetsStore = useWidgetsStore();
@@ -122,6 +124,7 @@ export const useSyncStore = defineStore("sync", () => {
   const dataVersion = ref(0);
   const pendingServerVersion = ref(0);
   const luckyStunData = ref<LuckyStunData | null>(null);
+  const activeSnapshotRole = ref<ActiveSnapshotRole>(null);
 
   // ---- State flags ----
   let wsMessageHandlerBound = false;
@@ -250,6 +253,7 @@ export const useSyncStore = defineStore("sync", () => {
 
   const resetActiveStateForGuest = () => {
     isApplyingServerData = true;
+    activeSnapshotRole.value = null;
     groupsStore.groups = [];
     widgetsStore.widgets = [];
     widgetsStore.uiStateMap = {};
@@ -294,7 +298,7 @@ export const useSyncStore = defineStore("sync", () => {
   };
 
   // ---- handleDataUpdate ----
-  const handleDataUpdate = (data: Record<string, unknown>) => {
+  const handleDataUpdate = (data: Record<string, unknown>): boolean => {
     isApplyingServerData = true;
     data = sanitizeSnapshotIcons(data);
     // Route by role: guest responses must never overwrite auth state layout
@@ -318,7 +322,7 @@ export const useSyncStore = defineStore("sync", () => {
         );
       }
       isApplyingServerData = false;
-      return;
+      return false;
     }
 
     if (data.systemConfig) {
@@ -406,8 +410,10 @@ export const useSyncStore = defineStore("sync", () => {
       ...buildCacheSnapshot(data),
       widgets: normalizedWidgets,
     });
+    activeSnapshotRole.value = responseRole;
     saveStore.hasUnsavedChanges = false;
     isApplyingServerData = false;
+    return true;
   };
 
   // ---- fetchAndProcessData ----
@@ -432,7 +438,8 @@ export const useSyncStore = defineStore("sync", () => {
       ) {
         return;
       }
-      handleDataUpdate(data);
+      const applied = handleDataUpdate(data);
+      if (!applied) return;
       widgetsStore.updateLastSavedLayout();
       if (!cacheStore.hasServerSnapshot) {
         cacheStore.markServerSnapshotReady();
@@ -687,9 +694,13 @@ export const useSyncStore = defineStore("sync", () => {
     cacheStore.hasServerSnapshot = false;
     cacheStore.cacheLoadedAt = null;
     cacheStore.deferredSaveRequested = false;
+    activeSnapshotRole.value = null;
 
     const cacheLoaded = cacheStore.loadFromCache(dataVersion);
-    if (cacheLoaded) cacheStore.cacheLoadedAt = Date.now();
+    if (cacheLoaded) {
+      cacheStore.cacheLoadedAt = Date.now();
+      activeSnapshotRole.value = auth.isLogged ? "auth" : "guest";
+    }
 
     try {
       let serverSnapshotLoaded = false;
@@ -714,7 +725,10 @@ export const useSyncStore = defineStore("sync", () => {
       }
       if (!serverSnapshotLoaded) {
         if (lastError) console.error("Init failed", lastError);
-        cacheStore.loadFromCache(dataVersion);
+        const fallbackCacheLoaded = cacheStore.loadFromCache(dataVersion);
+        if (fallbackCacheLoaded) {
+          activeSnapshotRole.value = auth.isLogged ? "auth" : "guest";
+        }
         if (cacheStore.cacheLoadedAt === null)
           cacheStore.cacheLoadedAt = Date.now();
         if (!cacheStore.serverSnapshotRetryTimer) {
@@ -868,7 +882,8 @@ export const useSyncStore = defineStore("sync", () => {
       auth.clearLocalSession();
       resetActiveStateForGuest();
       if (guestData) {
-        handleDataUpdate(guestData);
+        const applied = handleDataUpdate(guestData);
+        if (!applied) return;
         widgetsStore.updateLastSavedLayout();
         cacheStore.markServerSnapshotReady();
         initCompleted.value = true;
@@ -919,7 +934,9 @@ export const useSyncStore = defineStore("sync", () => {
         clearWsFallbackSyncSchedule(true);
         stopPingCheck();
         const shouldResetAuthenticatedState =
-          ready && hadAuthenticatedSession && !logoutInProgress;
+          ready &&
+          !logoutInProgress &&
+          (hadAuthenticatedSession || activeSnapshotRole.value === "auth");
         if (ready) {
           hadAuthenticatedSession = false;
         }
@@ -967,6 +984,7 @@ export const useSyncStore = defineStore("sync", () => {
     dataVersion,
     pendingServerVersion,
     luckyStunData,
+    activeSnapshotRole,
     isSaving: saveStore.isSaving,
     hasPendingSave: saveStore.hasPendingSave,
     hasUnsavedChanges: saveStore.hasUnsavedChanges,

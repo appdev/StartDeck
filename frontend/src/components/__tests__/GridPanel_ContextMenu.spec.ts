@@ -7,6 +7,7 @@ import ConfirmDialog from "../base/ConfirmDialog.vue";
 import { createTestingPinia } from "@pinia/testing";
 import { useMainStore } from "../../stores/main";
 import { useAuthStore } from "../../stores/auth";
+import { useSyncStore } from "../../stores/sync";
 import { useUiFeedbackStore } from "../../stores/uiFeedback";
 import type { AddComponentPayload } from "../../utils/addComponentTypes";
 import { SD_WALLPAPER_WIDGET_TYPE } from "../../features/sd-wallpaper/sdWallpaperTypes";
@@ -236,6 +237,9 @@ describe("GridPanel Context Menu", () => {
               groups: {
                 groups: [],
               },
+              sync: {
+                activeSnapshotRole: "auth",
+              },
               config: {
                 appConfig: {},
               },
@@ -335,6 +339,7 @@ describe("GridPanel Context Menu", () => {
   it("reinitializes GridStack when auth state swaps the home widget set", async () => {
     await flushPromises();
     const auth = useAuthStore();
+    const sync = useSyncStore();
     const initialInitCalls = gridStackMock.init.mock.calls.length;
     const initialRemoveAllCalls =
       gridStackMock.instance.removeAll.mock.calls.length;
@@ -342,6 +347,7 @@ describe("GridPanel Context Menu", () => {
     auth.sessionReady = true;
     auth.username = "";
     auth.sessionGeneration = "";
+    sync.activeSnapshotRole = "guest";
     await wrapper.vm.$nextTick();
     await flushPromises();
     await wrapper.vm.$nextTick();

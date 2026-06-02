@@ -215,7 +215,7 @@ describe("cache store auth scope", () => {
 
     await expect(
       cache.loadServerSnapshot(
-        () => undefined,
+        () => true,
         () => undefined,
       ),
     ).rejects.toThrow("Init unauthorized with stored token");

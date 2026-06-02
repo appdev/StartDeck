@@ -213,7 +213,7 @@ export const useCacheStore = defineStore("cache", () => {
   };
 
   const loadServerSnapshot = async (
-    handleDataUpdate: (data: Record<string, unknown>) => void,
+    handleDataUpdate: (data: Record<string, unknown>) => boolean,
     updateLayout: () => void,
   ) => {
     if (isLoadingSnapshot) return;
@@ -245,7 +245,8 @@ export const useCacheStore = defineStore("cache", () => {
           if (reloadData.systemConfig)
             configStore.systemConfig =
               reloadData.systemConfig as typeof configStore.systemConfig;
-          handleDataUpdate(reloadData);
+          const applied = handleDataUpdate(reloadData);
+          if (!applied) throw new Error("Init snapshot dropped by role guard");
         }
         updateLayout();
         markServerSnapshotReady();
@@ -256,7 +257,8 @@ export const useCacheStore = defineStore("cache", () => {
       if (data.systemConfig)
         configStore.systemConfig =
           data.systemConfig as typeof configStore.systemConfig;
-      handleDataUpdate(data);
+      const applied = handleDataUpdate(data);
+      if (!applied) throw new Error("Init snapshot dropped by role guard");
       updateLayout();
       markServerSnapshotReady();
     } finally {

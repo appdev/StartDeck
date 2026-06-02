@@ -176,6 +176,7 @@ describe("sync session lifecycle", () => {
       id: "clock",
       type: SD_CLOCK_WIDGET_TYPE,
     });
+    expect(sync.activeSnapshotRole).toBe("guest");
     expect(sync.isClientReady).toBe(true);
   });
 
@@ -254,6 +255,7 @@ describe("sync session lifecycle", () => {
     expect(
       widgets.widgets.some((widget) => widget.type === SD_CLOCK_WIDGET_TYPE),
     ).toBe(true);
+    expect(sync.activeSnapshotRole).toBe("auth");
     expect(sync.isClientReady).toBe(true);
   });
 
@@ -293,6 +295,7 @@ describe("sync session lifecycle", () => {
     expect(
       widgets.widgets.some((widget) => widget.id === "private-todo"),
     ).toBe(false);
+    expect(sync.activeSnapshotRole).toBe("guest");
     expect(sync.isClientReady).toBe(true);
   });
 
@@ -340,6 +343,7 @@ describe("sync session lifecycle", () => {
       id: "clock",
       type: SD_CLOCK_WIDGET_TYPE,
     });
+    expect(sync.activeSnapshotRole).toBe("guest");
     expect(sync.isClientReady).toBe(true);
   });
 
@@ -375,6 +379,7 @@ describe("sync session lifecycle", () => {
       id: "clock",
       type: SD_CLOCK_WIDGET_TYPE,
     });
+    expect(sync.activeSnapshotRole).toBe("guest");
   });
 
   it("drops authenticated snapshots that arrive after local auth is cleared", async () => {
@@ -421,6 +426,8 @@ describe("sync session lifecycle", () => {
     expect(auth.isLogged).toBe(false);
     expect(groups.groups).toEqual([]);
     expect(widgets.widgets).toEqual([]);
+    expect(sync.activeSnapshotRole).toBeNull();
+    expect(sync.hasServerSnapshot).toBe(false);
     expect(localStorage.getItem("start-deck-data-cache:guest")).toBeNull();
   });
 });
