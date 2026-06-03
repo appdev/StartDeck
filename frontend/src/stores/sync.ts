@@ -177,6 +177,20 @@ export const useSyncStore = defineStore("sync", () => {
     auth.applyServerSession(username, sessionGeneration);
   };
 
+  const snapshotRoleForCurrentAuth = (): ActiveSnapshotRole =>
+    auth.isLogged ? "auth" : "guest";
+
+  const hasLoadedSnapshotState = () =>
+    activeSnapshotRole.value !== null &&
+    (cacheStore.isClientReady ||
+      groupsStore.groups.length > 0 ||
+      widgetsStore.widgets.length > 0 ||
+      dataVersion.value > 0);
+
+  const canPreserveCurrentSnapshotForInit = () =>
+    activeSnapshotRole.value === snapshotRoleForCurrentAuth() &&
+    hasLoadedSnapshotState();
+
   const syncUsernameFromServer = (
     data: Record<string, unknown>,
     responseRole: "auth" | "guest",
@@ -711,8 +725,15 @@ export const useSyncStore = defineStore("sync", () => {
   const init = async () => {
     if (isInitializing) return;
     isInitializing = true;
-    initCompleted.value = false;
-    await auth.bootstrapSession();
+    const preservedSnapshotRole = activeSnapshotRole.value;
+    const preserveCurrentSnapshot = canPreserveCurrentSnapshotForInit();
+    if (!preserveCurrentSnapshot) {
+      initCompleted.value = false;
+    }
+    await auth.bootstrapSession({
+      preserveExistingSession:
+        preserveCurrentSnapshot && preservedSnapshotRole === "auth",
+    });
     // Only open WS when authenticated; avoid meaningless guest reconnect loops
     if (
       typeof window !== "undefined" &&
@@ -721,15 +742,22 @@ export const useSyncStore = defineStore("sync", () => {
       status.value !== "OPEN"
     )
       wsOpen();
-    cacheStore.hasServerSnapshot = false;
-    cacheStore.cacheLoadedAt = null;
+    const canKeepPreservedSnapshot =
+      preserveCurrentSnapshot &&
+      preservedSnapshotRole === snapshotRoleForCurrentAuth();
+    if (!canKeepPreservedSnapshot) {
+      cacheStore.hasServerSnapshot = false;
+      cacheStore.cacheLoadedAt = null;
+      activeSnapshotRole.value = null;
+    }
     cacheStore.deferredSaveRequested = false;
-    activeSnapshotRole.value = null;
 
-    const cacheLoaded = cacheStore.loadFromCache(dataVersion);
-    if (cacheLoaded) {
-      cacheStore.cacheLoadedAt = Date.now();
-      activeSnapshotRole.value = auth.isLogged ? "auth" : "guest";
+    if (!canKeepPreservedSnapshot) {
+      const cacheLoaded = cacheStore.loadFromCache(dataVersion);
+      if (cacheLoaded) {
+        cacheStore.cacheLoadedAt = Date.now();
+        activeSnapshotRole.value = snapshotRoleForCurrentAuth();
+      }
     }
 
     try {

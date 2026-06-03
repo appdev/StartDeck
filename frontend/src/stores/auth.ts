@@ -10,6 +10,10 @@ type SessionResponse = {
   error?: string;
 };
 
+type BootstrapSessionOptions = {
+  preserveExistingSession?: boolean;
+};
+
 const LEGACY_TOKEN_KEY = "start-deck-token";
 const USERNAME_KEY = "start-deck-username";
 
@@ -78,8 +82,12 @@ export const useAuthStore = defineStore("auth", () => {
     clearLocalSession();
   };
 
-  const bootstrapSession = async () => {
-    sessionReady.value = false;
+  const bootstrapSession = async (options: BootstrapSessionOptions = {}) => {
+    const preserveCurrentSession =
+      options.preserveExistingSession === true && isLogged.value;
+    if (!preserveCurrentSession) {
+      sessionReady.value = false;
+    }
     deleteLegacyToken();
     try {
       const res = await fetch("/api/session", {
@@ -105,7 +113,9 @@ export const useAuthStore = defineStore("auth", () => {
       }
     } catch (e) {
       console.warn("[Auth] Session bootstrap failed", e);
-      clearLocalSession();
+      if (!preserveCurrentSession) {
+        clearLocalSession();
+      }
     } finally {
       sessionReady.value = true;
     }

@@ -4,6 +4,7 @@ import { createPinia, setActivePinia } from "pinia";
 import { nextTick, ref } from "vue";
 import { useSyncStore } from "./sync";
 import { useAuthStore } from "./auth";
+import { useCacheStore } from "./cache";
 import { useGroupsStore } from "./groups";
 import { useWidgetsStore } from "./widgets";
 import { SD_GRID_SCHEMA_VERSION } from "@/features/sd-widgets/sdGrid";
@@ -113,6 +114,47 @@ const seedAuthenticatedState = () => {
   widgets.widgets = [privateWidget];
   widgets.updateLastSavedLayout();
   return { auth, groups, widgets };
+};
+
+const authenticatedSnapshot = {
+  appConfig: { customTitle: "Private Default" },
+  groups: [
+    {
+      id: "private-main",
+      title: "Private",
+      items: [
+        {
+          id: "private-link",
+          title: "Private Link",
+          url: "https://private.example/",
+          icon: "",
+        },
+      ],
+    },
+  ],
+  widgets: [
+    {
+      id: "auth-clock",
+      type: SD_CLOCK_WIDGET_TYPE,
+      enable: true,
+      x: 0,
+      y: 0,
+      w: 2,
+      h: 2,
+      colSpan: 2,
+      rowSpan: 2,
+      data: {
+        runtime: "sd-clock",
+        layoutSystem: SD_GRID_SCHEMA_VERSION,
+        version: 1,
+        sizeKey: "2x2",
+      },
+    },
+  ],
+  username: "admin",
+  authenticated: true,
+  sessionGeneration: "server-session-generation",
+  version: 20,
 };
 
 const waitForAsyncGuestTransition = async () => {
@@ -257,6 +299,110 @@ describe("sync session lifecycle", () => {
     ).toBe(true);
     expect(sync.activeSnapshotRole).toBe("auth");
     expect(sync.isClientReady).toBe(true);
+  });
+
+  it("preserves the authenticated snapshot while init revalidates session and data", async () => {
+    const sync = useSyncStore();
+    const auth = useAuthStore();
+    const cache = useCacheStore();
+    const groups = useGroupsStore();
+    const widgets = useWidgetsStore();
+    let resolveSession!: (response: Response) => void;
+    let resolveData!: (response: Response) => void;
+    const sessionResponse = new Promise<Response>((resolve) => {
+      resolveSession = resolve;
+    });
+    const dataResponse = new Promise<Response>((resolve) => {
+      resolveData = resolve;
+    });
+
+    auth.applyServerSession("admin", "existing-session-generation");
+    groups.groups = [
+      {
+        id: "private-main",
+        title: "Private",
+        items: [
+          {
+            id: "private-link",
+            title: "Private Link",
+            url: "https://private.example/",
+            icon: "",
+          },
+        ],
+      },
+    ];
+    widgets.widgets = [privateWidget];
+    widgets.updateLastSavedLayout();
+    sync.activeSnapshotRole = "auth";
+    cache.hasServerSnapshot = true;
+
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = String(input);
+        if (url.includes("/api/session")) {
+          return sessionResponse;
+        }
+        if (url.includes("/api/data")) {
+          return dataResponse;
+        }
+        return new Response(JSON.stringify({ success: true }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        });
+      }),
+    );
+
+    const initPromise = sync.init();
+    await nextTick();
+    await Promise.resolve();
+
+    expect(auth.isLogged).toBe(true);
+    expect(sync.activeSnapshotRole).toBe("auth");
+    expect(sync.isClientReady).toBe(true);
+    expect(groups.groups[0]?.id).toBe("private-main");
+    expect(widgets.widgets).toHaveLength(1);
+
+    resolveSession(
+      new Response(
+        JSON.stringify({
+          authenticated: true,
+          username: "admin",
+          sessionGeneration: "server-session-generation",
+        }),
+        {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        },
+      ),
+    );
+    await nextTick();
+    await Promise.resolve();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(auth.isLogged).toBe(true);
+    expect(sync.activeSnapshotRole).toBe("auth");
+    expect(sync.isClientReady).toBe(true);
+    expect(groups.groups[0]?.id).toBe("private-main");
+    expect(widgets.widgets).toHaveLength(1);
+
+    resolveData(
+      new Response(JSON.stringify(authenticatedSnapshot), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }),
+    );
+    await initPromise;
+    await nextTick();
+
+    expect(auth.isLogged).toBe(true);
+    expect(auth.sessionGeneration).toBe("server-session-generation");
+    expect(sync.activeSnapshotRole).toBe("auth");
+    expect(sync.isClientReady).toBe(true);
+    expect(groups.groups[0]?.id).toBe("private-main");
+    expect(
+      widgets.widgets.some((widget) => widget.type === SD_CLOCK_WIDGET_TYPE),
+    ).toBe(true);
   });
 
   it("ignores contaminated legacy guest cache during logged-out startup", async () => {
