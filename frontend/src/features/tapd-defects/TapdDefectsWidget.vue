@@ -3,6 +3,7 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import type { WidgetConfig } from "@/types";
 import type { SdWidgetSizeKey } from "@/features/sd-widgets/sdSizePresets";
 import { useAuthStore } from "@/stores/auth";
+import { loadBrowserTapdCredential } from "./tapdCredentialStorage";
 import { queryTapdDefects } from "./tapdDefectApi";
 import {
   buildTapdFilters,
@@ -39,10 +40,16 @@ let refreshTimer: ReturnType<typeof setInterval> | null = null;
 const data = computed(() => normalizeTapdDefectWidgetData(props.widget.data));
 const summary = computed(() => data.value.lastSummary);
 const isCatalogPreview = computed(() => data.value.catalogPreview === true);
+const connectorCredential = computed(() => {
+  if (data.value.credentialStorage !== "browser") return null;
+  return loadBrowserTapdCredential(auth.username || "guest", props.widget.id);
+});
 const needsConfig = computed(
   () =>
     !isCatalogPreview.value &&
-    (!auth.isLogged || !hasTapdDefectConnection(data.value)),
+    (!auth.isLogged ||
+      !hasTapdDefectConnection(data.value) ||
+      connectorCredential.value === null),
 );
 const title = computed(() =>
   needsConfig.value ? "TAPD 缺陷" : resolveTapdDisplayName(data.value),
@@ -107,6 +114,8 @@ const refreshDefects = async () => {
   try {
     const next = await queryTapdDefects({
       widgetId: props.widget.id,
+      requestMode: "connector",
+      credential: connectorCredential.value || undefined,
       workspaceId: data.value.workspaceId,
       page: summary.value?.page || 1,
       limit: data.value.query.limit,
@@ -175,7 +184,8 @@ watch(
 watch(
   () => [
     data.value.workspaceId,
-    data.value.hasServerCredential,
+    data.value.hasConnectorCredential,
+    data.value.credentialStorage,
     data.value.refreshIntervalMinutes,
     data.value.visibilityScope,
   ],

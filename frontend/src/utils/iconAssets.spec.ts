@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { queryStartDeckConnector } from "@/utils/startdeckConnector";
 import {
   isCanonicalIconUrl,
   materializeIconInput,
@@ -8,9 +9,20 @@ import {
   sanitizeSnapshotIcons,
 } from "./iconAssets";
 
+vi.mock("@/utils/startdeckConnector", () => ({
+  queryStartDeckConnector: vi.fn(),
+}));
+
+const mockedConnector = vi.mocked(queryStartDeckConnector);
+
 describe("iconAssets", () => {
+  beforeEach(() => {
+    mockedConnector.mockReset();
+  });
+
   afterEach(() => {
     vi.unstubAllGlobals();
+    mockedConnector.mockReset();
   });
 
   it("accepts only navigation icon data and rewrites legacy user icons", () => {
@@ -130,6 +142,7 @@ describe("iconAssets", () => {
     await expect(materializeIconInput("https://example.com/icon.png")).resolves.toBe(
       "/api/icons/icn_remote",
     );
+    expect(mockedConnector).not.toHaveBeenCalled();
   });
 
   it("uploads browser-readable remote image bytes when server materialization is blocked", async () => {
@@ -166,9 +179,53 @@ describe("iconAssets", () => {
       "/api/icons/icn_uploaded",
     );
     expect(fetch).toHaveBeenCalledTimes(3);
+    expect(mockedConnector).not.toHaveBeenCalled();
   });
 
-  it("fails remote icon fallback when browser fetch is blocked", async () => {
+  it("uses the local connector when server and page remote image reads are blocked", async () => {
+    mockedConnector.mockResolvedValue({
+      url: "https://example.com/icon.png",
+      contentType: "image/png",
+      byteSize: 3,
+      dataUrl: "data:image/png;base64,AQID",
+    });
+    const fetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      if (String(input) === "/api/icons") {
+        const body = JSON.parse(String(init?.body));
+        if (body.source.type === "remoteUrl") {
+          expect(body.source.value).toBe("https://example.com/icon.png");
+          return new Response(JSON.stringify({ error: "fetch_failed" }), {
+            status: 502,
+            headers: { "Content-Type": "application/json" },
+          });
+        }
+        expect(body.source.type).toBe("dataUrl");
+        expect(body.source.value).toBe("data:image/png;base64,AQID");
+        return new Response(
+          JSON.stringify({
+            success: true,
+            data: { url: "/api/icons/icn_connector", id: "icn_connector" },
+          }),
+          { status: 200, headers: { "Content-Type": "application/json" } },
+        );
+      }
+      expect(String(input)).toBe("https://example.com/icon.png");
+      throw new TypeError("CORS");
+    });
+    vi.stubGlobal("fetch", fetch);
+
+    await expect(materializeIconInput("https://example.com/icon.png")).resolves.toBe(
+      "/api/icons/icn_connector",
+    );
+    expect(mockedConnector).toHaveBeenCalledWith(
+      "icons.fetchRemoteImage",
+      { url: "https://example.com/icon.png", maxBytes: 5 * 1024 * 1024 },
+      12_000,
+    );
+  });
+
+  it("fails remote icon fallback when browser and connector fetch are blocked", async () => {
+    mockedConnector.mockRejectedValue(new Error("connector_unavailable"));
     vi.stubGlobal(
       "fetch",
       vi.fn(async (input: RequestInfo | URL) => {
@@ -183,7 +240,12 @@ describe("iconAssets", () => {
     );
 
     await expect(materializeIconInput("https://example.com/icon.png")).rejects.toThrow(
-      "浏览器不允许读取",
+      "本地扩展都无法读取",
+    );
+    expect(mockedConnector).toHaveBeenCalledWith(
+      "icons.fetchRemoteImage",
+      { url: "https://example.com/icon.png", maxBytes: 5 * 1024 * 1024 },
+      12_000,
     );
   });
 
@@ -207,6 +269,7 @@ describe("iconAssets", () => {
     await expect(materializeIconInput("https://example.com/icon.png")).rejects.toThrow(
       "不是有效图片",
     );
+    expect(mockedConnector).not.toHaveBeenCalled();
   });
 
   it("rejects remote icon fallback when browser bytes are too large", async () => {
@@ -229,6 +292,7 @@ describe("iconAssets", () => {
     await expect(materializeIconInput("https://example.com/icon.png")).rejects.toThrow(
       "超过 5MB",
     );
+    expect(mockedConnector).not.toHaveBeenCalled();
   });
 
   it("drops credential-bearing remote icon URLs without posting them", async () => {

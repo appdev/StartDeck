@@ -1,0 +1,157 @@
+name: Publish Connector Extension
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/publish-connector-extension.yml"
+      - "extensions/startdeck-connector/**"
+  workflow_dispatch:
+
+concurrency:
+  group: connector-extension-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    name: Package and publish Chrome extension
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Validate extension sources
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          node --check extensions/startdeck-connector/background.js
+          node --check extensions/startdeck-connector/content-script.js
+          node --check extensions/startdeck-connector/popup.js
+          node - <<'NODE'
+          const fs = require("fs");
+          const manifest = JSON.parse(
+            fs.readFileSync("extensions/startdeck-connector/manifest.json", "utf8")
+          );
+          if (manifest.manifest_version !== 3) {
+            throw new Error("StartDeck Connector must remain a Manifest V3 extension.");
+          }
+          if (!/^[0-9]+(?:\.[0-9]+){1,3}(?:[-.][0-9A-Za-z][0-9A-Za-z.-]*)?$/.test(manifest.version)) {
+            throw new Error("Extension manifest.version must look like 0.1.1 or 0.1.1-rc.1.");
+          }
+          NODE
+
+      - name: Package extension
+        id: package
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          extension_dir="extensions/startdeck-connector"
+          version="$(
+            node -e "const m=require('./extensions/startdeck-connector/manifest.json'); console.log(m.version)"
+          )"
+          tag="startdeck-connector-v${version}"
+          archive_name="${tag}.zip"
+          release_dir="dist/startdeck-connector"
+
+          rm -rf "$release_dir"
+          mkdir -p "$release_dir"
+
+          (
+            cd "$extension_dir"
+            zip -r "../../${release_dir}/${archive_name}" \
+              manifest.json \
+              background.js \
+              content-script.js \
+              popup.html \
+              popup.js \
+              README.md
+          )
+
+          sha256sum "${release_dir}/${archive_name}" > "${release_dir}/${archive_name}.sha256"
+
+          cat > "${release_dir}/release-notes.md" <<EOF
+          StartDeck Connector ${version}
+
+          Chrome MV3 extension package for StartDeck.
+
+          ## Install
+
+          1. Download \`${archive_name}\`.
+          2. Unzip it locally.
+          3. Open Chrome \`chrome://extensions/\`.
+          4. Enable developer mode.
+          5. Load the unzipped extension directory.
+
+          ## Assets
+
+          - \`${archive_name}\`
+          - \`${archive_name}.sha256\`
+          EOF
+
+          {
+            echo "version=${version}"
+            echo "tag=${tag}"
+            echo "archive_path=${release_dir}/${archive_name}"
+            echo "checksum_path=${release_dir}/${archive_name}.sha256"
+            echo "notes_path=${release_dir}/release-notes.md"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Ensure release tag
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          tag="${{ steps.package.outputs.tag }}"
+          git fetch --tags origin
+
+          if git rev-parse --quiet --verify "refs/tags/${tag}" >/dev/null; then
+            tag_sha="$(git rev-list -n 1 "${tag}")"
+            if [[ "$tag_sha" != "$GITHUB_SHA" ]]; then
+              echo "Tag ${tag} already exists at ${tag_sha}, but this workflow is running at ${GITHUB_SHA}." >&2
+              echo "Bump extensions/startdeck-connector/manifest.json version before publishing a new package." >&2
+              exit 1
+            fi
+            exit 0
+          fi
+
+          git tag "${tag}" "$GITHUB_SHA"
+          git push origin "refs/tags/${tag}"
+
+      - name: Publish GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          tag="${{ steps.package.outputs.tag }}"
+          title="StartDeck Connector ${{ steps.package.outputs.version }}"
+          archive_path="${{ steps.package.outputs.archive_path }}"
+          checksum_path="${{ steps.package.outputs.checksum_path }}"
+          notes_path="${{ steps.package.outputs.notes_path }}"
+
+          if gh release view "$tag" >/dev/null 2>&1; then
+            gh release upload "$tag" "$archive_path" "$checksum_path" --clobber
+            gh release edit "$tag" --title "$title" --notes-file "$notes_path"
+          else
+            gh release create "$tag" "$archive_path" "$checksum_path" \
+              --title "$title" \
+              --notes-file "$notes_path"
+          fi
+
+      - name: Upload workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: startdeck-connector-${{ steps.package.outputs.version }}
+          path: |
+            ${{ steps.package.outputs.archive_path }}
+            ${{ steps.package.outputs.checksum_path }}

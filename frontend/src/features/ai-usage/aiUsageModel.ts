@@ -15,6 +15,7 @@ import {
   type AiUsageCredentialStorage,
   type AiUsageCredentialType,
   type AiUsageProviderSummary,
+  type AiUsageRequestMode,
   type AiUsageWidgetData,
 } from "./aiUsageTypes";
 import { getAiUsageProvider } from "./aiUsageProviders";
@@ -44,7 +45,10 @@ const normalizeRefreshInterval = (value: unknown) => {
 const normalizeCredentialStorage = (
   value: unknown,
 ): AiUsageCredentialStorage =>
-  value === "once" || value === "server" ? value : "browser";
+  value === "once" ? value : "browser";
+
+const normalizeRequestMode = (_value: unknown): AiUsageRequestMode =>
+  "connector";
 
 const normalizeCredentialType = (
   value: unknown,
@@ -89,6 +93,7 @@ export const normalizeAiUsageWidgetData = (raw: unknown): AiUsageWidgetData => {
     ? input.sizeKey
     : AI_USAGE_DEFAULT_SIZE;
   const credentialStorage = normalizeCredentialStorage(input.credentialStorage);
+  const requestMode = normalizeRequestMode(input.requestMode);
   const summary = normalizeAiUsageSummary(input.lastSummary, provider.id);
 
   return {
@@ -104,10 +109,11 @@ export const normalizeAiUsageWidgetData = (raw: unknown): AiUsageWidgetData => {
     refreshIntervalMinutes: normalizeRefreshInterval(
       input.refreshIntervalMinutes,
     ),
+    requestMode,
     credentialStorage,
     credentialType: normalizeCredentialType(input.credentialType),
-    hasServerCredential: input.hasServerCredential === true,
-    accountIdHint: normalizeOptionalText(input.accountIdHint),
+    hasServerCredential: false,
+    accountIdHint: undefined,
     lastSummary: summary,
   };
 };

@@ -1,8 +1,12 @@
 // @vitest-environment jsdom
+import { existsSync } from "node:fs";
+import { resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { describe, expect, it, vi } from "vitest";
-import { mount } from "@vue/test-utils";
+import { flushPromises, mount } from "@vue/test-utils";
 import { createTestingPinia } from "@pinia/testing";
 import AddWidgetModal from "./AddWidgetModal.vue";
+import { useUiFeedbackStore } from "@/stores/uiFeedback";
 import type {
   AddComponentPayload,
   AddComponentResult,
@@ -12,6 +16,17 @@ import { AI_USAGE_CATALOG_ID } from "@/features/ai-usage/aiUsageTypes";
 import { TAPD_DEFECTS_CATALOG_ID } from "@/features/tapd-defects/tapdDefectTypes";
 import { SD_FOOD_PICKER_CATALOG_ID } from "@/features/sd-food-picker/sdFoodPickerTypes";
 import { SD_NUMBER_UPPERCASE_CATALOG_ID } from "@/features/sd-number-uppercase/sdNumberUppercaseTypes";
+import { WIDGET_CATALOG } from "@/utils/widgetCatalog";
+
+const repositoryRoot = resolve(fileURLToPath(import.meta.url), "../../../..");
+const frontendPreviewAssetsDir = resolve(
+  repositoryRoot,
+  "frontend/public/assets/widget-previews",
+);
+const backendPreviewAssetsDir = resolve(
+  repositoryRoot,
+  "rust/crates/startdeck-server/resources/public/assets/widget-previews",
+);
 
 const mountModal = (
   onAddComponent = vi.fn<
@@ -102,15 +117,23 @@ describe("AddWidgetModal widget add UI", () => {
         .map((chip) => chip.text()),
     ).toEqual(["全部", "效率", "工具", "系统", "开发", "设计", "创意", "娱乐"]);
     expect(wrapper.find(".sd-add-replica-popularity").exists()).toBe(false);
-    const initialCards = wrapper.findAll(
-      '[data-testid="sd-add-widget-card"]',
-    );
+    const initialCards = wrapper.findAll('[data-testid="sd-add-widget-card"]');
     expect(
       initialCards.slice(0, 4).map((card) => card.find("h3").text()),
     ).toEqual(["时钟", "天气", "纪念日", "日历"]);
-    expect(
-      wrapper.find(".sd-add-widget-preview-frame").attributes("src"),
-    ).toContain("/widget-preview?");
+    expect(wrapper.find(".sd-add-widget-preview-frame").exists()).toBe(false);
+    expect(wrapper.find(".sd-add-widget-preview-image").exists()).toBe(true);
+    expect(wrapper.find(".sd-add-widget-preview").exists()).toBe(false);
+    expect(wrapper.find(".widget-preview-stub").exists()).toBe(false);
+    const firstPreviewImage = initialCards[0]!.find(
+      "img.sd-add-widget-preview-image",
+    );
+    expect(firstPreviewImage.attributes("src")).toBe(
+      "/assets/widget-previews/clock-2x2@3x.png",
+    );
+    expect(firstPreviewImage.attributes("width")).toBe("150");
+    expect(firstPreviewImage.attributes("height")).toBe("150");
+    expect(firstPreviewImage.attributes("alt")).toBe("时钟 组件真实预览");
     expect(
       wrapper
         .findAll('[data-testid="sd-add-category-chip"]')[0]!
@@ -133,6 +156,34 @@ describe("AddWidgetModal widget add UI", () => {
     expect(wrapper.find(".sd-add-size-button").exists()).toBe(false);
   });
 
+  it("falls back to the lightweight preview only when a screenshot asset fails", async () => {
+    const wrapper = mountModal();
+    const firstCard = wrapper.find('[data-testid="sd-add-widget-card"]');
+
+    expect(firstCard.find("img.sd-add-widget-preview-image").exists()).toBe(
+      true,
+    );
+    expect(firstCard.find(".widget-preview-stub").exists()).toBe(false);
+
+    await firstCard.find("img.sd-add-widget-preview-image").trigger("error");
+    await wrapper.vm.$nextTick();
+
+    expect(firstCard.find("img.sd-add-widget-preview-image").exists()).toBe(
+      false,
+    );
+    expect(firstCard.find(".widget-preview-stub").exists()).toBe(true);
+  });
+
+  it("ships real preview screenshots for every catalog item", () => {
+    for (const item of WIDGET_CATALOG) {
+      const fileName = `${item.id}-2x2@3x.png`;
+      expect(existsSync(resolve(frontendPreviewAssetsDir, fileName))).toBe(
+        true,
+      );
+      expect(existsSync(resolve(backendPreviewAssetsDir, fileName))).toBe(true);
+    }
+  });
+
   it("emits default widget size through the shared payload contract", async () => {
     const addSpy = vi.fn(async (payload: AddComponentPayload) => ({
       status: "success" as const,
@@ -140,12 +191,14 @@ describe("AddWidgetModal widget add UI", () => {
       groupId: payload.destinationGroupId,
     }));
     const wrapper = mountModal(addSpy);
+    const uiFeedback = useUiFeedbackStore();
 
     await wrapper.find('[data-testid="sd-add-search"]').setValue("时钟");
     await wrapper.vm.$nextTick();
 
     expect(wrapper.find(".sd-add-size-button").exists()).toBe(false);
     await wrapper.find('[data-testid="sd-add-card-add"]').trigger("click");
+    await flushPromises();
 
     expect(addSpy).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -155,6 +208,15 @@ describe("AddWidgetModal widget add UI", () => {
         sizeKey: "2x2",
       }),
     );
+    expect(wrapper.find(".sd-add-result").text()).toBe("时钟已添加");
+    expect(wrapper.find('[data-testid="sd-add-card-add"]').text()).toBe(
+      "已添加",
+    );
+    expect(uiFeedback.notify).toHaveBeenCalledWith({
+      title: "添加成功",
+      message: "时钟已添加，位置：主页",
+      tone: "success",
+    });
   });
 
   it("shows system widgets as single-instance enable actions", async () => {
@@ -196,9 +258,7 @@ describe("AddWidgetModal widget add UI", () => {
       "已启用",
     );
     expect(
-      systemCard
-        .find('[data-testid="sd-add-card-add"]')
-        .attributes("disabled"),
+      systemCard.find('[data-testid="sd-add-card-add"]').attributes("disabled"),
     ).toBeDefined();
 
     await dockerButton.trigger("click");
@@ -286,9 +346,7 @@ describe("AddWidgetModal widget add UI", () => {
     }));
     const wrapper = mountModal(addSpy);
 
-    await wrapper
-      .find('[data-testid="sd-add-search"]')
-      .setValue("今天吃什么");
+    await wrapper.find('[data-testid="sd-add-search"]').setValue("今天吃什么");
     await wrapper.vm.$nextTick();
 
     const foodCard = wrapper
@@ -440,9 +498,7 @@ describe("AddWidgetModal widget add UI", () => {
     const memoButton = memoCard.find('[data-testid="sd-add-card-add"]');
     const todoButton = todoCard.find('[data-testid="sd-add-card-add"]');
     const poemButton = poemCard.find('[data-testid="sd-add-card-add"]');
-    const pomodoroButton = pomodoroCard.find(
-      '[data-testid="sd-add-card-add"]',
-    );
+    const pomodoroButton = pomodoroCard.find('[data-testid="sd-add-card-add"]');
     expect(clockButton.text()).toBe("添加");
     expect(memoButton.text()).toBe("添加");
     expect(todoButton.text()).toBe("添加");

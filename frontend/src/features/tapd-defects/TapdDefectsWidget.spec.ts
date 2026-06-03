@@ -4,8 +4,16 @@ import { createTestingPinia } from "@pinia/testing";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import tapdLogoUrl from "@/assets/tapd/logo.svg";
 import TapdDefectsWidget from "./TapdDefectsWidget.vue";
+import { saveBrowserTapdCredential } from "./tapdCredentialStorage";
+import { queryTapdDefects } from "./tapdDefectApi";
 import { createDefaultTapdDefectWidget } from "./tapdDefectModel";
 import { TAPD_ACTIONABLE_DEFECT_STATUS } from "./tapdDefectTypes";
+
+vi.mock("./tapdDefectApi", () => ({
+  queryTapdDefects: vi.fn(),
+}));
+
+const mockedQueryTapdDefects = vi.mocked(queryTapdDefects);
 
 const authenticatedState = {
   auth: {
@@ -16,8 +24,16 @@ const authenticatedState = {
   },
 };
 
+const saveCredential = (widgetId: string) =>
+  saveBrowserTapdCredential("ying", widgetId, {
+    credentialType: "bearer",
+    accessToken: "tapd-token",
+    savedAt: "2026-06-02T00:00:00.000Z",
+  });
+
 describe("TapdDefectsWidget", () => {
   beforeEach(() => {
+    mockedQueryTapdDefects.mockReset();
     localStorage.setItem("start-deck-username", "ying");
   });
 
@@ -30,12 +46,13 @@ describe("TapdDefectsWidget", () => {
     "renders the approved TAPD defects size %s without personal shorthand",
     (sizeKey) => {
       const widget = createDefaultTapdDefectWidget();
+      saveCredential(widget.id);
       widget.data = {
         ...(widget.data as Record<string, unknown>),
         sizeKey,
         workspaceId: "20358627",
         projectName: "支付平台",
-        hasServerCredential: true,
+        hasConnectorCredential: true,
         lastSummary: {
           status: "connected",
           workspaceId: "20358627",
@@ -84,12 +101,13 @@ describe("TapdDefectsWidget", () => {
 
   it("renders defect row statuses in Chinese", () => {
     const widget = createDefaultTapdDefectWidget();
+    saveCredential(widget.id);
     widget.data = {
       ...(widget.data as Record<string, unknown>),
       sizeKey: "2x4",
       workspaceId: "40685585",
       projectName: "UGOS_PRO",
-      hasServerCredential: true,
+      hasConnectorCredential: true,
       lastSummary: {
         status: "connected",
         workspaceId: "40685585",
@@ -210,8 +228,7 @@ describe("TapdDefectsWidget", () => {
   });
 
   it("keeps personal defect scope when no TAPD username is configured", async () => {
-    const fetchMock = vi.fn(async () =>
-      Response.json({
+    mockedQueryTapdDefects.mockResolvedValue({
         status: "connected",
         workspaceId: "40685585",
         projectName: "UGOS_PRO",
@@ -225,16 +242,15 @@ describe("TapdDefectsWidget", () => {
         page: 1,
         limit: 100,
         items: [],
-      }),
-    );
-    vi.stubGlobal("fetch", fetchMock);
+      });
     const widget = createDefaultTapdDefectWidget();
     widget.id = "tapd-real";
+    saveCredential(widget.id);
     widget.data = {
       ...(widget.data as Record<string, unknown>),
       workspaceId: "40685585",
       projectName: "UGOS_PRO",
-      hasServerCredential: true,
+      hasConnectorCredential: true,
       visibilityScope: "owned-by-current-user",
       query: {
         limit: 100,
@@ -260,11 +276,7 @@ describe("TapdDefectsWidget", () => {
     await new Promise((resolve) => window.setTimeout(resolve, 0));
     await wrapper.vm.$nextTick();
 
-    const [, init] = fetchMock.mock.calls[0] as unknown as [
-      RequestInfo,
-      RequestInit,
-    ];
-    const body = JSON.parse(String(init.body));
+    const body = mockedQueryTapdDefects.mock.calls[0]?.[0];
     expect(body.visibilityScope).toBe("owned-by-current-user");
     expect(body.filters.status).toBe(TAPD_ACTIONABLE_DEFECT_STATUS);
     expect(wrapper.emitted("updateData")?.at(-1)?.[0]).toMatchObject({
@@ -274,20 +286,17 @@ describe("TapdDefectsWidget", () => {
   });
 
   it("does not persist duplicate config error summaries during auto refresh", async () => {
-    const fetchMock = vi.fn(async () =>
-      Response.json(
-        { success: false, error: "current_user_required" },
-        { status: 400 },
-      ),
+    mockedQueryTapdDefects.mockRejectedValue(
+      new Error("current_user_required"),
     );
-    vi.stubGlobal("fetch", fetchMock);
     const widget = createDefaultTapdDefectWidget();
     widget.id = "tapd-duplicate-error";
+    saveCredential(widget.id);
     widget.data = {
       ...(widget.data as Record<string, unknown>),
       workspaceId: "40685585",
       projectName: "UGOS_PRO",
-      hasServerCredential: true,
+      hasConnectorCredential: true,
       visibilityScope: "owned-by-current-user",
       query: {
         limit: 100,
@@ -330,7 +339,7 @@ describe("TapdDefectsWidget", () => {
     await flushPromises();
     await wrapper.vm.$nextTick();
 
-    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(mockedQueryTapdDefects).toHaveBeenCalledTimes(1);
     expect(wrapper.emitted("updateData")).toBeUndefined();
     expect(wrapper.text()).toContain("请在配置参数里填写 TAPD 用户名");
     wrapper.unmount();

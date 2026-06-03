@@ -8,7 +8,8 @@ export const AI_USAGE_DEFAULT_SIZE: SdWidgetSizeKey = "2x2";
 
 export type AiUsageProviderId = "openai" | "claude" | "deepseek" | string;
 export type AiUsageCredentialType = "access_token" | "session_cookie";
-export type AiUsageCredentialStorage = "once" | "browser" | "server";
+export type AiUsageCredentialStorage = "once" | "browser";
+export type AiUsageRequestMode = "connector";
 export type AiUsageQuerySupport = "available" | "planned";
 export type AiUsageStatus = "connected" | "needs-config" | "error" | "syncing";
 
@@ -43,6 +44,7 @@ export interface AiUsageWidgetData {
   iconKey: string;
   defaultWindow: "primary" | "weekly";
   refreshIntervalMinutes: number;
+  requestMode: AiUsageRequestMode;
   credentialStorage: AiUsageCredentialStorage;
   credentialType?: AiUsageCredentialType;
   hasServerCredential?: boolean;
@@ -53,6 +55,7 @@ export interface AiUsageWidgetData {
 export interface AiUsageQueryRequest {
   widgetId: string;
   providerId: string;
+  requestMode?: AiUsageRequestMode;
   credentialStorage: AiUsageCredentialStorage;
   credentialType?: AiUsageCredentialType;
   credential?: string;
@@ -63,7 +66,6 @@ export interface AiUsageCredentialPayload {
   credentialType: AiUsageCredentialType;
   credential: string;
   accountId?: string;
-  serverStorageAcknowledged: boolean;
 }
 
 export interface AiUsageCredentialStatus {

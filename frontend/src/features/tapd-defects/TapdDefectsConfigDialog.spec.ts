@@ -3,11 +3,22 @@ import { flushPromises, mount } from "@vue/test-utils";
 import { createTestingPinia } from "@pinia/testing";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import TapdDefectsConfigDialog from "./TapdDefectsConfigDialog.vue";
+import {
+  saveBrowserTapdCredential,
+  tapdBrowserCredentialKey,
+} from "./tapdCredentialStorage";
+import { resolveTapdWorkspace } from "./tapdDefectApi";
 import { normalizeTapdDefectWidgetData } from "./tapdDefectModel";
 import type {
   TapdConfigSaveOptions,
   TapdDefectWidgetData,
 } from "./tapdDefectTypes";
+
+vi.mock("./tapdDefectApi", () => ({
+  resolveTapdWorkspace: vi.fn(),
+}));
+
+const mockedResolveTapdWorkspace = vi.mocked(resolveTapdWorkspace);
 
 const authenticatedState = {
   auth: {
@@ -18,8 +29,16 @@ const authenticatedState = {
   },
 };
 
+const saveCredential = (widgetId: string) =>
+  saveBrowserTapdCredential("ying", widgetId, {
+    credentialType: "bearer",
+    accessToken: "tapd-token",
+    savedAt: "2026-06-02T00:00:00.000Z",
+  });
+
 describe("TapdDefectsConfigDialog", () => {
   beforeEach(() => {
+    mockedResolveTapdWorkspace.mockReset();
     localStorage.setItem("start-deck-username", "ying");
   });
 
@@ -29,13 +48,6 @@ describe("TapdDefectsConfigDialog", () => {
   });
 
   it("keeps a large blocked list inside the fixed management surface", async () => {
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async () => ({
-        ok: true,
-        json: async () => ({ hasServerCredential: false, widgetId: "tapd-1" }),
-      })),
-    );
     const data = normalizeTapdDefectWidgetData({
       workspaceId: "20358627",
       projectName: "支付平台",
@@ -71,13 +83,6 @@ describe("TapdDefectsConfigDialog", () => {
   });
 
   it("restores a blocked defect without asking the parent to close the dialog", async () => {
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async () => ({
-        ok: true,
-        json: async () => ({ hasServerCredential: false, widgetId: "tapd-1" }),
-      })),
-    );
     const data = normalizeTapdDefectWidgetData({
       workspaceId: "40685585",
       projectName: "UGOS_PRO",
@@ -131,25 +136,11 @@ describe("TapdDefectsConfigDialog", () => {
   });
 
   it("confirms credential deletion and immediately clears stale connection data", async () => {
-    const fetchMock = vi.fn(
-      async (_input: RequestInfo | URL, init?: RequestInit) => ({
-        ok: true,
-        json: async () =>
-          init?.method === "DELETE"
-            ? { success: true }
-            : {
-                hasServerCredential: true,
-                widgetId: "tapd-1",
-                credentialType: "bearer",
-                accountHint: "****eacc",
-              },
-      }),
-    );
-    vi.stubGlobal("fetch", fetchMock);
+    saveCredential("tapd-1");
     const data = normalizeTapdDefectWidgetData({
       workspaceId: "40685585",
       projectName: "UGOS_PRO",
-      hasServerCredential: true,
+      hasConnectorCredential: true,
       credentialType: "bearer",
       credentialAccountHint: "****eacc",
       blockedBugIds: ["D-1751"],
@@ -214,22 +205,17 @@ describe("TapdDefectsConfigDialog", () => {
     expect(nextData?.displayName).toBeUndefined();
     expect(nextData?.query.currentUser).toBeUndefined();
     expect(nextData?.hasServerCredential).toBe(false);
+    expect(nextData?.hasConnectorCredential).toBe(false);
     expect(nextData?.credentialType).toBeUndefined();
     expect(nextData?.credentialAccountHint).toBeUndefined();
     expect(nextData?.lastSummary?.status).toBe("needs-config");
     expect(nextData?.lastSummary?.errorCode).toBeUndefined();
     expect(nextData?.lastSummary?.items).toEqual([]);
     expect(nextData?.lastSummary?.visibleTotal).toBe(0);
+    expect(localStorage.getItem(tapdBrowserCredentialKey("ying", "tapd-1"))).toBeNull();
   });
 
-  it("hides stale project names when no server credential is saved", async () => {
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async () => ({
-        ok: true,
-        json: async () => ({ hasServerCredential: false, widgetId: "tapd-1" }),
-      })),
-    );
+  it("hides stale project names when no connector credential is saved", async () => {
     const wrapper = mount(TapdDefectsConfigDialog, {
       global: {
         plugins: [createTestingPinia({ createSpy: vi.fn, initialState: authenticatedState })],
@@ -238,7 +224,7 @@ describe("TapdDefectsConfigDialog", () => {
         data: normalizeTapdDefectWidgetData({
           workspaceId: "40685585",
           projectName: "UGOS_PRO",
-          hasServerCredential: false,
+          hasConnectorCredential: false,
           lastSummary: {
             status: "error",
             workspaceId: "40685585",
@@ -278,14 +264,7 @@ describe("TapdDefectsConfigDialog", () => {
     expect(wrapper.text()).toContain("刷新间隔（分钟）");
   });
 
-  it("shows a credential-specific workspace lookup hint when the project id is already filled", async () => {
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async () => ({
-        ok: true,
-        json: async () => ({ hasServerCredential: false, widgetId: "tapd-1" }),
-      })),
-    );
+  it("shows a connector credential hint when the project id is already filled", async () => {
     const wrapper = mount(TapdDefectsConfigDialog, {
       global: {
         plugins: [createTestingPinia({ createSpy: vi.fn, initialState: authenticatedState })],
@@ -294,7 +273,7 @@ describe("TapdDefectsConfigDialog", () => {
         data: normalizeTapdDefectWidgetData({
           workspaceId: "40685585",
           projectName: "UGOS_PRO",
-          hasServerCredential: true,
+          hasConnectorCredential: true,
         }),
         widgetId: "tapd-1",
       },
@@ -306,46 +285,17 @@ describe("TapdDefectsConfigDialog", () => {
     expect(lookupButton).toBeTruthy();
     await lookupButton!.trigger("click");
 
-    expect(wrapper.text()).toContain("请先保存 TAPD 服务端凭据");
-    expect(wrapper.text()).not.toContain("请先填写项目 ID 并保存服务端凭据");
+    expect(wrapper.text()).toContain("请先保存 TAPD 浏览器插件凭据");
+    expect(wrapper.text()).not.toContain("请先填写项目 ID");
   });
 
   it("saves a new bearer credential before reading the workspace name", async () => {
-    const fetchMock = vi.fn(
-      async (input: RequestInfo | URL, init?: RequestInit) => {
-        const url = String(input);
-        if (url.includes("/credentials/") && init?.method === "PUT") {
-          return {
-            ok: true,
-            json: async () => ({
-              hasServerCredential: true,
-              widgetId: "tapd-1",
-              credentialType: "bearer",
-              accountHint: "****eacc",
-            }),
-          };
-        }
-        if (url.includes("/workspace")) {
-          return {
-            ok: true,
-            json: async () => ({
-              status: "connected",
-              workspaceId: "40685585",
-              projectName: "UGOS_PRO",
-              fallbackName: "TAPD 缺陷 · 40685585",
-            }),
-          };
-        }
-        return {
-          ok: true,
-          json: async () => ({
-            hasServerCredential: false,
-            widgetId: "tapd-1",
-          }),
-        };
-      },
-    );
-    vi.stubGlobal("fetch", fetchMock);
+    mockedResolveTapdWorkspace.mockResolvedValue({
+      status: "connected",
+      workspaceId: "40685585",
+      projectName: "UGOS_PRO",
+      fallbackName: "TAPD 缺陷 · 40685585",
+    });
     const wrapper = mount(TapdDefectsConfigDialog, {
       global: {
         plugins: [createTestingPinia({ createSpy: vi.fn, initialState: authenticatedState })],
@@ -360,9 +310,8 @@ describe("TapdDefectsConfigDialog", () => {
     await wrapper
       .find('input[placeholder="workspace_id"]')
       .setValue("40685585");
-    await wrapper.find("select").setValue("bearer");
+    await wrapper.findAll("select")[0].setValue("bearer");
     await wrapper.find('input[type="password"]').setValue("tapd-token");
-    await wrapper.find('input[type="checkbox"]').setValue(true);
 
     const lookupButton = wrapper
       .findAll("button")
@@ -371,14 +320,19 @@ describe("TapdDefectsConfigDialog", () => {
     await lookupButton!.trigger("click");
     await flushPromises();
 
-    expect(fetchMock).toHaveBeenCalledWith(
-      "/api/tapd-defects/credentials/tapd-1",
-      expect.objectContaining({ method: "PUT" }),
+    expect(mockedResolveTapdWorkspace).toHaveBeenCalledWith(
+      "tapd-1",
+      "40685585",
+      {
+        credential: expect.objectContaining({
+          credentialType: "bearer",
+          accessToken: "tapd-token",
+        }),
+      },
     );
-    expect(fetchMock).toHaveBeenCalledWith(
-      "/api/tapd-defects/workspace",
-      expect.objectContaining({ method: "POST" }),
-    );
+    expect(
+      localStorage.getItem(tapdBrowserCredentialKey("ying", "tapd-1")),
+    ).toContain("tapd-token");
     expect(
       (
         wrapper.find('input[placeholder="从 TAPD 读取"]')
@@ -388,27 +342,10 @@ describe("TapdDefectsConfigDialog", () => {
     expect(wrapper.text()).toContain("项目名称已更新");
   });
 
-  it("explains expired StartDeck login tokens instead of showing raw invalid_token", async () => {
-    const fetchMock = vi.fn(
-      async (input: RequestInfo | URL, init?: RequestInit) => {
-        const url = String(input);
-        if (url.includes("/credentials/") && init?.method === "PUT") {
-          return {
-            ok: false,
-            status: 401,
-            json: async () => ({ error: "invalid_token" }),
-          };
-        }
-        return {
-          ok: true,
-          json: async () => ({
-            hasServerCredential: false,
-            widgetId: "tapd-1",
-          }),
-        };
-      },
+  it("explains connector errors instead of exposing raw connector codes", async () => {
+    mockedResolveTapdWorkspace.mockRejectedValue(
+      new Error("connector_unavailable"),
     );
-    vi.stubGlobal("fetch", fetchMock);
     const wrapper = mount(TapdDefectsConfigDialog, {
       global: {
         plugins: [
@@ -429,18 +366,16 @@ describe("TapdDefectsConfigDialog", () => {
     await wrapper
       .find('input[placeholder="workspace_id"]')
       .setValue("40685585");
-    await wrapper.find("select").setValue("bearer");
+    await wrapper.findAll("select")[0].setValue("bearer");
     await wrapper.find('input[type="password"]').setValue("tapd-token");
-    await wrapper.find('input[type="checkbox"]').setValue(true);
-    const saveButton = wrapper
+    const lookupButton = wrapper
       .findAll("button")
-      .find((button) => button.text().includes("保存配置"));
-    expect(saveButton).toBeTruthy();
-    await saveButton!.trigger("click");
+      .find((button) => button.text().includes("读取项目名"));
+    expect(lookupButton).toBeTruthy();
+    await lookupButton!.trigger("click");
     await flushPromises();
 
-    expect(wrapper.text()).toContain("登录状态已失效，请重新登录");
-    expect(wrapper.text()).not.toContain("invalid_token");
-    expect(localStorage.getItem("start-deck-token")).toBeNull();
+    expect(wrapper.text()).toContain("未检测到 StartDeck 浏览器插件");
+    expect(wrapper.text()).not.toContain("connector_unavailable");
   });
 });

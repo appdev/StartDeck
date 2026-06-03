@@ -85,6 +85,5 @@ export const clearBrowserAiUsageCredential = (
 
 export const credentialStorageLabel = (storage: AiUsageCredentialStorage) => {
   if (storage === "once") return "仅本次使用";
-  if (storage === "server") return "保存到服务端";
   return "保存到当前浏览器";
 };

@@ -4,12 +4,7 @@ import type { WidgetConfig } from "@/types";
 import { useAuthStore } from "@/stores/auth";
 import { useRequireLogin } from "@/composables/useRequireLogin";
 import AiProviderIcon from "./AiProviderIcon.vue";
-import {
-  deleteAiUsageServerCredential,
-  getAiUsageCredentialStatus,
-  queryAiUsage,
-  saveAiUsageServerCredential,
-} from "./aiUsageApi";
+import { queryAiUsage } from "./aiUsageApi";
 import {
   clearBrowserAiUsageCredential,
   loadBrowserAiUsageCredential,
@@ -49,10 +44,7 @@ interface AiUsageEditorState {
   credentialType: AiUsageCredentialType;
   credential: string;
   accountId: string;
-  accountIdHint: string;
-  serverStorageAcknowledged: boolean;
   refreshIntervalMinutes: number;
-  hasServerCredential: boolean;
   lastSummary: AiUsageProviderSummary;
 }
 
@@ -71,10 +63,7 @@ const editor = reactive<AiUsageEditorState>({
   credentialType: initialData.value.credentialType || "access_token",
   credential: "",
   accountId: "",
-  accountIdHint: initialData.value.accountIdHint || "",
-  serverStorageAcknowledged: false,
   refreshIntervalMinutes: initialData.value.refreshIntervalMinutes,
-  hasServerCredential: initialData.value.hasServerCredential === true,
   lastSummary: normalizeAiUsageSummary(
     initialData.value.lastSummary,
     initialData.value.providerId,
@@ -102,16 +91,11 @@ const sanitizeEditorData = (): AiUsageWidgetData => {
     displayName: editor.displayName || provider.defaultDisplayName,
     accountLabel: editor.accountLabel,
     iconKey: provider.iconKey,
+    requestMode: "connector",
     credentialStorage: queryAvailable.value ? editor.credentialStorage : "once",
     credentialType: queryAvailable.value ? editor.credentialType : undefined,
-    hasServerCredential:
-      queryAvailable.value && editor.credentialStorage === "server"
-        ? editor.hasServerCredential
-        : false,
-    accountIdHint:
-      queryAvailable.value && editor.credentialStorage === "server"
-        ? editor.accountIdHint || undefined
-        : undefined,
+    hasServerCredential: false,
+    accountIdHint: undefined,
     refreshIntervalMinutes: editor.refreshIntervalMinutes,
     lastSummary: editor.lastSummary,
   });
@@ -130,32 +114,11 @@ const syncBrowserCredential = () => {
   editor.accountId = stored.accountId || "";
 };
 
-const syncServerCredential = async () => {
-  if (!auth.isLogged || !queryAvailable.value) return;
-  try {
-    const status = await getAiUsageCredentialStatus(
-      props.widget.id,
-      editor.providerId,
-    );
-    editor.hasServerCredential = status.hasServerCredential;
-    if (status.credentialType) editor.credentialType = status.credentialType;
-    editor.accountIdHint = status.accountIdHint || "";
-  } catch {
-    editor.hasServerCredential = false;
-    editor.accountIdHint = "";
-  }
-};
-
-const syncCredentialDraft = async () => {
+const syncCredentialDraft = () => {
   editor.credential = "";
   editor.accountId = "";
-  editor.accountIdHint = "";
-  editor.hasServerCredential = false;
   if (editor.credentialStorage === "browser") {
     syncBrowserCredential();
-  }
-  if (editor.credentialStorage === "server") {
-    await syncServerCredential();
   }
 };
 
@@ -170,39 +133,12 @@ const setProvider = (providerId: string) => {
   editor.credentialType = "access_token";
   editor.credential = "";
   editor.accountId = "";
-  editor.accountIdHint = "";
-  editor.hasServerCredential = false;
   editor.lastSummary = normalizeAiUsageSummary({}, provider.id);
   message.value =
     provider.querySupport === "available"
       ? ""
       : "此 provider 的查询适配器将在后续版本接入";
-  void syncCredentialDraft();
-};
-
-const saveServerCredentialIfNeeded = async () => {
-  if (editor.credentialStorage !== "server") return;
-  if (!editor.credential.trim()) {
-    if (editor.hasServerCredential) return;
-    throw new Error("请输入凭证后再保存到服务端");
-  }
-  if (!editor.serverStorageAcknowledged) {
-    throw new Error("请先确认服务端保存风险");
-  }
-  const status = await saveAiUsageServerCredential(
-    props.widget.id,
-    editor.providerId,
-    {
-      credentialType: editor.credentialType,
-      credential: editor.credential,
-      accountId: editor.accountId.trim() || undefined,
-      serverStorageAcknowledged: true,
-    },
-  );
-  editor.hasServerCredential = status.hasServerCredential;
-  editor.accountIdHint = status.accountIdHint || "";
-  editor.credential = "";
-  if (status.credentialType) editor.credentialType = status.credentialType;
+  syncCredentialDraft();
 };
 
 const persistCredentialChoice = async () => {
@@ -217,21 +153,8 @@ const persistCredentialChoice = async () => {
         savedAt: new Date().toISOString(),
       });
     }
-    if (auth.isLogged) {
-      await deleteAiUsageServerCredential(props.widget.id, editor.providerId);
-      editor.hasServerCredential = false;
-      editor.accountIdHint = "";
-    }
   } else {
     clearBrowserAiUsageCredential(scope, props.widget.id, editor.providerId);
-  }
-  if (editor.credentialStorage === "server") {
-    await saveServerCredentialIfNeeded();
-  }
-  if (editor.credentialStorage === "once" && auth.isLogged) {
-    await deleteAiUsageServerCredential(props.widget.id, editor.providerId);
-    editor.hasServerCredential = false;
-    editor.accountIdHint = "";
   }
 };
 
@@ -264,9 +187,6 @@ const testConnection = async () => {
   busy.value = true;
   message.value = "正在测试连接";
   try {
-    if (editor.credentialStorage === "server") {
-      await saveServerCredentialIfNeeded();
-    }
     const scope = auth.username || "admin";
     const stored =
       editor.credentialStorage === "browser"
@@ -279,19 +199,11 @@ const testConnection = async () => {
     const summary = await queryAiUsage({
       widgetId: props.widget.id,
       providerId: editor.providerId,
+      requestMode: "connector",
       credentialStorage: editor.credentialStorage,
-      credentialType:
-        editor.credentialStorage === "server"
-          ? undefined
-          : stored?.credentialType || editor.credentialType,
-      credential:
-        editor.credentialStorage === "server"
-          ? undefined
-          : stored?.credential || editor.credential,
-      accountId:
-        editor.credentialStorage === "server"
-          ? undefined
-          : stored?.accountId || editor.accountId.trim() || undefined,
+      credentialType: stored?.credentialType || editor.credentialType,
+      credential: stored?.credential || editor.credential,
+      accountId: stored?.accountId || editor.accountId.trim() || undefined,
     });
     editor.lastSummary = normalizeAiUsageSummary(summary, editor.providerId);
     emit("updateData", sanitizeEditorData());
@@ -317,12 +229,12 @@ const testConnection = async () => {
 watch(
   () => editor.credentialStorage,
   () => {
-    void syncCredentialDraft();
+    syncCredentialDraft();
   },
 );
 
 onMounted(() => {
-  void syncCredentialDraft();
+  syncCredentialDraft();
 });
 </script>
 
@@ -448,7 +360,7 @@ onMounted(() => {
 
           <div class="field">
             <span>凭证保存方式</span>
-            <div class="segmented segmented-three">
+            <div class="segmented segmented-two">
               <button
                 type="button"
                 :class="{ active: editor.credentialStorage === 'once' }"
@@ -463,27 +375,11 @@ onMounted(() => {
               >
                 浏览器
               </button>
-              <button
-                type="button"
-                :class="{ active: editor.credentialStorage === 'server' }"
-                @click="editor.credentialStorage = 'server'"
-              >
-                服务端
-              </button>
             </div>
           </div>
 
-          <label
-            v-if="editor.credentialStorage === 'server'"
-            class="credential-card warning"
-          >
-            <input v-model="editor.serverStorageAcknowledged" type="checkbox" />
-            <span
-              >我理解服务端会加密保存此凭证，仅在可信自托管环境中使用。</span
-            >
-          </label>
-          <div v-else class="credential-card warning">
-            服务端保存需二次确认，默认保存到浏览器。
+          <div class="credential-card warning">
+            插件模式会通过当前浏览器网络请求上游，凭据只用于本地发起请求。
           </div>
         </template>
         <div v-else class="planned-card">
@@ -810,10 +706,6 @@ onMounted(() => {
 
 .segmented-two {
   grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-.segmented-three {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .segmented button,

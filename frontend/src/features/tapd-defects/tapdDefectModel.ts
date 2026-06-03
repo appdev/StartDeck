@@ -15,20 +15,20 @@ import {
   TAPD_DEFECTS_WIDGET_TYPE,
   TAPD_DEFECT_DEFAULT_FIELDS,
   type TapdBlockedBugSnapshot,
+  type TapdCredentialStorage,
   type TapdCredentialType,
   type TapdDefectListItem,
   type TapdDefectQueryConfig,
   type TapdDefectSummary,
   type TapdDefectVisibilityScope,
   type TapdDefectWidgetData,
+  type TapdRequestMode,
 } from "./tapdDefectTypes";
 
 const isObject = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
 
-export const isTapdDefectSizeKey = (
-  value: unknown,
-): value is SdWidgetSizeKey =>
+export const isTapdDefectSizeKey = (value: unknown): value is SdWidgetSizeKey =>
   typeof value === "string" &&
   SD_WIDGET_SIZE_BY_KEY.has(value as SdWidgetSizeKey);
 
@@ -64,6 +64,19 @@ const normalizeCredentialType = (
   value: unknown,
 ): TapdCredentialType | undefined =>
   value === "bearer" || value === "basic" ? value : undefined;
+
+const normalizeRequestMode = (_value: unknown): TapdRequestMode =>
+  "connector";
+
+const normalizeCredentialStorage = (
+  value: unknown,
+  _requestMode: TapdRequestMode,
+): TapdCredentialStorage => {
+  if (value === "once" || value === "browser") {
+    return value;
+  }
+  return "browser";
+};
 
 const normalizeFields = (value: unknown) => {
   const source = Array.isArray(value) ? value : TAPD_DEFECT_DEFAULT_FIELDS;
@@ -226,7 +239,7 @@ export const resolveTapdDisplayName = (data: TapdDefectWidgetData) => {
 };
 
 export const hasTapdDefectConnection = (data: TapdDefectWidgetData) =>
-  Boolean(data.workspaceId.trim()) && data.hasServerCredential === true;
+  Boolean(data.workspaceId.trim()) && data.hasConnectorCredential === true;
 
 export const normalizeTapdDefectWidgetData = (
   raw: unknown,
@@ -239,6 +252,11 @@ export const normalizeTapdDefectWidgetData = (
   const workspaceId = normalizeText(input.workspaceId);
   const projectName = normalizeText(input.projectName);
   const visibilityScope = normalizeVisibilityScope(input.visibilityScope);
+  const requestMode = normalizeRequestMode(input.requestMode);
+  const credentialStorage = normalizeCredentialStorage(
+    input.credentialStorage,
+    requestMode,
+  );
   return {
     runtime: TAPD_DEFECTS_RUNTIME,
     layoutSystem: SD_GRID_SCHEMA_VERSION,
@@ -254,7 +272,10 @@ export const normalizeTapdDefectWidgetData = (
     refreshIntervalMinutes: normalizeRefreshInterval(
       input.refreshIntervalMinutes,
     ),
-    hasServerCredential: input.hasServerCredential === true,
+    requestMode,
+    credentialStorage,
+    hasServerCredential: false,
+    hasConnectorCredential: input.hasConnectorCredential === true,
     credentialType: normalizeCredentialType(input.credentialType),
     credentialAccountHint: normalizeOptionalText(input.credentialAccountHint),
     tapdBaseUrl: normalizeText(input.tapdBaseUrl, "https://www.tapd.cn"),
@@ -384,7 +405,11 @@ export const tapdErrorMessage = (code?: string) => {
     case "current_user_required":
       return "请在配置参数里填写 TAPD 用户名";
     case "server_credential_missing":
-      return "请先保存 TAPD 服务端凭据";
+      return "请先保存 TAPD 浏览器插件凭据";
+    case "connector_unavailable":
+      return "未检测到 StartDeck 浏览器插件";
+    case "connector_credential_missing":
+      return "请先保存 TAPD 浏览器插件凭据";
     case "reauth_required":
       return "TAPD 凭据已失效，请重新保存";
     case "upstream_forbidden":

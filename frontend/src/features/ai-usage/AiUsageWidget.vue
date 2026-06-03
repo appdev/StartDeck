@@ -59,13 +59,6 @@ const barStyle = (value: number | null | undefined) => ({
 
 const buildQueryCredential = () => {
   if (!isAiUsageProviderQueryAvailable(data.value.providerId)) return null;
-  if (data.value.credentialStorage === "server") {
-    return {
-      widgetId: props.widget.id,
-      providerId: data.value.providerId,
-      credentialStorage: "server" as const,
-    };
-  }
   if (data.value.credentialStorage === "browser") {
     const stored = loadBrowserAiUsageCredential(
       auth.username || "guest",
@@ -76,6 +69,7 @@ const buildQueryCredential = () => {
     return {
       widgetId: props.widget.id,
       providerId: data.value.providerId,
+      requestMode: "connector" as const,
       credentialStorage: "browser" as const,
       credentialType: stored.credentialType,
       credential: stored.credential,
@@ -89,10 +83,9 @@ const applySummary = (next: AiUsageProviderSummary) => {
   emit("updateData", {
     ...data.value,
     lastSummary: next,
-    hasServerCredential:
-      data.value.credentialStorage === "server"
-        ? data.value.hasServerCredential
-        : false,
+    requestMode: "connector",
+    hasServerCredential: false,
+    accountIdHint: undefined,
   });
 };
 

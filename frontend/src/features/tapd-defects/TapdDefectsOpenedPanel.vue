@@ -11,6 +11,7 @@ import {
 import type { WidgetConfig } from "@/types";
 import { useAuthStore } from "@/stores/auth";
 import { useRequireLogin } from "@/composables/useRequireLogin";
+import { loadBrowserTapdCredential } from "./tapdCredentialStorage";
 import { queryTapdDefects } from "./tapdDefectApi";
 import {
   buildTapdFilters,
@@ -59,11 +60,21 @@ const { requireLogin } = useRequireLogin();
 const requireTapdMutation = () => requireLogin("请先登录后再配置 TAPD 组件。");
 
 const data = computed(() => normalizeTapdDefectWidgetData(props.widget.data));
+const resolveConnectorCredential = (requestData: TapdDefectWidgetData) => {
+  if (requestData.credentialStorage !== "browser") return null;
+  return loadBrowserTapdCredential(auth.username || "guest", props.widget.id);
+};
+const connectorCredential = computed(() =>
+  resolveConnectorCredential(data.value),
+);
 const activeScope = computed<TapdDefectVisibilityScope>(
   () => data.value.visibilityScope,
 );
 const summary = computed(() => data.value.lastSummary);
-const needsConfig = computed(() => !hasTapdDefectConnection(data.value));
+const needsConfig = computed(
+  () =>
+    !hasTapdDefectConnection(data.value) || connectorCredential.value === null,
+);
 const title = computed(() =>
   needsConfig.value ? "TAPD 缺陷" : resolveTapdDisplayName(data.value),
 );
@@ -165,7 +176,9 @@ const refreshDefects = async (
     ? normalizeTapdDefectWidgetData(sourceData)
     : data.value;
   const requestScope = requestData.visibilityScope;
-  const requestNeedsConfig = !hasTapdDefectConnection(requestData);
+  const requestCredential = resolveConnectorCredential(requestData);
+  const requestNeedsConfig =
+    !hasTapdDefectConnection(requestData) || requestCredential === null;
   if (!auth.isLogged) {
     if (options.notifyAuth !== false) requireTapdMutation();
     return;
@@ -180,6 +193,8 @@ const refreshDefects = async (
   try {
     const next = await queryTapdDefects({
       widgetId: props.widget.id,
+      requestMode: "connector",
+      credential: requestCredential || undefined,
       workspaceId: requestData.workspaceId,
       page: nextPage,
       limit: requestData.query.limit,

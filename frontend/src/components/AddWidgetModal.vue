@@ -1,8 +1,10 @@
 <script setup lang="ts">
-import { computed, ref, watch } from "vue";
+import { computed, onBeforeUnmount, ref, watch } from "vue";
 import AppModalShell from "@/components/base/AppModalShell.vue";
 import AppWindowControls from "@/components/base/AppWindowControls.vue";
+import WidgetSizeVariantPreview from "@/components/home/WidgetSizeVariantPreview.vue";
 import { useMainStore } from "@/stores/main";
+import { useUiFeedbackStore, type UiFeedbackTone } from "@/stores/uiFeedback";
 import type { NavGroup, WidgetConfig } from "@/types";
 import type {
   AddComponentPayload,
@@ -42,13 +44,19 @@ const emit = defineEmits<{
 }>();
 
 const store = useMainStore();
+const uiFeedback = useUiFeedbackStore();
 
 const searchText = ref("");
 const destinationGroupId = ref("");
 const activeWidgetCategory = ref<WidgetUiCategory>("all");
 const busyKey = ref("");
 const resultMessage = ref("");
+const resultTone = ref<UiFeedbackTone>("info");
+const lastAddedKey = ref("");
+const lastAddedButtonLabel = ref("");
+const previewImageErrorIds = ref<Set<string>>(new Set());
 const previewSizeKey: WidgetCatalogSizeKey = "2x2";
+let addedFeedbackTimer: ReturnType<typeof setTimeout> | null = null;
 
 const groups = computed(() => props.groups || store.groups);
 
@@ -79,20 +87,6 @@ const ensureDestination = () => {
     ? preferred
     : destinationOptions.value[0]?.id || "";
 };
-
-watch(
-  () => props.show,
-  (show) => {
-    if (!show) return;
-    searchText.value = "";
-    activeWidgetCategory.value = "all";
-    resultMessage.value = "";
-    ensureDestination();
-  },
-  { immediate: true },
-);
-
-watch(destinationOptions, ensureDestination);
 
 const WIDGET_UI_CATEGORIES: {
   label: string;
@@ -166,8 +160,17 @@ const previewSizeFor = (item: WidgetCatalogItem) =>
     (candidate) => candidate.key === previewSizeKey,
   ) || defaultSizeFor(item);
 
-const widgetPreviewFrameSrc = (item: WidgetCatalogItem) =>
-  `/widget-preview?catalogId=${encodeURIComponent(item.id)}&size=${encodeURIComponent(previewSizeFor(item).key)}`;
+const previewImageSrcFor = (item: WidgetCatalogItem) =>
+  `/assets/widget-previews/${encodeURIComponent(item.id)}-2x2@3x.png`;
+
+const hasPreviewImageError = (item: WidgetCatalogItem) =>
+  previewImageErrorIds.value.has(item.id);
+
+const markPreviewImageError = (item: WidgetCatalogItem) => {
+  const next = new Set(previewImageErrorIds.value);
+  next.add(item.id);
+  previewImageErrorIds.value = next;
+};
 
 const actionLabel = (item: WidgetCatalogItem) => {
   const action = getWidgetCatalogAction(props.widgets, item);
@@ -180,6 +183,97 @@ const actionDisabled = (item: WidgetCatalogItem) =>
   getWidgetCatalogAction(props.widgets, item) === "enabled";
 
 const close = () => emit("update:show", false);
+
+const clearAddedFeedback = () => {
+  if (addedFeedbackTimer) {
+    clearTimeout(addedFeedbackTimer);
+    addedFeedbackTimer = null;
+  }
+  lastAddedKey.value = "";
+  lastAddedButtonLabel.value = "";
+};
+
+const showResult = (message: string, tone: UiFeedbackTone) => {
+  resultMessage.value = message;
+  resultTone.value = tone;
+};
+
+const toneForResult = (result: AddComponentResult): UiFeedbackTone => {
+  if (result.status === "success") return "success";
+  if (result.status === "save-error" || result.status === "unauthorized") {
+    return "danger";
+  }
+  return "warning";
+};
+
+const successVerbForAction = (action: string) =>
+  action === "enable" ? "已启用" : "已添加";
+
+const successMessageFor = (item: WidgetCatalogItem, action: string) =>
+  `${item.title}${successVerbForAction(action)}`;
+
+const notifyAddResult = (
+  item: WidgetCatalogItem,
+  result: AddComponentResult,
+  action: string,
+) => {
+  const tone = toneForResult(result);
+  const message =
+    result.message ||
+    (result.status === "success"
+      ? successMessageFor(item, action)
+      : "操作未完成");
+  showResult(message, tone);
+  uiFeedback.notify({
+    title:
+      result.status === "success"
+        ? action === "enable"
+          ? "启用成功"
+          : "添加成功"
+        : "添加失败",
+    message:
+      result.status === "success"
+        ? `${successMessageFor(item, action)}，位置：${destinationLabel.value}`
+        : message,
+    tone,
+  });
+
+  if (result.status !== "success") return;
+  clearAddedFeedback();
+  lastAddedKey.value = `widget:${item.id}`;
+  lastAddedButtonLabel.value = successVerbForAction(action);
+  addedFeedbackTimer = setTimeout(() => {
+    lastAddedKey.value = "";
+    lastAddedButtonLabel.value = "";
+    addedFeedbackTimer = null;
+  }, 1800);
+};
+
+const buttonLabel = (item: WidgetCatalogItem) => {
+  const key = `widget:${item.id}`;
+  if (busyKey.value === key) return "处理中";
+  if (lastAddedKey.value === key) return lastAddedButtonLabel.value;
+  return actionLabel(item);
+};
+
+watch(
+  () => props.show,
+  (show) => {
+    if (!show) return;
+    searchText.value = "";
+    activeWidgetCategory.value = "all";
+    resultMessage.value = "";
+    resultTone.value = "info";
+    previewImageErrorIds.value = new Set();
+    clearAddedFeedback();
+    ensureDestination();
+  },
+  { immediate: true },
+);
+
+watch(destinationOptions, ensureDestination);
+
+onBeforeUnmount(clearAddedFeedback);
 
 const invokeAdd = async (
   payload: AddComponentPayload,
@@ -210,6 +304,7 @@ const invokeAdd = async (
 
 const addWidget = async (item: WidgetCatalogItem) => {
   if (actionDisabled(item) || !destinationGroupId.value) return;
+  const action = getWidgetCatalogAction(props.widgets, item);
   const payload: AddComponentPayload = {
     kind: "widget",
     catalogItemId: item.id,
@@ -217,7 +312,18 @@ const addWidget = async (item: WidgetCatalogItem) => {
     saveMode: "dirty",
     sizeKey: defaultSizeFor(item).key,
   };
-  await invokeAdd(payload, `widget:${item.id}`);
+  try {
+    const result = await invokeAdd(payload, `widget:${item.id}`);
+    notifyAddResult(item, result, action);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "添加失败";
+    showResult(message, "danger");
+    uiFeedback.notify({
+      title: "添加失败",
+      message,
+      tone: "danger",
+    });
+  }
 };
 </script>
 
@@ -282,7 +388,12 @@ const addWidget = async (item: WidgetCatalogItem) => {
           </label>
         </div>
 
-        <div v-if="resultMessage" class="sd-add-result" role="status">
+        <div
+          v-if="resultMessage"
+          class="sd-add-result"
+          :class="`is-${resultTone}`"
+          role="status"
+        >
           {{ resultMessage }}
         </div>
 
@@ -316,15 +427,27 @@ const addWidget = async (item: WidgetCatalogItem) => {
               </div>
               <div class="sd-add-replica-preview">
                 <span class="sd-add-replica-art">
-                  <iframe
-                    class="sd-add-widget-preview-frame"
-                    :src="widgetPreviewFrameSrc(item)"
-                    :title="`${item.title} 2x2 预览`"
-                    loading="lazy"
-                    sandbox="allow-scripts allow-same-origin"
+                  <img
+                    v-if="!hasPreviewImageError(item)"
+                    class="sd-add-widget-preview-image"
+                    :src="previewImageSrcFor(item)"
+                    :alt="`${item.title} 组件真实预览`"
+                    width="150"
+                    height="150"
+                    loading="eager"
+                    decoding="async"
+                    @error="markPreviewImageError(item)"
+                  />
+                  <WidgetSizeVariantPreview
+                    v-else
+                    class="sd-add-widget-preview"
+                    :type="item.type"
+                    :title="item.title"
+                    :glyph="item.glyph"
+                    :size="previewSizeFor(item)"
+                    preview-role="hero"
                     aria-hidden="true"
-                    tabindex="-1"
-                  ></iframe>
+                  />
                 </span>
               </div>
               <div class="sd-add-replica-footer">
@@ -332,6 +455,9 @@ const addWidget = async (item: WidgetCatalogItem) => {
                   type="button"
                   data-testid="sd-add-card-add"
                   class="sd-add-card-button"
+                  :class="{
+                    'is-added': lastAddedKey === `widget:${item.id}`,
+                  }"
                   :disabled="
                     actionDisabled(item) || busyKey === `widget:${item.id}`
                   "
@@ -339,11 +465,7 @@ const addWidget = async (item: WidgetCatalogItem) => {
                   :aria-label="`${actionLabel(item)} ${item.title}`"
                   @click="addWidget(item)"
                 >
-                  {{
-                    busyKey === `widget:${item.id}`
-                      ? "处理中"
-                      : actionLabel(item)
-                  }}
+                  {{ buttonLabel(item) }}
                 </button>
               </div>
             </article>
@@ -549,6 +671,21 @@ const addWidget = async (item: WidgetCatalogItem) => {
   padding: 8px 10px;
 }
 
+.sd-add-result.is-success {
+  background: color-mix(in srgb, var(--sd-state-success) 14%, transparent);
+  color: var(--sd-state-success);
+}
+
+.sd-add-result.is-warning {
+  background: color-mix(in srgb, var(--sd-state-warning) 16%, transparent);
+  color: var(--sd-state-warning);
+}
+
+.sd-add-result.is-danger {
+  background: color-mix(in srgb, var(--sd-state-danger) 14%, transparent);
+  color: var(--sd-state-danger);
+}
+
 .sd-add-pane {
   display: flex;
   min-height: 0;
@@ -664,15 +801,30 @@ const addWidget = async (item: WidgetCatalogItem) => {
   opacity: 0.64;
 }
 
-.sd-add-widget-preview-frame {
+.sd-add-widget-preview {
   display: block;
   width: 150px;
   height: 150px;
-  border: 0;
   border-radius: 18px;
-  background: transparent;
-  color-scheme: light dark;
+  overflow: hidden;
   pointer-events: none;
+}
+
+.sd-add-widget-preview-image {
+  display: block;
+  width: 150px;
+  height: 150px;
+  border-radius: 18px;
+  object-fit: contain;
+  pointer-events: none;
+}
+
+.sd-add-widget-preview :deep(.widget-size-variant-preview) {
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  border-radius: 18px;
 }
 
 .sd-add-replica-preview {
@@ -714,6 +866,8 @@ const addWidget = async (item: WidgetCatalogItem) => {
 
 .sd-add-replica-art {
   display: grid;
+  width: 150px;
+  height: 150px;
   place-items: center;
 }
 
@@ -751,6 +905,12 @@ const addWidget = async (item: WidgetCatalogItem) => {
 .sd-add-card-button:disabled {
   cursor: not-allowed;
   opacity: 0.55;
+}
+
+.sd-add-card-button.is-added {
+  background: var(--sd-state-success);
+  color: var(--sd-component-on-strong);
+  opacity: 1;
 }
 
 .sd-add-empty {

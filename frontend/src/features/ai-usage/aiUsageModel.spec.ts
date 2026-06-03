@@ -25,6 +25,7 @@ describe("aiUsageModel", () => {
         providerId: "openai",
         displayName: "OpenAI 使用量",
         iconKey: "openai",
+        requestMode: "connector",
         credentialStorage: "browser",
         credentialType: "access_token",
       },
@@ -73,5 +74,19 @@ describe("aiUsageModel", () => {
       h: 2,
       data: expect.objectContaining({ sizeKey: "2x4" }),
     });
+  });
+
+  it("normalizes legacy server mode back to the browser connector", () => {
+    const normalized = normalizeAiUsageWidgetData({
+      requestMode: "server",
+      credentialStorage: "server",
+      hasServerCredential: true,
+      accountIdHint: "acct-old",
+    });
+
+    expect(normalized.requestMode).toBe("connector");
+    expect(normalized.credentialStorage).toBe("browser");
+    expect(normalized.hasServerCredential).toBe(false);
+    expect(normalized.accountIdHint).toBeUndefined();
   });
 });

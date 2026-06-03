@@ -1,5 +1,6 @@
 import type { NavGroup, NavItem } from "@/types";
 import { sessionFetch } from "@/utils/sessionFetch";
+import { queryStartDeckConnector } from "@/utils/startdeckConnector";
 
 const USER_ICON_RE = /^\/api\/icons\/icn_[A-Za-z0-9_-]+$/;
 const LEGACY_USER_ICON_RE = /^\/api\/assets\/icons\/(icn_[A-Za-z0-9_-]+)$/;
@@ -10,6 +11,8 @@ const REMOTE_ICON_PROTOCOLS = new Set(["http:", "https:"]);
 const MAX_ICON_BYTES = 5 * 1024 * 1024;
 const REMOTE_ICON_READ_ERROR =
   "该图片可预览但浏览器不允许读取，请下载后手动上传图标。";
+const REMOTE_ICON_CONNECTOR_READ_ERROR =
+  "该图片可预览但页面和本地扩展都无法读取，请确认已安装并允许 StartDeck Connector，或下载后手动上传图标。";
 
 export type ManagedIconCandidate = {
   id: string;
@@ -51,6 +54,13 @@ type CreateIconResponse = {
     url?: string;
   } | null;
   error?: string;
+};
+
+type ConnectorRemoteIconResponse = {
+  url?: string;
+  contentType?: string;
+  byteSize?: number;
+  dataUrl?: string;
 };
 
 export const isCanonicalIconUrl = (value: unknown): value is string =>
@@ -219,7 +229,7 @@ const blobToDataUrl = async (blob: Blob, contentType: string): Promise<string> =
   return `data:${contentType};base64,${bytesToBase64(new Uint8Array(buffer))}`;
 };
 
-const readRemoteIconAsDataUrl = async (url: string): Promise<string> => {
+const readRemoteIconInPageAsDataUrl = async (url: string): Promise<string> => {
   let res: Response;
   try {
     res = await fetch(url, {
@@ -244,6 +254,50 @@ const readRemoteIconAsDataUrl = async (url: string): Promise<string> => {
     throw new Error("远程图标超过 5MB，请下载压缩后手动上传图标。");
   }
   return blobToDataUrl(blob, contentType);
+};
+
+const isPageReadFailure = (error: unknown) =>
+  error instanceof Error && error.message === REMOTE_ICON_READ_ERROR;
+
+const readRemoteIconWithConnectorAsDataUrl = async (
+  url: string,
+): Promise<string> => {
+  let payload: ConnectorRemoteIconResponse;
+  try {
+    payload = await queryStartDeckConnector<ConnectorRemoteIconResponse>(
+      "icons.fetchRemoteImage",
+      { url, maxBytes: MAX_ICON_BYTES },
+      12_000,
+    );
+  } catch {
+    throw new Error(REMOTE_ICON_CONNECTOR_READ_ERROR);
+  }
+
+  const contentType = String(payload?.contentType || "")
+    .split(";")[0]
+    .trim()
+    .toLowerCase();
+  const byteSize = Number(payload?.byteSize || 0);
+  const dataUrl = String(payload?.dataUrl || "").trim();
+  if (!contentType.startsWith("image/") || !dataUrl.startsWith("data:image/")) {
+    throw new Error("远程图标不是有效图片，请下载后手动上传图标。");
+  }
+  if (!Number.isFinite(byteSize) || byteSize <= 0) {
+    throw new Error("远程图标为空，请下载后手动上传图标。");
+  }
+  if (byteSize > MAX_ICON_BYTES) {
+    throw new Error("远程图标超过 5MB，请下载压缩后手动上传图标。");
+  }
+  return dataUrl;
+};
+
+const readRemoteIconAsDataUrl = async (url: string): Promise<string> => {
+  try {
+    return await readRemoteIconInPageAsDataUrl(url);
+  } catch (error) {
+    if (!isPageReadFailure(error)) throw error;
+    return readRemoteIconWithConnectorAsDataUrl(url);
+  }
 };
 
 export const materializeIconInput = async (value: string): Promise<string> => {

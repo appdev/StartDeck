@@ -4,6 +4,7 @@ import {
   applyTapdDefectSizeToWidget,
   buildTapdFilters,
   createDefaultTapdDefectWidget,
+  hasTapdDefectConnection,
   normalizeTapdDefectWidgetData,
   resolveTapdDisplayName,
   tapdErrorMessage,
@@ -28,6 +29,8 @@ describe("tapdDefectModel", () => {
         layoutSystem: SD_GRID_SCHEMA_VERSION,
         version: 1,
         sizeKey: "2x2",
+        requestMode: "connector",
+        credentialStorage: "browser",
         visibilityScope: "owned-by-current-user",
         query: {
           limit: 100,
@@ -95,6 +98,27 @@ describe("tapdDefectModel", () => {
       h: 2,
       data: expect.objectContaining({ sizeKey: "2x4" }),
     });
+  });
+
+  it("normalizes legacy server mode back to the browser connector", () => {
+    const data = normalizeTapdDefectWidgetData({
+      requestMode: "server",
+      credentialStorage: "server",
+      workspaceId: "40685585",
+      hasServerCredential: true,
+      hasConnectorCredential: false,
+    });
+
+    expect(data.requestMode).toBe("connector");
+    expect(data.credentialStorage).toBe("browser");
+    expect(data.hasServerCredential).toBe(false);
+    expect(hasTapdDefectConnection(data)).toBe(false);
+    expect(
+      hasTapdDefectConnection({
+        ...data,
+        hasConnectorCredential: true,
+      }),
+    ).toBe(true);
   });
 
   it("resolves display names and current-user filters without visible personal copy", () => {

@@ -10,16 +10,18 @@ import {
   X,
 } from "@lucide/vue";
 import { useRequireLogin } from "@/composables/useRequireLogin";
+import { useAuthStore } from "@/stores/auth";
 import {
-  deleteTapdServerCredential,
-  getTapdCredentialStatus,
-  resolveTapdWorkspace,
-  saveTapdServerCredential,
-} from "./tapdDefectApi";
+  clearBrowserTapdCredential,
+  loadBrowserTapdCredential,
+  saveBrowserTapdCredential,
+} from "./tapdCredentialStorage";
+import { resolveTapdWorkspace } from "./tapdDefectApi";
 import {
   normalizeTapdDefectWidgetData,
   resolveTapdDisplayName,
   scopeLabel,
+  tapdErrorMessage,
 } from "./tapdDefectModel";
 import {
   TAPD_ACTIONABLE_DEFECT_STATUS,
@@ -28,6 +30,8 @@ import {
 import type {
   TapdBlockedBugSnapshot,
   TapdConfigSaveOptions,
+  TapdConnectorCredentialPayload,
+  TapdCredentialStorage,
   TapdCredentialType,
   TapdDefectWidgetData,
 } from "./tapdDefectTypes";
@@ -44,11 +48,13 @@ const emit = defineEmits<{
 }>();
 
 const limitOptions = [30, 50, 100, 200] as const;
+const auth = useAuthStore();
 const { requireLogin } = useRequireLogin();
 const requireTapdMutation = () => requireLogin("请先登录后再配置 TAPD 组件。");
-const hasInitialCredential = props.data.hasServerCredential === true;
+const hasInitialCredential = props.data.hasConnectorCredential === true;
 
 const editor = reactive({
+  credentialStorage: props.data.credentialStorage as TapdCredentialStorage,
   workspaceId: hasInitialCredential ? props.data.workspaceId : "",
   displayName: hasInitialCredential ? props.data.displayName || "" : "",
   projectName: hasInitialCredential ? props.data.projectName || "" : "",
@@ -70,9 +76,8 @@ const editor = reactive({
   apiUser: "",
   apiPassword: "",
   accessToken: "",
-  serverStorageAcknowledged: false,
 });
-const hasServerCredential = ref(props.data.hasServerCredential === true);
+const hasConnectorCredential = ref(props.data.hasConnectorCredential === true);
 const credentialAccountHint = ref(props.data.credentialAccountHint || "");
 const message = ref("");
 const busy = ref(false);
@@ -101,8 +106,16 @@ const blockedRows = computed(() => {
     });
 });
 
+const activeCredentialReady = computed(() =>
+  hasConnectorCredential.value,
+);
+
+const credentialStatusLabel = computed(() =>
+  activeCredentialReady.value ? "已保存" : "未保存",
+);
+
 const previewTitle = computed(() => {
-  if (!hasServerCredential.value) return "TAPD 缺陷";
+  if (!activeCredentialReady.value) return "TAPD 缺陷";
   return resolveTapdDisplayName(
     normalizeTapdDefectWidgetData({
       ...props.data,
@@ -123,21 +136,27 @@ const clearCredentialDependentEditor = () => {
   editor.accessToken = "";
 };
 
-const syncCredentialStatus = async () => {
-  try {
-    const status = await getTapdCredentialStatus(props.widgetId);
-    hasServerCredential.value = status.hasServerCredential;
-    credentialAccountHint.value = status.accountHint || "";
-    if (status.credentialType) editor.credentialType = status.credentialType;
-    if (!status.hasServerCredential && !props.data.hasServerCredential) {
-      clearCredentialDependentEditor();
-    }
-  } catch {
-    hasServerCredential.value = false;
-    credentialAccountHint.value = "";
-    if (!props.data.hasServerCredential) {
-      clearCredentialDependentEditor();
-    }
+const syncCredentialStatus = () => {
+  const stored = loadBrowserTapdCredential(
+    auth.username || "guest",
+    props.widgetId,
+  );
+  hasConnectorCredential.value = Boolean(stored);
+  credentialAccountHint.value =
+    stored?.credentialType === "basic"
+      ? stored.apiUser || ""
+      : stored?.accessToken
+        ? "****" + stored.accessToken.slice(-4)
+        : "";
+  if (stored) {
+    editor.credentialType = stored.credentialType;
+    editor.apiUser = stored.apiUser || "";
+    editor.apiPassword = "";
+    editor.accessToken = "";
+    return;
+  }
+  if (!props.data.hasConnectorCredential) {
+    clearCredentialDependentEditor();
   }
 };
 
@@ -146,25 +165,52 @@ const hasCredentialDraft = () =>
     ? Boolean(editor.apiUser.trim() && editor.apiPassword.trim())
     : Boolean(editor.accessToken.trim());
 
-const saveCredentialIfNeeded = async () => {
-  if (!hasCredentialDraft()) return false;
-  if (!editor.serverStorageAcknowledged) {
-    throw new Error("请先确认服务端保存凭据");
+const connectorCredentialFromDraft = ():
+  | TapdConnectorCredentialPayload
+  | undefined => {
+  if (!hasCredentialDraft()) return undefined;
+  if (editor.credentialType === "basic") {
+    return {
+      credentialType: "basic",
+      apiUser: editor.apiUser.trim(),
+      apiPassword: editor.apiPassword,
+    };
   }
-  const status = await saveTapdServerCredential(props.widgetId, {
-    credentialType: editor.credentialType,
-    apiUser: editor.credentialType === "basic" ? editor.apiUser : undefined,
-    apiPassword:
-      editor.credentialType === "basic" ? editor.apiPassword : undefined,
-    accessToken:
-      editor.credentialType === "bearer" ? editor.accessToken : undefined,
-    serverStorageAcknowledged: true,
-  });
-  hasServerCredential.value = status.hasServerCredential;
-  credentialAccountHint.value = status.accountHint || "";
-  editor.apiPassword = "";
-  editor.accessToken = "";
-  return status.hasServerCredential;
+  return {
+    credentialType: "bearer",
+    accessToken: editor.accessToken.trim(),
+  };
+};
+
+const loadConnectorCredential = () =>
+  connectorCredentialFromDraft() ||
+  loadBrowserTapdCredential(auth.username || "guest", props.widgetId) ||
+  undefined;
+
+const saveCredentialIfNeeded = async () => {
+  if (editor.credentialStorage !== "browser") {
+    hasConnectorCredential.value = false;
+    credentialAccountHint.value = "";
+    return Boolean(connectorCredentialFromDraft());
+  }
+  const draft = connectorCredentialFromDraft();
+  if (draft) {
+    saveBrowserTapdCredential(auth.username || "guest", props.widgetId, {
+      ...draft,
+      savedAt: new Date().toISOString(),
+    });
+    hasConnectorCredential.value = true;
+    credentialAccountHint.value =
+      draft.credentialType === "basic"
+        ? draft.apiUser || ""
+        : draft.accessToken
+          ? "****" + draft.accessToken.slice(-4)
+          : "";
+    editor.apiPassword = "";
+    editor.accessToken = "";
+    return true;
+  }
+  return hasConnectorCredential.value;
 };
 
 const resolveWorkspaceName = async () => {
@@ -176,10 +222,10 @@ const resolveWorkspaceName = async () => {
   busy.value = true;
   message.value = "正在读取项目名称";
   try {
-    if (!hasServerCredential.value) {
+    if (!activeCredentialReady.value) {
       const saved = await saveCredentialIfNeeded();
       if (!saved) {
-        message.value = "请先保存 TAPD 服务端凭据";
+        message.value = "请先保存 TAPD 浏览器插件凭据";
         return;
       }
       message.value = "凭据已保存，正在读取项目名称";
@@ -187,6 +233,9 @@ const resolveWorkspaceName = async () => {
     const response = await resolveTapdWorkspace(
       props.widgetId,
       editor.workspaceId.trim(),
+      {
+        credential: loadConnectorCredential(),
+      },
     );
     if (response.status === "connected" && response.projectName) {
       editor.projectName = response.projectName;
@@ -195,7 +244,10 @@ const resolveWorkspaceName = async () => {
     }
     message.value = response.errorCode || "项目名称读取失败";
   } catch (error) {
-    message.value = error instanceof Error ? error.message : "项目名称读取失败";
+    message.value =
+      error instanceof Error
+        ? tapdErrorMessage(error.message)
+        : "项目名称读取失败";
   } finally {
     busy.value = false;
   }
@@ -215,6 +267,7 @@ const buildDisconnectedData = (): TapdDefectWidgetData => {
     projectName: "",
     displayName: undefined,
     hasServerCredential: false,
+    hasConnectorCredential: false,
     credentialType: undefined,
     credentialAccountHint: undefined,
     query: {
@@ -229,10 +282,9 @@ const removeCredential = async () => {
   busy.value = true;
   message.value = "";
   try {
-    await deleteTapdServerCredential(props.widgetId);
-    hasServerCredential.value = false;
+    clearBrowserTapdCredential(auth.username || "guest", props.widgetId);
+    hasConnectorCredential.value = false;
     credentialAccountHint.value = "";
-    editor.serverStorageAcknowledged = false;
     clearCredentialDependentEditor();
     showDeleteConfirm.value = false;
     emit("save", buildDisconnectedData());
@@ -247,16 +299,24 @@ const removeCredential = async () => {
 const buildData = (): TapdDefectWidgetData =>
   normalizeTapdDefectWidgetData({
     ...props.data,
+    requestMode: "connector",
+    credentialStorage: editor.credentialStorage,
     workspaceId: editor.workspaceId,
     projectName: editor.projectName,
     displayName: editor.displayName,
     visibilityScope: "owned-by-current-user",
     refreshIntervalMinutes: editor.refreshIntervalMinutes,
-    hasServerCredential: hasServerCredential.value,
-    credentialType: hasServerCredential.value
+    hasServerCredential: false,
+    hasConnectorCredential:
+      editor.credentialStorage === "browser"
+        ? hasConnectorCredential.value
+        : false,
+    credentialType: activeCredentialReady.value
       ? editor.credentialType
       : undefined,
-    credentialAccountHint: credentialAccountHint.value || undefined,
+    credentialAccountHint: activeCredentialReady.value
+      ? credentialAccountHint.value || undefined
+      : undefined,
     query: {
       ...props.data.query,
       limit: editor.limit,
@@ -284,7 +344,13 @@ const saveConfig = async () => {
   busy.value = true;
   message.value = "";
   try {
-    await saveCredentialIfNeeded();
+    const saved = await saveCredentialIfNeeded();
+    if (
+      editor.credentialStorage === "browser" &&
+      !saved
+    ) {
+      throw new Error("请先填写并保存 TAPD 浏览器插件凭据");
+    }
     emit("save", buildData());
     message.value = "配置已保存";
   } catch (error) {
@@ -314,13 +380,13 @@ const restoreBlocked = (id: string) => {
 watch(
   () => props.data,
   () => {
-    hasServerCredential.value = props.data.hasServerCredential === true;
+    hasConnectorCredential.value = props.data.hasConnectorCredential === true;
     credentialAccountHint.value = props.data.credentialAccountHint || "";
   },
 );
 
 onMounted(() => {
-  void syncCredentialStatus();
+  syncCredentialStatus();
 });
 </script>
 
@@ -347,9 +413,9 @@ onMounted(() => {
           <h4>连接</h4>
           <div class="tapd-form-grid">
             <label>
-              <span>服务端凭据</span>
-              <strong :class="{ 'is-ready': hasServerCredential }">
-                {{ hasServerCredential ? "已保存" : "未保存" }}
+              <span>插件凭据</span>
+              <strong :class="{ 'is-ready': activeCredentialReady }">
+                {{ credentialStatusLabel }}
               </strong>
             </label>
             <label>
@@ -377,6 +443,32 @@ onMounted(() => {
             仅查询当前账号相关缺陷；Bearer Token 会优先尝试从 TAPD
             用户态接口自动识别账号，Basic Auth 可在这里填写 TAPD 用户名。
           </p>
+
+          <div class="tapd-form-grid">
+            <label>
+              <span>凭证保存方式</span>
+              <span class="tapd-segmented">
+                <button
+                  type="button"
+                  :class="{ active: editor.credentialStorage === 'once' }"
+                  @click="editor.credentialStorage = 'once'"
+                >
+                  本次
+                </button>
+                <button
+                  type="button"
+                  :class="{ active: editor.credentialStorage === 'browser' }"
+                  @click="editor.credentialStorage = 'browser'"
+                >
+                  浏览器
+                </button>
+              </span>
+            </label>
+            <label>
+              <span>网络出口</span>
+              <strong>当前浏览器</strong>
+            </label>
+          </div>
 
           <div class="tapd-credential-grid">
             <label>
@@ -407,10 +499,9 @@ onMounted(() => {
               />
             </label>
           </div>
-          <label class="tapd-checkbox">
-            <input v-model="editor.serverStorageAcknowledged" type="checkbox" />
-            <span>确认保存到服务端加密存储</span>
-          </label>
+          <p class="tapd-hint">
+            浏览器插件模式由当前浏览器网络访问 TAPD，凭据只用于本地发起请求。
+          </p>
           <div class="tapd-config-actions">
             <button type="button" @click="resolveWorkspaceName">
               <CheckCircle2 :size="16" />
@@ -712,6 +803,35 @@ label {
 
 label.wide {
   grid-column: 1 / -1;
+}
+
+.tapd-segmented {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px;
+  min-width: 0;
+  border: 1px solid var(--sd-component-border);
+  border-radius: 10px;
+  background: var(--sd-component-surface);
+  padding: 3px;
+}
+
+.tapd-segmented button {
+  min-width: 0;
+  height: 30px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--sd-component-text-secondary);
+  padding: 0 8px;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.tapd-segmented button.active {
+  background: var(--sd-state-info-surface);
+  color: var(--sd-state-info);
 }
 
 input,

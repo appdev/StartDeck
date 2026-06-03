@@ -254,7 +254,6 @@ onBeforeUnmount(() => {
       <WidgetRuntimeFrame
         v-if="isRuntimeWidget(previewWidget)"
         :widget="previewWidget"
-        editing
       />
       <WidgetSizeVariantPreview
         v-else-if="fallbackPreview"
@@ -283,6 +282,17 @@ onBeforeUnmount(() => {
   /* The app scales compact viewports globally; catalog previews must keep
      captured source geometry at exact CSS pixels for shell validation. */
   zoom: 1;
+}
+
+:global(html.widget-catalog-preview-route [id*="vue-devtools"]),
+:global(html.widget-catalog-preview-route [class*="vue-devtools"]),
+:global(html.widget-catalog-preview-route [data-vue-devtools]),
+:global(html.widget-catalog-preview-route [id*="vue-inspector"]),
+:global(html.widget-catalog-preview-route [class*="vue-inspector"]),
+:global(html.widget-catalog-preview-route [data-v-inspector]) {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
 }
 
 .widget-catalog-preview-page {

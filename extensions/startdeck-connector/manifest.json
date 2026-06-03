@@ -1,0 +1,22 @@
+{
+  "manifest_version": 3,
+  "name": "StartDeck Connector",
+  "description": "Let StartDeck query selected upstream resources through the user's browser network.",
+  "version": "0.1.2",
+  "permissions": ["storage", "tabs"],
+  "host_permissions": ["http://*/*", "https://*/*"],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content-script.js"],
+      "run_at": "document_start"
+    }
+  ],
+  "action": {
+    "default_title": "StartDeck Connector",
+    "default_popup": "popup.html"
+  }
+}

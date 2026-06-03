@@ -17,6 +17,8 @@ export const TAPD_ACTIONABLE_DEFECT_STATUS_LABEL =
   "新建 / 已分配 / 处理中 / 重新打开";
 
 export type TapdCredentialType = "basic" | "bearer";
+export type TapdRequestMode = "connector";
+export type TapdCredentialStorage = "browser" | "once";
 export type TapdDefectVisibilityScope =
   | "owned-by-current-user"
   | "created-by-current-user"
@@ -110,7 +112,10 @@ export interface TapdDefectWidgetData {
   blockedBugIds: string[];
   blockedBugSnapshots: TapdBlockedBugSnapshot[];
   refreshIntervalMinutes: number;
+  requestMode: TapdRequestMode;
+  credentialStorage: TapdCredentialStorage;
   hasServerCredential?: boolean;
+  hasConnectorCredential?: boolean;
   credentialType?: TapdCredentialType;
   credentialAccountHint?: string;
   tapdBaseUrl: string;
@@ -135,7 +140,13 @@ export interface TapdCredentialPayload {
   apiUser?: string;
   apiPassword?: string;
   accessToken?: string;
-  serverStorageAcknowledged: boolean;
+}
+
+export interface TapdConnectorCredentialPayload {
+  credentialType: TapdCredentialType;
+  apiUser?: string;
+  apiPassword?: string;
+  accessToken?: string;
 }
 
 export interface TapdWorkspaceResponse {
@@ -148,6 +159,8 @@ export interface TapdWorkspaceResponse {
 
 export interface TapdDefectsQueryRequest {
   widgetId: string;
+  requestMode?: TapdRequestMode;
+  credential?: TapdConnectorCredentialPayload;
   workspaceId: string;
   page: number;
   limit: 30 | 50 | 100 | 200;
