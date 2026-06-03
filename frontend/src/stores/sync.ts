@@ -738,6 +738,13 @@ export const useSyncStore = defineStore("sync", () => {
     if (!preserveCurrentSnapshot) {
       initCompleted.value = false;
     }
+    const canUseProvisionalGuestSnapshot =
+      !preserveCurrentSnapshot &&
+      !auth.isLogged &&
+      !auth.hasLocalSessionHint();
+    if (canUseProvisionalGuestSnapshot) {
+      markProvisionalGuestSnapshotReady();
+    }
     await auth.bootstrapSession({
       preserveExistingSession:
         preserveCurrentSnapshot && preservedSnapshotRole === "auth",
@@ -753,7 +760,12 @@ export const useSyncStore = defineStore("sync", () => {
     const canKeepPreservedSnapshot =
       preserveCurrentSnapshot &&
       preservedSnapshotRole === snapshotRoleForCurrentAuth();
-    if (!canKeepPreservedSnapshot) {
+    const canKeepProvisionalGuestSnapshot =
+      canUseProvisionalGuestSnapshot &&
+      !auth.isLogged &&
+      activeSnapshotRole.value === "guest" &&
+      cacheStore.isClientReady;
+    if (!canKeepPreservedSnapshot && !canKeepProvisionalGuestSnapshot) {
       cacheStore.hasServerSnapshot = false;
       cacheStore.cacheLoadedAt = null;
       activeSnapshotRole.value = null;

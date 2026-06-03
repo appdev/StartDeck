@@ -216,6 +216,7 @@ export const useAuthStore = defineStore("auth", () => {
     isLogged,
     password,
     getHeaders,
+    hasLocalSessionHint,
     clearLocalSession,
     applyServerSession,
     bootstrapSession,

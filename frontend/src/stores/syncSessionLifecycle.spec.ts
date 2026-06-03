@@ -227,7 +227,11 @@ describe("sync session lifecycle", () => {
     const cache = useCacheStore();
     const groups = useGroupsStore();
     const widgets = useWidgetsStore();
+    let resolveSession!: (response: Response) => void;
     let resolveData!: (response: Response) => void;
+    const sessionResponse = new Promise<Response>((resolve) => {
+      resolveSession = resolve;
+    });
     const dataResponse = new Promise<Response>((resolve) => {
       resolveData = resolve;
     });
@@ -237,10 +241,7 @@ describe("sync session lifecycle", () => {
       vi.fn(async (input: RequestInfo | URL) => {
         const url = String(input);
         if (url.includes("/api/session")) {
-          return new Response(JSON.stringify({ authenticated: false }), {
-            status: 200,
-            headers: { "Content-Type": "application/json" },
-          });
+          return sessionResponse;
         }
         if (url.includes("/api/data")) {
           return dataResponse;
@@ -253,6 +254,23 @@ describe("sync session lifecycle", () => {
     );
 
     const initPromise = sync.init();
+    await nextTick();
+    await Promise.resolve();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(sync.activeSnapshotRole).toBe("guest");
+    expect(sync.isClientReady).toBe(true);
+    expect(sync.hasServerSnapshot).toBe(false);
+    expect(cache.cacheLoadedAt).not.toBeNull();
+    expect(groups.groups).toHaveLength(0);
+    expect(widgets.widgets).toHaveLength(0);
+
+    resolveSession(
+      new Response(JSON.stringify({ authenticated: false }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }),
+    );
     await nextTick();
     await Promise.resolve();
     await new Promise((resolve) => setTimeout(resolve, 0));
