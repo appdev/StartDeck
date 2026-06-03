@@ -191,6 +191,14 @@ export const useSyncStore = defineStore("sync", () => {
     activeSnapshotRole.value === snapshotRoleForCurrentAuth() &&
     hasLoadedSnapshotState();
 
+  const markProvisionalGuestSnapshotReady = () => {
+    if (auth.isLogged || cacheStore.isClientReady) return;
+    activeSnapshotRole.value = "guest";
+    if (cacheStore.cacheLoadedAt === null) {
+      cacheStore.cacheLoadedAt = Date.now();
+    }
+  };
+
   const syncUsernameFromServer = (
     data: Record<string, unknown>,
     responseRole: "auth" | "guest",
@@ -757,6 +765,8 @@ export const useSyncStore = defineStore("sync", () => {
       if (cacheLoaded) {
         cacheStore.cacheLoadedAt = Date.now();
         activeSnapshotRole.value = snapshotRoleForCurrentAuth();
+      } else if (!auth.isLogged) {
+        markProvisionalGuestSnapshotReady();
       }
     }
 

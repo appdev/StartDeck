@@ -222,6 +222,65 @@ describe("sync session lifecycle", () => {
     expect(sync.isClientReady).toBe(true);
   });
 
+  it("keeps logged-out startup renderable while the guest snapshot is pending", async () => {
+    const sync = useSyncStore();
+    const cache = useCacheStore();
+    const groups = useGroupsStore();
+    const widgets = useWidgetsStore();
+    let resolveData!: (response: Response) => void;
+    const dataResponse = new Promise<Response>((resolve) => {
+      resolveData = resolve;
+    });
+
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = String(input);
+        if (url.includes("/api/session")) {
+          return new Response(JSON.stringify({ authenticated: false }), {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          });
+        }
+        if (url.includes("/api/data")) {
+          return dataResponse;
+        }
+        return new Response(JSON.stringify({ success: true }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        });
+      }),
+    );
+
+    const initPromise = sync.init();
+    await nextTick();
+    await Promise.resolve();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(sync.activeSnapshotRole).toBe("guest");
+    expect(sync.isClientReady).toBe(true);
+    expect(sync.hasServerSnapshot).toBe(false);
+    expect(cache.cacheLoadedAt).not.toBeNull();
+    expect(groups.groups).toHaveLength(0);
+    expect(widgets.widgets).toHaveLength(0);
+
+    resolveData(
+      new Response(JSON.stringify(guestSnapshot), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }),
+    );
+    await initPromise;
+    await nextTick();
+
+    expect(sync.activeSnapshotRole).toBe("guest");
+    expect(sync.isClientReady).toBe(true);
+    expect(sync.hasServerSnapshot).toBe(true);
+    expect(cache.cacheLoadedAt).toBeNull();
+    expect(groups.groups).toHaveLength(1);
+    expect(widgets.widgets).toHaveLength(1);
+  });
+
   it("restores authenticated state from an explicit data snapshot after session bootstrap fails", async () => {
     const sync = useSyncStore();
     const auth = useAuthStore();
