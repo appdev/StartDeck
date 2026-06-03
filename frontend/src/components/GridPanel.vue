@@ -176,6 +176,9 @@ const canRenderCurrentSnapshot = computed(() =>
     ? store.activeSnapshotRole === "auth"
     : store.activeSnapshotRole === "guest",
 );
+const hasConfirmedAuthSnapshot = computed(
+  () => store.isLogged && store.activeSnapshotRole === "auth",
+);
 const requireStoreLogin = (message?: string) => {
   if (store.isLogged) return true;
   return notifyLoginRequired(message);
@@ -3153,7 +3156,7 @@ onUnmounted(() => {
             :class="{ 'is-editing': isHomeEditChromeVisible }"
           >
             <HomeActionBar
-              v-if="store.isLogged && isHomeEditChromeVisible"
+              v-if="hasConfirmedAuthSnapshot && isHomeEditChromeVisible"
               class="pointer-events-auto"
               :is-saving="store.isSaving"
               :has-unsaved-changes="store.hasUnsavedChanges"
@@ -3167,7 +3170,7 @@ onUnmounted(() => {
               :is-lan="effectiveIsLan"
               :latency="latency"
               :is-checking="isChecking"
-              :is-logged="store.isLogged"
+              :is-logged="hasConfirmedAuthSnapshot"
               @toggle-force-mode="toggleForceMode"
               @settings="openSettings"
               @edit="toggleEditMode"

@@ -615,20 +615,6 @@ onMounted(() => {
     </div>
   </Transition>
 
-  <div
-    v-if="!isStandaloneRoute && !store.isClientReady"
-    class="fixed inset-0 z-[120] bg-black/30 flex items-center justify-center text-white"
-  >
-    <div
-      class="flex flex-col items-center gap-3 px-6 py-4 bg-black/60 rounded-2xl border border-white/10"
-    >
-      <div
-        class="w-8 h-8 border-4 border-white/20 border-t-white rounded-full animate-spin"
-      ></div>
-      <div class="text-sm font-medium">正在同步服务端数据，请稍后...</div>
-    </div>
-  </div>
-
   <Transition name="fade-up">
     <button
       v-if="!isStandaloneRoute && showBackToTop"

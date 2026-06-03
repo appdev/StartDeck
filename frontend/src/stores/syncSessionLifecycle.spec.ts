@@ -482,6 +482,90 @@ describe("sync session lifecycle", () => {
     ).toBe(true);
   });
 
+  it("does not render authenticated cache before startup data confirms auth state", async () => {
+    localStorage.setItem("start-deck-username", "admin");
+    localStorage.setItem(
+      "start-deck-data-cache:auth:admin",
+      JSON.stringify({
+        username: "admin",
+        groups: [
+          {
+            id: "private-main",
+            title: "Private",
+            items: [{ id: "private-link", title: "Private Link" }],
+          },
+        ],
+        widgets: [privateWidget],
+        version: 10,
+      }),
+    );
+
+    const sync = useSyncStore();
+    const auth = useAuthStore();
+    const groups = useGroupsStore();
+    const widgets = useWidgetsStore();
+    let resolveData!: (response: Response) => void;
+    const dataResponse = new Promise<Response>((resolve) => {
+      resolveData = resolve;
+    });
+
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = String(input);
+        if (url.includes("/api/session")) {
+          return new Response(
+            JSON.stringify({
+              authenticated: true,
+              username: "admin",
+              sessionGeneration: "server-session-generation",
+            }),
+            {
+              status: 200,
+              headers: { "Content-Type": "application/json" },
+            },
+          );
+        }
+        if (url.includes("/api/data")) {
+          return dataResponse;
+        }
+        return new Response(JSON.stringify({ success: true }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        });
+      }),
+    );
+
+    const initPromise = sync.init();
+    await nextTick();
+    await Promise.resolve();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(auth.isLogged).toBe(true);
+    expect(sync.activeSnapshotRole).toBeNull();
+    expect(groups.groups).toHaveLength(0);
+    expect(widgets.widgets).toHaveLength(0);
+
+    resolveData(
+      new Response(JSON.stringify(authenticatedSnapshot), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }),
+    );
+    await initPromise;
+    await nextTick();
+
+    expect(auth.isLogged).toBe(true);
+    expect(sync.activeSnapshotRole).toBe("auth");
+    expect(groups.groups[0]?.id).toBe("private-main");
+    expect(
+      widgets.widgets.some((widget) => widget.type === SD_CLOCK_WIDGET_TYPE),
+    ).toBe(true);
+    expect(
+      widgets.widgets.some((widget) => widget.id === "private-todo"),
+    ).toBe(false);
+  });
+
   it("ignores contaminated legacy guest cache during logged-out startup", async () => {
     localStorage.setItem(
       "start-deck-data-cache:guest",

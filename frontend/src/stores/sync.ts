@@ -773,7 +773,8 @@ export const useSyncStore = defineStore("sync", () => {
     cacheStore.deferredSaveRequested = false;
 
     if (!canKeepPreservedSnapshot) {
-      const cacheLoaded = cacheStore.loadFromCache(dataVersion);
+      const cacheLoaded =
+        !auth.isLogged && cacheStore.loadFromCache(dataVersion);
       if (cacheLoaded) {
         cacheStore.cacheLoadedAt = Date.now();
         activeSnapshotRole.value = snapshotRoleForCurrentAuth();
