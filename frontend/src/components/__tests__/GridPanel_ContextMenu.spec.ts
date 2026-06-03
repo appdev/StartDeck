@@ -308,6 +308,47 @@ describe("GridPanel Context Menu", () => {
     expect(options.draggable).not.toHaveProperty("pause");
   });
 
+  it("hides home auth actions until the active snapshot role is confirmed", async () => {
+    const auth = useAuthStore();
+    const sync = useSyncStore();
+
+    sync.activeSnapshotRole = null;
+    auth.sessionReady = false;
+    auth.username = "";
+    auth.sessionGeneration = "";
+    await wrapper.vm.$nextTick();
+    await flushPromises();
+
+    expect(wrapper.find('button[aria-label="登录后编辑"]').exists()).toBe(
+      false,
+    );
+    expect(wrapper.find('button[aria-label="进入编辑模式"]').exists()).toBe(
+      false,
+    );
+    expect(wrapper.find('button[aria-label="退出登录"]').exists()).toBe(false);
+
+    auth.sessionReady = true;
+    auth.username = "ying";
+    auth.sessionGeneration = "test-session";
+    await wrapper.vm.$nextTick();
+    await flushPromises();
+
+    expect(wrapper.find('button[aria-label="登录后编辑"]').exists()).toBe(
+      false,
+    );
+    expect(wrapper.find('button[aria-label="进入编辑模式"]').exists()).toBe(
+      false,
+    );
+    expect(wrapper.find('button[aria-label="退出登录"]').exists()).toBe(false);
+
+    sync.activeSnapshotRole = "auth";
+    await wrapper.vm.$nextTick();
+    await flushPromises();
+
+    expect(wrapper.find('button[aria-label="进入编辑模式"]').exists()).toBe(true);
+    expect(wrapper.find('button[aria-label="退出登录"]').exists()).toBe(true);
+  });
+
   it("reinitializes GridStack against the remounted responsive grid", async () => {
     await flushPromises();
 

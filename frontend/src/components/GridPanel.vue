@@ -179,6 +179,9 @@ const canRenderCurrentSnapshot = computed(() =>
 const hasConfirmedAuthSnapshot = computed(
   () => store.isLogged && store.activeSnapshotRole === "auth",
 );
+const canShowHomeTopActions = computed(
+  () => store.activeSnapshotRole !== null,
+);
 const requireStoreLogin = (message?: string) => {
   if (store.isLogged) return true;
   return notifyLoginRequired(message);
@@ -3165,7 +3168,7 @@ onUnmounted(() => {
               @add-group="store.addGroup"
             />
             <HomeTopActions
-              v-else-if="!showAddWidgetModal"
+              v-else-if="!showAddWidgetModal && canShowHomeTopActions"
               :force-mode="forceMode"
               :is-lan="effectiveIsLan"
               :latency="latency"
