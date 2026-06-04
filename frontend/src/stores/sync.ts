@@ -213,7 +213,7 @@ export const useSyncStore = defineStore("sync", () => {
 
   const revalidateSession = async () => {
     const wasLogged = auth.isLogged;
-    await auth.bootstrapSession();
+    await auth.bootstrapSession({ preserveExistingSession: wasLogged });
     if (wasLogged && !auth.isLogged) {
       stopOfflineQueueReplayTimer();
       networkStore.stopNetworkHeartbeat();

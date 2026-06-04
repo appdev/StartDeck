@@ -482,6 +482,89 @@ describe("sync session lifecycle", () => {
     ).toBe(true);
   });
 
+  it("keeps authenticated state while a closed websocket revalidates the session", async () => {
+    const sync = useSyncStore();
+    const auth = useAuthStore();
+    const cache = useCacheStore();
+    const groups = useGroupsStore();
+    const widgets = useWidgetsStore();
+    let resolveSession!: (response: Response) => void;
+    const sessionResponse = new Promise<Response>((resolve) => {
+      resolveSession = resolve;
+    });
+    let sessionRequested = false;
+
+    auth.applyServerSession("admin", "existing-session-generation");
+    groups.groups = [
+      {
+        id: "private-main",
+        title: "Private",
+        items: [
+          {
+            id: "private-link",
+            title: "Private Link",
+            url: "https://private.example/",
+            icon: "",
+          },
+        ],
+      },
+    ];
+    widgets.widgets = [privateWidget];
+    widgets.updateLastSavedLayout();
+    sync.activeSnapshotRole = "auth";
+    cache.hasServerSnapshot = true;
+
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = String(input);
+        if (url.includes("/api/session")) {
+          sessionRequested = true;
+          return sessionResponse;
+        }
+        return new Response(JSON.stringify({ success: true }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        });
+      }),
+    );
+
+    sync.status = "CONNECTING";
+    await nextTick();
+    sync.status = "CLOSED";
+    await nextTick();
+    await Promise.resolve();
+
+    expect(sessionRequested).toBe(true);
+    expect(auth.isLogged).toBe(true);
+    expect(sync.activeSnapshotRole).toBe("auth");
+    expect(groups.groups[0]?.id).toBe("private-main");
+    expect(widgets.widgets).toHaveLength(1);
+
+    resolveSession(
+      new Response(
+        JSON.stringify({
+          authenticated: true,
+          username: "admin",
+          sessionGeneration: "server-session-generation",
+        }),
+        {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        },
+      ),
+    );
+    await nextTick();
+    await Promise.resolve();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(auth.isLogged).toBe(true);
+    expect(auth.sessionGeneration).toBe("server-session-generation");
+    expect(sync.activeSnapshotRole).toBe("auth");
+    expect(groups.groups[0]?.id).toBe("private-main");
+    expect(widgets.widgets).toHaveLength(1);
+  });
+
   it("does not render authenticated cache before startup data confirms auth state", async () => {
     localStorage.setItem("start-deck-username", "admin");
     localStorage.setItem(
