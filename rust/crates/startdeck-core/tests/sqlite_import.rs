@@ -4,7 +4,7 @@ use serde_json::json;
 use sqlx::{Row, SqlitePool};
 use startdeck_core::models::{IconAssetRecord, IconRecord};
 use startdeck_core::{
-    RuntimeConfig, app_snapshot, connect_sqlite, icon_record, import_legacy_data,
+    RuntimeConfig, app_snapshot, connect_sqlite, ensure_schema, icon_record, import_legacy_data,
     import_meta_server_data, save_snapshot, upsert_icon_record, user_password_hash,
 };
 
@@ -802,6 +802,80 @@ async fn imports_legacy_navigation_widgets_and_icon_seed_into_relational_tables(
         .unwrap()
         .unwrap();
     assert_eq!(query_icon.title, "Query Example");
+}
+
+#[tokio::test]
+async fn materializes_icon_seed_sqlite_template_before_json_import() {
+    let temp = tempfile::tempdir().unwrap();
+    let base = temp.path();
+    let meta_resource_dir = base.join("rust/crates/startdeck-metaserver/resources/data");
+    std::fs::create_dir_all(&meta_resource_dir).unwrap();
+    let seed_sqlite = meta_resource_dir.join("seed.sqlite3");
+    let seed_options = sqlx::sqlite::SqliteConnectOptions::new()
+        .filename(&seed_sqlite)
+        .create_if_missing(true);
+    let seed_pool = sqlx::sqlite::SqlitePoolOptions::new()
+        .max_connections(1)
+        .connect_with(seed_options)
+        .await
+        .unwrap();
+    ensure_schema(&seed_pool).await.unwrap();
+    upsert_icon_record(
+        &seed_pool,
+        &IconRecord {
+            host: "template.example.com".to_string(),
+            title: "Template Seed".to_string(),
+            url: "https://template.example.com".to_string(),
+            final_url: "https://template.example.com".to_string(),
+            description: String::new(),
+            background_color: "#fff".to_string(),
+            icon: Some("icons/template.svg".to_string()),
+            icon_asset: None,
+            source: "seed".to_string(),
+            fetch_status: "ok".to_string(),
+            failure_kind: String::new(),
+            failure_count: 0,
+            retry_after: 0,
+            last_error: String::new(),
+            fetched_at: Utc::now(),
+        },
+    )
+    .await
+    .unwrap();
+    seed_pool.close().await;
+    std::fs::write(
+        meta_resource_dir.join("seed-data.json"),
+        serde_json::to_vec(&json!({"items": [{
+            "title": "JSON Seed",
+            "url": "https://json.example.com",
+            "icon_url": "icons/json.svg",
+            "background_color": "#fff"
+        }]}))
+        .unwrap(),
+    )
+    .unwrap();
+
+    let mut config = RuntimeConfig::from_base_dir(base.to_path_buf());
+    config.meta_server_resource_dir = meta_resource_dir;
+    let pool = connect_sqlite(&config).await.unwrap();
+    assert!(config.sqlite_file.is_file());
+    assert_eq!(
+        icon_record(&pool, "template.example.com")
+            .await
+            .unwrap()
+            .unwrap()
+            .title,
+        "Template Seed"
+    );
+
+    import_meta_server_data(&pool, &config).await.unwrap();
+    assert!(
+        icon_record(&pool, "json.example.com")
+            .await
+            .unwrap()
+            .is_none(),
+        "seed-data.json should not be imported when seed.sqlite3 already populated the DB"
+    );
 }
 
 #[tokio::test]

@@ -1,4 +1,6 @@
 use std::collections::BTreeMap;
+use std::fs;
+use std::io::{self, Read, Write};
 use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result};
@@ -6,7 +8,7 @@ use bcrypt::{DEFAULT_COST, hash};
 use chrono::{DateTime, Utc};
 use serde_json::{Value, json};
 use sqlx::sqlite::{SqliteConnectOptions, SqlitePoolOptions};
-use sqlx::{Row, SqlitePool};
+use sqlx::{Row, Sqlite, SqlitePool, Transaction};
 use uuid::Uuid;
 use walkdir::WalkDir;
 
@@ -18,9 +20,11 @@ use crate::models::{
 use crate::{migrate_legacy_widget_json_string, migrate_legacy_widget_string};
 
 const CURRENT_SCHEMA_VERSION: i64 = 9;
+const META_SEED_SQLITE_FILE: &str = "seed.sqlite3";
 
 pub async fn connect_sqlite(config: &RuntimeConfig) -> Result<SqlitePool> {
     config.ensure_dirs().context("create runtime directories")?;
+    materialize_seed_sqlite_if_missing(config).context("materialize sqlite seed database")?;
     let options = SqliteConnectOptions::new()
         .filename(&config.sqlite_file)
         .create_if_missing(true)
@@ -33,6 +37,69 @@ pub async fn connect_sqlite(config: &RuntimeConfig) -> Result<SqlitePool> {
         .await?;
     ensure_schema(&pool).await?;
     Ok(pool)
+}
+
+fn materialize_seed_sqlite_if_missing(config: &RuntimeConfig) -> Result<()> {
+    if config.sqlite_file.exists() {
+        return Ok(());
+    }
+    let seed_file = config.meta_server_resource_dir.join(META_SEED_SQLITE_FILE);
+    if !seed_file.is_file() || seed_file == config.sqlite_file {
+        return Ok(());
+    }
+    let Some(parent) = config.sqlite_file.parent() else {
+        return Ok(());
+    };
+    fs::create_dir_all(parent).with_context(|| format!("create {}", parent.display()))?;
+    copy_file_create_new(&seed_file, &config.sqlite_file).with_context(|| {
+        format!(
+            "copy sqlite seed {} to {}",
+            seed_file.display(),
+            config.sqlite_file.display()
+        )
+    })?;
+    tracing::info!(
+        source = %seed_file.display(),
+        target = %config.sqlite_file.display(),
+        "materialized sqlite seed database"
+    );
+    Ok(())
+}
+
+fn copy_file_create_new(source: &Path, target: &Path) -> Result<()> {
+    let mut source_file = fs::File::open(source)?;
+    let mut target_file = match fs::OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .open(target)
+    {
+        Ok(file) => file,
+        Err(error) if error.kind() == io::ErrorKind::AlreadyExists => return Ok(()),
+        Err(error) => return Err(error.into()),
+    };
+    let copy_result = (|| -> io::Result<()> {
+        let mut buffer = [0_u8; 64 * 1024];
+        loop {
+            let read = source_file.read(&mut buffer)?;
+            if read == 0 {
+                break;
+            }
+            target_file.write_all(&buffer[..read])?;
+        }
+        target_file.sync_all()?;
+        Ok(())
+    })();
+    if let Err(error) = copy_result {
+        drop(target_file);
+        let _ = fs::remove_file(target);
+        return Err(error.into());
+    }
+    let mut permissions = fs::metadata(target)?.permissions();
+    if permissions.readonly() {
+        permissions.set_readonly(false);
+        fs::set_permissions(target, permissions)?;
+    }
+    Ok(())
 }
 
 pub async fn ensure_schema(pool: &SqlitePool) -> Result<()> {
@@ -1109,6 +1176,10 @@ pub async fn import_legacy_app_data(pool: &SqlitePool, config: &RuntimeConfig) -
 }
 
 pub async fn import_meta_server_data(pool: &SqlitePool, config: &RuntimeConfig) -> Result<()> {
+    if seed_icon_data_exists(pool).await? {
+        tracing::info!("sqlite seed icon data already exists; skipping seed-data.json import");
+        return Ok(());
+    }
     import_icon_seed_file(
         pool,
         &config.meta_server_resource_dir.join("seed-data.json"),
@@ -1116,6 +1187,14 @@ pub async fn import_meta_server_data(pool: &SqlitePool, config: &RuntimeConfig) 
     )
     .await?;
     Ok(())
+}
+
+async fn seed_icon_data_exists(pool: &SqlitePool) -> Result<bool> {
+    let count: i64 =
+        sqlx::query_scalar("SELECT COUNT(*) FROM icon_records WHERE source = 'seed' LIMIT 1")
+            .fetch_one(pool)
+            .await?;
+    Ok(count > 0)
 }
 
 async fn user_data_exists(pool: &SqlitePool) -> Result<bool> {
@@ -1287,8 +1366,17 @@ pub async fn icon_record(pool: &SqlitePool, host: &str) -> Result<Option<IconRec
 }
 
 pub async fn upsert_icon_record(pool: &SqlitePool, record: &IconRecord) -> Result<()> {
-    let now = now_ms();
     let mut tx = pool.begin().await?;
+    upsert_icon_record_in_tx(&mut tx, record).await?;
+    tx.commit().await?;
+    Ok(())
+}
+
+async fn upsert_icon_record_in_tx(
+    tx: &mut Transaction<'_, Sqlite>,
+    record: &IconRecord,
+) -> Result<()> {
+    let now = now_ms();
     sqlx::query(
         r#"INSERT INTO icon_records(
              host, title, url, final_url, description, background_color, source,
@@ -1324,11 +1412,11 @@ pub async fn upsert_icon_record(pool: &SqlitePool, record: &IconRecord) -> Resul
     .bind(&record.last_error)
     .bind(record.fetched_at.timestamp_millis())
     .bind(now)
-    .execute(&mut *tx)
+    .execute(&mut **tx)
     .await?;
     sqlx::query("DELETE FROM icon_assets WHERE host = ? AND asset_kind = 'primary'")
         .bind(&record.host)
-        .execute(&mut *tx)
+        .execute(&mut **tx)
         .await?;
     if record.fetch_status == "ok"
         && let Some(icon) = record.icon.as_deref().and_then(normalize_icon_reference)
@@ -1363,10 +1451,9 @@ pub async fn upsert_icon_record(pool: &SqlitePool, record: &IconRecord) -> Resul
                 .map(|asset| asset.quality_refresh_after)
                 .unwrap_or(0),
         )
-        .execute(&mut *tx)
+        .execute(&mut **tx)
         .await?;
     }
-    tx.commit().await?;
     Ok(())
 }
 
@@ -1728,6 +1815,7 @@ async fn import_icon_seed_file(pool: &SqlitePool, path: &Path, source: &str) -> 
     let Some(items) = value.get("items").and_then(Value::as_array) else {
         return Ok(());
     };
+    let mut tx = pool.begin().await?;
     for item in items {
         let url = string_field(item, "url").unwrap_or_default();
         let host = normalize_host(&url).unwrap_or_else(|| Uuid::new_v4().to_string());
@@ -1753,8 +1841,9 @@ async fn import_icon_seed_file(pool: &SqlitePool, path: &Path, source: &str) -> 
             last_error: String::new(),
             fetched_at: Utc::now(),
         };
-        upsert_icon_record(pool, &record).await?;
+        upsert_icon_record_in_tx(&mut tx, &record).await?;
     }
+    tx.commit().await?;
     Ok(())
 }
 

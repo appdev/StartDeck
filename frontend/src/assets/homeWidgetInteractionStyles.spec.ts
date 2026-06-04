@@ -105,4 +105,11 @@ describe("home widget interaction styles", () => {
   it("does not zoom the document root on compact viewports", () => {
     expect(mainCssSource).not.toMatch(/html\s*{[^}]*\bzoom\s*:/);
   });
+
+  it("keeps the document scrollbar gutter stable for the home viewport", () => {
+    const htmlBlock = getRuleBlock(mainCssSource, "html");
+
+    expect(htmlBlock).toContain("overflow-y: scroll;");
+    expect(htmlBlock).toContain("scrollbar-gutter: stable;");
+  });
 });

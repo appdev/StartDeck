@@ -113,15 +113,15 @@ curl 'http://icons.put.run/api/icon?url=https://apkdv.com/posts/implementing_ios
 
 ## 配置
 
-Rust 元数据服务默认读取 `rust/crates/startdeck-metaserver/resources/data` 中的只读种子资源，部署时通过 `META_SERVER_DATA_DIR` 指向可写运行期缓存目录，默认监听 `9002`。服务独立运行，不依赖主服务；主服务通过 HTTP 调用它。常用环境变量：
+Rust 元数据服务默认读取 `rust/crates/startdeck-metaserver/resources/data` 中的只读种子资源。默认图标索引以预生成的 `seed.sqlite3` 作为运行期 SQLite 初始模板，不在服务启动时批量导入 `seed-data.json`；`seed-data.json` 只作为生成 seed DB 的输入保留。部署时通过 `META_SERVER_DATA_DIR` 指向可写运行期缓存目录，默认监听 `9002`。服务独立运行，不依赖主服务；主服务通过 HTTP 调用它。常用环境变量：
 
 - `BASE_DIR`: StartDeck 运行根目录，默认由当前工作目录推断。
 - `META_SERVER_PORT`: 元数据服务监听端口，默认 `9002`。
-- `META_SERVER_RESOURCE_DIR`: 元数据服务只读种子资源目录，只包含 `seed-data.json` 和默认 `icons/`。Docker 镜像中默认是 `/app/meta-service-defaults/data`。
+- `META_SERVER_RESOURCE_DIR`: 元数据服务只读种子资源目录，包含 `seed.sqlite3`、`seed-data.json` 和默认 `icons/`。Docker 镜像中默认是 `/app/meta-service-defaults/data`。
 - `META_SERVER_DATA_DIR`: 元数据服务可写运行期数据目录，用于外部挂载运行期 `cache/`。未设置时默认使用运行根目录下的 `Data/meta-service`。
 - `META_SERVER_MICROLINK_API_URL`: 网站媒体信息接口，默认 `https://api.microlink.io`。设置为空字符串可禁用 Microlink，直接回退到 HTML 与 `/favicon.ico` 解析。
 
-服务不再读取旧版 `config.json`。若缓存未命中，服务会优先使用只读 seed 数据；seed 也没有命中时先调用 Microlink 获取站点标题、描述和 logo，再将 logo 缓存到运行期 `cache/`。Microlink 不可用或无可用 logo 时，回退到直接解析目标站 HTML 和 `/favicon.ico`。
+服务不再读取旧版 `config.json`。若缓存未命中，服务会优先使用 `seed.sqlite3` 中的只读 seed 数据；seed 也没有命中时先调用 Microlink 获取站点标题、描述和 logo，再将 logo 缓存到运行期 `cache/`。Microlink 不可用或无可用 logo 时，回退到直接解析目标站 HTML 和 `/favicon.ico`。
 
 图标目录分层：
 
@@ -193,6 +193,12 @@ curl -X DELETE 'http://127.0.0.1:9002/api/icon/cache?host=apkdv.com'
 
 ```bash
 cargo build --release --locked --bin startdeck-metaserver
+```
+
+生成默认 seed SQLite：
+
+```bash
+cargo run --bin startdeck-seed-db
 ```
 
 ## StartDeck 接入

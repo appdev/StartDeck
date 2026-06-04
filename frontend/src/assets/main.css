@@ -1,5 +1,11 @@
 @import "tailwindcss";
 
+html {
+  /* Reserve the vertical scrollbar gutter so the home grid cannot shift when it appears. */
+  overflow-y: scroll;
+  scrollbar-gutter: stable;
+}
+
 :root {
   --overlay-motion-overlay-enter-duration: 140ms;
   --overlay-motion-overlay-leave-duration: 110ms;

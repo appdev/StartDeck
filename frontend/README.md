@@ -209,7 +209,7 @@ sudo ./deploy.sh install
 
 - **默认密码**: 系统初始密码为 `admin`。Docker 部署可设置 `STARTDECK_ADMIN_PASSWORD`，容器启动时会同步 admin 密码；未设置时请登录后在设置中及时修改。
 - **数据文件**: 所有配置（布局、组件、书签等）均存储在 `Data/data/startdeck.sqlite3` 中，二进制资源保存在 `Data/` 下的对应目录。
-- **站点图标数据**: Rust crate 下的 `rust/crates/startdeck-metaserver/resources/data` 保存默认种子图标；运行期缓存和站点 metadata 写入 Docker `/app/Data/meta-service` 或 Debian `/opt/startdeck/meta-service/data`。
+- **站点图标数据**: Rust crate 下的 `rust/crates/startdeck-metaserver/resources/data` 保存默认种子图标和预生成 `seed.sqlite3`；服务首次创建运行期 SQLite 时直接使用该 DB 模板，不在启动时批量导入 JSON。运行期缓存和站点 metadata 写入 Docker `/app/Data/meta-service` 或 Debian `/opt/startdeck/meta-service/data`。
 - **Docker 自动升级镜像**:
   - 入口：设置 → Docker 管理 → 自动升级镜像(每2小时)。
   - 关闭时：后台不会进行任何镜像拉取或版本对比。

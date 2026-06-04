@@ -65,6 +65,9 @@ RUN if [ -n "$STARTDECK_CRATES_IO_INDEX" ]; then \
       && printf '[source.crates-io]\nreplace-with = "startdeck-mirror"\n\n[source.startdeck-mirror]\nregistry = "%s"\n' "$STARTDECK_CRATES_IO_INDEX" > "${CARGO_HOME:-/usr/local/cargo}/config.toml"; \
     fi
 RUN cargo build --release --locked --workspace --bins
+RUN /app/target/release/startdeck-seed-db \
+      --resource-dir /app/rust/crates/startdeck-metaserver/resources/data \
+      --output /app/rust/crates/startdeck-metaserver/resources/data/seed.sqlite3
 RUN strip target/release/startdeck-server target/release/startdeck-metaserver
 
 # Stage 3: Runtime files copied into the slim final image.
@@ -88,7 +91,7 @@ RUN rm -rf public/icons
 FROM busybox:1.37.0-glibc AS icon-resource-filter
 
 WORKDIR /icon-resources
-COPY rust/crates/startdeck-metaserver/resources/data .
+COPY --from=rust-builder /app/rust/crates/startdeck-metaserver/resources/data .
 RUN rm -rf cache
 
 # Stage 6: Final Image

@@ -1,5 +1,5 @@
 use anyhow::Context;
-use startdeck_core::{RuntimeConfig, connect_sqlite, import_meta_server_data};
+use startdeck_core::{RuntimeConfig, connect_sqlite};
 use startdeck_metaserver::{MetaState, app, meta_addr_from_env};
 use tokio::net::TcpListener;
 use tracing_subscriber::EnvFilter;
@@ -12,7 +12,6 @@ async fn main() -> anyhow::Result<()> {
 
     let config = RuntimeConfig::from_env();
     let pool = connect_sqlite(&config).await?;
-    import_meta_server_data(&pool, &config).await?;
     let addr = meta_addr_from_env();
     let listener = TcpListener::bind(&addr)
         .await
