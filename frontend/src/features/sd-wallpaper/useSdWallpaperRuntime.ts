@@ -101,8 +101,8 @@ export const useSdWallpaperRuntime = (
     ) {
       return;
     }
-    activeWallpaperId.value = latestWallpaper!.id;
     await options.onDailyAutoUpdate(latestWallpaper!, currentSettings);
+    activeWallpaperId.value = latestWallpaper!.id;
   };
 
   const mergeWallpapers = (
@@ -134,12 +134,7 @@ export const useSdWallpaperRuntime = (
         page <= 1
           ? [...result.entries]
           : mergeWallpapers(bingWallpapers.value, result.entries);
-      if (
-        !activeWallpaperId.value ||
-        !bingWallpapers.value.some(
-          (entry) => entry.id === activeWallpaperId.value,
-        )
-      ) {
+      if (!activeWallpaperId.value) {
         activeWallpaperId.value = bingWallpapers.value[0]?.id || "";
       }
       currentPage.value = result.currentPage;

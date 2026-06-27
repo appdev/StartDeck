@@ -14,6 +14,7 @@ import {
   patchSdWallpaperData,
   patchSdWallpaperSettingsData,
 } from "./sdWallpaperModel";
+import { localizeSdWallpaperAsset } from "./sdWallpaperLocalAssets";
 import { useSdWallpaperRuntime } from "./useSdWallpaperRuntime";
 import type {
   SdWallpaperApplyPayload,
@@ -132,38 +133,94 @@ const persistWallpaperSettings = () => {
   emit("updateData", updatedData);
 };
 
+const DEFAULT_WALLPAPER = "default-wallpaper.svg";
+
+const prependPcWallpaperToList = (filename: string) => {
+  if (!filename || filename === DEFAULT_WALLPAPER) return;
+  const nextList = [
+    DEFAULT_WALLPAPER,
+    filename,
+    ...store.wallpaperListPc.filter(
+      (item) => item !== DEFAULT_WALLPAPER && item !== filename,
+    ),
+  ];
+  store.wallpaperListPc = nextList;
+  store.appConfig.pcWallpaperOrder = nextList;
+};
+
 const applyWallpaper = async (entry: SdWallpaperEntry) => {
   if (!store.isLogged) {
     notifyLoginRequired("请先登录后再应用壁纸。");
     return;
   }
-  runtime.selectWallpaper(entry);
-  persistWidgetWallpaperState(entry);
-  store.appConfig.background = entry.downloadUrl;
-  store.appConfig.solidBackgroundColor = "";
-  store.appConfig.pcRotation = false;
-  store.appConfig.wallpaperConfig = {
-    type: "api",
-    url: entry.downloadUrl,
-    enabled: false,
-    lastUpdated: Date.now(),
-  };
 
   applyingWallpaperId.value = entry.id;
   applyState.value = "applying";
   applyMessage.value = "正在应用";
+  let rollbackState: (() => void) | null = null;
 
   try {
+    const localized = await localizeSdWallpaperAsset({
+      sourceUrl: entry.downloadUrl,
+      filenameSeed: entry.id,
+      target: "pc",
+      uploadEndpoint:
+        store.appConfig.wallpaperApiPcUpload || "/api/backgrounds/upload",
+    });
+    const snapshot = {
+      activeWallpaperId: runtime.activeWallpaperId.value,
+      widgetData: targetWidget.value.data,
+      background: store.appConfig.background,
+      solidBackgroundColor: store.appConfig.solidBackgroundColor,
+      pcRotation: store.appConfig.pcRotation,
+      wallpaperConfig: store.appConfig.wallpaperConfig
+        ? { ...store.appConfig.wallpaperConfig }
+        : undefined,
+      wallpaperListPc: [...store.wallpaperListPc],
+      pcWallpaperOrder: Array.isArray(store.appConfig.pcWallpaperOrder)
+        ? [...store.appConfig.pcWallpaperOrder]
+        : [],
+    };
+
+    runtime.selectWallpaper(entry);
+    persistWidgetWallpaperState(entry);
+    store.appConfig.background = localized.localPath;
+    store.appConfig.solidBackgroundColor = "";
+    store.appConfig.pcRotation = false;
+    store.appConfig.wallpaperConfig = {
+      type: "api",
+      url: localized.sourceUrl,
+      enabled: false,
+      lastUpdated: Date.now(),
+    };
+    prependPcWallpaperToList(localized.filename);
+
+    rollbackState = () => {
+      runtime.activeWallpaperId.value = snapshot.activeWallpaperId;
+      targetWidget.value.data = snapshot.widgetData;
+      emit("updateData", snapshot.widgetData as Record<string, unknown>);
+      store.appConfig.background = snapshot.background;
+      store.appConfig.solidBackgroundColor = snapshot.solidBackgroundColor;
+      store.appConfig.pcRotation = snapshot.pcRotation;
+      store.appConfig.wallpaperConfig = snapshot.wallpaperConfig;
+      store.wallpaperListPc = snapshot.wallpaperListPc;
+      store.appConfig.pcWallpaperOrder = snapshot.pcWallpaperOrder;
+    };
+
     const result = await store.saveData(true, true);
     emit("applied", { entry, result });
     if (result === "conflict" || result === "unauthorized") {
+      rollbackState();
       applyState.value = "error";
       applyMessage.value = result === "conflict" ? "保存冲突" : "登录后保存";
       return;
     }
+    store.refreshResources();
     applyState.value = "saved";
-    applyMessage.value = "已应用";
+    applyMessage.value =
+      result === "queued" ? "已加入离线队列" : "已应用";
   } catch (error) {
+    rollbackState?.();
     applyState.value = "error";
     applyMessage.value =
       error instanceof Error && error.message ? error.message : "保存失败";

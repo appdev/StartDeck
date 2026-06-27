@@ -71,4 +71,15 @@ describe("GridPanel home search styles", () => {
       "color: var(--sd-home-search-engine-selected-text);",
     );
   });
+
+  it("renders the configured wallpaper layer immediately instead of hiding it behind preload opacity", () => {
+    expect(gridPanelSource).toContain("renderedPcBgUrl");
+    expect(gridPanelSource).toContain("renderedUrl.value = url;");
+    expect(gridPanelSource).toContain('v-if="renderedPcBgUrl"');
+    expect(gridPanelSource).not.toContain("isPcBgLoaded");
+    expect(gridPanelSource).not.toContain("opacity: isPcBgLoaded ? 1 : 0");
+    expect(gridPanelSource).not.toContain(
+      "opacity: isMobileBgLoaded ? 1 : 0",
+    );
+  });
 });

@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useAuthStore } from "@/stores/auth";
 import { useMainStore } from "@/stores/main";
 import { fetchSdBingWallpapers } from "./sdWallpaperApi";
+import { localizeSdWallpaperAsset } from "./sdWallpaperLocalAssets";
 import {
   patchSdWallpaperData,
   readSdWallpaperState,
@@ -15,6 +16,10 @@ import type { SdWallpaperEntry } from "./sdWallpaperTypes";
 
 vi.mock("./sdWallpaperApi", () => ({
   fetchSdBingWallpapers: vi.fn(),
+}));
+
+vi.mock("./sdWallpaperLocalAssets", () => ({
+  localizeSdWallpaperAsset: vi.fn(),
 }));
 
 const previousWallpaper: SdWallpaperEntry = {
@@ -56,6 +61,12 @@ describe("wallpaper widget", () => {
       pageSize: 24,
       currentPage: 1,
     });
+    vi.mocked(localizeSdWallpaperAsset).mockResolvedValue({
+      sourceUrl: latestWallpaper.downloadUrl,
+      localPath: "/backgrounds/latest-local.jpg",
+      filename: "latest-local.jpg",
+      target: "pc",
+    });
   });
 
   afterEach(() => {
@@ -81,6 +92,7 @@ describe("wallpaper widget", () => {
       ),
     };
     const store = useMainStore();
+    const refreshResources = vi.spyOn(store, "refreshResources");
 
     const wrapper = mount(SdWallpaperWidget, {
       props: {
@@ -90,7 +102,14 @@ describe("wallpaper widget", () => {
     });
     await flushRuntime();
 
-    expect(store.appConfig.background).toBe(latestWallpaper.downloadUrl);
+    expect(localizeSdWallpaperAsset).toHaveBeenCalledWith(
+      expect.objectContaining({
+        sourceUrl: latestWallpaper.downloadUrl,
+        filenameSeed: latestWallpaper.id,
+        target: "pc",
+      }),
+    );
+    expect(store.appConfig.background).toBe("/backgrounds/latest-local.jpg");
     expect(store.appConfig.wallpaperConfig).toMatchObject({
       type: "api",
       url: latestWallpaper.downloadUrl,
@@ -102,5 +121,71 @@ describe("wallpaper widget", () => {
       wallpaperUrl: latestWallpaper.downloadUrl,
       dailyAutoUpdate: true,
     });
+    expect(store.wallpaperListPc).toEqual([
+      "default-wallpaper.svg",
+      "latest-local.jpg",
+    ]);
+    expect(store.appConfig.pcWallpaperOrder).toEqual(store.wallpaperListPc);
+    expect(refreshResources).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not mutate app config or emit widget data when daily localization fails", async () => {
+    vi.mocked(localizeSdWallpaperAsset).mockRejectedValue(
+      new Error("localize failed"),
+    );
+    const widget = {
+      id: "wallpaper",
+      type: "sd-wallpaper-16",
+      enable: true,
+      isPublic: true,
+      data: patchSdWallpaperData(
+        {},
+        previousWallpaper,
+        {
+          dailyAutoUpdate: true,
+          dimWallpaper: false,
+          blurLevel: 0,
+        },
+        "2026-05-28T09:00:00+08:00",
+      ),
+    };
+    const store = useMainStore();
+    const refreshResources = vi.spyOn(store, "refreshResources");
+    store.appConfig.background = "/backgrounds/previous-local.jpg";
+    store.appConfig.wallpaperConfig = {
+      type: "api",
+      url: previousWallpaper.downloadUrl,
+      enabled: false,
+      lastUpdated: 1,
+    };
+    store.wallpaperListPc = ["default-wallpaper.svg", "previous-local.jpg"];
+    store.appConfig.pcWallpaperOrder = [
+      "default-wallpaper.svg",
+      "previous-local.jpg",
+    ];
+
+    const wrapper = mount(SdWallpaperWidget, {
+      props: {
+        widget,
+        sizeKey: "2x2",
+      },
+    });
+    await flushRuntime();
+
+    expect(store.appConfig.background).toBe("/backgrounds/previous-local.jpg");
+    expect(store.appConfig.wallpaperConfig).toMatchObject({
+      url: previousWallpaper.downloadUrl,
+      lastUpdated: 1,
+    });
+    expect(store.wallpaperListPc).toEqual([
+      "default-wallpaper.svg",
+      "previous-local.jpg",
+    ]);
+    expect(store.appConfig.pcWallpaperOrder).toEqual([
+      "default-wallpaper.svg",
+      "previous-local.jpg",
+    ]);
+    expect(refreshResources).not.toHaveBeenCalled();
+    expect(wrapper.emitted("updateData")).toBeUndefined();
   });
 });

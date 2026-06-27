@@ -18,6 +18,37 @@ type AppVersionCheckResponse = {
   hasUpdate?: unknown;
 };
 
+const HOME_BACKGROUND_CACHE_KEY_PREFIX = "start-deck-home-background-cache:v1";
+const LEGACY_HOME_BACKGROUND_CACHE_KEY = HOME_BACKGROUND_CACHE_KEY_PREFIX;
+const USERNAME_KEY = "start-deck-username";
+const HOME_BACKGROUND_STRING_FIELDS = [
+  "background",
+  "mobileBackground",
+  "solidBackgroundColor",
+] as const;
+const HOME_BACKGROUND_NUMBER_FIELDS = [
+  "backgroundBlur",
+  "backgroundMask",
+  "mobileBackgroundBlur",
+  "mobileBackgroundMask",
+] as const;
+const HOME_BACKGROUND_BOOLEAN_FIELDS = ["enableMobileWallpaper"] as const;
+
+type HomeBackgroundStringField =
+  (typeof HOME_BACKGROUND_STRING_FIELDS)[number];
+type HomeBackgroundNumberField =
+  (typeof HOME_BACKGROUND_NUMBER_FIELDS)[number];
+type HomeBackgroundBooleanField =
+  (typeof HOME_BACKGROUND_BOOLEAN_FIELDS)[number];
+type HomeBackgroundCache = Partial<
+  Pick<
+    AppConfig,
+    | HomeBackgroundStringField
+    | HomeBackgroundNumberField
+    | HomeBackgroundBooleanField
+  >
+>;
+
 const STABLE_ASSET_PREFIXES = [
   "/assets/",
   "/sd-live-assets/",
@@ -47,6 +78,79 @@ const shouldAppendResourceVersion = (url: string) => {
     return false;
   }
   return VERSIONED_RESOURCE_PREFIXES.some((prefix) => path.startsWith(prefix));
+};
+
+const getHomeBackgroundCacheKey = () => {
+  const username = localStorage.getItem(USERNAME_KEY)?.trim();
+  if (username) {
+    return `${HOME_BACKGROUND_CACHE_KEY_PREFIX}:auth:${encodeURIComponent(username)}`;
+  }
+  return `${HOME_BACKGROUND_CACHE_KEY_PREFIX}:guest`;
+};
+
+const readHomeBackgroundCachePayload = () => {
+  const scoped = localStorage.getItem(getHomeBackgroundCacheKey());
+  if (scoped) return scoped;
+  return localStorage.getItem(LEGACY_HOME_BACKGROUND_CACHE_KEY);
+};
+
+const readHomeBackgroundCache = (): HomeBackgroundCache => {
+  try {
+    const raw = readHomeBackgroundCachePayload();
+    if (!raw) return {};
+    const parsed = JSON.parse(raw) as Record<string, unknown>;
+    if (!parsed || typeof parsed !== "object") return {};
+
+    const cached: HomeBackgroundCache = {};
+    HOME_BACKGROUND_STRING_FIELDS.forEach((field) => {
+      const value = parsed[field];
+      if (typeof value === "string") {
+        cached[field] = value;
+      }
+    });
+    HOME_BACKGROUND_NUMBER_FIELDS.forEach((field) => {
+      const value = parsed[field];
+      if (typeof value === "number" && Number.isFinite(value)) {
+        cached[field] = value;
+      }
+    });
+    HOME_BACKGROUND_BOOLEAN_FIELDS.forEach((field) => {
+      const value = parsed[field];
+      if (typeof value === "boolean") {
+        cached[field] = value;
+      }
+    });
+    return cached;
+  } catch {
+    return {};
+  }
+};
+
+const writeHomeBackgroundCache = (config: AppConfig) => {
+  try {
+    const cached: HomeBackgroundCache = {};
+    HOME_BACKGROUND_STRING_FIELDS.forEach((field) => {
+      const value = config[field];
+      if (typeof value === "string") {
+        cached[field] = value;
+      }
+    });
+    HOME_BACKGROUND_NUMBER_FIELDS.forEach((field) => {
+      const value = config[field];
+      if (typeof value === "number" && Number.isFinite(value)) {
+        cached[field] = value;
+      }
+    });
+    HOME_BACKGROUND_BOOLEAN_FIELDS.forEach((field) => {
+      const value = config[field];
+      if (typeof value === "boolean") {
+        cached[field] = value;
+      }
+    });
+    localStorage.setItem(getHomeBackgroundCacheKey(), JSON.stringify(cached));
+  } catch {
+    /* localStorage can be unavailable in restricted browser modes */
+  }
 };
 
 export const useConfigStore = defineStore("config", () => {
@@ -165,6 +269,7 @@ export const useConfigStore = defineStore("config", () => {
       ngrok: false,
     },
     latencyThresholdMs: 200,
+    ...readHomeBackgroundCache(),
   });
 
   const systemConfig = ref<SystemConfig>({
@@ -236,6 +341,19 @@ export const useConfigStore = defineStore("config", () => {
       if (typeof val === "string")
         localStorage.setItem("start-deck-card-bg-color", val);
     },
+  );
+  watch(
+    () => [
+      appConfig.value.background,
+      appConfig.value.mobileBackground,
+      appConfig.value.solidBackgroundColor,
+      appConfig.value.enableMobileWallpaper,
+      appConfig.value.backgroundBlur,
+      appConfig.value.backgroundMask,
+      appConfig.value.mobileBackgroundBlur,
+      appConfig.value.mobileBackgroundMask,
+    ],
+    () => writeHomeBackgroundCache(appConfig.value),
   );
 
   return {

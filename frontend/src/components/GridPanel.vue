@@ -10,6 +10,7 @@ import {
   defineAsyncComponent,
   type Component,
   type AsyncComponentLoader,
+  type Ref,
 } from "vue";
 import { VueDraggable } from "vue-draggable-plus";
 import { GridStack } from "gridstack";
@@ -634,8 +635,10 @@ const getIconBackground = (item: IconBackgroundInput, shape?: string) =>
   }).color;
 
 // --- Wallpaper Preload Logic ---
-const isPcBgLoaded = ref(false);
-const isMobileBgLoaded = ref(false);
+const renderedPcBgUrl = ref("");
+const renderedMobileBgUrl = ref("");
+let pcBgPreloadVersion = 0;
+let mobileBgPreloadVersion = 0;
 
 const pcBgUrl = computed(() =>
   store.appConfig.background
@@ -648,26 +651,45 @@ const mobileBgUrl = computed(() =>
     : "",
 );
 
+const syncRenderedWallpaperUrl = (
+  url: string,
+  renderedUrl: Ref<string>,
+  version: number,
+  currentVersion: () => number,
+) => {
+  if (!url) {
+    renderedUrl.value = "";
+    return;
+  }
+  if (!renderedUrl.value) {
+    renderedUrl.value = url;
+    return;
+  }
+  if (renderedUrl.value === url) return;
+
+  const img = new Image();
+  img.onload = () => {
+    if (version === currentVersion()) renderedUrl.value = url;
+  };
+  img.onerror = () => {
+    if (version === currentVersion()) renderedUrl.value = url;
+  };
+  img.src = url;
+  if (img.complete) {
+    renderedUrl.value = url;
+  }
+};
+
 watch(
   pcBgUrl,
   (url) => {
-    if (!url) {
-      isPcBgLoaded.value = false;
-      return;
-    }
-    const img = new Image();
-    img.src = url;
-    if (img.complete) {
-      isPcBgLoaded.value = true;
-    } else {
-      isPcBgLoaded.value = false;
-      img.onload = () => {
-        isPcBgLoaded.value = true;
-      };
-      img.onerror = () => {
-        isPcBgLoaded.value = true;
-      };
-    }
+    const version = ++pcBgPreloadVersion;
+    syncRenderedWallpaperUrl(
+      url,
+      renderedPcBgUrl,
+      version,
+      () => pcBgPreloadVersion,
+    );
   },
   { immediate: true },
 );
@@ -675,23 +697,13 @@ watch(
 watch(
   mobileBgUrl,
   (url) => {
-    if (!url) {
-      isMobileBgLoaded.value = false;
-      return;
-    }
-    const img = new Image();
-    img.src = url;
-    if (img.complete) {
-      isMobileBgLoaded.value = true;
-    } else {
-      isMobileBgLoaded.value = false;
-      img.onload = () => {
-        isMobileBgLoaded.value = true;
-      };
-      img.onerror = () => {
-        isMobileBgLoaded.value = true;
-      };
-    }
+    const version = ++mobileBgPreloadVersion;
+    syncRenderedWallpaperUrl(
+      url,
+      renderedMobileBgUrl,
+      version,
+      () => mobileBgPreloadVersion,
+    );
   },
   { immediate: true },
 );
@@ -3038,12 +3050,11 @@ onUnmounted(() => {
             ? 'hidden md:block'
             : 'block'
         "
-        v-if="store.appConfig.background"
+        v-if="renderedPcBgUrl"
         :style="{
-          backgroundImage: `url('${store.getAssetUrl(store.appConfig.background)}')`,
+          backgroundImage: `url('${renderedPcBgUrl}')`,
           filter: `blur(${store.appConfig.backgroundBlur ?? 0}px)`,
-          opacity: isPcBgLoaded ? 1 : 0,
-          transition: 'opacity 0.5s ease-in-out, filter 0.3s ease-in-out',
+          transition: 'filter 0.3s ease-in-out',
         }"
       ></div>
 
@@ -3052,13 +3063,12 @@ onUnmounted(() => {
         class="absolute inset-[-20px] bg-cover bg-center bg-no-repeat md:hidden"
         v-if="
           (store.appConfig.enableMobileWallpaper ?? true) &&
-          store.appConfig.mobileBackground
+          renderedMobileBgUrl
         "
         :style="{
-          backgroundImage: `url('${store.getAssetUrl(store.appConfig.mobileBackground)}')`,
+          backgroundImage: `url('${renderedMobileBgUrl}')`,
           filter: `blur(${store.appConfig.mobileBackgroundBlur ?? 0}px)`,
-          opacity: isMobileBgLoaded ? 1 : 0,
-          transition: 'opacity 0.5s ease-in-out, filter 0.3s ease-in-out',
+          transition: 'filter 0.3s ease-in-out',
         }"
       ></div>
 

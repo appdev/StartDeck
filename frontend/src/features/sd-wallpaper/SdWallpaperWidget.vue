@@ -9,6 +9,7 @@ import {
   readSdWallpaperState,
   shouldApplySdWallpaperDailyAutoUpdate,
 } from "./sdWallpaperModel";
+import { localizeSdWallpaperAsset } from "./sdWallpaperLocalAssets";
 import { useSdWallpaperRuntime } from "./useSdWallpaperRuntime";
 import type {
   SdWallpaperEntry,
@@ -26,8 +27,22 @@ const emit = defineEmits<{
 
 const store = useMainStore();
 const widgetRef = computed(() => props.widget || null);
+const DEFAULT_WALLPAPER = "default-wallpaper.svg";
 
-const applyDailyWallpaperUpdate = (
+const prependPcWallpaperToList = (filename: string) => {
+  if (!filename || filename === DEFAULT_WALLPAPER) return;
+  const nextList = [
+    DEFAULT_WALLPAPER,
+    filename,
+    ...store.wallpaperListPc.filter(
+      (item) => item !== DEFAULT_WALLPAPER && item !== filename,
+    ),
+  ];
+  store.wallpaperListPc = nextList;
+  store.appConfig.pcWallpaperOrder = nextList;
+};
+
+const applyDailyWallpaperUpdate = async (
   entry: SdWallpaperEntry,
   settings: SdWallpaperSettings,
 ) => {
@@ -35,20 +50,29 @@ const applyDailyWallpaperUpdate = (
   const state = readSdWallpaperState(props.widget.data);
   if (!shouldApplySdWallpaperDailyAutoUpdate(state, settings, entry)) return;
 
+  const localized = await localizeSdWallpaperAsset({
+    sourceUrl: entry.downloadUrl,
+    filenameSeed: entry.id,
+    target: "pc",
+    uploadEndpoint:
+      store.appConfig.wallpaperApiPcUpload || "/api/backgrounds/upload",
+  });
   const updatedData = patchSdWallpaperData(
     props.widget.data,
     entry,
     settings,
   );
-  store.appConfig.background = entry.downloadUrl;
+  store.appConfig.background = localized.localPath;
   store.appConfig.solidBackgroundColor = "";
   store.appConfig.pcRotation = false;
   store.appConfig.wallpaperConfig = {
     type: "api",
-    url: entry.downloadUrl,
+    url: localized.sourceUrl,
     enabled: false,
     lastUpdated: Date.now(),
   };
+  prependPcWallpaperToList(localized.filename);
+  store.refreshResources();
   emit("updateData", updatedData);
 };
 

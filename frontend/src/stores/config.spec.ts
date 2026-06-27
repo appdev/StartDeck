@@ -2,8 +2,15 @@
 import { readFileSync } from "node:fs";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createPinia, setActivePinia } from "pinia";
+import { nextTick } from "vue";
 import { useConfigStore } from "./config";
 import { useUiFeedbackStore } from "./uiFeedback";
+
+const HOME_BACKGROUND_CACHE_KEY_PREFIX = "start-deck-home-background-cache:v1";
+const homeBackgroundCacheKey = (username?: string) =>
+  username
+    ? `${HOME_BACKGROUND_CACHE_KEY_PREFIX}:auth:${encodeURIComponent(username)}`
+    : `${HOME_BACKGROUND_CACHE_KEY_PREFIX}:guest`;
 
 const readServerCargoVersion = () => {
   const source = readFileSync(
@@ -70,6 +77,79 @@ describe("config store release checks", () => {
     expect(store.getAssetUrl("https://cdn.example.com/image.jpg")).toBe(
       "https://cdn.example.com/image.jpg",
     );
+  });
+
+  it("hydrates the initial home background from the local visual cache", () => {
+    localStorage.setItem("start-deck-username", "admin");
+    localStorage.setItem(
+      homeBackgroundCacheKey("admin"),
+      JSON.stringify({
+        background: "/backgrounds/cached-desk.jpg",
+        mobileBackground: "/mobile_backgrounds/cached-phone.jpg",
+        solidBackgroundColor: "",
+        enableMobileWallpaper: false,
+        backgroundBlur: 2,
+        backgroundMask: 0.25,
+        mobileBackgroundBlur: 3,
+        mobileBackgroundMask: 0.4,
+        groups: [{ id: "private-group" }],
+      }),
+    );
+
+    const store = useConfigStore();
+
+    expect(store.appConfig.background).toBe("/backgrounds/cached-desk.jpg");
+    expect(store.appConfig.mobileBackground).toBe(
+      "/mobile_backgrounds/cached-phone.jpg",
+    );
+    expect(store.appConfig.enableMobileWallpaper).toBe(false);
+    expect(store.appConfig.backgroundBlur).toBe(2);
+    expect(store.appConfig.backgroundMask).toBe(0.25);
+    expect(store.appConfig.mobileBackgroundBlur).toBe(3);
+    expect(store.appConfig.mobileBackgroundMask).toBe(0.4);
+    expect("groups" in store.appConfig).toBe(false);
+  });
+
+  it("persists home background changes to the local visual cache", async () => {
+    localStorage.setItem("start-deck-username", "admin");
+    const store = useConfigStore();
+
+    store.appConfig.background = "/backgrounds/next-desk.jpg";
+    store.appConfig.mobileBackground = "/mobile_backgrounds/next-phone.jpg";
+    store.appConfig.solidBackgroundColor = "";
+    store.appConfig.enableMobileWallpaper = true;
+    store.appConfig.backgroundBlur = 1;
+    store.appConfig.backgroundMask = 0.35;
+    store.appConfig.mobileBackgroundBlur = 4;
+    store.appConfig.mobileBackgroundMask = 0.45;
+    await nextTick();
+
+    const cached = JSON.parse(
+      localStorage.getItem(homeBackgroundCacheKey("admin")) || "{}",
+    );
+    expect(cached).toEqual({
+      background: "/backgrounds/next-desk.jpg",
+      mobileBackground: "/mobile_backgrounds/next-phone.jpg",
+      solidBackgroundColor: "",
+      enableMobileWallpaper: true,
+      backgroundBlur: 1,
+      backgroundMask: 0.35,
+      mobileBackgroundBlur: 4,
+      mobileBackgroundMask: 0.45,
+    });
+  });
+
+  it("falls back to the legacy unscoped home background cache", () => {
+    localStorage.setItem(
+      HOME_BACKGROUND_CACHE_KEY_PREFIX,
+      JSON.stringify({
+        background: "/backgrounds/legacy-desk.jpg",
+      }),
+    );
+
+    const store = useConfigStore();
+
+    expect(store.appConfig.background).toBe("/backgrounds/legacy-desk.jpg");
   });
 
   it("loads app update status from the backend and notifies once", async () => {

@@ -18,6 +18,7 @@ import AppSwitch from "@/components/base/AppSwitch.vue";
 import ConfirmDialog from "@/components/base/ConfirmDialog.vue";
 import StatusBanner from "@/components/base/StatusBanner.vue";
 import { fetchSdBingWallpapers } from "@/features/sd-wallpaper/sdWallpaperApi";
+import { localizeSdWallpaperAsset } from "@/features/sd-wallpaper/sdWallpaperLocalAssets";
 import type { SdWallpaperEntry } from "@/features/sd-wallpaper/sdWallpaperTypes";
 import { useUiFeedbackStore } from "@/stores/uiFeedback";
 import { sessionFetch } from "@/utils/sessionFetch";
@@ -178,24 +179,6 @@ const prependWallpaperToList = (name: string, type: "pc" | "mobile") => {
     mobileWallpapers.value = nextList;
     store.appConfig.mobileWallpaperOrder = nextList;
   }
-};
-
-const inferImageExtension = (blob: Blob, urlHint: string) => {
-  const mime = (blob.type || "").toLowerCase();
-  if (mime.includes("jpeg") || mime.includes("jpg")) return "jpg";
-  if (mime.includes("png")) return "png";
-  if (mime.includes("webp")) return "webp";
-  if (mime.includes("gif")) return "gif";
-  if (mime.includes("svg")) return "svg";
-  if (mime.includes("bmp")) return "bmp";
-  if (mime.includes("avif")) return "avif";
-
-  const normalizedHint = stripTransientQueryParams(urlHint);
-  const matched = normalizedHint.match(/\.([a-zA-Z0-9]+)$/);
-  if (matched?.[1]) {
-    return matched[1].toLowerCase();
-  }
-  return "jpg";
 };
 
 const getWallpaperErrorKey = (name: string, type: "pc" | "mobile") =>
@@ -664,29 +647,6 @@ const wallpaperStatusBanner = computed(() => {
   return null;
 });
 
-const normalizeApiWallpaperFilename = (entry: SdWallpaperEntry) =>
-  entry.id.replace(/[^a-z0-9-]+/gi, "-").replace(/^-+|-+$/g, "") ||
-  "bing-wallpaper";
-
-const fetchRemoteWallpaperBlob = async (
-  sourceUrl: string,
-  requestId: string,
-) => {
-  const proxyRes = await sessionFetch(
-    `/api/wallpaper/proxy?url=${encodeURIComponent(sourceUrl)}&uuid=${requestId}`,
-    { headers: authHeadersOnly() },
-  );
-  if (proxyRes.ok) {
-    return proxyRes.blob();
-  }
-
-  const directRes = await fetch(sourceUrl, { cache: "no-store" });
-  if (directRes.ok) {
-    return directRes.blob();
-  }
-  return null;
-};
-
 const applyBingApiWallpaper = async (
   entry: SdWallpaperEntry,
   type: "pc" | "mobile",
@@ -697,84 +657,51 @@ const applyBingApiWallpaper = async (
   applyingApi.value = true;
   apiApplyingTarget.value = `${entry.id}:${type}:${apply ? "apply" : "save"}`;
   try {
-    let backgroundPath = "";
-    let uploadedFilename = "";
     const cleanDownloadUrl = stripTransientQueryParams(entry.downloadUrl);
-    const blob = await fetchRemoteWallpaperBlob(
-      cleanDownloadUrl,
-      `bing-${entry.id}-${Date.now()}`,
-    );
-
-    if (blob) {
-      if (apply && type === "pc") {
-        document.body.style.backgroundImage = `url(${entry.thumbnailUrl})`;
-      }
-
-      const formData = new FormData();
-      const ext = inferImageExtension(blob, cleanDownloadUrl);
-      const filename = `${normalizeApiWallpaperFilename(entry)}_${Date.now()}.${ext}`;
-      formData.append("files", blob, filename);
-
-      const endpoint =
+    const localized = await localizeSdWallpaperAsset({
+      sourceUrl: cleanDownloadUrl,
+      filenameSeed: entry.id,
+      target: type,
+      uploadEndpoint:
         type === "pc"
           ? store.appConfig.wallpaperApiPcUpload || "/api/backgrounds/upload"
           : store.appConfig.wallpaperApiMobileUpload ||
-            "/api/mobile_backgrounds/upload";
+            "/api/mobile_backgrounds/upload",
+    });
 
-      const uploadRes = await sessionFetch(endpoint, {
-        method: "POST",
-        headers: authHeadersOnly(),
-        body: formData,
-      });
-
-      if (uploadRes.ok) {
-        const uploadData = await uploadRes.json();
-        if (
-          uploadData.success &&
-          uploadData.files &&
-          uploadData.files.length > 0
-        ) {
-          backgroundPath = uploadData.files[0].path;
-          uploadedFilename = uploadData.files[0].filename || "";
-        } else {
-          throw new Error("Upload failed: No path returned");
-        }
-      } else {
-        throw new Error("Upload failed: " + uploadRes.statusText);
-      }
-    } else {
-      throw new Error("No preview image available");
+    if (apply && type === "pc") {
+      document.body.style.backgroundImage = `url(${entry.thumbnailUrl})`;
     }
 
     // Now apply configuration
     if (apply) {
       const config = {
         type: "api" as const,
-        url: cleanDownloadUrl,
+        url: localized.sourceUrl,
         enabled: false,
         lastUpdated: Date.now(),
       };
 
       if (type === "pc") {
-        store.appConfig.background = backgroundPath; // Use the server path
+        store.appConfig.background = localized.localPath;
         store.appConfig.wallpaperConfig = config;
       } else {
-        store.appConfig.mobileBackground = backgroundPath;
+        store.appConfig.mobileBackground = localized.localPath;
         store.appConfig.mobileWallpaperConfig = config;
       }
-      if (uploadedFilename) {
-        prependWallpaperToList(uploadedFilename, type);
+      if (localized.filename) {
+        prependWallpaperToList(localized.filename, type);
       }
       store.refreshResources();
       store.markDirty();
       notify("当前设备的默认壁纸已经更新。", "success", "设置成功");
     } else {
-      if (uploadedFilename) {
-        prependWallpaperToList(uploadedFilename, type);
+      if (localized.filename) {
+        prependWallpaperToList(localized.filename, type);
       }
       await fetchWallpapers();
-      if (uploadedFilename) {
-        prependWallpaperToList(uploadedFilename, type);
+      if (localized.filename) {
+        prependWallpaperToList(localized.filename, type);
       }
       store.refreshResources();
       store.markDirty();

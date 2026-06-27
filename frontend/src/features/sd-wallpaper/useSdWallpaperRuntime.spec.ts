@@ -135,4 +135,32 @@ describe("wallpaper runtime", () => {
       dailyAutoUpdate: false,
     });
   });
+
+  it("keeps the previous active wallpaper and widget data when daily update fails", async () => {
+    const previousData = patchSdWallpaperData(
+      {},
+      previousWallpaper,
+      defaultSettings,
+      "2026-05-28T09:00:00+08:00",
+    );
+    const widget = ref({ data: previousData });
+    const onDailyAutoUpdate = vi
+      .fn()
+      .mockRejectedValue(new Error("localize failed"));
+
+    const runtime = useSdWallpaperRuntime(widget, { onDailyAutoUpdate });
+    await flushRuntime();
+
+    expect(onDailyAutoUpdate).toHaveBeenCalledWith(
+      latestWallpaper,
+      defaultSettings,
+    );
+    expect(runtime.activeWallpaperId.value).toBe(previousWallpaper.id);
+    expect(runtime.activeWallpaper.value?.id).toBe(previousWallpaper.id);
+    expect(widget.value.data).toStrictEqual(previousData);
+    expect(readSdWallpaperState(widget.value.data)).toMatchObject({
+      selectedWallpaperId: previousWallpaper.id,
+      wallpaperUrl: previousWallpaper.downloadUrl,
+    });
+  });
 });

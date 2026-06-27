@@ -5,14 +5,21 @@ import { createTestingPinia } from "@pinia/testing";
 import { nextTick } from "vue";
 import WallpaperLibrary from "./WallpaperLibrary.vue";
 import { fetchSdBingWallpapers } from "@/features/sd-wallpaper/sdWallpaperApi";
+import { localizeSdWallpaperAsset } from "@/features/sd-wallpaper/sdWallpaperLocalAssets";
 import type { SdBingWallpaperResult } from "@/features/sd-wallpaper/sdWallpaperApi";
 import type { SdWallpaperEntry } from "@/features/sd-wallpaper/sdWallpaperTypes";
+import { useMainStore } from "@/stores/main";
 
 vi.mock("@/features/sd-wallpaper/sdWallpaperApi", () => ({
   fetchSdBingWallpapers: vi.fn(),
 }));
 
+vi.mock("@/features/sd-wallpaper/sdWallpaperLocalAssets", () => ({
+  localizeSdWallpaperAsset: vi.fn(),
+}));
+
 const fetchBingWallpapersMock = vi.mocked(fetchSdBingWallpapers);
+const localizeWallpaperMock = vi.mocked(localizeSdWallpaperAsset);
 
 const buildWallpaperEntry = (id: string): SdWallpaperEntry => ({
   id,
@@ -194,6 +201,81 @@ describe("WallpaperLibrary Bing API loading", () => {
     );
     expect(wrapper.text()).toContain("Bing three");
 
+    wrapper.unmount();
+  });
+
+  it("applies a Bing API wallpaper through the shared local asset helper", async () => {
+    const entry = buildWallpaperEntry("one");
+    fetchBingWallpapersMock.mockResolvedValueOnce(buildResult(1, 1, [entry]));
+    localizeWallpaperMock.mockResolvedValueOnce({
+      sourceUrl: entry.downloadUrl,
+      localPath: "/backgrounds/one-local.jpg",
+      filename: "one-local.jpg",
+      target: "pc",
+    });
+
+    const wrapper = mountLibrary();
+    await wrapper.setProps({ show: true });
+    await flushPromises();
+    await nextTick();
+    const store = useMainStore();
+
+    const applyPcButton = wrapper
+      .findAll("button")
+      .find((button) => button.text() === "应用到 PC");
+    expect(applyPcButton).toBeTruthy();
+    await applyPcButton!.trigger("click");
+    await flushPromises();
+    await nextTick();
+
+    expect(localizeWallpaperMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        sourceUrl: entry.downloadUrl,
+        filenameSeed: entry.id,
+        target: "pc",
+      }),
+    );
+    expect(store.appConfig.background).toBe("/backgrounds/one-local.jpg");
+    expect(store.appConfig.wallpaperConfig).toMatchObject({
+      type: "api",
+      url: entry.downloadUrl,
+      enabled: false,
+    });
+    expect(store.wallpaperListPc).toEqual([
+      "default-wallpaper.svg",
+      "one-local.jpg",
+    ]);
+
+    wrapper.unmount();
+  });
+
+  it("does not update the wallpaper list when localization fails", async () => {
+    const consoleError = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => undefined);
+    const entry = buildWallpaperEntry("one");
+    fetchBingWallpapersMock.mockResolvedValueOnce(buildResult(1, 1, [entry]));
+    localizeWallpaperMock.mockRejectedValueOnce(new Error("proxy failed"));
+
+    const wrapper = mountLibrary();
+    await wrapper.setProps({ show: true });
+    await flushPromises();
+    await nextTick();
+    const store = useMainStore();
+
+    const applyPcButton = wrapper
+      .findAll("button")
+      .find((button) => button.text() === "应用到 PC");
+    expect(applyPcButton).toBeTruthy();
+    await applyPcButton!.trigger("click");
+    await flushPromises();
+    await nextTick();
+
+    expect(store.appConfig.background).toBe("/default-wallpaper.svg");
+    expect(store.wallpaperListPc).toEqual(["default-wallpaper.svg"]);
+    expect(consoleError).toHaveBeenCalledWith(expect.any(Error));
+
+    consoleError.mockRestore();
     wrapper.unmount();
   });
 });
