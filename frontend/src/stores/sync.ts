@@ -670,6 +670,7 @@ export const useSyncStore = defineStore("sync", () => {
         break;
       case "memo_updated":
       case "todo_updated": {
+        if (msg.type === "memo_updated" && saveStore.hasPendingChanges()) return;
         const p = msg.payload || {};
         const username = typeof p.username === "string" ? p.username : "";
         if (username && username !== auth.username) return;

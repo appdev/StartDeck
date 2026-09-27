@@ -10,6 +10,7 @@ import { useDebounceFn } from "@vueuse/core";
 import type { WidgetConfig } from "@/types";
 import { useResumeRefresh } from "@/composables/useResumeRefresh";
 import { useMainStore } from "@/stores/main";
+import { useSaveStore } from "@/stores/save";
 import { canWriteResource } from "@/utils/permissions";
 import { fetchSdMemoWidgetData } from "./sdMemoApi";
 import { normalizeSdMemoWidgetData } from "./sdMemoModel";
@@ -50,6 +51,7 @@ export const useSdMemoRuntime = (
   options: SdMemoRuntimeOptions = {},
 ) => {
   const store = useMainStore();
+  const saveStore = useSaveStore();
   const searchText = ref("");
   const remoteSync = options.remoteSync ?? false;
   const authRequired = options.authRequired ?? true;
@@ -260,6 +262,11 @@ export const useSdMemoRuntime = (
 
   const pollRemote = async (force = false) => {
     if (!remoteSync || !store.isLogged) return;
+    // The opened editor and desktop poller are separate runtime instances.
+    if (saveStore.hasPendingChanges()) {
+      scheduleNextPoll();
+      return;
+    }
     if (shouldUseSocket.value && !force) {
       stopPolling();
       return;
@@ -275,6 +282,9 @@ export const useSdMemoRuntime = (
     pollController?.abort();
     const controller = new AbortController();
     pollController = controller;
+    const requestNotes = JSON.stringify(normalizedData.value.notes);
+    const requestUsername = store.username;
+    const requestGeneration = store.sessionGeneration;
     const timeoutTimer = setTimeout(
       () => controller.abort(),
       MEMO_POLL_TIMEOUT_MS,
@@ -285,6 +295,16 @@ export const useSdMemoRuntime = (
         headers: store.getHeaders(),
         signal: controller.signal,
       });
+      if (
+        controller.signal.aborted ||
+        !store.isLogged ||
+        store.username !== requestUsername ||
+        store.sessionGeneration !== requestGeneration ||
+        saveStore.hasPendingChanges() ||
+        JSON.stringify(normalizedData.value.notes) !== requestNotes
+      ) {
+        return;
+      }
       const nextData = normalizeSdMemoWidgetData(raw);
       const currentData = normalizedData.value;
       if (

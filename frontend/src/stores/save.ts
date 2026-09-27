@@ -66,6 +66,27 @@ export const useSaveStore = defineStore("save", () => {
     if (auth.isLogged) hasUnsavedChanges.value = true;
   };
 
+  const hasPendingChanges = () =>
+    hasUnsavedChanges.value ||
+    isSaving.value ||
+    hasPendingSave.value ||
+    saveTimer !== null;
+
+  const buildBusinessBody = (version: number): Record<string, unknown> => {
+    const body: Record<string, unknown> = sanitizeSnapshotIcons({
+      groups: groupsStore.groups,
+      widgets: widgetsStore.widgets.map((w) => stripWidgetUiState(w)),
+      appConfig: stripForceNetworkMode(
+        configStore.appConfig as unknown as Record<string, unknown>,
+      ),
+      version,
+    });
+    if (typeof auth.password === "string" && auth.password.length > 0) {
+      body.password = auth.password;
+    }
+    return body;
+  };
+
   const saveCustomScripts = async () => {
     try {
       if (!auth.isLogged) return;
@@ -133,17 +154,10 @@ export const useSaveStore = defineStore("save", () => {
           );
         }
 
-        const businessBody: Record<string, unknown> = sanitizeSnapshotIcons({
-          groups: groupsStore.groups,
-          widgets: widgetsStore.widgets.map((w) => stripWidgetUiState(w)),
-          appConfig: stripForceNetworkMode(
-            configStore.appConfig as unknown as Record<string, unknown>,
-          ),
-          version: dataVersion.value,
-        });
-        if (typeof auth.password === "string" && auth.password.length > 0) {
-          businessBody.password = auth.password;
-        }
+        const requestVersion = dataVersion.value;
+        const requestUsername = auth.username;
+        const requestGeneration = auth.sessionGeneration;
+        const businessBody = buildBusinessBody(requestVersion);
         const json = JSON.stringify(businessBody);
         if (json === lastSavedJson) return "no_change";
 
@@ -211,9 +225,31 @@ export const useSaveStore = defineStore("save", () => {
           throw new Error(`Save failed after ${MAX_SAVE_RETRIES} retries`);
 
         if (res.ok) {
-          conflictState.value.show = false;
-          hasUnsavedChanges.value = false;
           const result = await res.json().catch(() => null);
+          if (
+            !auth.isLogged ||
+            auth.username !== requestUsername ||
+            auth.sessionGeneration !== requestGeneration
+          ) {
+            return "unauthorized";
+          }
+          conflictState.value.show = false;
+          if (
+            result &&
+            typeof (result as { version?: number }).version !== "undefined"
+          ) {
+            dataVersion.value = normalizeVersion(
+              (result as { version?: number }).version,
+            );
+          }
+          // Acknowledgement covers the sent snapshot, not edits made in flight.
+          if (JSON.stringify(buildBusinessBody(requestVersion)) !== json) {
+            hasUnsavedChanges.value = true;
+            hasPendingSave.value = true;
+            lastSavedJson = "";
+            return "saved";
+          }
+          hasUnsavedChanges.value = false;
           if ((result as { ignored?: boolean } | null)?.ignored) {
             const normalizedData = hasSnapshotData(
               (result as { data?: unknown } | null)?.data,
@@ -233,14 +269,6 @@ export const useSaveStore = defineStore("save", () => {
               );
               cacheStore.saveToCache(normalizedData);
             }
-            if (
-              result &&
-              typeof (result as { version?: number }).version !== "undefined"
-            ) {
-              dataVersion.value = normalizeVersion(
-                (result as { version?: number }).version,
-              );
-            }
             await fetchData();
             widgetsStore.updateLastSavedLayout();
             lastSavedJson = JSON.stringify({
@@ -248,14 +276,6 @@ export const useSaveStore = defineStore("save", () => {
               version: dataVersion.value,
             });
             return "saved";
-          }
-          if (
-            result &&
-            typeof (result as { version?: number }).version !== "undefined"
-          ) {
-            dataVersion.value = normalizeVersion(
-              (result as { version?: number }).version,
-            );
           }
           const normalizedData = hasSnapshotData(
             (result as { data?: unknown } | null)?.data,
@@ -569,6 +589,7 @@ export const useSaveStore = defineStore("save", () => {
     syncConfirmModal,
     heartbeatLostSinceLastVisible,
     markDirty,
+    hasPendingChanges,
     saveData,
     resolveConflict,
     checkVersionAfterActivation,

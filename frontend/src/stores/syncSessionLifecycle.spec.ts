@@ -7,9 +7,12 @@ import { useAuthStore } from "./auth";
 import { useCacheStore } from "./cache";
 import { useGroupsStore } from "./groups";
 import { useWidgetsStore } from "./widgets";
+import { useSaveStore } from "./save";
 import { SD_GRID_SCHEMA_VERSION } from "@/features/sd-widgets/sdGrid";
 import { SD_CLOCK_WIDGET_TYPE } from "@/features/sd-clock/sdClockTypes";
 import { sessionFetch } from "@/utils/sessionFetch";
+
+let socketData: ReturnType<typeof ref<string | null>>;
 
 vi.mock("@vueuse/core", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@vueuse/core")>();
@@ -17,7 +20,7 @@ vi.mock("@vueuse/core", async (importOriginal) => {
     ...actual,
     useWebSocket: () => ({
       status: ref("CLOSED"),
-      data: ref(null),
+      data: (socketData = ref<string | null>(null)),
       send: vi.fn(),
       open: vi.fn(),
       close: vi.fn(),
@@ -220,6 +223,100 @@ describe("sync session lifecycle", () => {
     });
     expect(sync.activeSnapshotRole).toBe("guest");
     expect(sync.isClientReady).toBe(true);
+  });
+
+  it("does not let memo websocket updates replace pending local edits", async () => {
+    const memoData = (body: string) => ({
+      runtime: "sd-memo",
+      layoutSystem: "sd-grid/2026-05-22",
+      version: 1,
+      sizeKey: "2x2",
+      activeNoteId: "note",
+      notes: [
+        {
+          id: "note",
+          title: "Test",
+          body,
+          pinned: false,
+          createdAt: "2026-09-27T00:00:00Z",
+          updatedAt: "2026-09-27T00:00:00Z",
+        },
+      ],
+    });
+    const snapshot = {
+      ...authenticatedSnapshot,
+      widgets: [
+        {
+          id: "memo",
+          type: "sd-memo-04",
+          enable: true,
+          data: memoData("ABCD"),
+        },
+      ],
+    };
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(
+        async (input: RequestInfo | URL) =>
+          new Response(
+            JSON.stringify(
+              String(input).includes("/api/session")
+                ? {
+                    authenticated: true,
+                    username: "admin",
+                    sessionGeneration: snapshot.sessionGeneration,
+                  }
+                : String(input).includes("/api/data")
+                  ? snapshot
+                  : { success: true },
+            ),
+          ),
+      ),
+    );
+    const sync = useSyncStore();
+    await sync.init();
+    const widgets = useWidgetsStore();
+    const memo = widgets.widgets.find(
+      (widget) => widget.type === "sd-memo-04",
+    )!;
+    memo.data = memoData("CVBD");
+    const save = useSaveStore();
+    save.markDirty();
+    socketData.value = JSON.stringify({
+      type: "memo_updated",
+      payload: {
+        username: "admin",
+        widgetId: memo.id,
+        content: memoData("ABCD"),
+      },
+    });
+    await nextTick();
+    expect(memo.data).toMatchObject({ notes: [{ body: "CVBD" }] });
+
+    save.hasUnsavedChanges = false;
+    save.isSaving = true;
+    socketData.value = JSON.stringify({
+      type: "memo_updated",
+      payload: {
+        username: "admin",
+        widgetId: memo.id,
+        content: memoData("OLDER"),
+      },
+    });
+    await nextTick();
+    expect(memo.data).toMatchObject({ notes: [{ body: "CVBD" }] });
+
+    save.isSaving = false;
+    socketData.value = JSON.stringify({
+      type: "memo_updated",
+      payload: {
+        username: "admin",
+        widgetId: memo.id,
+        content: memoData("REMOTE"),
+      },
+    });
+    await nextTick();
+    expect(memo.data).toMatchObject({ notes: [{ body: "REMOTE" }] });
   });
 
   it("keeps logged-out startup renderable while the guest snapshot is pending", async () => {

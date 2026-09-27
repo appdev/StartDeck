@@ -11,6 +11,7 @@ import { useSyncStore } from "../../stores/sync";
 import { useUiFeedbackStore } from "../../stores/uiFeedback";
 import type { AddComponentPayload } from "../../utils/addComponentTypes";
 import { SD_WALLPAPER_WIDGET_TYPE } from "../../features/sd-wallpaper/sdWallpaperTypes";
+import SdWallpaperOpenedPanel from "../../features/sd-wallpaper/SdWallpaperOpenedPanel.vue";
 import { SD_CALENDAR_WIDGET_TYPE } from "../../features/sd-calendar/sdCalendarTypes";
 import { SD_FOOD_PICKER_WIDGET_TYPE } from "../../features/sd-food-picker/sdFoodPickerTypes";
 import { SD_NUMBER_UPPERCASE_WIDGET_TYPE } from "../../features/sd-number-uppercase/sdNumberUppercaseTypes";
@@ -1187,6 +1188,39 @@ describe("GridPanel Context Menu", () => {
       }),
     });
     expect(vm.layoutData.some((item) => item.i === widget?.id)).toBe(true);
+  });
+
+  it("persists wallpaper settings through the parent and updates homepage blur", async () => {
+    const vm = wrapper.vm as unknown as {
+      addComponent: (payload: AddComponentPayload) => Promise<unknown>;
+      updateRuntimeWidgetData: (widget: WidgetConfig, data: Record<string, unknown>) => void;
+    };
+    await vm.addComponent({ kind: "widget", catalogItemId: "wallpaper", destinationGroupId: "home", saveMode: "dirty", sizeKey: "2x2" });
+    const widget = store.widgets.find((item) => item.type === SD_WALLPAPER_WIDGET_TYPE)!;
+    store.appConfig.background = "/default-wallpaper.svg";
+    store.appConfig.backgroundBlur = 1;
+    store.appConfig.backgroundMask = 0.7;
+    vi.mocked(store.saveData).mockClear().mockResolvedValue("saved");
+    const panel = mount(SdWallpaperOpenedPanel, {
+      props: { widget, onUpdateData: (data: Record<string, unknown>) => vm.updateRuntimeWidgetData(widget, data) },
+    });
+    try {
+      await flushPromises();
+      await panel.get("[data-sd-wallpaper-settings-trigger]").trigger("click");
+      await panel.findAll('input[type="checkbox"]')[0]!.setValue(false);
+      expect(store.saveData).toHaveBeenCalledOnce();
+      expect(store.saveData).toHaveBeenLastCalledWith(true);
+      expect(widget.data).toMatchObject({ sd: { state: { dailyAutoUpdate: false } } });
+      vi.mocked(store.saveData).mockClear();
+      await panel.get('input[type="range"]').setValue("0");
+      await wrapper.vm.$nextTick();
+      expect(store.saveData).toHaveBeenCalledOnce();
+      expect(store.appConfig.backgroundBlur).toBe(0);
+      expect(store.appConfig.backgroundMask).toBe(0.7);
+      expect(wrapper.get<HTMLElement>('.bg-cover.hidden.md\\:block').element.style.filter).toBe("blur(0px)");
+    } finally {
+      panel.unmount();
+    }
   });
 
   it("places the migrated calendar widget into the home grid", async () => {

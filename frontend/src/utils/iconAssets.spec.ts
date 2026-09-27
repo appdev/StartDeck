@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import { Blob as NodeBlob } from "node:buffer";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { queryStartDeckConnector } from "@/utils/startdeckConnector";
 import {
@@ -17,6 +18,8 @@ const mockedConnector = vi.mocked(queryStartDeckConnector);
 
 describe("iconAssets", () => {
   beforeEach(() => {
+    // Node's Response.blob() uses the global Blob; jsdom's lacks arrayBuffer().
+    vi.stubGlobal("Blob", NodeBlob);
     mockedConnector.mockReset();
   });
 

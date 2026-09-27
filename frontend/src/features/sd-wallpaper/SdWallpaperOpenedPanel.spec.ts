@@ -7,10 +7,7 @@ import { useAuthStore } from "@/stores/auth";
 import { useMainStore } from "@/stores/main";
 import { fetchSdBingWallpapers } from "./sdWallpaperApi";
 import { localizeSdWallpaperAsset } from "./sdWallpaperLocalAssets";
-import {
-  patchSdWallpaperData,
-  readSdWallpaperState,
-} from "./sdWallpaperModel";
+import { patchSdWallpaperData, readSdWallpaperState } from "./sdWallpaperModel";
 import SdWallpaperOpenedPanel from "./SdWallpaperOpenedPanel.vue";
 import type { SdWallpaperEntry } from "./sdWallpaperTypes";
 
@@ -111,7 +108,149 @@ describe("SdWallpaperOpenedPanel apply", () => {
   });
 
   afterEach(() => {
+    localStorage.clear();
     vi.clearAllMocks();
+  });
+
+  it("reads homepage effects and emits settings before mutating shared widget data", async () => {
+    const { store, widget } = prepareStore();
+    store.appConfig.backgroundBlur = 1;
+    store.appConfig.backgroundMask = 0.7;
+    const previousData = store.widgets[0]?.data;
+    const wrapper = mountPanel(widget);
+    await flushRuntime();
+    await wrapper.get("[data-sd-wallpaper-settings-trigger]").trigger("click");
+
+    const blur = wrapper.get<HTMLInputElement>('input[type="range"]');
+    const [autoUpdate, dim] = wrapper.findAll<HTMLInputElement>(
+      'input[type="checkbox"]',
+    );
+    expect(blur.element.value).toBe("1");
+    expect(dim!.element.checked).toBe(true);
+    await autoUpdate!.setValue(false);
+    expect(store.appConfig.backgroundBlur).toBe(1);
+    expect(store.appConfig.backgroundMask).toBe(0.7);
+    expect(store.widgets[0]?.data).toBe(previousData);
+    expect(
+      readSdWallpaperState(wrapper.emitted("updateData")?.at(-1)?.[0]),
+    ).toMatchObject({
+      dailyAutoUpdate: false,
+      blurLevel: 1,
+      dimWallpaper: true,
+    });
+
+    await blur.setValue("0");
+    expect(store.appConfig.backgroundBlur).toBe(0);
+    expect(store.appConfig.backgroundMask).toBe(0.7);
+    await dim!.setValue(false);
+    expect(store.appConfig.backgroundMask).toBe(0);
+    await dim!.setValue(true);
+    expect(store.appConfig.backgroundMask).toBeGreaterThan(0);
+    wrapper.unmount();
+  });
+
+  it("does not change homepage effects or emit data for guests", async () => {
+    const { store, widget } = prepareStore();
+    useAuthStore().username = "";
+    store.appConfig.backgroundBlur = 1;
+    store.appConfig.backgroundMask = 0;
+    const wrapper = mountPanel(widget);
+    await flushRuntime();
+    await wrapper.get("[data-sd-wallpaper-settings-trigger]").trigger("click");
+    await wrapper.get('input[type="range"]').setValue("12");
+    await wrapper.findAll('input[type="checkbox"]')[1]!.setValue(true);
+
+    expect(store.appConfig.backgroundBlur).toBe(1);
+    expect(store.appConfig.backgroundMask).toBe(0);
+    expect(wrapper.emitted("updateData")).toBeUndefined();
+    wrapper.unmount();
+  });
+
+  it("blocks additional applies and setting changes until localization and saving finish", async () => {
+    const { store, widget } = prepareStore();
+    let finishLocalization!: (
+      value: Awaited<ReturnType<typeof localizeSdWallpaperAsset>>,
+    ) => void;
+    let finishSave!: (value: "saved") => void;
+    vi.mocked(localizeSdWallpaperAsset).mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          finishLocalization = resolve;
+        }),
+    );
+    vi.mocked(fetchSdBingWallpapers).mockResolvedValue({
+      entries: [latestWallpaper, previousWallpaper],
+      sourceStatus: "ok",
+      count: 2,
+      totalPages: 1,
+      pageSize: 24,
+      currentPage: 1,
+    });
+    const save = vi.spyOn(store, "saveData").mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          finishSave = resolve;
+        }),
+    );
+    const wrapper = mountPanel(widget);
+    await flushRuntime();
+    await wrapper.get("[data-sd-wallpaper-settings-trigger]").trigger("click");
+    const vm = wrapper.vm as unknown as {
+      applyWallpaper: (entry: SdWallpaperEntry) => Promise<void>;
+    };
+    const firstApply = vm.applyWallpaper(latestWallpaper);
+    await nextTick();
+    expect(
+      wrapper.get<HTMLButtonElement>("[data-sd-wallpaper-apply-featured]")
+        .element.disabled,
+    ).toBe(true);
+    expect(
+      wrapper.get<HTMLInputElement>('input[type="range"]').element.disabled,
+    ).toBe(true);
+    await vm.applyWallpaper(previousWallpaper);
+    expect(localizeSdWallpaperAsset).toHaveBeenCalledTimes(1);
+
+    finishLocalization({
+      sourceUrl: latestWallpaper.downloadUrl,
+      localPath: "/backgrounds/latest-local.jpg",
+      filename: "latest-local.jpg",
+      target: "pc",
+    });
+    await flushRuntime();
+    await vm.applyWallpaper(previousWallpaper);
+    expect(localizeSdWallpaperAsset).toHaveBeenCalledTimes(1);
+    expect(save).toHaveBeenCalledTimes(1);
+    finishSave("saved");
+    await firstApply;
+    await nextTick();
+    expect(
+      wrapper.get<HTMLButtonElement>("[data-sd-wallpaper-apply-featured]")
+        .element.disabled,
+    ).toBe(false);
+    expect(store.appConfig.background).toBe("/backgrounds/latest-local.jpg");
+    wrapper.unmount();
+  });
+
+  it("unlocks wallpaper selection after localization fails so the user can retry", async () => {
+    const { store, widget } = prepareStore();
+    vi.spyOn(store, "saveData").mockResolvedValue("saved");
+    vi.mocked(localizeSdWallpaperAsset).mockRejectedValueOnce(
+      new Error("download failed"),
+    );
+    const wrapper = mountPanel(widget);
+    await flushRuntime();
+    const button = wrapper.get<HTMLButtonElement>(
+      "[data-sd-wallpaper-apply-featured]",
+    );
+    await button.trigger("click");
+    await flushRuntime();
+    expect(button.element.disabled).toBe(false);
+    expect(store.appConfig.background).toBe("/backgrounds/previous-local.jpg");
+    await button.trigger("click");
+    await flushRuntime();
+    expect(store.appConfig.background).toBe("/backgrounds/latest-local.jpg");
+    expect(localizeSdWallpaperAsset).toHaveBeenCalledTimes(2);
+    wrapper.unmount();
   });
 
   it("applies a localized wallpaper and prepends it to the PC list after save", async () => {
@@ -171,7 +310,9 @@ describe("SdWallpaperOpenedPanel apply", () => {
       await wrapper.find("[data-sd-wallpaper-apply-featured]").trigger("click");
       await flushRuntime();
 
-      expect(store.appConfig.background).toBe("/backgrounds/previous-local.jpg");
+      expect(store.appConfig.background).toBe(
+        "/backgrounds/previous-local.jpg",
+      );
       expect(store.appConfig.wallpaperConfig).toMatchObject({
         url: previousWallpaper.downloadUrl,
         lastUpdated: 1,

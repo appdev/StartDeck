@@ -19,6 +19,7 @@ import { useSdWallpaperRuntime } from "./useSdWallpaperRuntime";
 import type {
   SdWallpaperApplyPayload,
   SdWallpaperEntry,
+  SdWallpaperSettings,
 } from "./sdWallpaperTypes";
 
 const props = defineProps<{
@@ -120,16 +121,29 @@ const persistWidgetWallpaperState = (entry: SdWallpaperEntry) => {
   emit("updateData", updatedData);
 };
 
-const persistWallpaperSettings = () => {
+const persistWallpaperSettings = (patch: Partial<SdWallpaperSettings>) => {
   if (!store.isLogged) {
     notifyLoginRequired("请先登录后再修改壁纸设置。");
     return;
   }
+  if (applyingWallpaperId.value) return;
+  if (patch.blurLevel !== undefined) {
+    store.appConfig.backgroundBlur = Math.min(20, Math.max(0, patch.blurLevel));
+  }
+  if (patch.dimWallpaper !== undefined) {
+    store.appConfig.backgroundMask = patch.dimWallpaper
+      ? store.appConfig.backgroundMask || 0.3
+      : 0;
+  }
+  Object.assign(runtime.settings, patch, {
+    blurLevel: store.appConfig.backgroundBlur ?? 0,
+    dimWallpaper: (store.appConfig.backgroundMask ?? 0) > 0,
+  });
   const updatedData = patchSdWallpaperSettingsData(
     targetWidget.value.data,
     runtime.settings,
   );
-  targetWidget.value.data = updatedData;
+  // The parent compares against the current data before persisting the change.
   emit("updateData", updatedData);
 };
 
@@ -153,6 +167,7 @@ const applyWallpaper = async (entry: SdWallpaperEntry) => {
     notifyLoginRequired("请先登录后再应用壁纸。");
     return;
   }
+  if (applyingWallpaperId.value) return;
 
   applyingWallpaperId.value = entry.id;
   applyState.value = "applying";
@@ -217,8 +232,7 @@ const applyWallpaper = async (entry: SdWallpaperEntry) => {
     }
     store.refreshResources();
     applyState.value = "saved";
-    applyMessage.value =
-      result === "queued" ? "已加入离线队列" : "已应用";
+    applyMessage.value = result === "queued" ? "已加入离线队列" : "已应用";
   } catch (error) {
     rollbackState?.();
     applyState.value = "error";
@@ -287,33 +301,48 @@ watch(
     >
       <label>
         <input
-          v-model="runtime.settings.dailyAutoUpdate"
+          :checked="runtime.settings.dailyAutoUpdate"
+          :disabled="!!applyingWallpaperId"
           type="checkbox"
           data-sd-inner-control
-          @change="persistWallpaperSettings"
+          @change="
+            persistWallpaperSettings({
+              dailyAutoUpdate: ($event.target as HTMLInputElement).checked,
+            })
+          "
         />
         <span>自动更新</span>
       </label>
       <label>
         <input
-          v-model="runtime.settings.dimWallpaper"
+          :checked="(store.appConfig.backgroundMask ?? 0) > 0"
+          :disabled="!!applyingWallpaperId"
           type="checkbox"
           data-sd-inner-control
-          @change="persistWallpaperSettings"
+          @change="
+            persistWallpaperSettings({
+              dimWallpaper: ($event.target as HTMLInputElement).checked,
+            })
+          "
         />
         <span>桌面背景增加暗色遮罩</span>
       </label>
       <label class="wallpaper-range">
         <span>背景模糊</span>
         <input
-          v-model.number="runtime.settings.blurLevel"
+          :value="store.appConfig.backgroundBlur ?? 0"
+          :disabled="!!applyingWallpaperId"
           type="range"
           min="0"
           max="20"
           data-sd-inner-control
-          @change="persistWallpaperSettings"
+          @change="
+            persistWallpaperSettings({
+              blurLevel: Number(($event.target as HTMLInputElement).value),
+            })
+          "
         />
-        <b>{{ runtime.settings.blurLevel }}</b>
+        <b>{{ store.appConfig.backgroundBlur ?? 0 }}</b>
       </label>
     </div>
 
@@ -329,6 +358,7 @@ watch(
         :aria-label="`应用 ${featuredWallpaper.title}`"
         data-sd-inner-control
         data-sd-wallpaper-apply-featured
+        :disabled="!!applyingWallpaperId"
         @click="applyWallpaper(featuredWallpaper)"
       >
         <img
@@ -377,6 +407,7 @@ watch(
         :class="{ active: wallpaper.id === runtime.activeWallpaper.value?.id }"
         :aria-pressed="wallpaper.id === runtime.activeWallpaper.value?.id"
         :data-wallpaper-id="wallpaper.id"
+        :disabled="!!applyingWallpaperId"
         data-sd-inner-control
         @click="applyWallpaper(wallpaper)"
       >
